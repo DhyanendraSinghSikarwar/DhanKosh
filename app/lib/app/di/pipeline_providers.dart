@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:hisaab/app/di/notification_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/core/platform_channels/background_channel.dart';
 import 'package:hisaab/core/platform_channels/permissions_channel.dart';
 import 'package:hisaab/core/platform_channels/sms_channel.dart';
 import 'package:hisaab/features/onboarding_permissions/data/identity_store.dart';
@@ -14,6 +16,7 @@ import 'package:hisaab/features/settings_data_sources/data/settings_key_value_st
 import 'package:hisaab/features/settings_data_sources/domain/data_reset_repository.dart';
 import 'package:hisaab/features/sms_ingestion/data/sms_inbox_source_impl.dart';
 import 'package:hisaab/features/sms_ingestion/data/sms_live_source_impl.dart';
+import 'package:hisaab/features/sms_ingestion/data/sms_scan_scheduler_impl.dart';
 import 'package:hisaab/features/sms_ingestion/data/sms_settings_store.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
 import 'package:hisaab/features/sms_ingestion/domain/key_value_store.dart';
@@ -115,6 +118,9 @@ ScanSms Function(void Function(SmsScanProgress)? onProgress) scanSmsFactory(
         settings: settings,
         accept: ingest.accepts,
         ingest: ingest.call,
+        ingestBatch: (batch) async => [
+          for (final d in await ingest.ingestBatch(batch)) d.outcome,
+        ],
         onProgress: onProgress,
       );
 }
@@ -135,6 +141,7 @@ SmsEngine smsEngine(Ref ref) {
     ),
     scan: () => scan(null),
     senderPattern: SmsEngine.senderPatternDefault,
+    scheduler: const SmsScanSchedulerImpl(BackgroundChannel()),
   );
   ref.onDispose(engine.stop);
   return engine;
@@ -162,6 +169,7 @@ SmsPermissionWatcher smsPermissionWatcher(Ref ref) {
 /// every app resume (FR-01-09, FR-02-06). Never throws.
 @Riverpod(keepAlive: true)
 Future<void> Function() pipelineSync(Ref ref) => () async {
+      unawaited(ref.read(notificationSyncProvider)());
       try {
         final s = await ref.read(smsPermissionWatcherProvider).refresh();
         if (!s.granted) return;

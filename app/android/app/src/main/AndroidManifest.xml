@@ -43,6 +43,16 @@
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
+        <!-- Payment-app notifications (FR-04-01). Enabled by the user in system settings. -->
+        <service
+            android:name="com.hisaab.notifications.PaymentNotificationListener"
+            android:exported="true"
+            android:label="Hisaab"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

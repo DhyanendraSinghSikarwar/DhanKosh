@@ -3,7 +3,9 @@ abstract final class ChannelNames {
   static const smsLive = 'com.hisaab/sms_live';
   static const permissions = 'com.hisaab/permissions';
   static const notifications = 'com.hisaab/notifications';
+  static const notificationsLive = 'com.hisaab/notifications_live';
   static const secure = 'com.hisaab/secure';
   static const pdf = 'com.hisaab/pdf';
   static const widget = 'com.hisaab/widget';
+  static const background = 'com.hisaab/background';
 }

@@ -44,6 +44,12 @@ kotlin {
     }
 }
 
+dependencies {
+    // Headless background jobs (HeadlessWorker, BackgroundScheduler).
+    implementation("androidx.work:work-runtime:2.11.2")
+    implementation("androidx.concurrent:concurrent-futures:1.1.0")
+}
+
 flutter {
     source = "../.."
 }

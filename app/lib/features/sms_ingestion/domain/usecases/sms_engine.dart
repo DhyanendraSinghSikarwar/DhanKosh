@@ -17,15 +17,18 @@ class SmsEngine {
     required HandleLiveSms handle,
     required ScanSms Function() scan,
     required this.senderPattern,
+    SmsScanScheduler? scheduler,
   })  : _live = live,
         _settings = settings,
         _handle = handle,
-        _scan = scan;
+        _scan = scan,
+        _scheduler = scheduler;
 
   final SmsLiveSource _live;
   final SmsSettingsRepository _settings;
   final HandleLiveSms _handle;
   final ScanSms Function() _scan;
+  final SmsScanScheduler? _scheduler;
 
   /// Case-insensitive address regex pushed to the native receiver.
   final String senderPattern;
@@ -46,6 +49,7 @@ class SmsEngine {
   Future<void> start() async {
     try {
       await configure();
+      await _safe(_syncSchedule);
       await _sub?.cancel();
       _sub = _live.live.listen(
         (m) => unawaited(_safe(() => _handle(m))),
@@ -76,8 +80,20 @@ class SmsEngine {
     await _settings.setEnabled(enabled: enabled);
     try {
       await configure();
+      await _safe(_syncSchedule);
     } on Object {
       // Native side missing.
+    }
+  }
+
+  /// Nightly scan on while reading is on, off while paused (FR-02-14).
+  Future<void> _syncSchedule() async {
+    final scheduler = _scheduler;
+    if (scheduler == null) return;
+    if ((await _settings.read()).enabled) {
+      await scheduler.scheduleNightly();
+    } else {
+      await scheduler.cancelNightly();
     }
   }
 

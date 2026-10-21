@@ -4,6 +4,7 @@ import 'package:hisaab/core/db/tables/custom_categories.dart';
 import 'package:hisaab/core/db/tables/custom_subcategories.dart';
 import 'package:hisaab/core/db/tables/deleted_messages.dart';
 import 'package:hisaab/core/db/tables/merchant_rules.dart';
+import 'package:hisaab/core/db/tables/processed_emails.dart';
 import 'package:hisaab/core/db/tables/settings.dart';
 import 'package:hisaab/core/db/tables/transaction_sources.dart';
 import 'package:hisaab/core/db/tables/transactions.dart';
@@ -22,6 +23,7 @@ part 'app_database.g.dart';
     CustomCategories,
     CustomSubcategories,
     Settings,
+    ProcessedEmails,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -29,11 +31,15 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          // v1 -> v2: email ingestion (F-03). Additive, existing rows stay.
+          if (from < 2) await m.createTable(processedEmails);
+        },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },

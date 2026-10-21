@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-04 |
-| Status | Existing |
+| Status | In progress (Phase 2: Kotlin listener, channel, Dart engine, Data sources card and tests done; native code uncompiled and untested on device; payee-account memory, repair job, activity entries, app-lock skip pending) |
 | Priority | P1 |
 | Phase | 2 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -481,6 +481,8 @@ android/app/src/main/kotlin/.../notify/
 
 Fixtures: all rows of section 2.8, plus WhatsApp notifications with `category=msg`, `channelId='individual_chat_defaults'`.
 
+Implemented tests: `app/test/features/notification_ingestion/notification_engine_test.dart` (FR-04-01, 02, 03, 05, 06, 10, 11, 16: allow-list, setting off, repeat post no-op, live stream, chat guard, status/restricted hint, missing native) and `notification_access_card_test.dart` (FR-04-16). Parser fixtures (FR-04-06..09) live in `app/packages/parser_core`.
+
 ## 16. Acceptance Criteria
 
 - AC-04-01: With access and the setting on, a PhonePe "Paid ₹250 to Ravi Kumar" notification creates one transaction and one new-transaction alert (FR-04-01, FR-04-02, FR-04-08, FR-04-11; TC-04-06, TC-04-13).
@@ -506,7 +508,15 @@ Fixtures: all rows of section 2.8, plus WhatsApp notifications with `category=ms
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 2 landed 2026-10-21. FR status: FR-04-01..06, 08 (via parser_core), 09, 10, 11 (ingest only), 16 done; FR-04-07 done in parser_core; FR-04-12..15 pending (ledger owned: payee map, adopt, repair); FR-04-17 met (no text logged; native queue holds text only until drained); FR-04-18 pending (no app-lock skip flag exists yet).
+
+Native (`android/.../com/hisaab/notifications/`): `PaymentNotificationListener` (extracts title, bigTitle, text, bigText, sub, info, summary, lines; drops summary/ongoing and the WhatsApp chat guard before forwarding; `requestRebind` on disconnect), `NotificationStore` (EventChannel sink else SharedPreferences queue, cap 200, cleared by drain; accepts only when `enabled` and package in pushed list), `NotificationsBridge`. Manifest service entry with `BIND_NOTIFICATION_LISTENER_SERVICE`.
+
+Channel `com.hisaab/notifications`: `isAccessEnabled` -> bool, `sdkInt` -> int, `openAccessSettings`, `drainPending` -> list of `{packageName,key,postTime,parts,isGroupSummary,isOngoing,category,hasMessagesExtra,channelId}`, `configure{enabled,packages}`. Events on `com.hisaab/notifications_live` (same map).
+
+Dart (`lib/features/notification_ingestion`): `PaymentApps` allow-list (20 packages, 19 names), `HandleAppNotification` (allow-list, summary/ongoing, chat guard again, setting check, then `IngestMessage.detail` with Source.app and id `app:hex16(sha256(pkg|key|text))`), `NotificationEngine` (start/drain/setEnabled/status), `NotificationSettingsStore` (`app_notifications`), `NotificationAccessCard` embedded in More via `SettingsDataSourcesScreen.notificationCard` (composed in `app/router.dart` to respect the cross-feature rule). Wiring: `app/di/notification_providers.dart`; `pipelineSync` also runs `notificationSync` on launch and resume.
+
+Deviations: setting off drops natively before any text is read (stricter than the old app, which logged a skip note); skip reasons are returned to callers, not yet written to an activity log (no write path exists). Unverified: all Kotlin (not compiled here; CI compiles it), listener binding, restricted-settings flow, OEM kills, EventChannel hand-off on a device. Payee `NotificationSkip` enum is simplified to listener-level reasons; parser reasons pass through as strings.
 
 ## 19. Change Log (date | change | reason)
 
@@ -514,3 +524,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 2 notification ingestion landed | Phase 2 |

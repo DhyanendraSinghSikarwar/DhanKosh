@@ -35,3 +35,21 @@ final class UnexpectedFailure extends Failure {
   /// Creates an [UnexpectedFailure].
   const UnexpectedFailure(super.message);
 }
+
+/// Sign-in refused (wrong or revoked password). Needs the user to act.
+final class AuthFailure extends Failure {
+  /// Creates an [AuthFailure].
+  const AuthFailure(super.message);
+}
+
+/// Server unreachable or the connection dropped. Safe to retry.
+final class NetworkFailure extends Failure {
+  /// Creates a [NetworkFailure].
+  const NetworkFailure(super.message);
+}
+
+/// TLS handshake or certificate check failed. Never retried silently.
+final class TlsFailure extends Failure {
+  /// Creates a [TlsFailure].
+  const TlsFailure(super.message);
+}

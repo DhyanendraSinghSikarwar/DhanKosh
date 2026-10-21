@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/bank_sms_card.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/paste_sms_card.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_providers.dart';
@@ -7,7 +8,10 @@ import 'package:hisaab/features/settings_data_sources/presentation/settings_prov
 /// More tab: data sources, privacy and developer tools (F-26).
 class SettingsDataSourcesScreen extends ConsumerWidget {
   /// Creates the screen.
-  const SettingsDataSourcesScreen({super.key});
+  const SettingsDataSourcesScreen({this.notificationCard, super.key});
+
+  /// Payment-app notifications card (F-04), composed in `app/router.dart`.
+  final Widget? notificationCard;
 
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
@@ -52,6 +56,18 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
           const BankSmsCard(),
           const SizedBox(height: 12),
           const PasteSmsCard(),
+          ListTile(
+            key: const Key('email-tile'),
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.mail_outline),
+            title: const Text('Email'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/settings/email'),
+          ),
+          if (notificationCard != null) ...[
+            const SizedBox(height: 12),
+            notificationCard!,
+          ],
           head('Privacy'),
           SwitchListTile(
             key: hideAmountsKey,

@@ -8,6 +8,8 @@ import 'package:hisaab/features/accounts_management/presentation/accounts_manage
 import 'package:hisaab/features/analytics/presentation/analytics_screen.dart';
 import 'package:hisaab/features/dashboard_home/presentation/dashboard_home_screen.dart';
 import 'package:hisaab/features/dedup_review/presentation/dedup_review_screen.dart';
+import 'package:hisaab/features/email_ingestion/presentation/email_settings_screen.dart';
+import 'package:hisaab/features/notification_ingestion/presentation/notification_access_card.dart';
 import 'package:hisaab/features/onboarding_permissions/presentation/welcome_screen.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_screen.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_data_sources_screen.dart';
@@ -46,6 +48,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const AddTransactionScreen(),
       ),
       GoRoute(path: '/review', builder: (_, __) => const DedupReviewScreen()),
+      GoRoute(
+        path: '/settings/email',
+        builder: (_, __) => const EmailSettingsScreen(),
+      ),
       GoRoute(
         path: '/accounts',
         builder: (_, __) => const AccountsManagementScreen(),
@@ -97,7 +103,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/more',
-                builder: (_, __) => const SettingsDataSourcesScreen(),
+                builder: (_, __) => const SettingsDataSourcesScreen(
+                  notificationCard: NotificationAccessCard(),
+                ),
               ),
             ],
           ),

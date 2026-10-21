@@ -7,8 +7,8 @@ import org.json.JSONObject
 
 /**
  * Live-SMS hand-off. Delivers to Dart over the EventChannel when a listener is
- * attached, otherwise persists to a small SharedPreferences queue that Dart
- * drains with `drainPending`. Only counts/ids are ever logged, never bodies.
+ * attached, otherwise persists to a small SharedPreferences queue and enqueues a
+ * headless drain job; the queue is also drained with `drainPending` on app start. Only counts/ids are ever logged, never bodies.
  */
 object SmsStore {
     private const val PREFS = "hisaab_sms"
@@ -55,6 +55,17 @@ object SmsStore {
             }
         }
         enqueue(context, message)
+        // No Dart listener (app closed): wake a headless engine to drain the queue (AC-02-01).
+        try {
+            BackgroundScheduler.oneOff(
+                context,
+                BackgroundScheduler.UNIQUE_SMS_DRAIN,
+                BackgroundScheduler.TASK_SMS_DRAIN,
+                false,
+            )
+        } catch (e: Exception) {
+            // The queue is kept; Dart drains it on the next app start or resume.
+        }
     }
 
     @Synchronized

@@ -98,7 +98,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
     }
 
     final candidates = await _candidates(p);
-    var decision = _policy.decide(p, candidates);
+    var decision = await _policy.decide(p, candidates);
     final accountId = item.accountId ??
         await _accounts.ensureAccount(p, phoneLast4s: item.phoneLast4s);
 

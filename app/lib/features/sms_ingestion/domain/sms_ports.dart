@@ -62,3 +62,12 @@ abstract interface class SmsSettingsRepository {
   /// Sets the look-back window (7, 30, 90, 180, 365).
   Future<void> setLookbackDays(int days);
 }
+
+/// Schedules the background jobs of the SMS feature (FR-02-14).
+abstract interface class SmsScanScheduler {
+  /// Registers the nightly catch-up scan (02:30, 24 h, battery-not-low).
+  Future<void> scheduleNightly();
+
+  /// Removes the nightly scan (SMS reading paused).
+  Future<void> cancelNightly();
+}

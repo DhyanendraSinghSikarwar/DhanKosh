@@ -6,6 +6,12 @@ import 'package:hisaab/features/sms_ingestion/domain/sms_ports.dart';
 /// Parses and stores one message; the caller wires parser + ledger.
 typedef SmsIngest = Future<IngestOutcome> Function(InboxSms sms);
 
+/// Parses a whole batch (off the UI isolate) and stores it in order; one
+/// outcome per message (FR-02-10).
+typedef SmsBatchIngest = Future<List<IngestOutcome>> Function(
+  List<InboxSms> batch,
+);
+
 /// Inbox scan (FR-02-08..FR-02-12, FR-02-20). Pure orchestration.
 class ScanSms {
   /// Creates the use case.
@@ -14,6 +20,7 @@ class ScanSms {
     required SmsSettingsRepository settings,
     required bool Function(String sender) accept,
     required SmsIngest ingest,
+    SmsBatchIngest? ingestBatch,
     DateTime Function() now = DateTime.now,
     Future<void> Function(String message)? recordActivity,
     void Function(SmsScanProgress progress)? onProgress,
@@ -22,6 +29,7 @@ class ScanSms {
         _settings = settings,
         _accept = accept,
         _ingest = ingest,
+        _ingestBatch = ingestBatch,
         _now = now,
         _recordActivity = recordActivity,
         _onProgress = onProgress;
@@ -30,6 +38,7 @@ class ScanSms {
   final SmsSettingsRepository _settings;
   final bool Function(String) _accept;
   final SmsIngest _ingest;
+  final SmsBatchIngest? _ingestBatch;
   final DateTime Function() _now;
   final Future<void> Function(String)? _recordActivity;
   final void Function(SmsScanProgress)? _onProgress;
@@ -80,9 +89,12 @@ class ScanSms {
         batchSize: batchSize,
         accept: _accept,
         onBatch: (batch) async {
-          for (final sms in batch) {
+          final outcomes = _ingestBatch != null
+              ? await _ingestBatch(batch)
+              : [for (final sms in batch) await _ingest(sms)];
+          for (var i = 0; i < batch.length; i++) {
             bank++;
-            switch (await _ingest(sms)) {
+            switch (outcomes[i]) {
               case IngestOutcome.inserted:
                 inserted++;
               case IngestOutcome.merged:
@@ -94,7 +106,7 @@ class ScanSms {
               case IngestOutcome.rejected:
                 break;
             }
-            if (sms.receivedAt > cursor) cursor = sms.receivedAt;
+            if (batch[i].receivedAt > cursor) cursor = batch[i].receivedAt;
           }
           _onProgress?.call(
             SmsScanProgress(scanned: bank, found: inserted + merged + flagged),
