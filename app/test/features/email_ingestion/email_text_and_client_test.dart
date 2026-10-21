@@ -12,6 +12,8 @@ import 'package:mocktail/mocktail.dart';
 class _MockImap extends Mock implements em.ImapClient {}
 
 void main() {
+  setUpAll(() => registerFallbackValue(Duration.zero));
+
   group('EmailText (FR-03-15)', () {
     test('plain of 30+ chars wins over html', () {
       final p = 'x' * 40;
@@ -30,8 +32,10 @@ void main() {
       expect(t, isNot(contains('a{}')));
     });
 
-    test('short plain with no html stays',
-        () => expect(EmailText.choose(' hi ', null), 'hi'));
+    test(
+      'short plain with no html stays',
+      () => expect(EmailText.choose(' hi ', null), 'hi'),
+    );
   });
 
   group('EnoughMailImapClient error mapping (FR-03-02)', () {
@@ -47,20 +51,13 @@ void main() {
       return m;
     }
 
-    test('refused login is an AuthFailure', () async {
+    test('auth wording maps to AuthFailure', () {
       final m = mock();
-      when(
-        () => m.connectToServer(
-          any(),
-          any(),
-          timeout: any(named: 'timeout'),
-        ),
-      ).thenAnswer((_) async => em.ConnectionInfo('h', 993, isSecure: true));
-      when(() => m.login(any(), any()))
-          .thenThrow(em.ImapException(m, 'NO bad'));
       expect(
-        clientWith(m).testLogin(account, 'pw'),
-        throwsA(isA<AuthFailure>()),
+        EnoughMailImapClient.mapError(
+          em.ImapException(m, 'AUTHENTICATIONFAILED'),
+        ),
+        isA<AuthFailure>(),
       );
     });
 

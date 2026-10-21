@@ -169,8 +169,8 @@ void main() {
         text: '',
         html: '<html><head><style>p{}</style></head><body>'
             '<p>Dear Customer,</p><p>Rs.450.00 has been debited from '
-            'account **1234 to VPA shop@icici DEMO STORE on 20-10-26.</p>'
-            '<p>Your UPI transaction reference number is 000000000001.</p>'
+            'account **1234 to VPA shop@icici DEMO STORE on 20-10-26.</p> '
+            '<p>Your UPI transaction reference number is 000000000001.</p> '
             '</body></html>',
       ),
     ];
@@ -224,7 +224,7 @@ void main() {
     imap.mails = [mail('imap:<a@x>')];
     final r = await sync();
     expect(r.inserted, 0);
-    expect(r.merged + r.flagged, lessThanOrEqualTo(1));
+    expect(r.merged + r.flagged, 1);
     expect(await env.count('transactions'), 1);
     expect(await env.count('transaction_sources'), 2);
   });

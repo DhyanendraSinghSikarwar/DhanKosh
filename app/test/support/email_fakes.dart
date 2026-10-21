@@ -1,3 +1,4 @@
+import 'package:hisaab/core/errors/failure.dart';
 import 'package:hisaab/features/email_ingestion/domain/email_ports.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/email_account.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/raw_email.dart';
@@ -8,7 +9,7 @@ class FakeImap implements ImapClient {
   FakeImap([this.mails = const []]);
 
   List<RawEmail> mails;
-  Object? error;
+  Failure? error;
   DateTime? lastSince;
   String? lastPassword;
   int fetches = 0;

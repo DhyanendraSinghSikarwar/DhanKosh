@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-03 |
-| Status | Existing |
+| Status | In progress (Phase 2: IMAP app-password sync, sender whitelist, screen and tests done; Gmail OAuth/API, verification code, attachments, multi-account and scheduling NOT built) |
 | Priority | P1 |
 | Phase | 2 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -591,7 +591,43 @@ Fixtures (synthetic): HDFC UPI email `From: HDFC Bank InstaAlerts <alerts@hdfcba
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Landed 2026-10-21 (Phase 2, IMAP app-password only). Gmail OAuth/API is NOT built.
+
+FR status:
+
+| FR | Status | Where |
+|---|---|---|
+| FR-03-01 | Done (presets Gmail, Outlook, Yahoo, iCloud, Other; Zoho/AOL/Rediff fall to Other = `imap.<domain>`) | `domain/entities/email_account.dart` |
+| FR-03-02 | Done (TLS, 20 s timeout, spaces stripped, auth/network/tls mapped to `AuthFailure`/`NetworkFailure`/`TlsFailure` in `core/errors/failure.dart`) | `data/enough_mail_imap_client.dart` |
+| FR-03-03, 03-04 | Not built (no SMTP verification code; Test connection signs in instead) | - |
+| FR-03-05 | Partial: password only in `SecureStore` (key `email_app_password`, wipe = empty value); no immediate scheduling | `data/secure_email_credential_store.dart` |
+| FR-03-06 | Partial: one account; disconnect wipes password and settings, transactions stay | `usecases/manage_email_account.dart` |
+| FR-03-07 | Done, concise (steps and link per preset) | `EmailProvider.steps` |
+| FR-03-08, 03-11 | Not built (Gmail API) | - |
+| FR-03-09 | Done: `\All` folder else INBOX (EXAMINE), `SINCE d-Mon-yyyy`, one envelope fetch, filter, then body | `EnoughMailImapClient.fetchSince` |
+| FR-03-10 | Done: `since = lastSync - 1 day`, ids `imap:<Message-ID>` else `imap:uid:<n>`, processed skipped | `usecases/sync_email.dart` |
+| FR-03-12 | Done: defaults = registry list, user-added extras, any change clears the cursor; statement subjects always pass | `domain/sender_whitelist.dart` |
+| FR-03-13 | Done for IMAP (regex from parser_core `isStatementSubject`) | - |
+| FR-03-14 | Partial: body to `IngestMessage` with `Source.email`; outcome PARSED / REJECTED stored; loan status, card-due and attachments not wired | `processed_emails` |
+| FR-03-15 | Done (own pure-Dart HTML-to-text, no `html` package) | `domain/email_text.dart` |
+| FR-03-16 | Not built (attachments) | - |
+| FR-03-17 | Not scheduled here: entry point `EmailSyncRunner.run()` (provider `emailSyncRunnerProvider`) for the lead's workmanager task | `usecases/email_sync_runner.dart` |
+| FR-03-18 | Done: auth sets `needsReauth` and keeps cursor and ids; `retryable` only for network; a message that throws is not marked and the cursor stays | `SyncEmail` |
+| FR-03-19 | Reads shared `history_days` (default 90); raising it does not yet clear the cursor | `EmailSettingsStore` |
+| FR-03-20 | Done: no bodies, passwords or server text in reports, failures or logs | - |
+| FR-03-21 | Done (`full` / `incremental` mode) | `EmailSyncReport.summary` |
+| FR-03-22 | Partial: route `/settings/email` (provider picker, login, Test connection, Save, Sync now with progress, senders, Disconnect), entry tile in More; no Data sources card or enable toggle | `presentation/email_settings_screen.dart` |
+
+Decisions and deviations:
+- Schema v2 adds `processed_emails` (`messageId` PK, `processedAt`, `outcome`, `transactionId?`); `onUpgrade` creates it for v1 databases, no other table touched.
+- Non-secret state lives in the settings table as strings: `email_address`, `email_provider`, `email_imap_host`, `email_imap_port`, `email_last_sync`, `email_last_report`, `email_needs_reauth`, `email_custom_senders` (JSON list). Cleared values are empty strings.
+- `SecureStore` has no delete; wipe writes an empty string.
+- `SyncEmail` takes an `IngestEmail` function; `lib/app/di/email_providers.dart` binds it to `IngestMessage.detail(..., source: Source.email, messageId)`. SMS and email of one payment end as one transaction with two sources (dedup in the ledger).
+- The use case reads at most 300 allowed emails per sync.
+
+Tests: `test/features/email_ingestion/sync_email_test.dart` (TC-03-01, 03-03, 03-06, 03-07, 03-08, 03-12, 03-16, 03-18 equivalents plus SMS+email dedup), `email_text_and_client_test.dart` (TC-03-10, error mapping), `email_settings_screen_test.dart` (TC-03-17 subset), `test/core/db/migration_v1_v2_test.dart`.
+
+Not done: Gmail API and OAuth, mailed verification code, multiple accounts, attachments and statement import, loan status and card-due from email, nightly 02:30 job and retry wiring (lead), Home sync pill, GIFs, raising look-back clearing the cursor.
 
 ## 19. Change Log (date | change | reason)
 
@@ -599,3 +635,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 2 email ingestion landed | Phase 2 |

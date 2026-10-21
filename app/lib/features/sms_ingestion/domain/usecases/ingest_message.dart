@@ -43,8 +43,8 @@ class IngestMessage {
   bool accepts(String sender) => _registry.accepts(sender);
 
   /// Matches the SmsIngest typedef: SMS in, outcome out.
-  Future<IngestOutcome> call(sms.InboxSms message) async =>
-      (await detail(message)).outcome;
+  Future<IngestOutcome> call(sms.InboxSms message) =>
+      detail(message).then((d) => d.outcome);
 
   /// Batches at least this large are parsed on a worker isolate (FR-02-10).
   static const isolateThreshold = 50;
@@ -59,7 +59,7 @@ class IngestMessage {
     final rows = [
       for (final m in batch) (m.sender, m.body, m.receivedAt),
     ];
-    return Isolate.run(() => parseRows(rows));
+    return await Isolate.run(() => parseRows(rows));
   }
 
   /// Parses [batch] off the UI isolate, then stores each message in order on
