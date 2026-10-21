@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-06 |
-| Status | Existing |
+| Status | In progress (Phase 1: SMS/email/notification path done; statements pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -777,7 +777,44 @@ Fixture source: all samples in 2.15 (already anonymised: digits 1234/5678, refs 
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 1 Dart port of the Kotlin `parser-core` SMS, email and notification path, in `app/packages/parser_core/` (pure Dart: no Flutter, no `dart:io`; `dart:convert` only for the SHA-256 input). Public API (`lib/parser_core.dart`): `ParseResult parse(Source source, String sender, String body, int receivedAt, {ParserRegistry? registry})`, a sealed `ParseResult` = `Parsed(transaction)` | `Rejected(reason)` (the rule that fired: `otp`, `failed`, `future`, `mandate`, `collect`, `promo`, `reminder`, `balance`, or a notification skip reason) | `NotATransaction(reason)` (unknown sender, too short, no amount, no direction, no account or reference, deposit advice). `Source.sms` / `email` go through `ParserRegistry.standard()`; `Source.app` through `FreeTextParser.readNotification` (sender = app name); screenshot, manual and statement return `NotATransaction`. `ParserRegistry.parse/parseDetailed`, `loanStatus`, `accepts`, `isKnownSender`, `defaultEmailSenders`, `isStatementSubject`, `FreeTextParser.draft/fromNotification/readNotification`, `TransactionHasher`, `DuplicateMatcher.decide` and the extractors are exported too.
+
+Layout (one concept per file, as section 13): `src/text` (rx, Guarded, text_normalizer), `src/extract` (money, amount, balance, account, type_classifier, channel_detector, reference, date_time, merchant, generic_phrases), `src/rules` (rejection_rules, card_bill), `src/hash` (transaction_hasher, own sha256), `src/registry` (sender_keys, bank_parser, parser_registry), `src/bank` (base_bank_parser, banks, indian_banks, lender_parser, loan_status, deposits, payment_app_parser, generic_bank_parser), `src/template`, `src/merchant` (merchant_normalizer, merchant_directory, subcategories + generated data files), `src/free_text`, `src/dedup` (see [Dedup and review](07_dedup_review.md)), `src/util` (civil date/time, string helpers), `src/parse.dart` (entry point), `src/parse_result.dart`.
+
+Decisions and deviations:
+- Model is `lib/src/model/model.dart` (single file, as it already existed); `ParsedTransaction` gained `copyWith`, `==`, `hashCode`.
+- Zone: `ParserConfig.utcOffset` (default +05:30, IST has no DST) and `maxBackdateDays` (45) replace `java.time.ZoneId`; `CivilDate` / `CivilTime` replace `LocalDate` / `LocalTime`. No timezone package.
+- Money is `int` paise; `Money.parse` reads decimal text exactly (BigInt, half-up past two decimals, Rs 10,000 crore ceiling); no `double` anywhere in the engine. Deposit rates are parsed to basis points exactly.
+- SHA-256 is implemented in `src/hash/sha256.dart` (no new dependency); verified against the standard vectors and against Python `hashlib` for the key `250.00|OUT|1234|2026-09-25|526812345678`.
+- Data assets are Dart const data, not JSON files (a pure package cannot load Flutter assets): `merchant_data.dart` (115 directory rows, 13 keyword rows), `subcategory_data.dart` (22 categories, 86 sub-categories), `indian_banks.dart` (51 banks), `lender_parser.dart` (17 lenders), `banks.dart` (10 core parsers, 29 templates), sender and subject lists in `parser_registry.dart`. They were generated from the Kotlin source by script and are the parity baseline. The test corpus is likewise Dart const lists under `test/corpus/`, not JSON.
+- Regex: `rx()` is `RegExp(caseSensitive: false)`; Java group indexes are reproduced (the labelled-number group of `AccountExtractor` always ends the match, so its range is derived from the match end). Dart's `List.sort` is not stable, so the two places where Kotlin relies on a stable sort (directory phrases, dedup candidates) sort with an index tie-break.
+- Java `Regex.matches` is `rxFull` (anchored); `DepositParser.parseDate` replaces `DateTimeFormatter` (same 14 patterns, English month names, a day past the month end is clamped like the Java smart resolver).
+- `BankParser.parseDetailed` is new (reason for non-transactions); `parse` is kept as `parseDetailed(...).transaction`. `LoanStatus`, `DepositInfo` and `DuplicateMatcher` types have value equality so tests can compare them.
+- `dedup`: `DedupDecision` is `Duplicate | PossibleDuplicate | NewTransaction`; `DedupLookup` methods are `Future`-based; source sets use the upper-case keys `SMS`, `EMAIL`, `APP`, ... (`sourceKey`).
+- Analysis options: `lines_longer_than_80_chars`, `prefer_interpolation_to_compose_strings`, `missing_whitespace_between_adjacent_strings` and `avoid_equals_and_hash_code_on_mutable_classes` are off in `packages/parser_core/analysis_options.yaml` (regex strings ported verbatim; value classes without `@immutable`).
+
+FR status:
+
+| FR | Status | Where / tests |
+|---|---|---|
+| FR-06-01..07 | Done | `text_normalizer_test`, `parser_registry_test`, `rejection_rules_test`, `extractors_test`, `account_attribution_test` (TC-06-01..13) |
+| FR-06-08 | Done | 10 core parsers, 51 listed banks, 17 lenders; `bank_parsers_test` (219 tests), `feedback_cases_test`, `merchant_normalizer_test` (counts) |
+| FR-06-09, 11 | Done | `merchant_normalizer_test`, `bank_parsers_test` (TC-06-15, 17) |
+| FR-06-10 | Done | `card_bill_test` (TC-06-16) |
+| FR-06-12 | Done | `feedback_cases_test`, `card_alerts_test` (93 cases), `card_spend_test` (TC-06-18) |
+| FR-06-13 | Done | `hash_test` (TC-06-19) |
+| FR-06-14 | Not in parser_core | account and type guessing at ingest belongs to the accounts feature |
+| FR-06-15 | Partial | lender EMI and loan status, FD/RD/PPF deposit status done (`lender_parser_test`, `deposit_messages_test`, TC-06-21); card-due notices, investment SMS, EPF/NPS pending (Phase 3, `statement/`) |
+| FR-06-16 | Done | `FreeTextParser`; `notification_layouts_test` (61 layouts + 12 receipts), `payment_app_amounts_test`, `feedback_cases_test` (TC-06-22) |
+| FR-06-17 | Done | `Subcategories`; `subcategories_test` (TC-06-26) |
+| FR-06-18 | Done for the 10-bank corpus | `corpus_accuracy_test`: 940/940 fields (100%), 0 negative leaks, SMS/email hash equality (TC-06-23, AC-06-02, AC-06-03). New fixtures still to be added as real messages are masked and contributed |
+| FR-06-19 | Done | no Flutter imports; `parse_api_test` determinism |
+| FR-06-20 | Done | `regex_parity_test` (TC-06-24); parity is mainly proven by the ported Kotlin suites passing unchanged |
+| FR-06-21 | Partial | `Guarded` kept; 10,000 corpus messages parse in about 1.7 s in the JIT on a desktop (about 0.17 ms each), asserted under 10 s (TC-06-25); device timing pending |
+
+Tests: 598 pass, 0 skipped (`dart test` in `packages/parser_core`), `dart analyze` and `dart format` clean. Ported from Kotlin: HDFC, ICICI, SBI, Axis, Kotak, IDFC, Yes, BoB, PNB and AU corpus contracts, `CorpusAccuracyTest`, `SmsToTransactionTest`, `FeedbackCasesTest`, `ExtractorsTest`, `AccountAttributionTest`, `CardBillTest`, `DepositMessagesTest`, `LenderParserTest`, `NotificationLayoutsTest`, `CardAlertsTest`, `CardSpendTest`, `PaymentAppAmountsTest`, `DuplicateMatcherTest`, `TransactionHasherTest`, `MerchantNormalizerTest`, `ParserRegistryTest`, `RejectionRulesTest`, `TextNormalizerTest`. New: `regex_parity_test`, `parse_api_test`, `subcategories_test`, more Money/SHA-256/date vectors. Corpus messages were reviewed for real personal data: only invented names, masked accounts (XX1234) and public bank helpline numbers appear; nothing needed masking.
+
+Not ported (Phase 3, statements feature): `SmsToTransactionTest` statement-row test; `statement/` (StatementParser, CardDue and `ParserRegistry.cardDue`, holdings, InvestmentParser, MfOrderParser, PortfolioSummary, PasswordGuesser, NPS, EPF) and their tests (`StatementParserTest`, `CardDuesTest`, `CasHoldingsTest`, `FundEmailsTest`, `HoldingPlatformsTest`, `HoldingsSheetTest`, `MfOrderParserTest`, `NpsAndGrowwHoldingsTest`, `StatementToHoldingsTest`, `BankIdentityGuessTest`, `PasswordGuesserTest`). Kotlin `ParserPerformanceTest` is replaced by the 10,000-message test in `parse_api_test`. The thin Flutter wrapper `lib/features/parsing/` is not built yet.
 
 ## 19. Change Log (date | change | reason)
 
@@ -786,3 +823,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Listed-bank count corrected to 51 (matches table); subcategory regexes now link to 09 section 3.3; stale section refs 2.8/2.10 updated | Audit Gate gap, scan_N |
+| 2026-10-21 | Phase 1 Dart port landed in app/packages/parser_core | Phase 1 |

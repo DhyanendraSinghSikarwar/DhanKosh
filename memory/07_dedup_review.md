@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-07 |
-| Status | In progress (Phase 1 data layer; UI pending) |
+| Status | In progress (Phase 1: matcher in parser_core and data layer done; UI pending) |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-21 |
@@ -385,6 +385,8 @@ Pending: FR-07-01 (hash is computed by the parser; parser_core's `TransactionHas
 
 Deviations: `DedupPolicy` is a port shaped like parser_core's `DuplicateMatcher`; the repository loads nearby rows once (`DedupCandidate` list) instead of the matcher calling storage lookups; to be reconciled with parser_core's matcher. Flagged rows are not offered as match candidates. The "same local day" test of the rounded rule uses the IST day (deterministic) instead of the device zone. `mergeFlagged` fills gaps row-to-row and moves sources but does not re-apply a stated balance.
 
+Matcher in parser_core (Phase 1): `app/packages/parser_core/lib/src/dedup/` holds `DuplicateMatcher.decide(tx, lookup, {utcOffset})` as pure async logic over a `DedupLookup` interface (`byReference`, `byHash`, `potentialDuplicates`, `potentialDuplicatesInRange`), with `StoredTransaction`, `MatchReason` and the sealed `DedupDecision` (`Duplicate`, `PossibleDuplicate`, `NewTransaction`); `sourceKey(Source)` gives the upper-case source keys. It is a line-for-line port of the Kotlin matcher (FR-07-02..06) and `TransactionHasher` (FR-07-01, byte-identical, own SHA-256). Tests (`test/duplicate_matcher_test.dart`, `test/hash_test.dart`, 20 + 5): all 18 Kotlin `DuplicateMatcherTest` scenarios (TC-07-02..06) plus same-source review, helper and hash vectors (TC-07-01), and the Kotlin `TransactionHasherTest`. The app-side `DedupPolicy` above should be replaced by (or reconciled with) this matcher.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -393,3 +395,4 @@ Deviations: `DedupPolicy` is a port shaped like parser_core's `DuplicateMatcher`
 | 2026-10-19 | Linked `deleted_messages` and `transaction_sources` to 08 as definition owner; FR-07-17 (shared MessageView) | Audit Gate gap, scan_3, scan_6 |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 1 data layer landed (`DedupPolicy` (reference/hash/fuzzy/rounded rules), merge rules, flagged-row actions) | Phase 1 |
+| 2026-10-21 | Phase 1 Dart port landed in app/packages/parser_core: DuplicateMatcher and TransactionHasher | Phase 1 |

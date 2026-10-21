@@ -68,7 +68,8 @@ void contract(
             if (s.expect == null) s.body.toLowerCase(),
         ];
         expect(
-          negatives.any((b) => b.contains('otp') || b.contains('one time password')),
+          negatives
+              .any((b) => b.contains('otp') || b.contains('one time password')),
           isTrue,
         );
         expect(
