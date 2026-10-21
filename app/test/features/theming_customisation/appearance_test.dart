@@ -155,5 +155,7 @@ void main() {
     expect(wref.read(appearanceProvider).palette, PaletteId.spiceDune);
     final ctx = t.element(find.byType(Scaffold));
     expect(Theme.of(ctx).colorScheme.primary, const Color(0xFFA34A12));
+    await t.pumpWidget(const SizedBox());
+    await settle(t);
   });
 }
