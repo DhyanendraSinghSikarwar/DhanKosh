@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-02 |
-| Status | Existing |
+| Status | In Progress |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -486,7 +486,13 @@ Fixtures: the corpus messages listed in section 2.5 (all synthetic/masked), plus
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 1 status (2026-10-21): native + Dart data/domain done; UI, parser wiring, scheduling and headless entrypoint pending.
+
+- FR done in code + unit tests: FR-02-02 (accept predicate injected), FR-02-04 (`SmsIds`, pure-Dart SHA-256, shared by live and scan), FR-02-05, FR-02-08, FR-02-09, FR-02-11, FR-02-12, FR-02-17 (settings only), FR-02-19, FR-02-20 (via ingest outcome `skipped`). Native-only, NOT compiled or run (no Android SDK here; CI compiles): FR-02-01, FR-02-03 (multi-part join in `SmsReceiver`), FR-02-09 inbox query. Pending: FR-02-06, FR-02-07 (ledger wiring), FR-02-10 (parallel parse), FR-02-13, FR-02-14 (scheduler), FR-02-15, FR-02-16, FR-02-18.
+- Kotlin (`android/app/src/main/kotlin/com/hisaab/sms/`): `SmsReceiver` (manifest, priority 999, `BROADCAST_SMS`), `SmsStore` (EventChannel sink + SharedPreferences JSON queue, capped 500, pause flag and sender regex), `SmsInbox` (query paged by `(date, _id)`, body column read only after the address matches), `SmsBridge` (channels `com.hisaab/sms`, `com.hisaab/sms_live`, `com.hisaab/permissions`). `MainActivity` attaches the bridge.
+- Channel contract `com.hisaab/sms`: `hasPermission() -> bool`; `readInbox{sinceMillis, afterId?, limit, senderPattern?} -> {items:[{id,sender,body,timestamp,sentTimestamp}], examined, nextSince, nextAfterId, done}` (error code `permission` without READ_SMS); `drainPending() -> [msg]`; `configureLive{enabled, senderPattern}`. Events on `com.hisaab/sms_live`: msg maps. Until `configureLive` is called the receiver queues nothing (privacy default).
+- Deviations: ports return `SmsReadStats` (examined + last timestamp, needed for the cursor) instead of `int`; `SmsIngest` returns `IngestOutcome` (inserted/merged/flagged/skipped/rejected) so counts and the summary are exact; a never-scanned cursor (0) uses the look-back or recent window instead of epoch 0; settings key `lookback_days`; plain classes instead of freezed. Live messages use arrival time as `receivedAt` and PDU time as `sentAt` (open questions 1, 2 unchanged).
+- Pending: headless Dart entrypoint for a killed app (today a live SMS with the app closed is queued natively and drained on next start, so AC-02-01 is not yet met), WorkManager scan and nightly jobs, parallel isolate parsing, sender-header table push to native (`senderPattern`).
 
 ## 19. Change Log (date | change | reason)
 
@@ -495,3 +501,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Lender parsers 16 -> 17 and listed banks ~55 -> 51 (verified against `LenderParser.kt`, `IndianBanks.kt`) | Audit Gate gap, scan_N |
+| 2026-10-21 | Phase 1 native SMS channel + Dart data/domain landed | Phase 1 |

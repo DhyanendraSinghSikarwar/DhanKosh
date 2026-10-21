@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-01 |
-| Status | Existing |
+| Status | In Progress |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -445,7 +445,11 @@ Fixtures: identity `Identity(name: 'Asha Rao', dob: 1990-05-14, pan: 'ABCDE1234F
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 1 status (2026-10-21): domain + data done; Welcome UI, Home card, Riverpod wiring pending.
+
+- FR done in code + unit tests: FR-01-01 (`onboardingNeeded`), FR-01-06, FR-01-07 (`FinishOnboarding`, `IdentityStore`, `ProfileStore`), FR-01-08 (`ownNumberTails` + publish callback), FR-01-09, FR-01-10, FR-01-11 (`SmsPermissionRepositoryImpl`, `SmsPermissionWatcher`), FR-01-12 (edge trigger only; the scan enqueue is wired by the lead), FR-01-14 (`AskNotificationsOnce`). Native-only, NOT compiled or run: permission dialogs, rationale, App info intent in `SmsBridge` (channel `com.hisaab/permissions`: `smsStatus -> {granted, rationale}`, `requestSms`, `requestNotifications -> bool`, `openAppSettings`). Pending (UI/app wiring): FR-01-02..05, 13, 15 (hook `beforeOpenSettings` exists), 16, 17.
+- Permission checks use the real state after every request; `blocked` is remembered in memory after a refusal with no rationale and is lost on process death (the next request re-infers it).
+- Decisions: PAN is trimmed and upper-cased before validation and storage (resolves open question 1 provisionally); skip still writes a sealed identity (name, email, mobile only); `SecureStore` and `KeyValueStore` are abstract ports, the lead binds them to flutter_secure_storage and the settings store; plain classes, no codegen; Android 13 restricted-settings guidance is UI copy plus `openAppSettings`.
 
 ## 19. Change Log (date | change | reason)
 
@@ -454,3 +458,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Key-value store name aligned to `settings` (26 owns it); manifest, splash theme and adjustResize facts live in 26 section 11, not duplicated here | Audit Gate gap, scan_4 |
+| 2026-10-21 | Phase 1 native SMS channel + Dart data/domain landed | Phase 1 |
