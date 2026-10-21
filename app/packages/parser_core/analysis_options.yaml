@@ -3,3 +3,11 @@ include: package:very_good_analysis/analysis_options.yaml
 linter:
   rules:
     public_member_api_docs: false
+    # Regexes and message fixtures are ported verbatim from the Kotlin parser;
+    # splitting them would hide the parity with the original.
+    lines_longer_than_80_chars: false
+    prefer_interpolation_to_compose_strings: false
+    missing_whitespace_between_adjacent_strings: false
+    # Value classes here have only final fields; @immutable would need a
+    # direct dependency on package:meta for no gain.
+    avoid_equals_and_hash_code_on_mutable_classes: false

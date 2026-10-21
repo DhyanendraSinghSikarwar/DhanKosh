@@ -12,10 +12,10 @@ enum TransactionType {
   /// and the email for one transaction can word it differently (one becomes
   /// investment, the other stays debit) but both move money out.
   String get direction => switch (this) {
-    TransactionType.debit || TransactionType.investment => 'OUT',
-    TransactionType.credit => 'IN',
-    TransactionType.transfer => 'XFER',
-  };
+        TransactionType.debit || TransactionType.investment => 'OUT',
+        TransactionType.credit => 'IN',
+        TransactionType.transfer => 'XFER',
+      };
 }
 
 /// Bank account or card.
@@ -153,4 +153,107 @@ class ParsedTransaction {
 
   /// A debit card: balance is the linked bank account's.
   final bool isDebitCard;
+
+  /// A copy with the given fields replaced (a null argument keeps the field).
+  ParsedTransaction copyWith({
+    int? amountMinor,
+    String? currency,
+    TransactionType? type,
+    String? bankName,
+    String? accountLast4,
+    AccountKind? accountKind,
+    String? merchant,
+    String? upiId,
+    String? referenceNumber,
+    Channel? channel,
+    int? balanceMinor,
+    int? availableLimitMinor,
+    int? transactionTime,
+    bool? hasExplicitTime,
+    Category? category,
+    Source? source,
+    String? sender,
+    int? messageTimestamp,
+    double? confidence,
+    String? transactionHash,
+    bool? isDebitCard,
+  }) =>
+      ParsedTransaction(
+        amountMinor: amountMinor ?? this.amountMinor,
+        currency: currency ?? this.currency,
+        type: type ?? this.type,
+        bankName: bankName ?? this.bankName,
+        accountLast4: accountLast4 ?? this.accountLast4,
+        accountKind: accountKind ?? this.accountKind,
+        merchant: merchant ?? this.merchant,
+        upiId: upiId ?? this.upiId,
+        referenceNumber: referenceNumber ?? this.referenceNumber,
+        channel: channel ?? this.channel,
+        balanceMinor: balanceMinor ?? this.balanceMinor,
+        availableLimitMinor: availableLimitMinor ?? this.availableLimitMinor,
+        transactionTime: transactionTime ?? this.transactionTime,
+        hasExplicitTime: hasExplicitTime ?? this.hasExplicitTime,
+        category: category ?? this.category,
+        source: source ?? this.source,
+        sender: sender ?? this.sender,
+        messageTimestamp: messageTimestamp ?? this.messageTimestamp,
+        confidence: confidence ?? this.confidence,
+        transactionHash: transactionHash ?? this.transactionHash,
+        isDebitCard: isDebitCard ?? this.isDebitCard,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      other is ParsedTransaction &&
+      other.amountMinor == amountMinor &&
+      other.currency == currency &&
+      other.type == type &&
+      other.bankName == bankName &&
+      other.accountLast4 == accountLast4 &&
+      other.accountKind == accountKind &&
+      other.merchant == merchant &&
+      other.upiId == upiId &&
+      other.referenceNumber == referenceNumber &&
+      other.channel == channel &&
+      other.balanceMinor == balanceMinor &&
+      other.availableLimitMinor == availableLimitMinor &&
+      other.transactionTime == transactionTime &&
+      other.hasExplicitTime == hasExplicitTime &&
+      other.category == category &&
+      other.source == source &&
+      other.sender == sender &&
+      other.messageTimestamp == messageTimestamp &&
+      other.confidence == confidence &&
+      other.transactionHash == transactionHash &&
+      other.isDebitCard == isDebitCard;
+
+  @override
+  int get hashCode => Object.hashAll([
+        amountMinor,
+        currency,
+        type,
+        bankName,
+        accountLast4,
+        accountKind,
+        merchant,
+        upiId,
+        referenceNumber,
+        channel,
+        balanceMinor,
+        availableLimitMinor,
+        transactionTime,
+        hasExplicitTime,
+        category,
+        source,
+        sender,
+        messageTimestamp,
+        confidence,
+        transactionHash,
+        isDebitCard,
+      ]);
+
+  @override
+  String toString() =>
+      'ParsedTransaction($type $amountMinor $currency $bankName '
+      '$accountLast4 $merchant $referenceNumber)';
 }
