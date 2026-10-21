@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:hisaab/app/di/notification_providers.dart';
+import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/core/platform_channels/background_channel.dart';
 import 'package:hisaab/core/platform_channels/permissions_channel.dart';
@@ -103,6 +104,8 @@ Future<Set<String>> _ownTails(Ref ref) async {
 IngestMessage ingestMessage(Ref ref) => IngestMessage(
       ledger: ref.watch(transactionRepositoryProvider),
       ownNumberTails: () => _ownTails(ref),
+      cardDues: ref.watch(cardDueRepositoryProvider),
+      holdings: ref.watch(holdingRepositoryProvider),
     );
 
 /// Builds a ScanSms; onProgress feeds the Settings progress line.

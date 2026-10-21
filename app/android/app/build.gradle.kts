@@ -48,6 +48,8 @@ dependencies {
     // Headless background jobs (HeadlessWorker, BackgroundScheduler).
     implementation("androidx.work:work-runtime:2.11.2")
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
+    // On-device PDF text (F-05, channel `pdf`).
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
 }
 
 flutter {

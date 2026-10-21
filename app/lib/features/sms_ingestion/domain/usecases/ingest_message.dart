@@ -1,5 +1,10 @@
 import 'dart:isolate';
 
+import 'package:hisaab/features/credit_cards/domain/card_due_repository.dart';
+import 'package:hisaab/features/credit_cards/domain/card_models.dart';
+import 'package:hisaab/features/portfolio/domain/asset_class.dart' as pf;
+import 'package:hisaab/features/portfolio/domain/holding.dart' as pf;
+import 'package:hisaab/features/portfolio/domain/holding_repository.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart'
     as sms;
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
@@ -29,12 +34,18 @@ class IngestMessage {
     required TransactionRepository ledger,
     Future<Set<String>> Function()? ownNumberTails,
     ParserRegistry? registry,
+    CardDueRepository? cardDues,
+    HoldingRepository? holdings,
   })  : _ledger = ledger,
+        _cardDues = cardDues,
+        _holdings = holdings,
         _tails = ownNumberTails,
         _customRegistry = registry != null,
         _registry = registry ?? ParserRegistry.standard();
 
   final TransactionRepository _ledger;
+  final CardDueRepository? _cardDues;
+  final HoldingRepository? _holdings;
   final Future<Set<String>> Function()? _tails;
   final ParserRegistry _registry;
   final bool _customRegistry;
@@ -99,8 +110,12 @@ class IngestMessage {
     String? messageId,
   ) async {
     final tx = result.transaction;
+    final side = await _recordSide(message, source);
     if (tx == null) {
-      return MessageIngestDetail(IngestOutcome.rejected, result);
+      return MessageIngestDetail(
+        side ? IngestOutcome.inserted : IngestOutcome.rejected,
+        result,
+      );
     }
     final r = await _ledger.ingest(
       led.IngestItem(
@@ -117,5 +132,67 @@ class IngestMessage {
       led.IngestOutcome.skipped => IngestOutcome.skipped,
     };
     return MessageIngestDetail(outcome, result);
+  }
+
+  /// Records a card due notice (FR-14-06) and an EPF/NPS holding (FR-06-15)
+  /// from [message]; neither is a transaction. Both run independently of the
+  /// transaction parse, so a message can feed more than one. Notifications
+  /// (Source.app) never carry either. True when something was stored.
+  Future<bool> _recordSide(sms.InboxSms message, Source source) async {
+    if (source == Source.app) return false;
+    final at = message.receivedAt;
+    var stored = false;
+    final dues = _cardDues;
+    if (dues != null) {
+      final d = parseCardDue(message.body, message.sender, at);
+      if (d != null) {
+        stored = await dues.recordNotice(
+              NewCardNotice(
+                isPayment: d.paymentMinor != null,
+                source: source == Source.email
+                    ? CardDueSource.email
+                    : CardDueSource.sms,
+                receivedAt: at,
+                processedAt: DateTime.now().millisecondsSinceEpoch,
+                bankName: d.bank,
+                last4: d.last4,
+                totalDueMinor: d.totalDueMinor,
+                minDueMinor: d.minDueMinor,
+                dueEpochDay: d.dueEpochDay,
+                statementEpochDay: d.statementEpochDay,
+                paymentMinor: d.paymentMinor,
+              ),
+            ) ||
+            stored;
+      }
+    }
+    final holdings = _holdings;
+    if (holdings != null) {
+      final h = source == Source.email
+          ? parseInvestmentEmail(message.body, at)
+          : parseInvestmentSms(message.body, message.sender, at);
+      if (h != null) {
+        final n = await holdings.record(
+          [
+            pf.HoldingSnapshot(
+              kind: pf.HoldingKind.values.byName(h.kind.name),
+              name: h.name,
+              identifier: h.identifier,
+              asOf: h.asOf,
+              units: h.units,
+              valueMinor: h.valueMinor,
+              investedMinor: h.investedMinor,
+              contributionMinor: h.contributionMinor,
+              platform: h.platform,
+            ),
+          ],
+          source == Source.email
+              ? pf.HoldingSource.email
+              : pf.HoldingSource.sms,
+        );
+        stored = stored || n > 0;
+      }
+    }
+    return stored;
   }
 }

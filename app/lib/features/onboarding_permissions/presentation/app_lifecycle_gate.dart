@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
+import 'package:hisaab/app/di/portfolio_providers.dart';
 
 /// Keeps the SMS pipeline in step with the app: on start and on every resume
 /// it re-reads SMS access, drains queued messages and refreshes the UI state
@@ -46,6 +47,7 @@ class _AppLifecycleGateState extends ConsumerState<AppLifecycleGate>
     await ref.read(smsPermissionProvider.notifier).refresh();
     if (!mounted) return;
     await ref.read(pipelineSyncProvider)();
+    unawaited(ref.read(portfolioSyncProvider)());
     try {
       if (!await ref.read(onboardingGateProvider.future)) {
         await _askNotifications();

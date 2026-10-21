@@ -8,10 +8,17 @@ import 'package:hisaab/features/settings_data_sources/presentation/settings_prov
 /// More tab: data sources, privacy and developer tools (F-26).
 class SettingsDataSourcesScreen extends ConsumerWidget {
   /// Creates the screen.
-  const SettingsDataSourcesScreen({this.notificationCard, super.key});
+  const SettingsDataSourcesScreen({
+    this.notificationCard,
+    this.statementsTile,
+    super.key,
+  });
 
   /// Payment-app notifications card (F-04), composed in `app/router.dart`.
   final Widget? notificationCard;
+
+  /// Statements entry (F-05), composed in `app/router.dart`.
+  final Widget? statementsTile;
 
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
@@ -52,6 +59,14 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          ListTile(
+            key: const Key('profile-tile'),
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.person_outline),
+            title: const Text('Profile'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/profile'),
+          ),
           head('Data sources'),
           const BankSmsCard(),
           const SizedBox(height: 12),
@@ -64,6 +79,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/email'),
           ),
+          if (statementsTile != null) statementsTile!,
           if (notificationCard != null) ...[
             const SizedBox(height: 12),
             notificationCard!,

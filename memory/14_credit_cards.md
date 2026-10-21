@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-14 |
-| Status | In progress (Phase 3 data/domain layer and the `CardDueParser` message parser in parser_core done; reminders worker, notification, Home widget, card UI pending) |
+| Status | In progress (data/domain, message parser, SMS/email notice ingest, `/cards` screen, Edit amounts sheet and Home strip done; reminders worker and notification actions, forex markup UI, detail screen pending) |
 | Priority | P0 |
 | Phase | 3 (statements + portfolio); card due SMS/email recording can start in Phase 2; reminders in Phase 2 |
 | Last Updated | 2026-10-21 |
@@ -467,6 +467,8 @@ Tests: `test/features/phase3/card_position_test.dart` (worked examples 1 to 5), 
 
 Message parser (2026-10-21): `CardDueParser` and `CardDue` are ported to `app/packages/parser_core/lib/src/statement/card_due.dart`; app code calls `parseCardDue(body, sender, timestamp)` or `ParserRegistry.cardDue(...)` and gets `CardDue{bank, last4, totalDueMinor, minDueMinor, dueEpochDay, statementEpochDay, paymentMinor, at}` (epoch days via `CivilDate.toEpochDay`) or null; lenders return null and the generic parser reads the issuer from the text. Statement PDFs give `StatementResult.summary` (total/min due, due date, credit limit, available, statement date). FR-14-06 parsing side: tests `card_dues_test` (27 cases, TC-14 parser fixtures from the Kotlin `CardDuesTest`). The pipeline that records the notices stays in the app layer.
 
+Phase 3 ingest + UI (2026-10-21): `IngestMessage(cardDues:, holdings:)` (wired in `pipeline_providers.dart`) runs `parseCardDue` and `parseInvestmentSms/Email` on every SMS/email, independent of the transaction parse (so one message can feed several paths); a notice goes to `CardDueRepository.recordNotice` (FR-14-06, dedupe by its keys), an EPF/NPS snapshot to `HoldingRepository.record` ([Portfolio](16_portfolio.md)). A message that only produced a notice or holding returns `IngestOutcome.inserted` (counts as added in ScanSms); a repeat returns `rejected`. Notifications (`Source.app`) never record notices. UI: route `/cards` -> `CreditCardsScreen` (`CardTile`: billed/outstanding, min due, due date, unbilled, limit left, limit-used bar, due label, Mark paid/Undo, Edited chip; `CardAmountsSheet`: Calculated hints, per-field reset, Reset all), `CardsHomeStrip` embedded on Home through `DashboardHomeScreen(cardsSection:)` from the router, `activeCardsProvider` in `lib/app/di/cards_providers.dart`. Done: FR-14-06 (pipeline), 07, 09 (UI), 12 (strip: total and rows; Mark paid check and `~` only on `/cards`), 13 partly (no dedicated detail route; Total outstanding editable, limit and bars shown). Pending: FR-14-10/11 (reminders), 15 (forex markup UI). Tests: `test/features/sms_ingestion/ingest_side_records_test.dart` (TC-14-08/17 ingest side), `test/features/credit_cards/credit_cards_screen_test.dart` (TC-14-14/15 UI). Deferred: link from the accounts list, GIF capture, widget on the launcher.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -476,3 +478,4 @@ Message parser (2026-10-21): `CardDueParser` and `CardDue` are ported to `app/pa
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |
 | 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |
+| 2026-10-21 | Phase 3 card-due ingest + Cards UI landed | Phase 3 |

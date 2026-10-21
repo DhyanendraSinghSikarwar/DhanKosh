@@ -15,7 +15,10 @@ import 'package:hisaab/shared/widgets/empty_state.dart';
 /// Home: greeting, month spent/income, review notice, recent, accounts
 /// (F-17, Phase 1 subset of FR-17-01..03, 06, 12, 14, 19).
 class DashboardHomeScreen extends ConsumerWidget {
-  const DashboardHomeScreen({super.key});
+  const DashboardHomeScreen({this.cardsSection, super.key});
+
+  /// Optional cards strip embedded by the app composition (F-14).
+  final Widget? cardsSection;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,6 +43,10 @@ class DashboardHomeScreen extends ConsumerWidget {
                       const _ReviewNotice(),
                       const _SpentCard(),
                       const SizedBox(height: 16),
+                      if (cardsSection != null) ...[
+                        cardsSection!,
+                        const SizedBox(height: 16),
+                      ],
                       HomeRecentList(txs: recent, masked: masked),
                       const SizedBox(height: 16),
                       HomeAccountsStrip(accounts: accounts, masked: masked),

@@ -8,6 +8,7 @@ environment:
 
 # Resolved with Flutter 3.47.7 on 2026-10-21 (pub upgrade --major-versions); pinned in pubspec.lock.
 dependencies:
+  crypto: ^3.0.3
   csv: ^8.0.0
   drift: ^2.20.0
   enough_mail: ^2.1.6

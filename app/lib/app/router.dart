@@ -6,13 +6,18 @@ import 'package:hisaab/app/ledger_shell.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_detail_screen.dart';
 import 'package:hisaab/features/accounts_management/presentation/accounts_management_screen.dart';
 import 'package:hisaab/features/analytics/presentation/analytics_screen.dart';
+import 'package:hisaab/features/credit_cards/presentation/cards_home_strip.dart';
+import 'package:hisaab/features/credit_cards/presentation/credit_cards_screen.dart';
 import 'package:hisaab/features/dashboard_home/presentation/dashboard_home_screen.dart';
 import 'package:hisaab/features/dedup_review/presentation/dedup_review_screen.dart';
 import 'package:hisaab/features/email_ingestion/presentation/email_settings_screen.dart';
 import 'package:hisaab/features/notification_ingestion/presentation/notification_access_card.dart';
 import 'package:hisaab/features/onboarding_permissions/presentation/welcome_screen.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_screen.dart';
+import 'package:hisaab/features/profile/presentation/profile_screen.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_data_sources_screen.dart';
+import 'package:hisaab/features/statement_import/presentation/statements_screen.dart';
+import 'package:hisaab/features/statement_import/presentation/statements_tile.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/add_transaction_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -47,6 +52,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/transactions/add',
         builder: (_, __) => const AddTransactionScreen(),
       ),
+      GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+      GoRoute(path: '/cards', builder: (_, __) => const CreditCardsScreen()),
+      GoRoute(
+        path: '/statements',
+        builder: (_, __) => const StatementsScreen(),
+      ),
       GoRoute(path: '/review', builder: (_, __) => const DedupReviewScreen()),
       GoRoute(
         path: '/settings/email',
@@ -71,7 +82,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/home',
-                builder: (_, __) => const DashboardHomeScreen(),
+                builder: (_, __) => const DashboardHomeScreen(
+                  cardsSection: CardsHomeStrip(),
+                ),
               ),
             ],
           ),
@@ -105,6 +118,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/more',
                 builder: (_, __) => const SettingsDataSourcesScreen(
                   notificationCard: NotificationAccessCard(),
+                  statementsTile: StatementsTile(),
                 ),
               ),
             ],

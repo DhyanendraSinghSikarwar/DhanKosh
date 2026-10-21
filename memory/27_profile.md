@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-27 |
-| Status | In progress (Phase 3 data layer done: sealed bank details, own-number guard, draft rules; Welcome/Profile UI, photo, hero tint pending) |
+| Status | In progress (Phase 3: data layer and Profile screen done: name, mobile, email, DOB, PAN, per-bank unlock details, password count; photo, crop, header tint and Support icon pending) |
 | Priority | P1 |
 | Phase | 1 (first-run identity and Profile screen); statement-password use lands in Phase 3 |
 | Last Updated | 2026-10-21 |
@@ -426,7 +426,10 @@ Phase 3 data layer (no UI). No Drift table (as specified). The identity (`Identi
 FR status done: FR-27-07/08 (`ProfileDraft.canSave`, PAN rule via `OnboardingValidators`), FR-27-13 and 15 (sealed per-account details with field limits, count via `readAll().length`), FR-27-16 (`effectiveBankIdentity`), FR-27-17 (`ownLast4s`), FR-27-18 (identity read through the existing port; password inputs via `assemblePasswordSource` in statement_import). Pending: the UI, photo (FR-27-09..12, 20), the first-run gate wiring, the own-number guard hook into the ledger.
 Deviation: the identity is stored as JSON under `identity_v1` (Phase 1), not the U+001F seven-field blob of FR-27-14; revisit if Android data import is added.
 APIs: `BankIdentityRepository.read(accountId)/readAll()/save(BankIdentity)` (an empty identity removes the entry; `customerId` alnum <= 20, `accountNumber` <= 24, `ifsc` upper <= 11), `ownLast4s(Iterable<String?>) -> Set<String>`, `ProfileDraft(name, pan, dirty).canSave`.
-Tests: `test/features/phase3/phase3_repositories_test.dart` (profile and passwords group).
+Tests: `test/features/phase3/phase3_repositories_test.dart` (profile and passwords group); `test/features/profile/profile_screen_test.dart` (validation, save order, counts).
+
+UI (2026-10-21): `/profile` (`presentation/{profile_screen,bank_details_sheet}.dart`, providers in `lib/app/di/portfolio_providers.dart`), linked from a Profile tile at the top of More. Save is gated by `ProfileDraft.canSave` plus a valid mobile; writes the sealed identity first, then the profile (FR-27-05 order), then refreshes the onboarding gate. FR-27-06 (partly), 07, 08, 13, 15 UI done; the alternate name/phone are preserved but not editable yet.
+Deferred UI: photo pick/crop/tint (FR-27-09..12), avatar on Home/More (FR-27-20), Support icon, alternate fields, link from Accounts.
 
 ## 19. Change Log (date | change | reason)
 
@@ -435,3 +438,4 @@ Tests: `test/features/phase3/phase3_repositories_test.dart` (profile and passwor
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |
+| 2026-10-21 | Phase 3 Portfolio + Profile UI landed | Phase 3 |

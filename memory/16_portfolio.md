@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-16 |
-| Status | In progress (Phase 3 data/domain layer done: holdings, HoldingMatch, net worth, allocation, maturity; holdings parsers done in parser_core; history estimate, MF order/NPS recording pipeline and UI pending) |
+| Status | In progress (Phase 3: data/domain layer and Portfolio tab UI done: net worth hero, history chart, allocation, holdings CRUD, maturities, exclusions; history estimate, MF order/NPS recording pipeline, loans card, sparklines and statement link pending) |
 | Priority | P1 |
 | Phase | 3 |
 | Last Updated | 2026-10-21 |
@@ -452,7 +452,10 @@ APIs for UI agents:
 - `NetWorthRepository.recordPoint(day, a, l)`, `watchPoints({sinceDay})`, `points`; `NetWorthPrefsRepository.watch/read/save(NetWorthFilter)`.
 - `summarisePortfolio(holdings, {cashMinor})`, `maturityItems(accounts, maturityDays, today)` (the accounts domain has no `maturityDay` yet, so the caller passes a map).
 Deviations: PPF deposit accounts are skipped when a PPF holding exists (no double count); Business book excludes holdings only, Personal book excludes business accounts, as written in FR-16-16; `NetWorthFilter` uses enums not strings.
-Tests: `test/features/phase3/phase3_repositories_test.dart` (holdings, summary, net worth, prefs, history cap).
+Tests: `test/features/phase3/phase3_repositories_test.dart` (holdings, summary, net worth, prefs, history cap); `test/features/portfolio/portfolio_screen_test.dart` (empty, populated light/dark, add manual, delete, masked).
+
+UI (2026-10-21): `presentation/{portfolio_screen,holding_sheet,exclusions_sheet,net_worth_chart,holding_labels}.dart`, wiring `lib/app/di/portfolio_providers.dart` (`holdings`, `netWorthPoints`, `netWorthFilter`, `maturities`, `portfolioSync`). `/portfolio` tab: net worth hero with change over the range (masked by hide-amounts), fl_chart line with 1M/6M/1Y/3Y/All chips, allocation bar with legend, maturities (amber within 30 days), holdings grouped by kind, add/edit/delete sheet, include/exclude sheet. `portfolioSync` (via `AppLifecycleGate`) runs `dedupe()` once per run and `recordToday` at start and resume. FR-16-01, 03, 05 (chart), 06 (hero totals only), 08, 12, 14 UI done.
+Deferred UI: Book filter chips (FR-16-16 UI), breakdown by bank/deposit/loan (FR-16-06 full), sparkline per holding, tap-slice filter, loans card, statement link (FR-16-13), donut (bar used), history estimate.
 
 Parsers (2026-10-21): the holdings snapshot producers are ported to parser_core (`HoldingSnapshot`, `HoldingKind` in `src/model/holding.dart`): `parseStatement(...).holdings` (CAS, NSDL/CDSL, broker tables and sheets, NPS statements, EPF passbooks, USD tables at the statement rate), `parseInvestmentSms/Email` (EPF balance with `contributionMinor`, NPS value), `InvestmentParser.npsContribution` (`NpsContribution.key` is the dedup key), `parseMfOrder` (`MfOrder.identifier` = `MF:<normalised scheme>`) and `parsePortfolioSummary` (`AGG:INDMONEY:<class>`). Identifier schemes: ISIN, `EPF:<member>`, `NPS:<last4>[:T2]`, `MF:`, `STOCK:`, `US:<ticker>`, `AGG:`. `HoldingSnapshot.units` is the only `double`; the app maps these to the domain `HoldingSnapshot` used by `HoldingRepository.record`. Tests: `statement_to_holdings_test`, `cas_holdings_test`, `nps_and_groww_holdings_test`, `holdings_sheet_test`, `holding_platforms_test`, `fund_emails_test`, `mf_order_parser_test` (TC-16 parser fixtures).
 
@@ -465,3 +468,4 @@ Parsers (2026-10-21): the holdings snapshot producers are ported to parser_core 
 | 2026-10-19 | Added 3.10 HoldingMatch, 3.11 record/dedupe/recordMfOrder, 3.12 NPS contributions; FR-16-17..21, TC-16-14..17. Corrected FR-16-09 ("upsert by identifier"), 2.2 step 1, 3.4 and 3.9 (MF orders also update holdings, not only transactions) | Audit Gate gap, scan_2 |
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |
 | 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |
+| 2026-10-21 | Phase 3 Portfolio + Profile UI landed | Phase 3 |

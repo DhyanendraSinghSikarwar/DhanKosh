@@ -1,0 +1,471 @@
+import 'dart:convert';
+import 'dart:isolate';
+import 'dart:typed_data';
+
+import 'package:crypto/crypto.dart' show sha256;
+import 'package:hisaab/features/credit_cards/domain/card_due_repository.dart';
+import 'package:hisaab/features/credit_cards/domain/card_models.dart';
+import 'package:hisaab/features/portfolio/domain/asset_class.dart';
+import 'package:hisaab/features/portfolio/domain/holding.dart' as pf;
+import 'package:hisaab/features/portfolio/domain/holding_repository.dart';
+import 'package:hisaab/features/statement_import/domain/import_result.dart';
+import 'package:hisaab/features/statement_import/domain/password_candidates.dart';
+import 'package:hisaab/features/statement_import/domain/password_source.dart';
+import 'package:hisaab/features/statement_import/domain/saved_password.dart';
+import 'package:hisaab/features/statement_import/domain/statement.dart';
+import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
+import 'package:hisaab/features/statement_import/domain/statement_repository.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
+import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
+import 'package:parser_core/parser_core.dart' as pc;
+
+StatementKind _kind(pc.StatementKind k) => switch (k) {
+      pc.StatementKind.creditCard => StatementKind.creditCard,
+      pc.StatementKind.bank => StatementKind.bank,
+      pc.StatementKind.investment => StatementKind.investment,
+      pc.StatementKind.other => StatementKind.other,
+    };
+
+/// Top level so a worker isolate can run it (memory 05 section 6).
+pc.StatementResult _parseOnWorker((String, String, int) a) =>
+    pc.parseStatement(a.$1, a.$2, a.$3);
+
+/// Reads one statement file and applies it: sniff, open (no password, derived,
+/// saved), parse, ingest rows through the ledger, record holdings and card
+/// bill figures, store the statement row (FR-05-01..15).
+///
+/// Never writes `transactions` itself; rows go through
+/// [TransactionRepository.ingestBatch] with ids `stmt:<key>:<i>` (FR-05-04).
+class ImportStatement {
+  /// Creates the use case.
+  ImportStatement({
+    required StatementRepository statements,
+    required SavedPasswordRepository savedPasswords,
+    required PdfTextReader pdf,
+    required SheetReader sheets,
+    required StatementFileStore files,
+    required TransactionRepository ledger,
+    required HoldingRepository holdings,
+    required CardDueRepository cardDues,
+    required Future<PasswordSource> Function() passwordSource,
+    int Function()? clock,
+  })  : _statements = statements,
+        _saved = savedPasswords,
+        _pdf = pdf,
+        _sheets = sheets,
+        _files = files,
+        _ledger = ledger,
+        _holdings = holdings,
+        _cardDues = cardDues,
+        _source = passwordSource,
+        _clock = clock ?? (() => DateTime.now().millisecondsSinceEpoch);
+
+  final StatementRepository _statements;
+  final SavedPasswordRepository _saved;
+  final PdfTextReader _pdf;
+  final SheetReader _sheets;
+  final StatementFileStore _files;
+  final TransactionRepository _ledger;
+  final HoldingRepository _holdings;
+  final CardDueRepository _cardDues;
+  final Future<PasswordSource> Function() _source;
+  final int Function() _clock;
+
+  /// Imports [file] picked by the user (FR-05-01). An already imported file
+  /// answers [ImportAlreadyDone] unless its row is LOCKED, which is retried.
+  Future<ImportResult> call(PickedFile file) async {
+    final type = sniffStatement(file.bytes, file.name);
+    if (type == StatementFileType.unknown || type == StatementFileType.xls) {
+      return const ImportUnsupported(UnsupportedReason.unknownType);
+    }
+    final digest = sha256.convert(file.bytes).toString();
+    final key = 'file:$digest';
+    final existing = await _statements.byKey(key);
+    if (existing != null && !existing.isLocked) {
+      return ImportAlreadyDone(existing.id);
+    }
+    if (type == StatementFileType.protectedSheet) {
+      return await _unreadable(
+        existing,
+        key,
+        file,
+        kind: StatementKind.protected,
+        reason: UnsupportedReason.protectedSheet,
+      );
+    }
+    return await _run(
+      file.bytes,
+      file.name,
+      key,
+      digest.substring(0, 16),
+      type,
+      existing,
+    );
+  }
+
+  /// Retries a LOCKED statement with [password] (FR-05-12). On success the
+  /// password is remembered when [remember] and other locked statements are
+  /// retried.
+  Future<ImportResult> unlock(
+    int id,
+    String password, {
+    bool remember = false,
+    String? label,
+  }) async {
+    final row = await _statements.byId(id);
+    final path = row?.filePath;
+    if (row == null || path == null) return const ImportFileMissing();
+    final bytes = await _files.read(path);
+    if (bytes == null) return const ImportFileMissing();
+    final r = await _run(
+      bytes,
+      row.fileName,
+      row.key,
+      null,
+      sniffStatement(bytes, row.fileName),
+      row,
+      explicit: password,
+    );
+    if (r is ImportDone) {
+      if (remember) {
+        await _saved.add(
+          SavedPassword(
+            label: label ?? row.bankName ?? row.fileName,
+            secret: password,
+          ),
+        );
+      }
+      await retryLocked();
+    }
+    return r;
+  }
+
+  /// Retries every LOCKED statement with the current passwords (FR-05-13).
+  /// Returns how many opened.
+  Future<int> retryLocked() async {
+    var opened = 0;
+    for (final row in await _statements.locked()) {
+      final path = row.filePath;
+      final bytes = path == null ? null : await _files.read(path);
+      if (bytes == null) continue;
+      final r = await _run(
+        bytes,
+        row.fileName,
+        row.key,
+        null,
+        sniffStatement(bytes, row.fileName),
+        row,
+      );
+      if (r is ImportDone) opened++;
+    }
+    return opened;
+  }
+
+  /// Deletes the row and its stored file (FR-05-19).
+  Future<void> delete(int id) async {
+    final path = await _statements.delete(id);
+    if (path != null) await _files.delete(path);
+  }
+
+  Future<ImportResult> _unreadable(
+    Statement? existing,
+    String key,
+    PickedFile file, {
+    required UnsupportedReason reason,
+    StatementKind? kind,
+  }) async {
+    final now = _clock();
+    if (existing == null) {
+      await _statements.insert(
+        NewStatement(
+          key: key,
+          source: StatementSource.file,
+          sender: file.name,
+          fileName: file.name,
+          receivedAt: now,
+          processedAt: now,
+          status: StatementStatus.unreadable,
+          kind: kind,
+        ),
+      );
+    } else {
+      await _statements.markProcessed(
+        existing.id,
+        status: StatementStatus.unreadable,
+        at: now,
+        kind: kind,
+      );
+    }
+    return ImportUnsupported(reason);
+  }
+
+  Future<ImportResult> _run(
+    Uint8List bytes,
+    String name,
+    String key,
+    String? namePrefix,
+    StatementFileType type,
+    Statement? existing, {
+    String? explicit,
+  }) async {
+    final now = _clock();
+    final file = PickedFile(name: name, bytes: bytes);
+    if (type == StatementFileType.pdf) {
+      final opened = await _openPdf(bytes, explicit);
+      switch (opened) {
+        case _Text(:final text):
+          return await _apply(text, file, key, namePrefix, existing, now);
+        case _Fail(:final failure):
+          if (failure == PdfFailure.passwordRequired ||
+              failure == PdfFailure.wrongPassword) {
+            final id = await _lock(file, key, namePrefix, existing, now);
+            return explicit != null && failure == PdfFailure.wrongPassword
+                ? ImportWrongPassword(id)
+                : ImportLocked(id);
+          }
+          return await _unreadable(
+            existing,
+            key,
+            file,
+            reason: failure == PdfFailure.scanned
+                ? UnsupportedReason.scanned
+                : UnsupportedReason.unreadable,
+          );
+      }
+    }
+    final String text;
+    try {
+      final rows = type == StatementFileType.csv
+          ? pc.SpreadsheetLines.parseCsv(
+              utf8.decode(bytes, allowMalformed: true),
+            )
+          : _sheets.xlsxRows(bytes);
+      text = pc.SpreadsheetLines.toText(rows);
+    } on FormatException {
+      return await _unreadable(
+        existing,
+        key,
+        file,
+        reason: UnsupportedReason.unreadable,
+      );
+    }
+    return await _apply(text, file, key, namePrefix, existing, now);
+  }
+
+  /// No password, then (explicit | derived then saved); first success wins.
+  Future<_PdfOpen> _openPdf(Uint8List bytes, String? explicit) async {
+    var last = PdfFailure.passwordRequired;
+    Future<_PdfOpen?> attempt(String? pw) async {
+      try {
+        return _Text(await _pdf.extractText(bytes, password: pw));
+      } on PdfReadException catch (e) {
+        last = e.failure;
+        return switch (e.failure) {
+          PdfFailure.scanned || PdfFailure.unreadable => _Fail(e.failure),
+          _ => null,
+        };
+      }
+    }
+
+    if (explicit != null) {
+      return await attempt(explicit) ?? const _Fail(PdfFailure.wrongPassword);
+    }
+    final first = await attempt(null);
+    if (first != null) return first;
+    for (final pw in passwordCandidates(await _source())) {
+      final r = await attempt(pw);
+      if (r != null) return r;
+    }
+    return _Fail(
+      last == PdfFailure.wrongPassword ? PdfFailure.passwordRequired : last,
+    );
+  }
+
+  Future<int> _lock(
+    PickedFile file,
+    String key,
+    String? namePrefix,
+    Statement? existing,
+    int now,
+  ) async {
+    final path = existing?.filePath ??
+        await _files.save('${namePrefix ?? _short(key)}.bin', file.bytes);
+    if (existing != null) {
+      await _statements.markLocked(existing.id, at: now);
+      return existing.id;
+    }
+    final r = await _statements.insert(
+      NewStatement(
+        key: key,
+        source: StatementSource.file,
+        sender: file.name,
+        fileName: file.name,
+        receivedAt: now,
+        processedAt: now,
+        status: StatementStatus.locked,
+        filePath: path,
+      ),
+    );
+    return switch (r) {
+      StatementInserted(:final statement) ||
+      StatementAlreadyImported(:final statement) ||
+      StatementRetryLocked(:final statement) =>
+        statement.id,
+    };
+  }
+
+  static String _short(String key) =>
+      key.replaceAll(RegExp('[^A-Za-z0-9]'), '').padRight(16, '0').substring(
+            0,
+            16,
+          );
+
+  Future<ImportResult> _apply(
+    String text,
+    PickedFile file,
+    String key,
+    String? namePrefix,
+    Statement? existing,
+    int now,
+  ) async {
+    final result = await Isolate.run(
+      () => _parseOnWorker((text, file.name, now)),
+    );
+    final items = <IngestItem>[
+      for (var i = 0; i < result.transactions.length; i++)
+        IngestItem(
+          parsed: result.transactions[i],
+          sourceMessageId: 'stmt:$key:$i',
+          rawText: i < result.lines.length ? result.lines[i] : null,
+        ),
+    ];
+    final report = items.isEmpty
+        ? const IngestReport([])
+        : await _ledger.ingestBatch(items);
+    final snaps = [
+      for (final h in result.holdings)
+        if ((h.valueMinor ?? 0) > 0)
+          pf.HoldingSnapshot(
+            kind: HoldingKind.values.byName(h.kind.name),
+            name: h.name,
+            identifier: h.identifier,
+            asOf: h.asOf,
+            units: h.units,
+            valueMinor: h.valueMinor,
+            investedMinor: h.investedMinor,
+            contributionMinor: h.contributionMinor,
+            platform: h.platform,
+          ),
+    ];
+    final held = snaps.isEmpty
+        ? 0
+        : await _holdings.record(snaps, HoldingSource.statement);
+
+    final s = result.summary;
+    final kind = _kind(result.statementKind);
+    var notice = false;
+    if (kind == StatementKind.creditCard &&
+        (s.totalDueMinor != null || s.dueDate != null)) {
+      notice = await _cardDues.recordNotice(
+        NewCardNotice(
+          isPayment: false,
+          source: CardDueSource.statement,
+          receivedAt: now,
+          processedAt: now,
+          bankName: result.bankName,
+          last4: result.last4,
+          totalDueMinor: s.totalDueMinor,
+          minDueMinor: s.minDueMinor,
+          dueEpochDay: s.dueDate?.toEpochDay(),
+          creditLimitMinor: s.creditLimitMinor,
+          statementEpochDay: s.statementDate?.toEpochDay(),
+          availableMinor: s.availableMinor,
+        ),
+      );
+    }
+    final totals = StatementTotals(
+      totalDueMinor: s.totalDueMinor,
+      minDueMinor: s.minDueMinor,
+      dueEpochDay: s.dueDate?.toEpochDay(),
+      creditLimitMinor: s.creditLimitMinor,
+      statementEpochDay: s.statementDate?.toEpochDay(),
+      openingMinor: s.openingMinor,
+      closingMinor: s.closingMinor,
+      debitsMinor: s.debitsMinor,
+      creditsMinor: s.creditsMinor,
+      availableMinor: s.availableMinor,
+    );
+    final hasTotals = s.totalDueMinor != null ||
+        s.closingMinor != null ||
+        s.openingMinor != null;
+    final empty =
+        items.isEmpty && snaps.isEmpty && !hasTotals && result.deposits.isEmpty;
+    final status = empty ? StatementStatus.empty : StatementStatus.parsed;
+    final path = existing?.filePath ??
+        await _files.save('${namePrefix ?? _short(key)}.bin', file.bytes);
+    final int id;
+    if (existing != null) {
+      id = existing.id;
+      await _statements.markProcessed(
+        id,
+        status: status,
+        at: now,
+        kind: kind,
+        bankName: result.bankName,
+        last4: result.last4,
+        transactionCount: items.length,
+        holdingCount: snaps.length,
+        totals: totals,
+        filePath: path,
+      );
+    } else {
+      final r = await _statements.insert(
+        NewStatement(
+          key: key,
+          source: StatementSource.file,
+          sender: file.name,
+          fileName: file.name,
+          receivedAt: now,
+          processedAt: now,
+          status: status,
+          filePath: path,
+          bankName: result.bankName,
+          last4: result.last4,
+          kind: kind,
+          transactionCount: items.length,
+          holdingCount: snaps.length,
+          totals: totals,
+        ),
+      );
+      id = switch (r) {
+        StatementInserted(:final statement) ||
+        StatementAlreadyImported(:final statement) ||
+        StatementRetryLocked(:final statement) =>
+          statement.id,
+      };
+    }
+    return ImportDone(
+      statementId: id,
+      added: report.inserted,
+      merged: report.merged,
+      review: report.flagged,
+      holdings: held,
+      cardNotice: notice,
+      empty: empty,
+    );
+  }
+}
+
+sealed class _PdfOpen {
+  const _PdfOpen();
+}
+
+class _Text extends _PdfOpen {
+  const _Text(this.text);
+  final String text;
+}
+
+class _Fail extends _PdfOpen {
+  const _Fail(this.failure);
+  final PdfFailure failure;
+}
