@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/features/activity_log/domain/activity_stats.dart';
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
-import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:intl/intl.dart';
 
 /// Activity log (F-22): totals, sync times, source filter and entries by day.
@@ -59,7 +57,13 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
   @override
   Widget build(BuildContext context) {
     final entries = ref.watch(activityEntriesProvider).value ?? const [];
-    final settings = ref.watch(settingsRepositoryProvider);
+    final due = [
+      for (final v in [
+        ref.watch(nextSmsSyncProvider).value ?? 0,
+        ref.watch(nextEmailSyncProvider).value ?? 0,
+      ])
+        if (v > _now.millisecondsSinceEpoch) v,
+    ]..sort();
     final now = _now;
     final shown = [
       for (final e in entries)
@@ -91,24 +95,12 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
             totals: ActivityStats.week(entries, now),
           ),
           const SizedBox(height: 12),
-          FutureBuilder<List<int>>(
-            future: Future.wait([
-              settings.read(_nextSms),
-              settings.read(_nextEmail),
-            ]),
-            builder: (context, snap) {
-              final due = [
-                for (final v in snap.data ?? const <int>[])
-                  if (v > now.millisecondsSinceEpoch) v,
-              ]..sort();
-              return _SyncCard(
-                lastSms: ActivityStats.lastSms(entries),
-                lastEmail: ActivityStats.lastEmail(entries),
-                next: due.isEmpty
-                    ? null
-                    : DateTime.fromMillisecondsSinceEpoch(due.first),
-              );
-            },
+          _SyncCard(
+            lastSms: ActivityStats.lastSms(entries),
+            lastEmail: ActivityStats.lastEmail(entries),
+            next: due.isEmpty
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(due.first),
           ),
           const SizedBox(height: 12),
           SingleChildScrollView(
@@ -140,9 +132,6 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
       ),
     );
   }
-
-  static const _nextSms = SettingKey<int>('next_sms_sync_at', 0);
-  static const _nextEmail = SettingKey<int>('next_email_sync_at', 0);
 
   Widget _pill(String label, ActivitySource? s) => Padding(
         padding: const EdgeInsets.only(right: 8),

@@ -3,8 +3,8 @@ import 'dart:isolate';
 
 import 'package:hisaab/features/backup_export/data/csv_codec.dart';
 import 'package:hisaab/features/backup_export/domain/backup_models.dart';
-import 'package:hisaab/features/settings_data_sources/domain/settings_repository.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
+import 'package:hisaab/features/settings_data_sources/domain/settings_repository.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
@@ -16,7 +16,9 @@ const lastExportKey = SettingKey<int>('last_csv_export', 0);
 /// CSV export and import over the single ledger write path (F-24).
 class BackupService {
   /// Creates the service.
-  BackupService(this._txs, this._settings);
+  BackupService(TransactionRepository txs, SettingsRepository settings)
+      : _txs = txs,
+        _settings = settings;
 
   final TransactionRepository _txs;
   final SettingsRepository _settings;
@@ -58,7 +60,7 @@ class BackupService {
 
   /// Parses [text] without writing anything (for the confirm dialog).
   Future<CsvImportResult> parse(String text) async => text.length > 200000
-      ? Isolate.run(() => importCsv(text))
+      ? await Isolate.run(() => importCsv(text))
       : importCsv(text);
 
   /// Ingests parsed rows through the ledger (FR-24-10/11); stable source

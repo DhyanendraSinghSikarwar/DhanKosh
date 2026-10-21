@@ -18,6 +18,6 @@ final backupServiceProvider = Provider<BackupService>(
 );
 
 /// Last export time in epoch ms, 0 when never.
-final lastExportProvider = FutureProvider.autoDispose<int>(
+final FutureProvider<int> lastExportProvider = FutureProvider.autoDispose<int>(
   (ref) => ref.watch(settingsRepositoryProvider).read(lastExportKey),
 );

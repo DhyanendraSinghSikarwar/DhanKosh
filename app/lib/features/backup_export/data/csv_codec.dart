@@ -6,7 +6,7 @@ import 'package:parser_core/parser_core.dart';
 /// IST offset, the zone the parsers hash dates in (memory 24 section 10).
 const int istOffsetMs = 19800000;
 
-final _bareNewline = Csv(lineDelimiter: '\n', quoteMode: QuoteMode.necessary);
+final _bareNewline = Csv(lineDelimiter: '\n');
 final _instant = RegExp(r'^\d{4}-\d{2}-\d{2}T.*(Z|[+-]\d{2}:?\d{2})$');
 
 /// "2450.50" from paise by integer math; no sign, no grouping (FR-24-04).
@@ -67,7 +67,7 @@ String exportCsv(List<LedgerTx> rows) {
 /// (FR-24-07). Unreadable lines are counted, never fatal (FR-24-09).
 CsvImportResult importCsv(String text, {int zoneOffsetMs = istOffsetMs}) {
   final body = text.startsWith('﻿') ? text.substring(1) : text;
-  final lines = Csv(dynamicTyping: false).decode(body);
+  final lines = Csv().decode(body);
   if (lines.isEmpty) return const CsvImportResult(rows: [], badLines: 0);
   final header = [
     for (final h in lines.first) h.toString().trim().toLowerCase(),

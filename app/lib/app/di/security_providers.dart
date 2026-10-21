@@ -37,3 +37,15 @@ ActivityLogger activityLogger(Ref ref) =>
 @riverpod
 Stream<List<ActivityEntry>> activityEntries(Ref ref) =>
     ref.watch(activityLogRepositoryProvider).watch();
+
+/// Planned next SMS scan, epoch ms; 0 when unknown (FR-22-08).
+@riverpod
+Stream<int> nextSmsSync(Ref ref) => ref
+    .watch(settingsRepositoryProvider)
+    .watch(const SettingKey<int>('next_sms_sync_at', 0));
+
+/// Planned next email sync, epoch ms; 0 when unknown (FR-22-08).
+@riverpod
+Stream<int> nextEmailSync(Ref ref) => ref
+    .watch(settingsRepositoryProvider)
+    .watch(const SettingKey<int>('next_email_sync_at', 0));

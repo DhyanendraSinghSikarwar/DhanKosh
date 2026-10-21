@@ -6,6 +6,10 @@ import 'package:hisaab/features/backup_export/data/backup_service.dart';
 import 'package:hisaab/features/backup_export/data/csv_codec.dart';
 import 'package:hisaab/features/backup_export/domain/backup_models.dart';
 import 'package:hisaab/features/backup_export/presentation/backup_export_screen.dart';
+import 'package:hisaab/features/settings_data_sources/domain/settings_repository.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:parser_core/parser_core.dart';
 
 import '../../support/parsed.dart';
@@ -25,6 +29,26 @@ class _Gw implements BackupFileGateway {
 
   @override
   Future<String?> pickText() async => text;
+}
+
+class _Txs extends Mock implements TransactionRepository {}
+
+class _Settings extends Mock implements SettingsRepository {}
+
+class _FakeSvc extends BackupService {
+  _FakeSvc(super.txs, super.settings);
+  @override
+  Future<({int count, String file})?> export(
+    BackupFileGateway gateway, {
+    required DateTime now,
+  }) async {
+    final f = await gateway.save('hisaab-2026-10-21.csv', [1]);
+    return (count: 1, file: f!);
+  }
+
+  @override
+  Future<ImportReport> ingest(CsvImportResult parsed) async =>
+      ImportReport(inserted: parsed.rows.length, skipped: 0);
 }
 
 void main() {
@@ -125,55 +149,61 @@ void main() {
       expect(rep.inserted, 2);
       final a = await svc.allTransactions();
       final b = await svc2.allTransactions();
-      int sum(List l) => l.fold<int>(0, (s, t) => s + (t.amountMinor as int));
+      int sum(List<LedgerTx> l) => l.fold<int>(0, (s, t) => s + t.amountMinor);
       expect(sum(b), sum(a));
       expect(
-          b.map((t) => t.merchant).toSet(), a.map((t) => t.merchant).toSet(),);
-      expect(b.map((t) => t.balanceMinor).toSet(),
-          a.map((t) => t.balanceMinor).toSet(),);
+        b.map((t) => t.merchant).toSet(),
+        a.map((t) => t.merchant).toSet(),
+      );
+      expect(
+        b.map((t) => t.balanceMinor).toSet(),
+        a.map((t) => t.balanceMinor).toSet(),
+      );
 
       final again = await svc2.ingest(await svc2.parse(out.csv));
       expect(again.inserted, 0);
       expect(again.skipped, 2);
       expect((await svc2.allTransactions()).length, 2);
     });
+  });
 
-    // FR-24-02, FR-24-05
-    testWidgets('screen exports and imports with confirm', (tester) async {
-      await env.ingest(parsed());
-      final gw = _Gw(
-        'date,amount,type\n2026-10-17T08:15:30Z,50.00,DEBIT\n',
-      );
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            backupFileGatewayProvider.overrideWithValue(gw),
-            backupServiceProvider
-                .overrideWithValue(BackupService(env.txs, env.settings)),
-          ],
-          child: const MaterialApp(home: BackupExportScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('No export yet'), findsOneWidget);
+  // FR-24-02, FR-24-05
+  testWidgets('screen exports and imports with confirm', (tester) async {
+    final gw = _Gw(
+      'date,amount,type\n2026-10-17T08:15:30Z,50.00,DEBIT\n',
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          backupFileGatewayProvider.overrideWithValue(gw),
+          backupServiceProvider
+              .overrideWithValue(_FakeSvc(_Txs(), _Settings())),
+          lastExportProvider.overrideWith((ref) async => 0),
+        ],
+        child: const MaterialApp(home: BackupExportScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('No export yet'), findsOneWidget);
 
-      await tester.tap(find.text('Export'));
-      await tester.pumpAndSettle();
-      expect(gw.savedName, matches(r'^hisaab-\d{4}-\d{2}-\d{2}\.csv$'));
-      expect(find.textContaining('Exported 1 transactions'), findsOneWidget);
+    await tester.tap(find.text('Export'));
+    await tester.pumpAndSettle();
+    expect(gw.savedName, matches(r'^hisaab-\d{4}-\d{2}-\d{2}\.csv$'));
+    expect(find.textContaining('Exported 1 transactions'), findsOneWidget);
 
-      await tester.tap(find.text('Import'));
-      await tester.pumpAndSettle();
-      expect(find.text('Import transactions?'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('backup-import-confirm')));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Imported 1, skipped 0'), findsOneWidget);
+    await tester.tap(find.text('Import'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Import transactions?'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('backup-import-confirm')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Imported 1, skipped 0'), findsOneWidget);
 
-      gw.text = 'x,y\n1,2\n';
-      await tester.tap(find.text('Import'));
-      await tester.pumpAndSettle();
-      expect(
-          find.textContaining('Import failed: Not a DhanKosh'), findsOneWidget,);
-    });
+    gw.text = 'x,y\n1,2\n';
+    await tester.tap(find.text('Import'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Import failed: Not a DhanKosh'),
+      findsOneWidget,
+    );
   });
 }

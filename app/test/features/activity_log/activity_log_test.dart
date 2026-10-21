@@ -49,8 +49,10 @@ void main() {
   test('keeps newest 200, newest first, clear empties (TC-22-01)', () async {
     for (var i = 0; i < 205; i++) {
       await repo.record(
-        _e(ActivitySource.smsScan,
-            DateTime(2026, 1, 1).add(Duration(hours: i)),),
+        _e(
+          ActivitySource.smsScan,
+          DateTime(2026, 1, 1).add(Duration(hours: i)),
+        ),
       );
     }
     final l = await repo.watch().first;
@@ -211,12 +213,12 @@ void main() {
     expect(find.text('Failed: permission'), findsOneWidget);
 
     await t.tap(find.byKey(const Key('activity-clear')));
-    await t.pumpAndSettle();
+    await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.text('Cancel'));
-    await t.pumpAndSettle();
+    await t.pump(const Duration(milliseconds: 400));
     expect(find.text('Failed: permission'), findsOneWidget);
     await t.tap(find.byKey(const Key('activity-clear')));
-    await t.pumpAndSettle();
+    await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.byKey(const Key('activity-clear-confirm')));
     await settle(t);
     expect(find.text('No activity yet'), findsOneWidget);
