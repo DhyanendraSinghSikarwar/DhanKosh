@@ -66,6 +66,7 @@ lib/
 ├── core/           # constants, errors, utils, extensions, network, db (Drift), platform channels, money/format
 ├── shared/         # reusable widgets (cards, pills, empty state, sheets), common models
 └── features/<feature>/{data,domain,presentation}
+packages/parser_core/   # pure Dart parsing package (ADR-0008), app/packages/
 ```
 
 Feature folder names are listed in each memory file (section 13). Native code: `android/app/src/main/kotlin/com/hisaab/` (channels: `sms`, `notifications`, `secure`, `pdf`, `widget`).

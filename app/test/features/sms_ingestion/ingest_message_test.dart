@@ -63,7 +63,7 @@ void main() {
     expect(await env.count('transaction_sources'), 2);
   });
 
-  test('sample data all lands through the normal path (FR-26-30)', () async {
+  test('sample data all lands through the normal path (FR-26-27)', () async {
     final msgs = SampleData.build(DateTime(2026, 10, 21, 12));
     var inserted = 0;
     for (final m in msgs) {

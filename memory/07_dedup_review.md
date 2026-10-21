@@ -393,6 +393,8 @@ UI done: FR-07-10 basic (one card per flagged row, New beside Existing with merc
 
 Deferred: full Compare view and source messages, FR-07-11 sheet details, FR-07-13 split, FR-07-14 manual merge/undo, FR-07-17 shared MessageView, undo snackbar.
 
+Reconciliation note (2026-10-21, pipeline wiring): not changed. The ledger still decides duplicates with `DedupPolicy` alone; parser_core's `DuplicateMatcher` is not used by the ledger, so there is exactly one matcher in effect. Switching needs an async `DedupLookup` adapter over the ledger tables and re-running the dedup and ledger tests; deferred.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -403,3 +405,4 @@ Deferred: full Compare view and source messages, FR-07-11 sheet details, FR-07-1
 | 2026-10-21 | Phase 1 data layer landed (`DedupPolicy` (reference/hash/fuzzy/rounded rules), merge rules, flagged-row actions) | Phase 1 |
 | 2026-10-21 | Phase 1 Dart port landed in app/packages/parser_core: DuplicateMatcher and TransactionHasher | Phase 1 |
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
+| 2026-10-21 | Phase 1 pipeline wiring + UI landed (matcher reconciliation deferred, note only) | Phase 1 |

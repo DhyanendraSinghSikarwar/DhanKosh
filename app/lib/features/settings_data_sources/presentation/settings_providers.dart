@@ -12,12 +12,12 @@ part 'settings_providers.g.dart';
 Stream<bool> smsEnabled(Ref ref) =>
     ref.watch(settingsRepositoryProvider).watch(SettingKeys.smsEnabled);
 
-/// Amount masking (FR-26-20).
+/// Amount masking (FR-26-29).
 @riverpod
 Stream<bool> hideAmounts(Ref ref) =>
     ref.watch(settingsRepositoryProvider).watch(SettingKeys.hideAmounts);
 
-/// Developer section flag (FR-26-30).
+/// Developer section flag (FR-26-27).
 @riverpod
 Stream<bool> developerTools(Ref ref) =>
     ref.watch(settingsRepositoryProvider).watch(SettingKeys.developerTools);
@@ -71,7 +71,7 @@ class ScanController extends _$ScanController {
   }
 }
 
-/// One-shot actions: sample data and clear (FR-26-30, FR-26-31).
+/// One-shot actions: sample data and clear (FR-26-27, FR-26-28).
 @riverpod
 class DeveloperActions extends _$DeveloperActions {
   @override

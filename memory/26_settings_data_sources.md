@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-26 |
-| Status | In progress (Phase 1 data layer; UI pending) |
+| Status | In progress (Phase 1: settings store and a first Data sources screen with SMS card, paste import, masking switch and developer tools; email, notification rows, history choices, More hub and About pending) |
 | Priority | P0 |
 | Phase | 1 (Data sources screen and settings store); 2 extends it with email and notification rows |
 | Last Updated | 2026-10-21 |
@@ -248,6 +248,10 @@ On start, off the main thread: restore language, scan SMS if permitted, schedule
 - FR-26-22: The Gmail/IMAP settings store persists `read_pdf` (default true), `history_id`, `last_sync`, `last_result` and `imap_synced_at:<email>`; disconnect clears all `imap_synced_at:*` keys.
 - FR-26-23: The More hub shows a live subtitle per entry and a footer, as in Section 3.8. The footer reads "You're all caught up" and "DhanKosh v{version}".
 - FR-26-24: Every `InfoButton` (i) opens an AlertDialog with a "Got it" button and the texts and placements in Section 3.6; other features link to that list rather than copy it.
+- FR-26-26: (Phase 1 addition) "Paste a bank SMS": sender and message fields, "Parse and add" runs the normal ingest path and shows what was added (type, amount, merchant, account tail) or why it was ignored.
+- FR-26-27: (Phase 1 addition) Developer section, shown while `developer_tools` is true (default true in this early build): "Add sample data" ingests 25 clearly dummy SMS (accounts XX1234 bank and XX5678 card, merchants prefixed DEMO) over the last 60 days through the normal ingest path.
+- FR-26-28: (Phase 1 addition) "Clear all data" with a confirm dialog deletes transactions, sources, tombstones, accounts, rules and custom categories and resets the SMS cursor; settings and the sealed identity stay.
+- FR-26-29: (Phase 1 addition) Privacy switch "Hide amounts" writes `hide_amounts` (default true).
 - FR-26-25: The settings key-value store is one Drift table `settings(key TEXT PRIMARY KEY, value TEXT)`; every feature persisting a simple setting (including [01_onboarding_permissions.md](01_onboarding_permissions.md) and [17_dashboard_home.md](17_dashboard_home.md)) uses this name.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
@@ -484,6 +488,13 @@ Widget:
 - TC-26-18 (FR-26-23): More subtitles render "2 active · 1 near limit", "3 statements · 1 need a password" and the footer "You're all caught up" / "DhanKosh v2.9.8" for matching state.
 - TC-26-19 (FR-26-24): each placement in Section 3.6 opens a dialog with its text and a "Got it" button.
 
+Widget (Phase 1, `test/features/settings_data_sources/settings_screen_test.dart`):
+
+- TC-26-20 (FR-26-03): with SMS off the card shows "Not allowed", the permission card and a disabled Scan now; with SMS on, Scan now shows the summary and "Last scan: just now".
+- TC-26-21 (FR-26-26): pasting a debit SMS shows "Added: debit ₹320.00"; pasting an OTP shows "Ignored".
+- TC-26-22 (FR-26-27, FR-26-28): Add sample data inserts 25 transactions; Clear all data (confirm) empties the ledger.
+- TC-26-23 (FR-26-29): the Hide amounts switch flips `hide_amounts` to false.
+
 Integration:
 
 - TC-26-15 (FR-26-02): change 90 to 180 triggers one full scan with window 180 days.
@@ -519,7 +530,9 @@ Phase 1 data layer (store only, no Data sources screen). Code: `lib/core/db/tabl
 
 Done: FR-26-12 (typed keys with defaults, streams, `hide_amounts` default true; keys implemented: `sms_enabled`, `sms_cursor`, `last_sms_scan`, `last_sms_result`, `sms_prompt_dismissed`, `app_notifications`, `notifications_asked`, `history_days`, `hide_amounts`, `app_lock`, `transaction_notifications`, `card_due_reminders`, `check_updates`, `budget_alert_percent`; the rest are added by their owners as `SettingKey`s), FR-26-13 (`appendCapped`), FR-26-14 (`sms_cursor` max on write, `remove` resets).
 
-Pending: FR-26-01..11, 15..25 (screens, permission flows, email, updates).
+Phase 1 UI (2026-10-21): `presentation/settings_data_sources_screen.dart` (More tab), `bank_sms_card.dart`, `paste_sms_card.dart`, `settings_providers.dart`; `domain/sample_data.dart`, `domain/data_reset_repository.dart` (impl `features/transactions_ledger/data/data_reset_repository_impl.dart`, kept with the ledger data layer so every write to `transactions` stays there). `SettingsKeyValueStore` (data) backs the string `KeyValueStore` port for onboarding and SMS settings; `SettingKeys.developerTools` is new. Done: FR-26-03 (status, last read, last result, Scan now; "No permission / Paused / On" is shown as Allowed / Not allowed plus the enable switch), FR-26-04 (switch pauses live ingestion without revoking permission), FR-26-12 (store), FR-26-16, FR-26-17 (via F-01), FR-26-26..29.
+
+Pending: FR-26-01, 02, 05..11, 13 UI parts, 15, 18..25 (history choices, email, notification card, bank senders dialog, More hub subtitles, About, InfoButtons, updates).
 
 Deviations: values are encoded text in one `settings(key, value)` table (bool, int, String, JSON string set); `history_days` is stored under this key rather than a separate DataStore name. The SMS ingestion agent's own settings store should be reconciled with this one.
 
@@ -531,3 +544,4 @@ Deviations: values are encoded text in one `settings(key, value)` table (bool, i
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Added `nps-contributions`, `mf-orders`, full `gmail_settings` keys to inventory; More hub subtitles and footer (3.8); shared InfoButton placements with three inline dialogs (3.6; corrects "only four wired"); manifest and SDK platform facts; FR-26-21..25, TC-26-17..19; settings table named `settings` | Audit Gate gap, scan_4, scan_5, scan_6, scan_3 |
 | 2026-10-21 | Phase 1 data layer landed (tables settings (key-value); typed `SettingKey`s and `SettingsRepository`) | Phase 1 |
+| 2026-10-21 | Phase 1 pipeline wiring + UI landed | Phase 1 |

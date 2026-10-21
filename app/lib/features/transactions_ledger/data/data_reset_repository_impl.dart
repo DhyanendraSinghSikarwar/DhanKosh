@@ -3,7 +3,7 @@ import 'package:hisaab/core/db/app_database.dart';
 import 'package:hisaab/features/settings_data_sources/domain/data_reset_repository.dart';
 
 /// [DataResetRepository] kept with the ledger data layer so every write to
-/// `transactions` stays in one place (FR-08-17).
+/// `transactions` stays in one place (FR-08-17, FR-26-28).
 class DataResetRepositoryImpl implements DataResetRepository {
   /// Creates the repository.
   const DataResetRepositoryImpl(this._db);

@@ -1,5 +1,4 @@
 import 'package:drift/native.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -31,7 +30,7 @@ class FakePermission implements SmsPermissionRepository {
   @override
   Future<SmsPermissionState> request() async {
     if (!blocked && grantOnRequest) granted = true;
-    return read();
+    return await read();
   }
 
   @override
@@ -73,8 +72,9 @@ class FakeLive implements SmsLiveSource {
   Future<void> configure({
     required bool enabled,
     required String senderPattern,
-  }) async =>
-      this.enabled = enabled;
+  }) async {
+    this.enabled = enabled;
+  }
 }
 
 /// Everything a screen test needs; call [dispose] in tearDown.

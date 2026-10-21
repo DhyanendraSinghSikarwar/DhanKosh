@@ -42,7 +42,7 @@ abstract final class SettingKeys {
   static const checkUpdates = SettingKey<bool>('check_updates', true);
 
   /// Shows the Developer section (sample data, clear data). ON in this early
-  /// build (FR-26-30).
+  /// build (FR-26-27).
   static const developerTools = SettingKey<bool>('developer_tools', true);
   static const budgetAlertPercent = SettingKey<int>('budget_alert_percent', 90);
 

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-01 |
-| Status | In Progress |
+| Status | In progress (Phase 1: domain, data, Welcome and permission UI done; email sign-in, Home card and app-lock skip pending) |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-21 |
@@ -415,6 +415,10 @@ lib/features/onboarding/
 | TC-01-13 | integration | FR-01-03, FR-01-06 | Email path with a fake IMAP connector: verified email leads to `details`, Finish writes profile, gate closes, Home visible. |
 | TC-01-14 | integration | FR-01-12 | Grant SMS via fake channel then verify exactly one full scan job enqueued. |
 | TC-01-15 | widget | FR-01-16, FR-01-17 | Welcome contains "Your data never leaves this phone." and each string resolves through i18n. |
+| TC-01-17 | widget | FR-01-04, FR-01-16 | `welcome_screen_test`: Continue is disabled until name is non-blank and the mobile has 10 digits; privacy line shown. |
+| TC-01-18 | widget | FR-01-05, FR-01-06, FR-01-07, FR-01-10 | `welcome_screen_test`: Finish saves the sealed identity (alternate name, upper-cased PAN) and the profile; the SMS card then appears and Allow flips it to "SMS access allowed". |
+| TC-01-19 | widget | FR-01-10, FR-01-11 | `welcome_screen_test`: blocked permission shows the "Allow restricted settings" steps and the button opens App settings. |
+| TC-01-20 | widget | FR-01-01 | `welcome_screen_test` and `widget_test`: with an empty profile the app shows Welcome; once skipped or onboarded it shows the shell. |
 | TC-01-16 | integration | FR-01-15 | Opening App info sets the lock-skip flag. |
 
 Fixtures: identity `Identity(name: 'Asha Rao', dob: 1990-05-14, pan: 'ABCDE1234F', phone: '+91 9876543210', altName: 'Asha R', altPhone: '+91 9123456780', email: 'asha@example.com')` (all synthetic).
@@ -445,7 +449,10 @@ Fixtures: identity `Identity(name: 'Asha Rao', dob: 1990-05-14, pan: 'ABCDE1234F
 
 ## 18. Implementation Notes
 
-Phase 1 status (2026-10-21): domain + data done; Welcome UI, Home card, Riverpod wiring pending.
+Phase 1 status (2026-10-21): domain, data, Riverpod wiring and Welcome UI done; Home card, email sign-in and app-lock skip pending.
+
+- UI/wiring (2026-10-21): `presentation/welcome_screen.dart` (steps: name + mobile, optional statement details, SMS ask; FR-01-01, 02, 04, 05, 06, 16), `presentation/app_lifecycle_gate.dart` (wraps the app in `app.dart`; on start and every resume re-reads SMS access, drains queued messages, and asks POST_NOTIFICATIONS once after the gate closes; FR-01-09, FR-01-12, FR-01-14), shared `lib/shared/widgets/sms_permission_card.dart` (rationale or restricted-settings guidance; FR-01-10, FR-01-11, FR-01-13; reused by the Data sources card). Providers in `lib/app/di/pipeline_providers.dart`: `onboardingGateProvider` (FR-01-01; `/loading` blank route while unknown, `/welcome` while needed, redirect in `router.dart`), `smsPermissionProvider`, `smsPermissionWatcherProvider` (full scan on missing-to-granted), `identityRepositoryProvider` (flutter_secure_storage via `SecureStoreImpl`), `profileRepositoryProvider`, `finishOnboardingProvider`, `askNotificationsOnceProvider`.
+- Deviations: email sign-in (FR-01-03) is not offered until F-03 lands, so the gate is satisfied by name + mobile; a "Skip for now" on the first step stores `onboarding_skipped=true` (ends the gate with no profile; an extension of FR-01-05's skip). `blocked` is still kept in memory only. The Home "Read bank SMS" card (FR-01-13) is not placed on Home here; the same card is on Data sources. `publishOwnNumbers` is not wired: own-number tails are read from profile and identity at ingest time instead (`ingestMessageProvider`), which has the same effect for FR-01-08.
 
 - FR done in code + unit tests: FR-01-01 (`onboardingNeeded`), FR-01-06, FR-01-07 (`FinishOnboarding`, `IdentityStore`, `ProfileStore`), FR-01-08 (`ownNumberTails` + publish callback), FR-01-09, FR-01-10, FR-01-11 (`SmsPermissionRepositoryImpl`, `SmsPermissionWatcher`), FR-01-12 (edge trigger only; the scan enqueue is wired by the lead), FR-01-14 (`AskNotificationsOnce`). Native-only, NOT compiled or run: permission dialogs, rationale, App info intent in `SmsBridge` (channel `com.hisaab/permissions`: `smsStatus -> {granted, rationale}`, `requestSms`, `requestNotifications -> bool`, `openAppSettings`). Pending (UI/app wiring): FR-01-02..05, 13, 15 (hook `beforeOpenSettings` exists), 16, 17.
 - Permission checks use the real state after every request; `blocked` is remembered in memory after a refusal with no rationale and is lost on process death (the next request re-infers it).
@@ -459,3 +466,4 @@ Phase 1 status (2026-10-21): domain + data done; Welcome UI, Home card, Riverpod
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Key-value store name aligned to `settings` (26 owns it); manifest, splash theme and adjustResize facts live in 26 section 11, not duplicated here | Audit Gate gap, scan_4 |
 | 2026-10-21 | Phase 1 native SMS channel + Dart data/domain landed | Phase 1 |
+| 2026-10-21 | Phase 1 pipeline wiring + UI landed | Phase 1 |

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-02 |
-| Status | In Progress |
+| Status | In progress (Phase 1: native, data, parser wiring, engine and Data sources UI done; WorkManager scheduling, headless entrypoint and Home progress pending) |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-21 |
@@ -486,7 +486,11 @@ Fixtures: the corpus messages listed in section 2.5 (all synthetic/masked), plus
 
 ## 18. Implementation Notes
 
-Phase 1 status (2026-10-21): native + Dart data/domain done; UI, parser wiring, scheduling and headless entrypoint pending.
+Phase 1 status (2026-10-21): native + Dart data/domain, parser wiring, live engine and Data sources UI done; scheduling and headless entrypoint pending.
+
+- Pipeline (2026-10-21): `domain/usecases/ingest_message.dart` `IngestMessage` = `parser_core.parse` -> `TransactionRepository.ingest` -> `IngestOutcome` (rejected for OTP/Rejected/NotATransaction; skipped on a re-ingested id; merged when SMS and email describe one payment). Category comes from the parser's merchant directory; learned and manual rules are applied inside the ledger's ingest transaction (FR-09-10), so there is one classification path. `domain/usecases/sms_engine.dart` `SmsEngine`: `configureLive` on start, subscribe to live messages, drain the native queue, then a 14-day `recent` catch-up scan (FR-02-13 start-up scan); `setEnabled` persists the pause flag and reconfigures native (FR-02-05). Wiring: `lib/app/di/pipeline_providers.dart` (`ingestMessageProvider`, `scanSmsFactoryProvider`, `smsEngineProvider`, `pipelineSyncProvider` called by `AppLifecycleGate` at start and on resume). Sender filter is `ParserRegistry.accepts`; native gets the permissive pattern `.*[A-Za-z].*` (`SmsEngine.senderPatternDefault`), so the sender-header table push is still pending. Tests: `test/features/sms_ingestion/{ingest_message_test,sms_engine_test}.dart`.
+- UI: Data sources "Bank SMS" card (status, enable switch, Scan now with live "n read, m found" and the exact summary, last scan; FR-02-15, FR-02-16 partly) in `features/settings_data_sources/presentation/bank_sms_card.dart`; details in [26_settings_data_sources.md](26_settings_data_sources.md).
+- Not done: parsing runs on the UI isolate (batches of 500 awaited one message at a time, so the UI stays responsive but a very large inbox is slower than the parallel design of FR-02-10); the full scan after a missing-to-granted change also follows the start-up catch-up, so recent messages are read twice (ids make it idempotent).
 
 - FR done in code + unit tests: FR-02-02 (accept predicate injected), FR-02-04 (`SmsIds`, pure-Dart SHA-256, shared by live and scan), FR-02-05, FR-02-08, FR-02-09, FR-02-11, FR-02-12, FR-02-17 (settings only), FR-02-19, FR-02-20 (via ingest outcome `skipped`). Native-only, NOT compiled or run (no Android SDK here; CI compiles): FR-02-01, FR-02-03 (multi-part join in `SmsReceiver`), FR-02-09 inbox query. Pending: FR-02-06, FR-02-07 (ledger wiring), FR-02-10 (parallel parse), FR-02-13, FR-02-14 (scheduler), FR-02-15, FR-02-16, FR-02-18.
 - Kotlin (`android/app/src/main/kotlin/com/hisaab/sms/`): `SmsReceiver` (manifest, priority 999, `BROADCAST_SMS`), `SmsStore` (EventChannel sink + SharedPreferences JSON queue, capped 500, pause flag and sender regex), `SmsInbox` (query paged by `(date, _id)`, body column read only after the address matches), `SmsBridge` (channels `com.hisaab/sms`, `com.hisaab/sms_live`, `com.hisaab/permissions`). `MainActivity` attaches the bridge.
@@ -502,3 +506,4 @@ Phase 1 status (2026-10-21): native + Dart data/domain done; UI, parser wiring, 
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Lender parsers 16 -> 17 and listed banks ~55 -> 51 (verified against `LenderParser.kt`, `IndianBanks.kt`) | Audit Gate gap, scan_N |
 | 2026-10-21 | Phase 1 native SMS channel + Dart data/domain landed | Phase 1 |
+| 2026-10-21 | Phase 1 pipeline wiring + UI landed | Phase 1 |

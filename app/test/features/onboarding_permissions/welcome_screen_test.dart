@@ -107,7 +107,8 @@ void main() {
       UncontrolledProviderScope(container: c, child: const HisaabApp()),
     );
     await t.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 300)));
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
     await t.pump();
     await t.pump();
     expect(find.byKey(const Key('welcome-name')), findsOneWidget);

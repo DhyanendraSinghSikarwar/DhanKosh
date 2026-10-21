@@ -8,7 +8,7 @@ import 'package:hisaab/features/sms_ingestion/domain/usecases/scan_sms.dart';
 
 /// Live SMS lifecycle: configure the native receiver, drain what queued while
 /// Dart was away, stream new messages, 14-day catch-up (FR-02-01, FR-02-05,
-/// FR-02-06, FR-02-08).
+/// FR-02-13, FR-02-08).
 class SmsEngine {
   /// Creates the engine.
   SmsEngine({

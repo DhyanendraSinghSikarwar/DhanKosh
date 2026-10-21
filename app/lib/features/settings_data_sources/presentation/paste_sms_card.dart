@@ -9,7 +9,7 @@ import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:parser_core/parser_core.dart' hide Money;
 
 /// Manual test path: paste a bank SMS, see what was parsed or why not
-/// (FR-26-29).
+/// (FR-26-26).
 class PasteSmsCard extends ConsumerStatefulWidget {
   /// Creates the card.
   const PasteSmsCard({super.key});

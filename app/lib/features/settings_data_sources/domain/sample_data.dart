@@ -1,6 +1,6 @@
 import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart';
 
-/// Clearly dummy bank SMS for a tester (FR-26-30). Fake account tails
+/// Clearly dummy bank SMS for a tester (FR-26-27). Fake account tails
 /// (XX1234 bank, XX5678 card), fake merchants prefixed DEMO, fake refs.
 abstract final class SampleData {
   /// Number of messages [build] returns.

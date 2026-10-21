@@ -11,7 +11,7 @@ All parsing and storage are on-device. Native code (SMS, notifications, Keystore
 
 ## Status of the skeleton
 
-Verified 2026-10-21 with Flutter 3.47.7: `flutter pub get`, `dart run build_runner build -d`, `flutter analyze` (0 issues) and `flutter test` (22 pass) are green. The debug APK is built by CI (`.github/workflows/ci.yml`, artifact `hisaab-debug-apk`); it has not been built or run on a device yet. Setup and phone install: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+Verified 2026-10-21 with Flutter 3.47.7: `flutter pub get`, `dart run build_runner build -d`, `flutter analyze` (0 issues) and `flutter test` are green; Phase 1 features are implemented (see memory Status fields; app 169 tests, `app/packages/parser_core` 598). The debug APK is built by CI (`.github/workflows/ci.yml`, artifact `hisaab-debug-apk`); the Kotlin SMS code and the APK have not been compiled or run on a device yet. Setup and phone install: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Reference sources
 

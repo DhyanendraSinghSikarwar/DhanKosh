@@ -10,7 +10,7 @@ import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/sms_permission_card.dart';
 
 /// Data source "Bank SMS": status, toggle, scan now and last scan
-/// (FR-26-26..28, FR-02-15).
+/// (FR-26-03, FR-02-15).
 class BankSmsCard extends ConsumerWidget {
   /// Creates the card.
   const BankSmsCard({super.key});

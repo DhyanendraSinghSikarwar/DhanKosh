@@ -6,7 +6,7 @@ Flutter rebuild (Android first) of the Kotlin app [hisaab_apk](https://github.co
 
 ## Status
 
-Skeleton phase (Phase 0 in [plan.md](plan.md) section 13). The app shell, theme, router, encrypted-DB scaffolding and shared widgets exist; features land phase by phase.
+Phase 1 (core ledger + SMS) is built: parser, encrypted ledger and dedup, accounts, categories, onboarding, Home, transactions, search, review, settings, sample data. Deferred items are listed in each feature's Implementation Notes. Native Kotlin is compiled only by CI so far. Phases 2-5 are pending ([plan.md](plan.md) section 13).
 
 ## Run it on your phone
 

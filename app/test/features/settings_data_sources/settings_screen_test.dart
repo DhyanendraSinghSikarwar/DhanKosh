@@ -49,7 +49,7 @@ void main() {
 
   tearDown(() => h.dispose());
 
-  testWidgets('shows status and permission card when SMS is off (FR-26-26)',
+  testWidgets('shows status and permission card when SMS is off (FR-26-03)',
       (t) async {
     await pump(t, granted: false);
     expect(find.text('Not allowed'), findsOneWidget);
@@ -58,7 +58,7 @@ void main() {
     expect(scan.onPressed, isNull);
   });
 
-  testWidgets('scan now reports a summary and last scan (FR-26-27)', (t) async {
+  testWidgets('scan now reports a summary and last scan (FR-26-03)', (t) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     await pump(
       t,
@@ -78,7 +78,8 @@ void main() {
         i < 50 && find.byKey(const Key('scan-result')).evaluate().isEmpty;
         i++) {
       await t.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 100)));
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
       await t.pump();
     }
     expect(find.textContaining('1 new'), findsWidgets);
@@ -86,7 +87,7 @@ void main() {
     expect(find.textContaining('Last scan: just now'), findsOneWidget);
   });
 
-  testWidgets('paste import shows what was parsed or why not (FR-26-29)',
+  testWidgets('paste import shows what was parsed or why not (FR-26-26)',
       (t) async {
     await pump(t);
     await t.enterText(
@@ -104,7 +105,7 @@ void main() {
     expect(find.textContaining('Ignored'), findsOneWidget);
   });
 
-  testWidgets('sample data and clear all (FR-26-30, FR-26-31)', (t) async {
+  testWidgets('sample data and clear all (FR-26-27, FR-26-28)', (t) async {
     await pump(t);
     final txs = c.read(transactionRepositoryProvider);
     await tapAsync(t, const Key('add-sample'));
@@ -122,13 +123,17 @@ void main() {
     expect(await t.runAsync(() => txs.watchRecent(100).first), isEmpty);
   });
 
-  testWidgets('hide amounts toggle persists (FR-26-20)', (t) async {
+  testWidgets('hide amounts toggle persists (FR-26-29)', (t) async {
     await pump(t);
     final settings = c.read(settingsRepositoryProvider);
     expect(
-        await t.runAsync(() => settings.read(SettingKeys.hideAmounts)), isTrue);
+      await t.runAsync(() => settings.read(SettingKeys.hideAmounts)),
+      isTrue,
+    );
     await tapAsync(t, const Key('hide-amounts'));
-    expect(await t.runAsync(() => settings.read(SettingKeys.hideAmounts)),
-        isFalse);
+    expect(
+      await t.runAsync(() => settings.read(SettingKeys.hideAmounts)),
+      isFalse,
+    );
   });
 }
