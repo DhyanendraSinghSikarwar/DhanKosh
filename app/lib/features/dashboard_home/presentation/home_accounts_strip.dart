@@ -36,7 +36,7 @@ class HomeAccountsStrip extends StatelessWidget {
           ),
           if (total != null)
             Text(
-              formatAmount(total, masked: masked, paise: false),
+              formatAmount(total, masked: masked),
               key: const Key('home_balance'),
               style: theme.textTheme.titleLarge,
             ),

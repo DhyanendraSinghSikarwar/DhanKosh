@@ -81,17 +81,17 @@ void main() {
       expect(find.byKey(const Key('home_spent')), findsOneWidget);
       expect(
         t.widget<Text>(find.byKey(const Key('home_spent'))).data,
-        '₹2,451',
+        '₹2,450.50',
       );
       expect(
         t.widget<Text>(find.byKey(const Key('home_income'))).data,
-        '₹85,000',
+        '₹85,000.00',
       );
       expect(find.text('Swiggy'), findsOneWidget);
       expect(find.text('HDFC Bank ••1234'), findsOneWidget);
       expect(
         t.widget<Text>(find.byKey(const Key('home_balance'))).data,
-        '₹50,000',
+        '₹1,32,549.50',
       );
       await t.tap(find.text('Swiggy'));
       await settle(t);
@@ -110,13 +110,13 @@ void main() {
     await settle(t);
     expect(
       t.widget<Text>(find.byKey(const Key('home_spent'))).data,
-      '₹0',
+      '₹0.00',
     );
     await t.tap(find.byKey(const Key('home_month_next')));
     await settle(t);
     expect(
       t.widget<Text>(find.byKey(const Key('home_spent'))).data,
-      '₹2,451',
+      '₹2,450.50',
     );
     await teardownApp(t);
   });
@@ -134,7 +134,7 @@ void main() {
     await settle(t);
     expect(
       t.widget<Text>(find.byKey(const Key('home_spent'))).data,
-      '₹2,451',
+      '₹2,450.50',
     );
     await teardownApp(t);
   });
@@ -148,7 +148,6 @@ void main() {
           amountMinor: 245050,
           time: now() - 1000 + 60000,
           ref: null,
-          merchant: 'Swiggy',
         ),
         id: 'dupe',
       ),

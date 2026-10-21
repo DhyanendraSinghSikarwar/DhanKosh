@@ -163,7 +163,6 @@ class _SpentCard extends ConsumerWidget {
             formatAmount(
               totals?.netSpentMinor ?? 0,
               masked: masked,
-              paise: false,
             ),
             key: const Key('home_spent'),
             style: theme.textTheme.headlineMedium,
@@ -177,7 +176,6 @@ class _SpentCard extends ConsumerWidget {
                   value: formatAmount(
                     totals?.incomeMinor ?? 0,
                     masked: masked,
-                    paise: false,
                   ),
                   color: colors?.income,
                   valueKey: const Key('home_income'),
@@ -189,7 +187,6 @@ class _SpentCard extends ConsumerWidget {
                   value: formatAmount(
                     (totals?.incomeMinor ?? 0) - (totals?.outMinor ?? 0),
                     masked: masked,
-                    paise: false,
                   ),
                   valueKey: const Key('home_saved'),
                 ),

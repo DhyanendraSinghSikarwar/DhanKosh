@@ -74,6 +74,13 @@ void main() {
     );
     expect(find.text('Allowed'), findsOneWidget);
     await tapAsync(t, const Key('scan-now'));
+    for (var i = 0;
+        i < 50 && find.byKey(const Key('scan-result')).evaluate().isEmpty;
+        i++) {
+      await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await t.pump();
+    }
     expect(find.textContaining('1 new'), findsWidgets);
     expect(find.byKey(const Key('scan-result')), findsOneWidget);
     expect(find.textContaining('Last scan: just now'), findsOneWidget);

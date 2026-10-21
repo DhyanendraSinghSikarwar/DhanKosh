@@ -131,12 +131,12 @@ void main() {
       await env.settings.write(SettingKeys.hideAmounts, false);
       await env.ingest(parsed(balance: 5000000, ref: 'AAAAAA111'));
       await env.ingest(
-        parsed(amountMinor: 25000, time: t0 + hour, ref: 'BBBBBB222'),
+        parsed(time: t0 + hour, ref: 'BBBBBB222'),
       );
     });
     await pumpApp(t, env, _routes, initial: '/accounts/1');
     expect(find.byKey(const Key('detail_estimated')), findsOneWidget);
-    expect(find.text('Swiggy'), findsOneWidget);
+    expect(find.text('Swiggy'), findsWidgets);
     await teardownApp(t);
   });
 

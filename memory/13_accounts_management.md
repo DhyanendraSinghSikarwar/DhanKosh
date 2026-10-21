@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-13 |
-| Status | In progress (Phase 1 data layer; UI pending) |
+| Status | In progress (Phase 1 data layer and basic UI; tabs, edit fields, suggestions, gaps pending) |
 | Priority | P0 |
 | Phase | 1 (account creation from messages, balances, lists); 2 for debit-card link, merge and gap detection; 3 for statement unlock details |
 | Last Updated | 2026-10-21 |
@@ -505,7 +505,9 @@ Phase 1 data layer. Code: `lib/core/db/tables/accounts.dart`, `features/accounts
 
 Done: FR-13-01 (no account without last4, phone-digit guard, unique `(bankName, last4)`), FR-13-02 (debit card and credit card typing; lender and text-based `AccountGuess` not ported), FR-13-03 (APP source attaches by exact or unique bank-prefix match, never creates), FR-13-05 data side (`create`, null when already listed; typed balance stored as manual balance), FR-13-07 (`updateBalance` newer-wins with COALESCE; `AccountWithActivity.usesManual`, `currentBalanceMinor`, `balanceIsEstimated`, signed effects incl. card TRANSFER and `xfer-out`/`xfer-in`/card-bill transfer legs, review and null-INR rows excluded), FR-13-08 (display-only merge/unmerge, figures roll up), FR-13-10 (hide/show), FR-13-11 data side (delete unmerges children, clears links, FK nulls transaction accounts; delete transactions first via `TransactionRepository.deleteTransactions(idsForAccount)` for tombstones), rename.
 
-Pending: FR-13-04 Book filtering and tabs (UI), FR-13-06 edit fields beyond rename/type/manual balance, FR-13-09 suggestions, FR-13-12 restore, FR-13-13 matured deposits, FR-13-14 unlock details, FR-13-15/16 gap detection and notifications, FR-13-17/18 (UI); debit-card link rule, `gapFor` check at ingest.
+UI (Phase 1): `presentation/accounts_management_screen.dart` (route `/accounts`: Accounts/Cards sections, hidden section with Show again, add FAB; FR-13-04 partial, FR-13-05, FR-13-10), `add_account_sheet.dart` (FR-13-05, "Already in your list."), `account_detail_screen.dart` (route `/accounts/:id`: balance, `~`/estimated flag, month spend, last 10 transactions, menu rename/set type/set balance with remove/hide/delete with confirm; FR-13-06 partial, FR-13-07, FR-13-10, FR-13-11 without transaction deletion, FR-13-17 partial), `account_actions.dart`, `account_tile.dart`, `account_providers.dart`. Tests: `test/features/accounts_management/accounts_screen_test.dart` (TC-13-14 partial, FR-13-05/06/07/10/11), harness `test/support/ui_harness.dart`.
+
+Pending: FR-13-04 Book filtering and count tabs, FR-13-06 edit fields beyond rename/type/manual balance, FR-13-09 suggestions, FR-13-12 restore, FR-13-13 matured deposits, FR-13-14 unlock details, FR-13-15/16 gap detection and notifications, FR-13-17/18 (UI); debit-card link rule, `gapFor` check at ingest.
 
 Deviations: balance maths is Dart + one SQL aggregate per account (`watchWithActivity`), recomputed when accounts, transactions or sources change; the `Account` entity omits maturity, forex markup and loan fields (columns exist in the table).
 
@@ -516,3 +518,4 @@ Deviations: balance maths is Dart + one SQL aggregate per account (`watchWithAct
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 1 data layer landed (tables accounts; `AccountRepository` ensure/create/rename/hide/merge/delete/balance streams) | Phase 1 |
+| 2026-10-21 | Phase 1 UI landed | Phase 1 |

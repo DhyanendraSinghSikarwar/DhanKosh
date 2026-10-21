@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-17 |
-| Status | Existing |
+| Status | In progress (Phase 1 core Home; widgets, sync, bell, permissions cards pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -520,7 +520,9 @@ Fixture messages (masked): `HDFC Bank: Rs 2450.50 debited from a/c XX1234 on 17-
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 1 core Home. Code: `features/dashboard_home/domain/home_logic.dart` (`greeting` FR-17-03, `MonthRange`, `liquidBalanceMinor`), `presentation/{dashboard_home_screen,home_providers,home_recent_list,home_accounts_strip}.dart`, shared `lib/shared/providers/amount_masking.dart` (hide-amounts stream + `formatAmount`, FR-17-19). Done: greeting header, eye toggle, Accounts shortcut (`/accounts`), month spent/income/saved card with prev/next month (FR-17-06 basics, no chart/by-account/percent), recent 4 (FR-17-12, tap `/transaction/:id`, All -> Transactions), review notice (count -> `/review`, partial FR-17-14), accounts strip with liquid balance, empty state with Scan SMS -> More. Aggregates come from repositories (`watchTotals`, `watchRecent`, `watchReviewCount`, `watchWithActivity`). Tests: `test/features/dashboard_home/home_screen_test.dart` (TC-17-01, TC-17-12 partial: masking and eye).
+
+Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insights, categories, budgets widgets, bell sheet, SMS and notification permission cards, sync FAB and pill, tab layout store (FR-17-04, 05, 07-11, 13, 15-18, 20-22).
 
 ## 19. Change Log (date | change | reason)
 
@@ -529,3 +531,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Stated Safe to spend is NOT in the rebuilt Home (FR-17-23, link to 34_planned_insights_backlog.md); More hub subtitles delegated to 26 (FR-17-24); settings key-value table renamed to `settings` to match 26 | Audit Gate gap, scan_5, scan_6 |
+| 2026-10-21 | Phase 1 UI landed | Phase 1 |
