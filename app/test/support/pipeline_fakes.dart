@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:hisaab/app/di/pipeline_providers.dart';
+import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/core/db/app_database.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/entities/sms_permission_state.dart';
@@ -93,6 +94,7 @@ class PipelineHarness {
 
   List<Override> get overrides => [
         appDatabaseProvider.overrideWithValue(db),
+        portfolioSyncProvider.overrideWithValue(() async {}),
         secureStoreProvider.overrideWithValue(secure),
         smsPermissionRepositoryProvider.overrideWithValue(permission),
         notificationPermissionProvider.overrideWithValue(notifications),
