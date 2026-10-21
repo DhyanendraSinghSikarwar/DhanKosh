@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:hisaab/core/db/forex_sql.dart';
 import 'package:hisaab/core/db/tables/accounts.dart';
+import 'package:hisaab/core/db/tables/activity_entries.dart';
 import 'package:hisaab/core/db/tables/alert_state.dart';
 import 'package:hisaab/core/db/tables/budgets.dart';
 import 'package:hisaab/core/db/tables/card_due_notices.dart';
@@ -48,6 +49,7 @@ part 'app_database.g.dart';
     AlertedKeys,
     CardDueReminderState,
     BalanceNoticeDays,
+    ActivityEntries,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -55,12 +57,16 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS activity_entries_at '
+            'ON activity_entries (at DESC)',
+          );
           await _installTriggers();
         },
         onUpgrade: (m, from, to) async {
@@ -91,6 +97,14 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
               'UPDATE transactions SET inr_minor = amount_minor '
               "WHERE currency = 'INR' AND inr_minor IS NULL",
+            );
+          }
+          // v4 -> v5: activity log (F-22, Phase 5). Additive.
+          if (from < 5) {
+            await m.createTable(activityEntries);
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS activity_entries_at '
+              'ON activity_entries (at DESC)',
             );
           }
         },

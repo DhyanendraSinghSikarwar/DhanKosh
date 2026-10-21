@@ -1,0 +1,67 @@
+import 'dart:async';
+
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hisaab/app/di/pipeline_providers.dart';
+import 'package:hisaab/app/di/updates_providers.dart';
+
+/// On start and every resume: refreshes the home-screen widget (FR-30-08,
+/// FR-30-09) and runs the daily update check (FR-31-18). Never throws.
+class StartupTasks extends ConsumerStatefulWidget {
+  /// Wraps [child].
+  const StartupTasks({required this.child, super.key});
+
+  /// The app.
+  final Widget child;
+
+  @override
+  ConsumerState<StartupTasks> createState() => _StartupTasksState();
+}
+
+class _StartupTasksState extends ConsumerState<StartupTasks>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _run());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _run();
+  }
+
+  void _run() {
+    if (!mounted) return;
+    try {
+      _startWidget();
+      unawaited(ref.read(updateControllerProvider.notifier).check());
+    } on Object {
+      // Background chores never break the app.
+    }
+  }
+
+  /// Re-subscribes so day and month boundaries roll over (FR-30-04). Waits
+  /// for onboarding to finish: there is nothing to show before that.
+  void _startWidget() {
+    final gate = ref.read(onboardingGateProvider);
+    if (gate.hasValue && !gate.requireValue) {
+      ref.read(widgetSyncProvider).start();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(onboardingGateProvider, (_, next) {
+      if (next.hasValue && !next.requireValue) _startWidget();
+    });
+    return widget.child;
+  }
+}

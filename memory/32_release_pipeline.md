@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-32 |
-| Status | Existing |
+| Status | In progress (manual Flutter release workflow, version/changelog script and gradle signing written; never run, CI/YAML unverified; key lineage and per-ABI details open) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -273,10 +273,17 @@ Fixtures: a small dummy APK with known SHA-256; a git history of three commits w
 
 ## 18. Implementation Notes
 
-N/A - not built yet.
+Files: `.github/workflows/release.yml` (workflow_dispatch only, optional `version` input, main branch only; direct-merge flow, no PR), `tools/prepare_release.py` (`bump` edits `app/pubspec.yaml` version+build and dates CHANGELOG `Unreleased`; `notes` prints the FR-32-09 format from the CHANGELOG section, `sha256:` last), `tools/test_prepare_release.py` (6 unit tests, run with `python3 -m unittest discover -s tools -p 'test_*.py'`), `app/android/app/build.gradle.kts` (release signing from `android/key.properties` when present, else debug signing so CI debug and local builds still work).
+
+Workflow order: signing secrets present, checks (memory, architecture, python tests, format, analyze, flutter test, parser_core), bump, tag-must-be-new, build (decode keystore to a temp dir, write `key.properties`, `flutter build apk --release --target-platform android-arm,android-arm64` with `APP_VERSION` and `SUPPORT_UPI_ID` dart-defines, copy to `DhanKosh-<version>.apk`, delete keys, write `.sha256`), commit `chore(release)` to main, `gh release create v<version>` with the APK plus a `.sha256` file (one `.apk` asset) and notes. Secrets (names only): `HISAAB_RELEASE_KEYSTORE`, `HISAAB_KEYSTORE_PASSWORD`, optional `HISAAB_KEY_ALIAS` and `SUPPORT_UPI_ID`; documented in `docs/DEVELOPMENT.md`.
+
+FR status: 01/02 covered by the checks step (no PR/push CI change; `ci.yml` unchanged); 03/12 replaced by manual dispatch plus the tag-new check; 04 not done (no R8 config added); 05 two-signer lineage NOT done (single release key, Open Question 1 open, so installs over the Kotlin app are unproven); 06 missing-secret failure and key deletion done; 07..10, 13, 14 done by design; 11 `concurrency` group without cancel; 15 pending the lineage decision. Notes come from the CHANGELOG, not commit bodies (Open Question 10).
+
+Unverified: YAML, Gradle Kotlin DSL and the apksigner step were never run (the workflow was intentionally not executed). Tests: `tools/test_prepare_release.py` (TC-32-01 version read, TC-32-03 notes format and 40 cap); TC-32-05 in `test/features/news_support_updates/updates_domain_test.dart`.
 
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
 |---|---|---|
 | 2026-10-19 | Created | Audit Gate gap |
+| 2026-10-21 | Phase 5 widget + updates + release pipeline landed | Phase 5 |

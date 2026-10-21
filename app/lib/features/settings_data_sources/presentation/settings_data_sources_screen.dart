@@ -15,7 +15,15 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
     this.loansTile,
     this.alertsTile,
     this.forexTile,
+    this.backupTile,
     this.taxTile,
+    this.securityTile,
+    this.activityTile,
+    this.customiseTile,
+    this.languageTile,
+    this.newsTile,
+    this.supportTile,
+    this.updatesTile,
     super.key,
   });
 
@@ -37,8 +45,32 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
   /// Forex rates entry (F-23), composed in `app/router.dart`.
   final Widget? forexTile;
 
+  /// Backup & Export entry (F-24), composed in `app/router.dart`.
+  final Widget? backupTile;
+
   /// Tax Centre entry (F-19), composed in `app/router.dart`.
   final Widget? taxTile;
+
+  /// Security & privacy entry (F-25), embedded by the app.
+  final Widget? securityTile;
+
+  /// Activity log entry (F-22), embedded by the app.
+  final Widget? activityTile;
+
+  /// Customise entry (F-28), composed in `app/router.dart`.
+  final Widget? customiseTile;
+
+  /// Language entry (F-29), composed in `app/router.dart`.
+  final Widget? languageTile;
+
+  /// Market news entry (F-31), composed in `app/router.dart`.
+  final Widget? newsTile;
+
+  /// Support entry (F-31), only composed when configured.
+  final Widget? supportTile;
+
+  /// About and updates entry (F-31), composed in `app/router.dart`.
+  final Widget? updatesTile;
 
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
@@ -102,14 +134,22 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
           if (statementsTile != null) statementsTile!,
           if (billsTile != null) billsTile!,
           if (loansTile != null) loansTile!,
+          if (customiseTile != null) customiseTile!,
+          if (languageTile != null) languageTile!,
           if (taxTile != null) taxTile!,
           if (alertsTile != null) alertsTile!,
           if (forexTile != null) forexTile!,
+          if (activityTile != null) activityTile!,
+          if (backupTile != null) backupTile!,
+          if (newsTile != null) newsTile!,
+          if (supportTile != null) supportTile!,
+          if (updatesTile != null) updatesTile!,
           if (notificationCard != null) ...[
             const SizedBox(height: 12),
             notificationCard!,
           ],
           head('Privacy'),
+          if (securityTile != null) securityTile!,
           SwitchListTile(
             key: hideAmountsKey,
             contentPadding: EdgeInsets.zero,

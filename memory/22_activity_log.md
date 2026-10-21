@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-22 |
-| Status | Existing |
+| Status | In progress (Phase 5: schema v5 table, repository with coalescing and 200 cap, ActivityLogger port wired into SMS scan, live SMS and email runs, Activity screen and More tile done; notification, statements and email statement counts not recorded; native-only live runs not logged) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -415,7 +415,14 @@ Fixture rows (masked): scan summary `412 SMS checked, 63 from banks, 9 new, 2 me
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 5 (2026-10-21). Code: `features/activity_log/{domain,data,presentation}`; table `core/db/tables/activity_entries.dart` (Drift schema v5, real migration v4 -> v5, index on `at`); providers in `app/di/security_providers.dart`.
+
+- FR-22-01/03: `ActivityLogger.record` is called by `ScanSms` (SMS_SCAN, permission error with zero counts), `HandleLiveSms` (one SMS_LIVE entry per accepted message, coalesced by the repository) and `EmailSyncRunner.onReport` (recorded as `IMAP`; `GMAIL` unused until Gmail sync exists). Foreground and headless (nightly, drain) runs both log because they use the same providers.
+- FR-22-02/04/13: coalescing, trim to 200 and the swallow-all error guard are inside `ActivityLogRepositoryImpl.record` (one DB transaction). Unknown source codes are skipped on read.
+- FR-22-07..12: `ActivityStats` (pure) plus `ActivityLogScreen` at `/activity`, More tile `ActivityTile`. Times use `intl` English patterns.
+- Next scheduled sync reads settings keys `next_sms_sync_at` / `next_email_sync_at`; nothing writes them yet, so it shows "Not scheduled".
+- Not done: FR-22-05 `statements`/`locked` counts (email run records 0), FR-22-06 notification entries (no notification ingest path exists yet), STATEMENTS source, native receiver logging when the engine is dead. TC-22-07/08/09/12 not covered by an end-to-end test; the recorder takes no free text by construction.
+- Tests: `test/features/activity_log/activity_log_test.dart` (TC-22-01..06, 10, 11), `test/core/db/migration_v4_v5_test.dart`.
 
 ## 19. Change Log (date | change | reason)
 
@@ -423,3 +430,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 5 security + activity log landed | Phase 5 |

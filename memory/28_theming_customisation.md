@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-28 |
-| Status | Existing |
+| Status | In progress (Phase 5: 22 palettes ported verbatim, mode/pure-black/text size, Customise Appearance section and More tile done; Net worth, Tab sections, backdrop, reduce-motion pending) |
 | Priority | P1 |
 | Phase | 0 (theme engine, tokens, text scale) and 5 (Customise screen polish, presets) |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -484,7 +484,12 @@ Integration:
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Landed 2026-10-21: FR-28-01..07, 09, 12, 13, 21, 22 (TC-28-01..04, 11 via semantic colours, 12, 13, 18, 19 plus a 4.5:1 text/surface contrast test for all 22 palettes in light and dark).
+
+- Code: `lib/app/theme/{palette_spec,palettes,app_theme,semantic_colors}.dart` (`palettes.dart` generated once from `Palettes.kt`, values verbatim); `features/theming_customisation/{domain/appearance.dart,data/appearance_repository_impl.dart,presentation/}`; providers in `app/di/appearance_providers.dart` (hand-written, no codegen); route `/settings/appearance`; `CustomiseTile` on More (optional-embed pattern).
+- Persisted in the settings store: `theme`, `theme_palette`, `pure_black`, `text_scale_pct` (int percent, the store has no double). Text scale applied in `app.dart` via `effectiveTextScale`; theme via `AppTheme.build`, `themeMode`.
+- `SemanticColors` values updated to the Kotlin `MoneyColors` (credit/debit/warn); `transfer` not added yet.
+- Deferred: FR-28-08 backdrop wash and glows, FR-28-10 reduce-motion handling (Flutter `disableAnimations` is not wired to custom motion), FR-28-11 Net worth card (FR-28-14), Tab sections card and layout logic (FR-28-15..20), hero-gradient consumers of `PaletteSpec.heroLight/heroDark`, SystemChrome overlay styling, GIFs.
 
 ## 19. Change Log (date | change | reason)
 
@@ -493,3 +498,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Stated code palette is authoritative over SPEC_NOTES design tokens and listed discrepancies (FR-28-22, TC-28-19); persisted-keys table named `settings` per 26 | Audit Gate gap, scan_6 |
+| 2026-10-21 | Phase 5 theming + localization landed | Phase 5 |

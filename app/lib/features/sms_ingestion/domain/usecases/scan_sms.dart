@@ -1,4 +1,6 @@
 import 'package:hisaab/core/errors/failure.dart';
+import 'package:hisaab/features/activity_log/domain/activity_logger.dart';
+import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
 import 'package:hisaab/features/sms_ingestion/domain/sms_ports.dart';
@@ -23,6 +25,7 @@ class ScanSms {
     SmsBatchIngest? ingestBatch,
     DateTime Function() now = DateTime.now,
     Future<void> Function(String message)? recordActivity,
+    ActivityLogger? activity,
     void Function(SmsScanProgress progress)? onProgress,
     this.batchSize = 500,
   })  : _inbox = inbox,
@@ -32,6 +35,7 @@ class ScanSms {
         _ingestBatch = ingestBatch,
         _now = now,
         _recordActivity = recordActivity,
+        _activity = activity,
         _onProgress = onProgress;
 
   final SmsInboxSource _inbox;
@@ -41,6 +45,7 @@ class ScanSms {
   final SmsBatchIngest? _ingestBatch;
   final DateTime Function() _now;
   final Future<void> Function(String)? _recordActivity;
+  final ActivityLogger? _activity;
   final void Function(SmsScanProgress)? _onProgress;
 
   /// Accepted messages per batch.
@@ -122,6 +127,21 @@ class ScanSms {
     }
     if (cursor > nowMs) cursor = nowMs;
     final millis = _now().difference(started).inMilliseconds;
+    // FR-22-01, FR-22-03: counts and error class only.
+    await _activity?.record(
+      ActivityEntry(
+        at: started,
+        source: ActivitySource.smsScan,
+        read: error == 'permission' ? 0 : checked,
+        relevant: error == 'permission' ? 0 : bank,
+        added: inserted,
+        merged: merged,
+        review: flagged,
+        skipped: skipped,
+        millis: millis,
+        error: error,
+      ),
+    );
     if (error == 'permission') {
       await _recordActivity?.call('SMS scan failed: permission');
       return SmsScanResult.failed('permission', settings.cursor);

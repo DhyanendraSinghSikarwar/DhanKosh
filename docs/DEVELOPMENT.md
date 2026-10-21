@@ -35,8 +35,20 @@ SMS and notification access need the real device. On Android 13+ a sideloaded ap
 
 ## CI
 
-`.github/workflows/ci.yml` jobs: **Docs and structure** (memory and architecture checks), **Analyse and test** (format, analyze, test), **Debug APK** (builds and uploads the artifact). No signing secrets are used. Release signing is a later phase ([feature 32](../memory/32_release_pipeline.md)).
+`.github/workflows/ci.yml` jobs: **Docs and structure** (memory and architecture checks), **Analyse and test** (format, analyze, test), **Debug APK** (builds and uploads the artifact). No signing secrets are used. Release signing is the manual Release workflow below ([feature 32](../memory/32_release_pipeline.md)).
 
 ## Pinned versions
 
 Flutter 3.47.7 (stable), Dart 3.x. Packages: `app/pubspec.lock`. The first build downloads the SQLCipher library through the `sqlite3` build hook.
+
+## Releasing (F-32)
+
+Direct-merge flow, no pull request: on `main`, run Actions, Release, Run workflow (optional `version` X.Y.Z). It runs the checks, bumps `app/pubspec.yaml` and `CHANGELOG.md` (`tools/prepare_release.py`), builds a signed APK, pushes one `chore(release)` commit and creates the GitHub Release (tag `v<version>`, asset `DhanKosh-<version>.apk`, notes ending in `sha256: <hex>`). Without `app/android/key.properties` local release builds fall back to debug signing.
+
+Repository secrets (names only; never commit keys):
+
+- `HISAAB_RELEASE_KEYSTORE`: base64 of the release keystore.
+- `HISAAB_KEYSTORE_PASSWORD`: store and key password.
+- `HISAAB_KEY_ALIAS` (optional, default `hisaab`).
+- `SUPPORT_UPI_ID` (optional): donation UPI id passed as `--dart-define`; empty hides Support.
+

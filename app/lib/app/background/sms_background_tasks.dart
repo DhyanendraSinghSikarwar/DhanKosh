@@ -3,6 +3,7 @@ import 'package:hisaab/app/di/alerts_providers.dart';
 import 'package:hisaab/app/di/email_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
 import 'package:hisaab/features/sms_ingestion/domain/usecases/drain_pending_sms.dart';
 import 'package:hisaab/features/sms_ingestion/domain/usecases/handle_live_sms.dart';
@@ -41,6 +42,7 @@ Future<bool> smsDrainTask({ProviderContainer Function()? create}) =>
             settings: c.read(smsSettingsRepositoryProvider),
             accept: ingest.accepts,
             ingest: ingest.call,
+            activity: c.read(activityLoggerProvider),
           ),
         )();
         return true;

@@ -8,12 +8,16 @@ import 'package:hisaab/features/email_ingestion/domain/usecases/sync_email.dart'
 /// a retry with backoff (up to 5 attempts); any other result is final.
 class EmailSyncRunner {
   /// Creates the runner.
-  EmailSyncRunner(this._sync, {this.onChanged});
+  EmailSyncRunner(this._sync, {this.onChanged, this.onReport});
 
   final SyncEmail _sync;
 
   /// Called after a run that added or merged transactions.
   final void Function()? onChanged;
+
+  /// Called after every run with the report and its start (activity log,
+  /// FR-22-05); must not throw.
+  final void Function(EmailSyncReport report, DateTime startedAt)? onReport;
 
   Future<EmailSyncReport>? _running;
 
@@ -21,8 +25,16 @@ class EmailSyncRunner {
   bool get running => _running != null;
 
   /// Runs a sync; a call during a run joins that run.
-  Future<EmailSyncReport> run() => _running ??= _sync().then((r) {
-        if (r.changed) onChanged?.call();
-        return r;
-      }).whenComplete(() => _running = null);
+  Future<EmailSyncReport> run() {
+    final started = DateTime.now();
+    return _running ??= _sync().then((r) {
+      if (r.changed) onChanged?.call();
+      try {
+        onReport?.call(r, started);
+      } on Object {
+        // Logging never breaks a sync (FR-22-13).
+      }
+      return r;
+    }).whenComplete(() => _running = null);
+  }
 }

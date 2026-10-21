@@ -5,14 +5,16 @@ import com.hisaab.alerts.AlertsBridge
 import com.hisaab.notifications.NotificationsBridge
 import com.hisaab.pdf.PdfBridge
 import com.hisaab.sms.SmsBridge
-import io.flutter.embedding.android.FlutterActivity
+import com.hisaab.widget.WidgetBridge
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     private var smsBridge: SmsBridge? = null
     private var notificationsBridge: NotificationsBridge? = null
     private var pdfBridge: PdfBridge? = null
     private var alertsBridge: AlertsBridge? = null
+    private var widgetBridge: WidgetBridge? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -22,6 +24,9 @@ class MainActivity : FlutterActivity() {
         }
         pdfBridge = PdfBridge(this).also { it.attach(flutterEngine.dartExecutor.binaryMessenger) }
         alertsBridge = AlertsBridge(this).also {
+            it.attach(flutterEngine.dartExecutor.binaryMessenger)
+        }
+        widgetBridge = WidgetBridge(this).also {
             it.attach(flutterEngine.dartExecutor.binaryMessenger)
         }
         AlertsBridge.captureRoute(intent)
@@ -41,6 +46,8 @@ class MainActivity : FlutterActivity() {
         pdfBridge = null
         alertsBridge?.detach()
         alertsBridge = null
+        widgetBridge?.detach()
+        widgetBridge = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
 

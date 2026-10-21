@@ -1,7 +1,9 @@
 import 'package:hisaab/core/db/app_database.dart';
 
-/// Drops everything added in schema v4 so a test can fake a v3 file.
+/// Drops everything added in schema v4 and later so a test can fake a v3
+/// file.
 Future<void> dropV4(AppDatabase db) async {
+  await dropV5(db);
   for (final t in [
     'budgets',
     'recurring',
@@ -16,4 +18,10 @@ Future<void> dropV4(AppDatabase db) async {
   }
   await db.customStatement('DROP TRIGGER IF EXISTS transactions_inr_insert');
   await db.customStatement('DROP TRIGGER IF EXISTS transactions_inr_update');
+}
+
+/// Drops everything added in schema v5 so a test can fake a v4 file.
+Future<void> dropV5(AppDatabase db) async {
+  await db.customStatement('DROP INDEX IF EXISTS activity_entries_at');
+  await db.customStatement('DROP TABLE activity_entries');
 }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_name">DhanKosh spend</string>
+    <string name="widget_description">Spent today and this month at a glance.</string>
+    <color name="widget_background">#FFFFFFFF</color>
+    <color name="widget_text_primary">#FF1B1B1F</color>
+    <color name="widget_text_secondary">#FF5F6368</color>
+    <color name="widget_accent">#FF1A6B4A</color>
+</resources>

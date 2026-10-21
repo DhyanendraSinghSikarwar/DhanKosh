@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-25 |
-| Status | Existing |
+| Status | In progress (Phase 5: app lock gate, Security & privacy screen and More tile done; native biometric prompt, theme and FragmentActivity change are not compiled or run on a device; Keystore sealing stays on flutter_secure_storage; hosted text size and backup rows, skip-hop callers, FLAG_SECURE, widget masking pending) |
 | Priority | P0 |
 | Phase | 5 (secure-storage helper is built in Phase 0 and reused by Phase 2 email) |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -394,7 +394,17 @@ Fixtures: a masked sample secret `abcd efgh ijkl mnop` (app-password shape), an 
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 5 (2026-10-21). Code: `features/security_privacy/{domain,data,presentation}`, `app/lock_gate.dart` (wraps the app in `app.dart`, outside `AppLifecycleGate`), providers in `app/di/security_providers.dart`.
+
+- FR-25-01..08: `LockGate` hides the child with `Visibility(maintainState: true)` behind an opaque `LockOverlay` ("DhanKosh is locked", Unlock). Blank splash until the `app_lock` setting is known. `LockController` locks on `paused`/`hidden` only (never `inactive`), prompts on start and on resume while locked, one prompt at a time, cancel stays locked. `skipNextLock()` is a one-shot flag that expires after 60 s (Open Question 5). Enabling the lock calls `markUnlocked()`. Locks immediately on background; no timeout setting (this memory defines none).
+- Auth: `LocalAuthAppLockService` over `local_auth` (device credential allowed). Availability is `available` when `isDeviceSupported`, else `noneEnrolled`; the lock switch is then disabled with "Set a screen lock on this phone first". The prompt title is the plugin default (a custom title needs `local_auth_android`, not a direct dependency).
+- Native (UNVERIFIED, CI compiles): `MainActivity` now extends `FlutterFragmentActivity`; `LaunchTheme`/`NormalTheme` (values and values-night) derive from `Theme.AppCompat.*.NoActionBar` as `local_auth` requires. `USE_BIOMETRIC` was already declared. No Kotlin `secure` channel methods were added.
+- FR-25-11/12 (sealed secrets): kept on `flutter_secure_storage` (allowed by section 11); unchanged this round. FR-25-14/15 manifest settings already exist. FLAG_SECURE not added (out of scope, Open Question 2).
+- FR-25-09: masking already provided by `hideAmountsProvider` and the money formatter; the Security screen hosts the switch. FR-25-10 (widget) belongs to F-30.
+- FR-25-16: `/settings/security` (More tile `SecurityTile`) shows App lock, Hide amounts, a `hostedRows` slot (text size, CSV backup; the router does not pass any yet), short privacy rows and Clear all data (reuses `DataResetRepository.clearLedger`, confirm dialog).
+- Headless workers never pass through `LockGate`, so they are not blocked.
+- Not done: `skipNextLock` callers at file pickers, consent and settings hops (owners call `lockControllerProvider.notifier.skipNextLock()`), hosted text size and backup rows, auto-disable when the device lock is removed (the app stays locked and Unlock re-prompts), TC-25-03/04 (vault tests, N/A while on flutter_secure_storage), TC-25-14/15.
+- Tests: `test/features/security_privacy/lock_gate_test.dart` (TC-25-06/07/08/09/11/12/13).
 
 ## 19. Change Log (date | change | reason)
 
@@ -402,3 +412,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 5 security + activity log landed | Phase 5 |

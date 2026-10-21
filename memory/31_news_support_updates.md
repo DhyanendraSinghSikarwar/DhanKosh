@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-31 |
-| Status | Existing |
+| Status | In progress (news, Support, About and update check done in Dart; Kotlin `openUrl` hand-off unverified on device; in-app download with checksum, What's new bundled changelog, Home notice and Profile cup entry pending) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -470,7 +470,17 @@ Fixtures: RSS 2.0 sample with CDATA, entity and missing-date items; GitHub relea
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Code in `lib/features/news_support_updates/` (single feature folder, not the three folders of section 13) plus `lib/app/di/updates_providers.dart` (hand-written Riverpod providers, no codegen) and `lib/app/startup_tasks.dart`.
+
+Done: News (FR-31-01..09): `domain/news.dart` (feed table, regex RSS parser, RFC 1123 parser, title cleaning, merge/dedupe/cap 200, age text), `data/news_remote_source.dart` (parallel `dart:io` HttpClient GETs, UA string, 10/15 s, per-feed failure tolerated), `NewsController` (10 min cache per tab), `NewsScreen` at `/news` (tabs, 6 skeletons, error state, pull to refresh, tap opens browser). No `xml` package was added, so parsing is regex based. Support (FR-31-10..14): `SupportScreen` at `/settings/support`, `buildUpiLink`, VPA from `--dart-define=SUPPORT_UPI_ID` (empty hides the More tile; never displayed; nothing stored). Updates (FR-31-15..19, 23 partly, 24): `GithubReleaseSource` (repo `DhyanendraSinghSikarwar/DhanKosh`, no identifiers sent), `parseRelease`, `isNewer`, `updateCheckDue` + `UpdateChecker` (daily gate via settings keys `check_updates` and `last_update_check`, stamp only on success, manual bypass), `cleanReleaseNotes`, `UpdateController`, `UpdatesScreen` at `/settings/updates` (version, update states, notes, privacy statement, licence note "all rights reserved" per ADR-0006). The daily check runs from `StartupTasks` at launch and resume. FR-31-26 failures are non-fatal. Installed version comes from `--dart-define=APP_VERSION` (default 0.1.0; the release workflow passes it) because `package_info_plus` is not a dependency.
+
+Entry points: More tab tiles (News, Support, About and updates) via optional slots on `SettingsDataSourcesScreen`.
+
+Native (UNVERIFIED): `com.hisaab/widget` channel (`WidgetBridge.kt`, method `openUrl` with optional chooser), attached in `MainActivity`; manifest `<queries>` for `upi` and `https` schemes.
+
+Deferred (not built): in-app APK download, progress, SHA-256 verification and the FileProvider install (FR-31-20..22: Install currently opens the release APK URL in the browser/system via ACTION_VIEW, no checksum check, no `REQUEST_INSTALL_PACKAGES`), bundled changelog and What's new bottom sheet (notes show on the About screen), Home update notice, Portfolio and Profile entry icons, `t()` translations (FR-31-25).
+
+Tests: `test/features/news_support_updates/` (`updates_domain_test.dart`: TC isNewer, release JSON fixtures, notes cleaning, throttle, checker incl. failure; TC-32-05 notes round trip; `news_domain_test.dart`: parse, merge, age, tabs; `news_support_screens_test.dart`: Support link, custom amount, no UPI app, About, install hand-off; `support_tile_test.dart`).
 
 ## 19. Change Log (date | change | reason)
 
@@ -479,3 +489,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Added FR-31-27 and dependency link to 32_release_pipeline.md as producer of the updater feed | Audit Gate gap, scan_N |
+| 2026-10-21 | Phase 5 widget + updates + release pipeline landed | Phase 5 |

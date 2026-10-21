@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-29 |
-| Status | Existing |
+| Status | In progress (Phase 5: `t()`, packs, download from the documented URL, Language screen and More tile done; string conversion of existing screens and build-time key check pending) |
 | Priority | P2 |
 | Phase | 5 (the `t()` lookup API is introduced in Phase 0 so all UI strings are wrapped from the start) |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -373,7 +373,12 @@ Fixtures: a 3-key pack JSON, a corrupt pack `{`, an empty pack `{"version":1,"co
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Landed 2026-10-21: FR-29-01, 03..12, 14, 16..18 (TC via `test/features/localization`).
+
+- Code: `features/localization/domain/language.dart` (`Language`, `parsePack`, `Translator`, global `t()`/`I18n`, ports `LanguagePackStore`/`LanguagePackRemote`); data `LanguagePackStoreImpl` (temp file + rename in app support `lang/`), `LanguagePackRemoteImpl` (dart:io `HttpClient`, 10 s connect, 20 s read, only the documented raw GitHub base, only on tapping a not-downloaded language); `presentation/language_controller.dart`, `language_screen.dart`, `language_tile.dart`; route `/settings/language`; active code stored under `language`.
+- `app.dart` re-keys the app subtree on the active language so every `t()` call site rebuilds (navigation stack is rebuilt from the router location; ephemeral state resets).
+- English is the key and is built in, so no English pack asset is bundled. Packs are not bundled; offline use needs a prior download.
+- Conversion backlog: only the Language and Customise screens and the two More tiles use `t()`. All other UI literals still need conversion (FR-29-02). Copy `lang/keys.json` into the repo and add the key-coverage tool for FR-29-15; FR-29-13 token check, FR-29-18 backup exclusion (owned by backup feature), pack import from file, GIFs also pending.
 
 ## 19. Change Log (date | change | reason)
 
@@ -382,3 +387,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Verified `lang/keys.json` has 1,455 unique keys (each pack 1,455); all counts in this file confirmed as 1,455 | Audit Gate gap, scan_N |
+| 2026-10-21 | Phase 5 theming + localization landed | Phase 5 |

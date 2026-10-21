@@ -1,0 +1,146 @@
+# Manual release of the signed Flutter APK as a GitHub Release (F-32).
+#
+# Direct-merge flow, no pull request: run this workflow on `main` (Actions ->
+# Release -> Run workflow). It checks the code, bumps app/pubspec.yaml and
+# CHANGELOG.md with tools/prepare_release.py, builds and signs the APK, pushes
+# one `chore(release)` commit to main, then creates tag v<version> and the
+# release. Nothing is published when a check or the build fails, a signing
+# secret is missing, or the tag already exists.
+#
+# Required repository secrets (names only; Settings -> Secrets and variables -> Actions):
+#   HISAAB_RELEASE_KEYSTORE   base64 of the release keystore (.jks)
+#   HISAAB_KEYSTORE_PASSWORD  its password (same for store and key)
+#   HISAAB_KEY_ALIAS          optional, key alias (default: hisaab)
+#   SUPPORT_UPI_ID            optional, donation UPI id; empty hides Support in the app
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "New version X.Y.Z (empty keeps the pubspec version)"
+        required: false
+        type: string
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: "3.47.7"
+
+jobs:
+  release:
+    name: Check, sign and publish
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Signing secrets present
+        env:
+          KEYSTORE: ${{ secrets.HISAAB_RELEASE_KEYSTORE }}
+          PASSWORD: ${{ secrets.HISAAB_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE" ] || [ -z "$PASSWORD" ]; then
+            echo "::error::Signing secrets are missing; see the top of release.yml."; exit 1
+          fi
+
+      - name: Checks
+        run: |
+          python3 tools/check_memory.py
+          python3 tools/check_architecture.py
+          python3 -m unittest discover -s tools -p 'test_*.py'
+          cd app
+          flutter pub get
+          dart run build_runner build -d
+          dart format --output=none --set-exit-if-changed .
+          flutter analyze
+          flutter test
+          cd packages/parser_core
+          dart pub get
+          dart test
+
+      - name: Bump version and changelog
+        id: bump
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            python3 tools/prepare_release.py bump --version "$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+          else
+            python3 tools/prepare_release.py bump >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Tag must be new
+        run: |
+          if git rev-parse "v${{ steps.bump.outputs.version }}" >/dev/null 2>&1; then
+            echo "::error::v${{ steps.bump.outputs.version }} is already released."; exit 1
+          fi
+
+      - name: Build signed APK
+        env:
+          KEYSTORE: ${{ secrets.HISAAB_RELEASE_KEYSTORE }}
+          PASSWORD: ${{ secrets.HISAAB_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.HISAAB_KEY_ALIAS }}
+          SUPPORT_UPI_ID: ${{ secrets.SUPPORT_UPI_ID }}
+        run: |
+          keys="$RUNNER_TEMP/keys"
+          mkdir -p "$keys"
+          echo "$KEYSTORE" | base64 -d > "$keys/release.jks"
+          # Generated at build time, never committed (.gitignore blocks both files).
+          {
+            echo "storeFile=$keys/release.jks"
+            echo "storePassword=$PASSWORD"
+            echo "keyAlias=${ALIAS:-hisaab}"
+            echo "keyPassword=$PASSWORD"
+          } > app/android/key.properties
+          cd app
+          flutter build apk --release \
+            --target-platform android-arm,android-arm64 \
+            --dart-define=APP_VERSION=${{ steps.bump.outputs.version }} \
+            --dart-define=SUPPORT_UPI_ID="$SUPPORT_UPI_ID"
+          cd ..
+          out="DhanKosh-${{ steps.bump.outputs.version }}.apk"
+          cp app/build/app/outputs/flutter-apk/app-release.apk "$out"
+          rm -rf "$keys" app/android/key.properties
+          echo "APK=$out" >> "$GITHUB_ENV"
+          sha256sum "$out" | cut -d' ' -f1 > "$out.sha256"
+          # Signer certificate in the log for verification.
+          "$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs "$out" | grep Signer || true
+
+      - name: Commit the bump to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/pubspec.yaml CHANGELOG.md
+          git commit -m "chore(release): v${{ steps.bump.outputs.version }}"
+          git push origin HEAD:main
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${{ steps.bump.outputs.version }}"
+          python3 tools/prepare_release.py notes --version "$v" --sha "$(cat "$APK.sha256")" > notes.md
+          gh release create "v$v" "$APK" "$APK.sha256" \
+            --target "$(git rev-parse HEAD)" --title "DhanKosh $v" --notes-file notes.md

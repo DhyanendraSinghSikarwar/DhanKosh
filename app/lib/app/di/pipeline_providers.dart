@@ -4,6 +4,7 @@ import 'package:hisaab/app/di/alerts_providers.dart';
 import 'package:hisaab/app/di/notification_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/core/platform_channels/background_channel.dart';
 import 'package:hisaab/core/platform_channels/permissions_channel.dart';
 import 'package:hisaab/core/platform_channels/sms_channel.dart';
@@ -117,7 +118,9 @@ ScanSms Function(void Function(SmsScanProgress)? onProgress) scanSmsFactory(
   final ingest = ref.watch(ingestMessageProvider);
   final inbox = ref.watch(smsInboxSourceProvider);
   final settings = ref.watch(smsSettingsRepositoryProvider);
+  final activity = ref.watch(activityLoggerProvider);
   return (onProgress) => ScanSms(
+        activity: activity,
         inbox: inbox,
         settings: settings,
         accept: ingest.accepts,
@@ -142,6 +145,7 @@ SmsEngine smsEngine(Ref ref) {
       settings: settings,
       accept: ingest.accepts,
       ingest: ingest.call,
+      activity: ref.watch(activityLoggerProvider),
     ),
     scan: () => scan(null),
     senderPattern: SmsEngine.senderPatternDefault,

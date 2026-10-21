@@ -48,6 +48,6 @@ void main() {
         );
     expect(await db.select(db.processedEmails).get(), hasLength(1));
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.read<int>('user_version'), 4);
+    expect(v.read<int>('user_version'), 5);
   });
 }

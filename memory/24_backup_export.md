@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-24 |
-| Status | Existing |
+| Status | Implemented (Phase 5, CSV; device pickers untested) |
 | Priority | P1 |
 | Phase | 5 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -404,7 +404,14 @@ Fixture files: the export row and the minimal file in section 10; a BOM-prefixed
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Built 2026-10-21 (FR-24-01..13, 16 done; FR-24-14 and FR-24-15 partial).
+
+- Code: `data/csv_codec.dart` (pure `exportCsv`/`importCsv`, integer-math `dec2`), `data/backup_service.dart` (builds CSV, ingests via `TransactionRepository.ingestBatch` only), `data/file_gateway.dart` (`FilePicker.saveFile` / `pickFile`), `domain/backup_models.dart`, `lib/app/di/backup_providers.dart`, screen `/settings/backup` plus `BackupTile` on More.
+- Import shows a confirm dialog (rows to add, unreadable lines) before writing, then the summary snackbar.
+- Deviation: the stored source row is `MANUAL` with id `csv:<hash>` (no `CSV` value in the `Source` enum, no schema change this phase). A re-import is idempotent through that id and the hash dedup; rows matching an existing near-duplicate may be merged or flagged and are reported.
+- Deviation: hash date for hash-less rows uses IST (as the parsers), not the device zone.
+- Added "Last export" time (setting `last_csv_export`); skipped-as-present count includes merged rows.
+- Deferred: full structured backup (accounts, rules, budgets, recurring, holdings, settings) and password encryption (out of scope in 2.4, no Kotlin parity); app-lock skip-next-lock (FR-24-14, waits for F-25); streaming 100k rows (Isolate for large files only); Excel BOM / formula-injection options; GIFs; real-device picker test.
 
 ## 19. Change Log (date | change | reason)
 
@@ -412,3 +419,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 5 backup/export landed | Phase 5 |

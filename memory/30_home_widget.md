@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-30 |
-| Status | Existing |
+| Status | In progress (Dart sync, Kotlin provider, XML and manifest landed; native code uncompiled and unrun on a device, CI compiles it; midnight rollover, language re-render and background refresh pending) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -317,7 +317,13 @@ Fixtures: transactions list as in TC-30-01 with dates anchored to a fixed clock 
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Dart: `lib/features/home_widget/{domain,data}`. `buildSpendWidgetData` (pure; FR-30-03/05/06/13; masked while the setting is unread), `WidgetSync` (subscribes to `watchTotals` for today and month in the device zone plus `hide_amounts`, sums spent + invested, debounces 2 s, swallows errors: FR-30-04/08/10/14), `HomeWidgetUpdater` (saves the five keys of section 8 with `HomeWidget.saveWidgetData`, then `updateWidget(qualifiedAndroidName: com.hisaab.widget.SpendWidgetProvider)`). Started by `lib/app/startup_tasks.dart` on launch and every resume (re-subscribing rolls the day/month window over); provider in `lib/app/di/updates_providers.dart`.
+
+Native (UNVERIFIED, not compiled here): `android/app/src/main/kotlin/com/hisaab/widget/SpendWidgetProvider.kt` (extends the plugin's `HomeWidgetProvider`, reads strings only, masked defaults, tap launches `MainActivity` via `HomeWidgetLaunchIntent`), `res/layout/spend_widget.xml`, `res/xml/spend_widget_info.xml` (180x110 dp, 3x2 cells, resize both, 1,800,000 ms, home_screen), `res/drawable/widget_background.xml` (20 dp), `res/values{,-night}/widget_resources.xml` (system light/dark colours, name and description strings), manifest receiver with `APPWIDGET_UPDATE`.
+
+Deviations and pending: Dart-owned data means the widget shows the last snapshot until the app runs, so FR-30-09 (periodic and date-change refresh with the app closed) and FR-30-14 are only partly met (no DATE_CHANGED/midnight refresh, no workmanager refresh yet); FR-30-12 captions are English constants until `t()` is wired (see 29); the 30-minute tick redraws the stored snapshot only. FR-30-01/02/07/08 done in code; FR-30-03/04/05/06/13/15 done and unit-tested; FR-30-10 tested; FR-30-11 done by resources (not screenshot-checked).
+
+Tests: `test/features/home_widget/home_widget_test.dart` (TC-30-03, 04, 05; payload keys FR-30-15; WidgetSync against the real ledger repository and a failing updater, TC-30-12). TC-30-01/02/07 rely on the ledger `watchTotals` tests; TC-30-08..11, 13 need CI or a device.
 
 ## 19. Change Log (date | change | reason)
 
@@ -325,3 +331,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 5 widget + updates + release pipeline landed | Phase 5 |

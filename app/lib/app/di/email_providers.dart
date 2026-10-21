@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/security_providers.dart';
+import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/email_ingestion/data/email_settings_store.dart';
 import 'package:hisaab/features/email_ingestion/data/enough_mail_imap_client.dart';
 import 'package:hisaab/features/email_ingestion/data/processed_email_repository_impl.dart';
@@ -62,8 +66,28 @@ SyncEmail syncEmail(Ref ref) {
 /// Scheduler entry: `ref.read(emailSyncRunnerProvider).run()` (the nightly
 /// job and Sync now). Never throws.
 @Riverpod(keepAlive: true)
-EmailSyncRunner emailSyncRunner(Ref ref) =>
-    EmailSyncRunner(ref.watch(syncEmailProvider));
+EmailSyncRunner emailSyncRunner(Ref ref) {
+  final log = ref.watch(activityLoggerProvider);
+  return EmailSyncRunner(
+    ref.watch(syncEmailProvider),
+    // FR-22-05: counts and error class only.
+    onReport: (r, started) => unawaited(
+      log.record(
+        ActivityEntry(
+          at: started,
+          source: ActivitySource.imap,
+          emails: r.emails,
+          added: r.inserted,
+          merged: r.merged,
+          review: r.flagged,
+          skipped: r.skipped,
+          millis: r.millis,
+          error: r.error,
+        ),
+      ),
+    ),
+  );
+}
 
 /// Connect, disconnect and sender edits.
 @Riverpod(keepAlive: true)

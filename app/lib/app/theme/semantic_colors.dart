@@ -10,14 +10,14 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
   });
 
   static const light = SemanticColors(
-    income: Color(0xFF2E7D32),
-    expense: Color(0xFFC62828),
-    warning: Color(0xFFEF6C00),
+    income: Color(0xFF13895A),
+    expense: Color(0xFFD2453B),
+    warning: Color(0xFFC98A0B),
   );
   static const dark = SemanticColors(
-    income: Color(0xFF81C784),
-    expense: Color(0xFFEF9A9A),
-    warning: Color(0xFFFFB74D),
+    income: Color(0xFF3CCB8B),
+    expense: Color(0xFFFF7B70),
+    warning: Color(0xFFF2B84B),
   );
 
   final Color income;

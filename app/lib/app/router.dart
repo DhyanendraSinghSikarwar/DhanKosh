@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/ledger_shell.dart';
+import 'package:hisaab/features/backup_export/presentation/backup_export_screen.dart';
+import 'package:hisaab/features/backup_export/presentation/backup_tile.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_detail_screen.dart';
 import 'package:hisaab/features/accounts_management/presentation/accounts_management_screen.dart';
 import 'package:hisaab/features/alerts_reminders/presentation/alerts_reminders_screen.dart';
@@ -20,17 +22,31 @@ import 'package:hisaab/features/income_tracking/presentation/income_tracking_scr
 import 'package:hisaab/features/loans/presentation/loan_detail_screen.dart';
 import 'package:hisaab/features/loans/presentation/loans_screen.dart';
 import 'package:hisaab/features/loans/presentation/loans_tile.dart';
+import 'package:hisaab/features/news_support_updates/presentation/news_screen.dart';
+import 'package:hisaab/features/news_support_updates/presentation/news_tile.dart';
+import 'package:hisaab/features/news_support_updates/presentation/support_screen.dart';
+import 'package:hisaab/features/news_support_updates/presentation/support_tile.dart';
+import 'package:hisaab/features/news_support_updates/presentation/updates_screen.dart';
+import 'package:hisaab/features/news_support_updates/presentation/updates_tile.dart';
 import 'package:hisaab/features/notification_ingestion/presentation/notification_access_card.dart';
 import 'package:hisaab/features/onboarding_permissions/presentation/welcome_screen.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_screen.dart';
 import 'package:hisaab/features/profile/presentation/profile_screen.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/bills_tile.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/recurring_transactions_screen.dart';
+import 'package:hisaab/features/localization/presentation/language_screen.dart';
+import 'package:hisaab/features/localization/presentation/language_tile.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_data_sources_screen.dart';
+import 'package:hisaab/features/theming_customisation/presentation/customise_tile.dart';
+import 'package:hisaab/features/theming_customisation/presentation/theming_customisation_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_tile.dart';
 import 'package:hisaab/features/tax_centre/presentation/tax_centre_screen.dart';
 import 'package:hisaab/features/tax_centre/presentation/tax_tile.dart';
+import 'package:hisaab/features/activity_log/presentation/activity_log_screen.dart';
+import 'package:hisaab/features/activity_log/presentation/activity_tile.dart';
+import 'package:hisaab/features/security_privacy/presentation/security_privacy_screen.dart';
+import 'package:hisaab/features/security_privacy/presentation/security_tile.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/add_transaction_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -101,9 +117,35 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const AlertsRemindersScreen(),
       ),
       GoRoute(
+        path: '/settings/backup',
+        builder: (_, __) => const BackupExportScreen(),
+      ),
+      GoRoute(path: '/news', builder: (_, __) => const NewsScreen()),
+      GoRoute(
+        path: '/settings/support',
+        builder: (_, __) => const SupportScreen(),
+      ),
+      GoRoute(
+        path: '/settings/updates',
+        builder: (_, __) => const UpdatesScreen(),
+      ),
+      GoRoute(
         path: '/settings/forex',
         builder: (_, __) => const ForexRatesScreen(),
       ),
+      GoRoute(
+        path: '/settings/appearance',
+        builder: (_, __) => const ThemingCustomisationScreen(),
+      ),
+      GoRoute(
+        path: '/settings/language',
+        builder: (_, __) => const LanguageScreen(),
+      ),
+      GoRoute(
+        path: '/settings/security',
+        builder: (_, __) => const SecurityPrivacyScreen(),
+      ),
+      GoRoute(path: '/activity', builder: (_, __) => const ActivityLogScreen()),
       GoRoute(
         path: '/settings/email',
         builder: (_, __) => const EmailSettingsScreen(),
@@ -168,7 +210,15 @@ final routerProvider = Provider<GoRouter>((ref) {
                   loansTile: LoansTile(),
                   alertsTile: AlertsTile(),
                   forexTile: ForexTile(),
+                  backupTile: BackupTile(),
                   taxTile: TaxTile(),
+                  securityTile: SecurityTile(),
+                  activityTile: ActivityTile(),
+                  newsTile: NewsTile(),
+                  supportTile: SupportTile(),
+                  updatesTile: UpdatesTile(),
+                  customiseTile: CustomiseTile(),
+                  languageTile: LanguageTile(),
                 ),
               ),
             ],
