@@ -45,6 +45,12 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed .
       - run: flutter analyze
       - run: flutter test
+      - name: parser_core
+        working-directory: app/packages/parser_core
+        run: |
+          dart pub get
+          dart analyze
+          dart test
 
   apk:
     name: Debug APK
