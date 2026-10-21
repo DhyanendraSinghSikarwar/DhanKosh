@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-15 |
-| Status | In progress (pure domain logic done: detection, summarise, amortisation, duplicates, link encodings, add-loan rule, EMI pairing; data/persistence and UI pending) |
+| Status | In progress (domain, link store and core UI done: Loans list, detail with schedule and payoff, add/edit loan, link/unlink, Not a loan; terms editor, link prompt, merge/duplicates UI, lender status pending) |
 | Priority | P2 |
 | Phase | 4 |
 | Last Updated | 2026-10-21 |
@@ -361,6 +361,8 @@ Fixtures: Propelld EMI/disbursal SMS (Part B 8 sample 18), three monthly EMI deb
 
 ## 18. Implementation Notes
 
+Phase 4 UI (2026-10-21): routes `/loans` (`LoansScreen`) and `/loans/:key` (`LoanDetailScreen`, key URL-encoded `acct:<id>` / `payee:<key>`); `LoanCard`, `LoanFormSheet`, `LinkPaymentSheet`, `LoansTile` (More tab via `SettingsDataSourcesScreen.loansTile`). New `LoanAccountRepository` (`domain/loan_account_repository.dart`, `data/loan_account_repository_impl.dart`, reads/writes `accounts` loan columns, no schema change). Wiring `lib/app/di/bills_providers.dart` (`loansStateProvider` = `Loans.build` over accounts, 400-day ledger window, links, dismissals). UI done: FR-15-01 (no hero totals), 04, 05 (schedule list, payoff date, remaining EMIs, total interest), 06 (form uses `Loans.termsFromForm`; EMI is calculated from principal/rate/tenure, first EMI date sets EMI day), 07 partly (edit form, no live EMI comparison or Clear), 08 partly (source label, no prepayment tag), 10 (link a payment or all from a payee; unlink), 11 (Not a loan, Undo list; payments are kept). Links apply to EMI & Loans category payments only (domain rule), so the picker lists those. Tests `test/features/bills_loans/bills_loans_screens_test.dart` (TC-15-09 partly, TC-15-10 partly, TC-15-06 and TC-15-14 via UI). Deferred: FR-15-09 link prompt after categorising, FR-15-12 duplicates/merge UI, FR-15-13, FR-15-15 edit mode, hero totals, Terms Clear, delete loan, prepayment tag.
+
 Phase 4 domain logic (no UI, no persistence). Code in `lib/features/loans/domain/`: `amortization.dart`, `loan_models.dart`, `loan_builder.dart`, `emi_pairing.dart`; shared date helpers in `lib/features/analytics/domain/civil_date.dart` (a "day" is a UTC-midnight `DateTime`; row times bucket at an `offset`, default IST `istOffset`, per memory 18 Open Question 9).
 
 FR status: done in domain: FR-15-01..05 (list/assign/detect/summarise/amortise), FR-15-06 (`Loans.termsFromForm`, `Loans.validEmiDay`), FR-15-08 (source label via `OutstandingSource`, prepayment tag via `Amortization.isPrepayment`), FR-15-10 (`LoanLinks.keyOf/encodeTx/encodePayee/decode`), FR-15-12 (`Loans.duplicates`), FR-15-14. Pending: FR-15-07 UI, FR-15-09, FR-15-11 persistence (link/dismissal stores, S1), FR-15-13 (`applyLoanStatus`), FR-15-15, and every screen.
@@ -384,3 +386,4 @@ Tests: `test/features/loans/loans_test.dart` ports Kotlin `LoansTest` (EMI 867,8
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
+| 2026-10-21 | Phase 4 UI landed | Phase 4 |

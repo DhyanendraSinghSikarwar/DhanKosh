@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-12 |
-| Status | In progress (Phase 4: user items store, detection and next-due maths done; Bills screen, calendar, Home Upcoming, policies, loan merge and alerts pending) |
+| Status | In progress (Phase 4: items store, detection, next-due maths, Bills screen with calendar, add/edit/delete/confirm sheet and loan EMIs in bills done; Home Upcoming, policies, short flag, alerts, EMI pairing pending) |
 | Priority | P1 |
 | Phase | 4 (recurring + analytics); detection functions are pure and can be built in Phase 1 for the Home Upcoming widget |
 | Last Updated | 2026-10-21 |
@@ -445,6 +445,8 @@ Fixtures: three monthly transactions for Netflix/rent/SIP; an insurance yearly p
 
 ## 18. Implementation Notes
 
+Phase 4 UI (2026-10-21): route `/bills` (`RecurringTransactionsScreen`), `RecurringSheet`, `BillsCalendar`, `BillsTile` (More tab, embedded via `SettingsDataSourcesScreen.billsTile`; Home can reuse `BillsTile` or push `/bills` for its "Calendar" action). Wiring `lib/app/di/bills_providers.dart` (`billsProvider` = detect + `withManual` + loans). Pure helpers in `domain/bills_view.dart` (`withLoans`, `paid`, `dueIn30`, `everyMonth`). UI done: FR-12-03, 04, 06 (loan tagged by same name else synthetic row; tap opens `/loans/<key>`), 09 (summary, calendar, dots, legend, day filter, empty state), 10. Tests `test/features/bills_loans/bills_loans_screens_test.dart` (TC-12-12 partly, TC-12-13 partly). Detected items stay computed: "confirm" saves a user item of the same name (replaces it per FR-12-04); there is no dismiss or stored paid state (memory 9). "Paid" = last paid this month and next due in a later month. Deferred: policies (FR-12-07) and insurance rows, `short` (FR-12-08), Home Upcoming widget (FR-12-11), alerts (FR-12-12..14), EMI pairing wiring (FR-12-15), off-main-thread plan (FR-12-16), account picker in the sheet (existing account id is kept on edit), category-default switch on the Income toggle.
+
 Phase 4 data/domain layer (no UI). Table `recurring` (Drift class `RecurringItems`, schema v4). Detected items stay derived (no table). Code: `lib/features/recurring_transactions/domain/{recurring,recurring_detector,recurring_repository}.dart`, `data/recurring_repository_impl.dart`; providers `recurringRepositoryProvider`, `recurringItemsProvider`. Tests: `test/features/phase4/phase4_{logic,repositories}_test.dart`.
 
 FR status done: FR-12-01, 02 (`RecurringDetector.detect`, Netflix example), 03 (repository CRUD with validation), 04 (`withManual`), 05 (`nextDueOf`, clamping), 10 (`occursOn`). Pending: FR-12-06 (loans), 07 (policies), 08, 09, 11, 12..14 (alerts, S2 decision logic), 15, 16 and all UI.
@@ -471,3 +473,4 @@ abstract interface class RecurringRepository {
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
+| 2026-10-21 | Phase 4 UI landed | Phase 4 |
