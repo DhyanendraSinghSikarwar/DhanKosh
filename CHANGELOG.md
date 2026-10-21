@@ -5,6 +5,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 ## [Unreleased]
 
 ### Added
+- Phase 5: app lock, activity log, CSV backup/import, 22 themes and text size, language packs, home-screen widget, update check, support and about, signed-release workflow.
 - Phase 5: home-screen spend widget, market news, Support (UPI hand-off), About and update check, signed release workflow.
 - Phase 4: budgets, income and cash flow, bills calendar, loans, analytics, tax centre, alert notifications, manual forex rates.
 - Phase 3: statement import (PDF/Excel/CSV, passwords), credit cards with due tracking, portfolio and net worth, profile; card-due and EPFO/NPS SMS recognised.

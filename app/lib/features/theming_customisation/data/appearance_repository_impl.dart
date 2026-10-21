@@ -52,11 +52,7 @@ class AppearanceRepositoryImpl implements AppearanceRepository {
                 ),
           );
       },
-      onCancel: () async {
-        for (final s in subs) {
-          await s.cancel();
-        }
-      },
+      onCancel: () => Future.wait(subs.map((s) => s.cancel())),
     );
     return c.stream;
   }

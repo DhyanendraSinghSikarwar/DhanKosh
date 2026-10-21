@@ -51,7 +51,7 @@ void main() {
       await repo.record(
         _e(
           ActivitySource.smsScan,
-          DateTime(2026, 1, 1).add(Duration(hours: i)),
+          DateTime(2026).add(Duration(hours: i)),
         ),
       );
     }

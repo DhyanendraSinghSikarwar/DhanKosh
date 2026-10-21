@@ -157,5 +157,6 @@ void main() {
     expect(Theme.of(ctx).colorScheme.primary, const Color(0xFFA34A12));
     await t.pumpWidget(const SizedBox());
     await settle(t);
+    await t.pump(const Duration(seconds: 1));
   });
 }
