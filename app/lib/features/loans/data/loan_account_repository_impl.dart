@@ -54,7 +54,7 @@ class LoanAccountRepositoryImpl implements LoanAccountRepository {
         .getSingleOrNull();
     if (exists != null) return null;
     final now = _now();
-    return _db.into(_db.accounts).insert(
+    final id = await _db.into(_db.accounts).insert(
           AccountsCompanion.insert(
             bankName: d.bankName,
             last4: last4,
@@ -69,6 +69,7 @@ class LoanAccountRepositoryImpl implements LoanAccountRepository {
             manualBalanceAt: Value(d.outstandingMinor == null ? null : now),
           ),
         );
+    return id;
   }
 
   @override
