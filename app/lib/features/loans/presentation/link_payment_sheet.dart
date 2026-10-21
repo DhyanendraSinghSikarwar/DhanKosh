@@ -8,6 +8,7 @@ import 'package:hisaab/features/loans/domain/loan_link_repository.dart';
 import 'package:hisaab/features/loans/domain/loan_models.dart';
 import 'package:hisaab/features/loans/presentation/loan_card.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
+import 'package:parser_core/parser_core.dart' show Category;
 
 /// Pick a payment to count towards [loan] (FR-15-10). Needs a loan account.
 class LinkPaymentSheet extends ConsumerStatefulWidget {
@@ -31,7 +32,10 @@ class _LinkPaymentSheetState extends ConsumerState<LinkPaymentSheet> {
     final have = {for (final p in widget.loan.payments) p.id};
     final rows = [
       for (final t in txs)
-        if (Loans.isPayment(t) && !have.contains(t.id)) t,
+        if (Loans.isPayment(t) &&
+            t.category == Category.emiLoan &&
+            !have.contains(t.id))
+          t,
     ].take(40).toList();
     return SafeArea(
       child: Column(
@@ -54,7 +58,7 @@ class _LinkPaymentSheetState extends ConsumerState<LinkPaymentSheet> {
             child: rows.isEmpty
                 ? const Padding(
                     padding: EdgeInsets.all(24),
-                    child: Text('No payments to link'),
+                    child: Text('No EMI payments to link'),
                   )
                 : ListView(
                     shrinkWrap: true,

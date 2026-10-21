@@ -80,8 +80,9 @@ class _LoanFormSheetState extends ConsumerState<LoanFormSheet> {
       firstDate: DateTime(now.year - 30),
       lastDate: DateTime(now.year + 5),
     );
-    if (d != null)
+    if (d != null) {
       setState(() => _first = DateTime.utc(d.year, d.month, d.day));
+    }
   }
 
   Future<void> _save() async {
@@ -132,7 +133,8 @@ class _LoanFormSheetState extends ConsumerState<LoanFormSheet> {
       final made = await repo.create(draft);
       if (made == null) {
         return setState(
-            () => _error = 'A loan with this lender and last 4 exists');
+          () => _error = 'A loan with this lender and last 4 exists',
+        );
       }
     } else {
       await repo.update(id, draft);
@@ -143,8 +145,13 @@ class _LoanFormSheetState extends ConsumerState<LoanFormSheet> {
   @override
   Widget build(BuildContext context) {
     final editing = widget.loan != null;
-    Widget field(String key, String label, TextEditingController c,
-            {String? prefix, bool number = true}) =>
+    Widget field(
+      String key,
+      String label,
+      TextEditingController c, {
+      String? prefix,
+      bool number = true,
+    }) =>
         TextField(
           key: Key(key),
           controller: c,
@@ -170,19 +177,27 @@ class _LoanFormSheetState extends ConsumerState<LoanFormSheet> {
             field('loan-lender', 'Lender', _lender, number: false),
             if (!editing) field('loan-last4', 'Last 4 (optional)', _last4),
             field('loan-principal', 'Principal', _principal, prefix: '₹ '),
-            field('loan-emi', 'EMI (used when no principal)', _emi,
-                prefix: '₹ '),
+            field(
+              'loan-emi',
+              'EMI (used when no principal)',
+              _emi,
+              prefix: '₹ ',
+            ),
             Row(
               children: [
                 Expanded(child: field('loan-rate', 'Rate % a year', _rate)),
                 const SizedBox(width: 12),
                 Expanded(
-                    child: field('loan-tenure', 'Tenure (months)', _tenure)),
+                  child: field('loan-tenure', 'Tenure (months)', _tenure),
+                ),
               ],
             ),
             field(
-                'loan-outstanding', 'Outstanding now (optional)', _outstanding,
-                prefix: '₹ '),
+              'loan-outstanding',
+              'Outstanding now (optional)',
+              _outstanding,
+              prefix: '₹ ',
+            ),
             const SizedBox(height: 8),
             OutlinedButton(
               key: const Key('loan-first'),

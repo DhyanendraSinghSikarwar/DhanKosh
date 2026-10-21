@@ -90,15 +90,19 @@ class _Body extends ConsumerWidget {
           child: Column(
             children: [
               kv(
-                  'Source',
-                  switch (loan.outstandingSource) {
-                    OutstandingSource.bank => 'Bank balance',
-                    OutstandingSource.schedule => 'Schedule',
-                    OutstandingSource.none => 'Unknown',
-                  }),
+                'Source',
+                switch (loan.outstandingSource) {
+                  OutstandingSource.bank => 'Bank balance',
+                  OutstandingSource.schedule => 'Schedule',
+                  OutstandingSource.none => 'Unknown',
+                },
+              ),
               kv('Paid so far', money(loan.totalPaidMinor)),
-              kv('Remaining EMIs', '${loan.remainingEmis ?? '-'}',
-                  const Key('loan-remaining')),
+              kv(
+                'Remaining EMIs',
+                '${loan.remainingEmis ?? '-'}',
+                const Key('loan-remaining'),
+              ),
               kv(
                 'Payoff',
                 loan.payoffDate == null ? '-' : loanDate(loan.payoffDate!),

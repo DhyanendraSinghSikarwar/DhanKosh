@@ -7,9 +7,9 @@ import 'package:hisaab/app/di/bills_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/theme/app_theme.dart';
+import 'package:hisaab/features/loans/data/loan_account_repository_impl.dart';
 import 'package:hisaab/features/loans/data/loan_link_repository_impl.dart';
 import 'package:hisaab/features/loans/domain/loan_account_repository.dart';
-import 'package:hisaab/features/loans/data/loan_account_repository_impl.dart';
 import 'package:hisaab/features/loans/presentation/loan_detail_screen.dart';
 import 'package:hisaab/features/loans/presentation/loans_screen.dart';
 import 'package:hisaab/features/recurring_transactions/data/recurring_repository_impl.dart';
@@ -235,7 +235,7 @@ void main() {
         merchant: 'Acme Lender',
         ref: 'l1',
         time: now - 86400000,
-        category: Category.other,
+        category: Category.emiLoan,
       ),
     );
     await pump(t);
@@ -244,7 +244,8 @@ void main() {
     await s(t);
     await t.tap(find.textContaining('Acme Lender'));
     await s(t);
-    final txId = (await env.txs.watchRecent(5).first).first.id;
+    final txId =
+        (await t.runAsync(() => env.txs.watchRecent(5).first))!.first.id;
     expect(r, isNotNull);
     expect(find.byKey(Key('unlink-$txId')), findsOneWidget);
     await t.tap(find.byKey(Key('unlink-$txId')));

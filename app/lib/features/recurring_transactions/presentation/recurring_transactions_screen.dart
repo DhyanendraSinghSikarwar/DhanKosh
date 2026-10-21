@@ -138,10 +138,16 @@ class _Summary extends StatelessWidget {
     return AppCard(
       child: Row(
         children: [
-          cell('Due in 30 days', BillsView.dueIn30(items, today),
-              const Key('sum-30')),
-          cell('Every month', BillsView.everyMonth(items),
-              const Key('sum-month')),
+          cell(
+            'Due in 30 days',
+            BillsView.dueIn30(items, today),
+            const Key('sum-30'),
+          ),
+          cell(
+            'Every month',
+            BillsView.everyMonth(items),
+            const Key('sum-month'),
+          ),
         ],
       ),
     );
@@ -180,12 +186,15 @@ class _Row extends StatelessWidget {
     return ListTile(
       key: Key('bill-${r.name}'),
       contentPadding: EdgeInsets.zero,
-      leading: Icon(Icons.circle,
-          size: 12, color: BillsCalendar.markColor(context, r)),
+      leading: Icon(
+        Icons.circle,
+        size: 12,
+        color: BillsCalendar.markColor(context, r),
+      ),
       title: Text(r.name),
       subtitle: Text(
         [
-          paid ? 'Paid' : due,
+          if (paid) 'Paid' else due,
           '${r.nextDue.day}/${r.nextDue.month}/${r.nextDue.year}',
           if (tag != null) tag,
         ].join(' · '),

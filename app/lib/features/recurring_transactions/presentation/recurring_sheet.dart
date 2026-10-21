@@ -194,7 +194,9 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
                       items: [
                         for (var i = 1; i <= 12; i++)
                           DropdownMenuItem(
-                              value: i, child: Text(_months[i - 1])),
+                            value: i,
+                            child: Text(_months[i - 1]),
+                          ),
                       ],
                       onChanged: (v) => setState(() => _month = v ?? _month),
                     ),
