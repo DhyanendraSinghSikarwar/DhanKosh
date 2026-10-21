@@ -29,6 +29,32 @@ class CivilDate implements Comparable<CivilDate> {
   /// This date moved back by [days].
   CivilDate minusDays(int days) => plusDays(-days);
 
+  /// Days since 1970-01-01 (the Kotlin `LocalDate.toEpochDay`).
+  int toEpochDay() =>
+      DateTime.utc(year, month, day).millisecondsSinceEpoch ~/ 86400000;
+
+  /// The date [days] after 1970-01-01.
+  static CivilDate ofEpochDay(int days) {
+    final d = DateTime.fromMillisecondsSinceEpoch(days * 86400000, isUtc: true);
+    return CivilDate(d.year, d.month, d.day);
+  }
+
+  /// This date moved back by [months]; the day is clamped to the month's end
+  /// (the Kotlin `minusMonths`).
+  CivilDate minusMonths(int months) {
+    final total = year * 12 + (month - 1) - months;
+    final y = total ~/ 12;
+    final m = total % 12 + 1;
+    final last = DateTime.utc(y, m + 1, 0).day;
+    return CivilDate(y, m, day > last ? last : day);
+  }
+
+  /// This date moved back by [years]; 29 Feb falls back to 28 Feb.
+  CivilDate minusYears(int years) => minusMonths(years * 12);
+
+  /// This date moved forward by [years]; 29 Feb falls back to 28 Feb.
+  CivilDate plusYears(int years) => minusMonths(-years * 12);
+
   /// Whether this is later than [other].
   bool isAfter(CivilDate other) => compareTo(other) > 0;
 

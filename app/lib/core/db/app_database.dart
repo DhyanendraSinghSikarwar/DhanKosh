@@ -1,11 +1,16 @@
 import 'package:drift/drift.dart';
 import 'package:hisaab/core/db/tables/accounts.dart';
+import 'package:hisaab/core/db/tables/card_due_notices.dart';
+import 'package:hisaab/core/db/tables/card_overrides.dart';
 import 'package:hisaab/core/db/tables/custom_categories.dart';
 import 'package:hisaab/core/db/tables/custom_subcategories.dart';
 import 'package:hisaab/core/db/tables/deleted_messages.dart';
+import 'package:hisaab/core/db/tables/holdings.dart';
 import 'package:hisaab/core/db/tables/merchant_rules.dart';
+import 'package:hisaab/core/db/tables/net_worth_points.dart';
 import 'package:hisaab/core/db/tables/processed_emails.dart';
 import 'package:hisaab/core/db/tables/settings.dart';
+import 'package:hisaab/core/db/tables/statements.dart';
 import 'package:hisaab/core/db/tables/transaction_sources.dart';
 import 'package:hisaab/core/db/tables/transactions.dart';
 
@@ -24,6 +29,11 @@ part 'app_database.g.dart';
     CustomSubcategories,
     Settings,
     ProcessedEmails,
+    Statements,
+    Holdings,
+    NetWorthPoints,
+    CardDueNotices,
+    CardOverrides,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -31,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -39,6 +49,14 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           // v1 -> v2: email ingestion (F-03). Additive, existing rows stay.
           if (from < 2) await m.createTable(processedEmails);
+          // v2 -> v3: statements, holdings, net worth, card dues (Phase 3).
+          if (from < 3) {
+            await m.createTable(statements);
+            await m.createTable(holdings);
+            await m.createTable(netWorthPoints);
+            await m.createTable(cardDueNotices);
+            await m.createTable(cardOverrides);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
