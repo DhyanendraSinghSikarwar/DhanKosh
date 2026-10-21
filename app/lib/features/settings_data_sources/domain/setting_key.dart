@@ -40,6 +40,10 @@ abstract final class SettingKeys {
   );
   static const cardDueReminders = SettingKey<bool>('card_due_reminders', true);
   static const checkUpdates = SettingKey<bool>('check_updates', true);
+
+  /// Shows the Developer section (sample data, clear data). ON in this early
+  /// build (FR-26-30).
+  static const developerTools = SettingKey<bool>('developer_tools', true);
   static const budgetAlertPercent = SettingKey<int>('budget_alert_percent', 90);
 
   /// Capped to the most recent 300 entries (FR-26-13); newest last.

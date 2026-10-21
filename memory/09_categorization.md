@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-09 |
-| Status | In progress (Phase 1 data layer; UI pending) |
+| Status | In progress (Phase 1 data layer and category picker done; Rules screen, Category detail, logos, taxonomy catalogue pending) |
 | Priority | P0 |
 | Phase | 1 (core ledger + SMS; rule editor and category detail finish in Phase 4) |
 | Last Updated | 2026-10-21 |
@@ -656,6 +656,12 @@ Pending: FR-09-01..04 (catalogue, merchant normalisation, sub-category guess), F
 
 Deviations: category enum is parser_core's `Category`; the rule store is loaded once per ingest batch (`loadRuleSet`) rather than cached in memory.
 
+Phase 1 UI. Code: `features/categorization/presentation/category_sheet.dart` (`showCategorySheet`, `CategorySheet`), `domain/category_choice.dart`. Tests: category cases in `test/features/transactions_ledger/transaction_detail_test.dart`.
+
+UI done: FR-09-05 (change category from the detail screen), FR-09-06 (every change learns an EXACT rule via `setCategory`), FR-09-08 (switch "Always use for {merchant}" saves a manual EXACT rule through `saveManualRule`), FR-09-09 (live count and "Also apply to past (n)" calls `applyRuleToPast`), FR-09-13 (custom categories listed under "Your categories", "New category" with name only; icon/colour fixed; custom sub-categories deferred), FR-09-16 basic (27 built-ins as chips, search by label; no groups).
+
+Deferred: FR-09-12 Rules screen, FR-09-14 Category detail, FR-09-15/18/19 logos, FR-09-16 groups and translated search, FR-09-17 budgets, sub-category edit, bulk change from multi-select.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -664,3 +670,4 @@ Deviations: category enum is parser_core's `Category`; the rule store is loaded 
 | 2026-10-19 | `LogoPaths` vector logos: FR-09-18, FR-09-19, relation to WebP logos in 3.9, TC-09-18 | Audit Gate gap, scan_5
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 1 data layer landed (tables merchant_rules, custom_categories, custom_subcategories; `CategoryRepository`, `RuleSet`, learning in `setCategory`) | Phase 1 |
+| 2026-10-21 | Phase 1 UI landed | Phase 1 |

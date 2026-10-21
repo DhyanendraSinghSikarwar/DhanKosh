@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-20 |
-| Status | Existing |
+| Status | In progress (Phase 1: Transactions search and filters done; global Book/Period store pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -432,7 +432,11 @@ Fixtures (masked): `HDFC Bank: Rs 2450.50 debited from a/c XX1234 on 17-10-26 to
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 1 Transactions-tab subset. Code: `features/search_filters/domain/ledger_view_state.dart` (`PeriodKind`, `periodRange`, `LedgerViewState.toFilter`), `presentation/{ledger_view_notifier,ledger_filter_bar}.dart`. Tests: `test/features/search_filters/ledger_filters_test.dart`.
+
+Done: FR-20-03/04/05 partial (This month, Last month, Custom range via "Choose dates" picker, All time; local-time ranges, inclusive custom end, missing end = start), FR-20-11 (placeholder "Search merchant, amount, note...", 120 ms debounce, trimmed query, match-count badge, clear button), FR-20-12 (matching done in the repository), FR-20-13 (type chips), FR-20-16 (type, account, category AND-combined; "Clear" resets chips only), FR-20-17 (merged children, repository), FR-20-18 (strip describes shown rows), FR-20-19 (three empty texts). Account and category filters are menu chips with a delete action. The state is local to the tab (`ledgerViewProvider`), not yet app-wide.
+
+Deferred: FR-20-01/02 (global Book store, persistence), FR-20-03 This week / FY / 12 months, FR-20-06..10 (previous period, ViewFilter slice, Book rule, account visibility by book), FR-20-14/15 (bank and source chips), FR-20-20, FR-20-08.
 
 ## 19. Change Log (date | change | reason)
 
@@ -440,3 +444,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 1 UI landed | Phase 1 |

@@ -1,0 +1,310 @@
+// Riverpod's autoDispose provider types are not worth spelling out.
+// ignore_for_file: specify_nonobvious_property_types
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/features/categorization/domain/category_choice.dart';
+import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:hisaab/features/transactions_ledger/presentation/ledger_tx_tile.dart';
+import 'package:hisaab/shared/providers/amount_masking.dart';
+import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/empty_state.dart';
+import 'package:intl/intl.dart';
+
+/// Opens the category picker for a row (supplied by the app shell, which
+/// binds the categorization sheet; features never import each other).
+typedef CategoryPicker = Future<CategoryChoice?> Function(
+  BuildContext context,
+  LedgerTx tx,
+);
+
+final _txProvider = FutureProvider.autoDispose.family<LedgerTx?, int>(
+  (ref, id) => ref.watch(transactionRepositoryProvider).byId(id),
+);
+
+final _sourcesProvider =
+    FutureProvider.autoDispose.family<List<TxSourceRow>, int>(
+  (ref, id) => ref.watch(transactionRepositoryProvider).sourcesOf(id),
+);
+
+final _accountLabelProvider =
+    FutureProvider.autoDispose.family<String?, int>((ref, id) async {
+  final a = await ref.watch(accountRepositoryProvider).byId(id);
+  return a?.label;
+});
+
+/// Transaction detail: fields, category and note edit, source messages,
+/// delete (FR-08-09, FR-08-10, FR-09-05, FR-09-06, FR-09-08, FR-09-09).
+class TransactionDetailScreen extends ConsumerWidget {
+  /// Creates the screen for [id].
+  const TransactionDetailScreen({
+    required this.id,
+    required this.pickCategory,
+    super.key,
+  });
+
+  /// Row id.
+  final int id;
+
+  /// Category picker.
+  final CategoryPicker pickCategory;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tx = ref.watch(_txProvider(id));
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Transaction'),
+        actions: [
+          if (tx.value != null)
+            IconButton(
+              key: const Key('detail_delete'),
+              tooltip: 'Delete',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _delete(context, ref),
+            ),
+        ],
+      ),
+      body: tx.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => const EmptyState(
+          icon: Icons.error_outline,
+          title: 'Could not load',
+        ),
+        data: (t) => t == null
+            ? const EmptyState(
+                icon: Icons.search_off,
+                title: 'Transaction not found',
+              )
+            : _Body(t, pickCategory),
+      ),
+    );
+  }
+
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete 1 transaction?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('delete_confirm'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await ref.read(transactionRepositoryProvider).deleteTransactions([id]);
+    if (!context.mounted) return;
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/transactions');
+    }
+  }
+}
+
+class _Body extends ConsumerWidget {
+  const _Body(this.t, this.pickCategory);
+  final LedgerTx t;
+  final CategoryPicker pickCategory;
+
+  void _refresh(WidgetRef ref) => ref.invalidate(_txProvider(t.id));
+
+  Future<void> _editCategory(BuildContext context, WidgetRef ref) async {
+    final choice = await pickCategory(context, t);
+    if (choice == null) return;
+    final txs = ref.read(transactionRepositoryProvider);
+    await txs.setCategory(
+      [t.id],
+      choice.category,
+      customCategoryId: choice.customCategoryId,
+    );
+    final key = MerchantRule.keyOf(t.merchant, t.upiId);
+    if (choice.saveRule && key != null) {
+      final rule = MerchantRule(
+        merchantKey: key,
+        category: choice.category,
+        customCategoryId: choice.customCategoryId,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+        manual: true,
+      );
+      await ref.read(categoryRepositoryProvider).saveManualRule(rule);
+      if (choice.applyToPast) await txs.applyRuleToPast(rule);
+    }
+    _refresh(ref);
+  }
+
+  Future<void> _editNote(BuildContext context, WidgetRef ref) async {
+    final c = TextEditingController(text: t.note ?? '');
+    final note = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Note'),
+        content: TextField(
+          key: const Key('note_field'),
+          controller: c,
+          autofocus: true,
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('note_save'),
+            onPressed: () => Navigator.pop(ctx, c.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (note == null) return;
+    await ref
+        .read(transactionRepositoryProvider)
+        .setNote(t.id, note.isEmpty ? null : note);
+    _refresh(ref);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final masked = ref.watch(hideAmountsProvider).value ?? true;
+    final account = t.accountId == null
+        ? null
+        : ref.watch(_accountLabelProvider(t.accountId!)).value;
+    final sources = ref.watch(_sourcesProvider(t.id)).value ?? const [];
+    final last4 = t.accountLast4;
+    final fallbackAccount =
+        last4 == null ? t.bankName : '${t.bankName} ••$last4';
+    final when = DateFormat(
+      t.hasExplicitTime ? 'd MMM yyyy, h:mm a' : 'd MMM yyyy',
+    ).format(DateTime.fromMillisecondsSinceEpoch(t.timestamp));
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(t.title, style: theme.textTheme.titleLarge),
+        const SizedBox(height: 4),
+        Text(
+          txAmountText(t, masked: masked),
+          key: const Key('detail_amount'),
+          style: theme.textTheme.headlineMedium,
+        ),
+        if (t.needsReview)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              t.reviewReason ?? 'Needs review',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+        const SizedBox(height: 16),
+        AppCard(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            children: [
+              _Row(
+                'Category',
+                t.category.label,
+                tag: 'detail_category',
+                onTap: () => _editCategory(context, ref),
+              ),
+              _Row('Account', account ?? fallbackAccount),
+              _Row('Date', when),
+              _Row('Channel', t.channel.name.toUpperCase()),
+              if (t.upiId != null) _Row('UPI id', t.upiId!),
+              if (t.referenceNumber != null)
+                _Row('Reference', t.referenceNumber!),
+              _Row(
+                'Note',
+                t.note ?? 'Add note',
+                tag: 'detail_note',
+                onTap: () => _editNote(context, ref),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text('Messages', style: theme.textTheme.titleSmall),
+        const SizedBox(height: 8),
+        if (sources.isEmpty)
+          const Text('No source messages')
+        else
+          for (final s in sources) _MessageView(s),
+      ],
+    );
+  }
+}
+
+class _Row extends StatelessWidget {
+  const _Row(this.label, this.value, {this.onTap, this.tag});
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
+
+  final String? tag;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        key: tag == null ? null : Key(tag!),
+        dense: true,
+        onTap: onTap,
+        title: Text(label),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(child: Text(value, textAlign: TextAlign.end)),
+            if (onTap != null) const Icon(Icons.chevron_right, size: 18),
+          ],
+        ),
+      );
+}
+
+/// Source message with sender, time and copy (FR-08-20 basic).
+class _MessageView extends StatelessWidget {
+  const _MessageView(this.s);
+  final TxSourceRow s;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final raw = s.rawText;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${s.source.name.toUpperCase()} · ${s.sender}',
+              style: theme.textTheme.labelMedium,
+            ),
+            const SizedBox(height: 4),
+            if (raw == null)
+              const Text('Original text not available')
+            else ...[
+              Text(raw, maxLines: 10, overflow: TextOverflow.ellipsis),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Clipboard.setData(ClipboardData(text: raw)),
+                  child: const Text('Copy text'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

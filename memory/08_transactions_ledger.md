@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-08 |
-| Status | In progress (Phase 1 data layer; UI pending) |
+| Status | In progress (Phase 1 data layer and core UI done; Calendar, By merchant, multi-select, OCR, gaps pending) |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-21 |
@@ -454,6 +454,14 @@ Pending: FR-08-01..04, 08, 11 (screen), 12, 16, 20, 21 (UI/OCR/gaps); FR-08-13 (
 
 Deviations: column names are Drift snake_case (`amount_minor`), not Room camelCase, so an import from the Room file needs a column map (Open Question 6); folder is `features/transactions_ledger` (the existing skeleton) not `features/transactions`; enums come from `package:parser_core` and are stored as `SNAKE_UPPER` text; `source_message_id` uniqueness on `transaction_sources` doubles as the processed-id set (no extra table).
 
+Phase 1 UI. Code: `features/transactions_ledger/presentation/{transactions_ledger_screen,ledger_summary_strip,ledger_tx_tile,transaction_detail_screen,add_transaction_screen}.dart`, `domain/day_groups.dart` (`groupByDay`, `summarize`, `dayLabel`). Routes `/transactions` (tab, composed in `app/ledger_shell.dart`), `/transaction/:id`, `/transactions/add`. Tests: `test/features/transactions_ledger/{ledger_screen_test,transaction_detail_test}.dart` (fakes in `test/support/fake_ledger.dart`).
+
+UI done: FR-08-01 (summary strip Income/Expenses/Net with "{n} transactions . {period}", review banner; segments only List), FR-08-02 (day cards Today / Yesterday / "EEE, d MMM yyyy" with Out per day), FR-08-05 (type chips; source chips deferred), FR-08-06 and FR-08-07 via [Search & Filters](20_search_filters.md), FR-08-09 (confirm "Delete 1 transaction?", tombstones), FR-08-10 (category, note, source messages with Copy text; sub-category, account change and split deferred), FR-08-11 (Spent / Received, amount, payee, account, category, date, reference, note, merge/review snackbar; Transfer mode, EMI_LOAN prompt deferred), FR-08-20 basic (raw text capped at 10 lines, Copy text; "Show all" deferred). Amounts honour hide-amounts.
+
+Deferred UI: FR-08-03 Calendar view, FR-08-04 By-merchant view, FR-08-08 multi-select, FR-08-12 screenshot OCR, FR-08-16 gaps, FR-08-21 calendar captions, source chips, account-scope pills from route args. Screen GIFs not captured.
+
+Deviation: features cannot import each other's presentation, so `app/ledger_shell.dart` composes the tab (search header from search_filters) and binds the category sheet into the detail screen via a `CategoryPicker` callback.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -463,3 +471,4 @@ Deviations: column names are Drift snake_case (`amount_minor`), not Room camelCa
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Package `sqlcipher_flutter_libs` replaced by the `sqlite3` 3.x SQLCipher build hook | Package obsolete after sqlite3 3.x; see ADR-0003 |
 | 2026-10-21 | Phase 1 data layer landed (tables transactions, transaction_sources, deleted_messages; `TransactionRepository` ingest/edit/delete/read streams) | Phase 1 |
+| 2026-10-21 | Phase 1 UI landed | Phase 1 |

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-07 |
-| Status | In progress (Phase 1: matcher in parser_core and data layer done; UI pending) |
+| Status | In progress (Phase 1: matcher and data layer done; Review screen basic, Compare/split/manual merge pending) |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-21 |
@@ -387,6 +387,12 @@ Deviations: `DedupPolicy` is a port shaped like parser_core's `DuplicateMatcher`
 
 Matcher in parser_core (Phase 1): `app/packages/parser_core/lib/src/dedup/` holds `DuplicateMatcher.decide(tx, lookup, {utcOffset})` as pure async logic over a `DedupLookup` interface (`byReference`, `byHash`, `potentialDuplicates`, `potentialDuplicatesInRange`), with `StoredTransaction`, `MatchReason` and the sealed `DedupDecision` (`Duplicate`, `PossibleDuplicate`, `NewTransaction`); `sourceKey(Source)` gives the upper-case source keys. It is a line-for-line port of the Kotlin matcher (FR-07-02..06) and `TransactionHasher` (FR-07-01, byte-identical, own SHA-256). Tests (`test/duplicate_matcher_test.dart`, `test/hash_test.dart`, 20 + 5): all 18 Kotlin `DuplicateMatcherTest` scenarios (TC-07-02..06) plus same-source review, helper and hash vectors (TC-07-01), and the Kotlin `TransactionHasherTest`. The app-side `DedupPolicy` above should be replaced by (or reconciled with) this matcher.
 
+Phase 1 UI. Code: `features/dedup_review/presentation/dedup_review_screen.dart`, route `/review` (opened by the review banner on the Transactions tab). Tests: `test/features/dedup_review/review_screen_test.dart`.
+
+UI done: FR-07-10 basic (one card per flagged row, New beside Existing with merchant, amount, time, bank and the review reason), FR-07-12 (Merge via `mergeFlagged`, disabled when the target is gone; Keep separate via `keepSeparate`; "Nothing to review" empty state).
+
+Deferred: full Compare view and source messages, FR-07-11 sheet details, FR-07-13 split, FR-07-14 manual merge/undo, FR-07-17 shared MessageView, undo snackbar.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -396,3 +402,4 @@ Matcher in parser_core (Phase 1): `app/packages/parser_core/lib/src/dedup/` hold
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 1 data layer landed (`DedupPolicy` (reference/hash/fuzzy/rounded rules), merge rules, flagged-row actions) | Phase 1 |
 | 2026-10-21 | Phase 1 Dart port landed in app/packages/parser_core: DuplicateMatcher and TransactionHasher | Phase 1 |
+| 2026-10-21 | Phase 1 UI landed | Phase 1 |

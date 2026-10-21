@@ -1,17 +1,90 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hisaab/features/settings_data_sources/presentation/bank_sms_card.dart';
+import 'package:hisaab/features/settings_data_sources/presentation/paste_sms_card.dart';
+import 'package:hisaab/features/settings_data_sources/presentation/settings_providers.dart';
 
-/// Placeholder screen for: Settings & Data Sources.
-class SettingsDataSourcesScreen extends StatelessWidget {
+/// More tab: data sources, privacy and developer tools (F-26).
+class SettingsDataSourcesScreen extends ConsumerWidget {
+  /// Creates the screen.
   const SettingsDataSourcesScreen({super.key});
 
+  Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Clear all data?'),
+        content: const Text('Deletes every transaction and account.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('clear-confirm'),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+    if (ok ?? false) {
+      await ref.read(developerActionsProvider.notifier).clearAll();
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          'Settings & Data Sources placeholder',
-          key: Key('settings_data_sources_placeholder'),
-        ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final text = Theme.of(context).textTheme;
+    final hide = ref.watch(hideAmountsProvider).value ?? true;
+    final dev = ref.watch(developerToolsProvider).value ?? true;
+    final status = ref.watch(developerActionsProvider);
+    Widget head(String t) => Padding(
+          padding: const EdgeInsets.only(top: 20, bottom: 8),
+          child: Text(t, style: text.titleSmall),
+        );
+    return Scaffold(
+      appBar: AppBar(title: const Text('More')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          head('Data sources'),
+          const BankSmsCard(),
+          const SizedBox(height: 12),
+          const PasteSmsCard(),
+          head('Privacy'),
+          SwitchListTile(
+            key: hideAmountsKey,
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Hide amounts'),
+            value: hide,
+            onChanged: (v) => setHideAmounts(ref, value: v),
+          ),
+          if (dev) ...[
+            head('Developer'),
+            Wrap(
+              spacing: 8,
+              children: [
+                OutlinedButton(
+                  key: const Key('add-sample'),
+                  onPressed: () => ref
+                      .read(developerActionsProvider.notifier)
+                      .addSampleData(),
+                  child: const Text('Add sample data'),
+                ),
+                OutlinedButton(
+                  key: const Key('clear-all'),
+                  onPressed: () => _confirmClear(context, ref),
+                  child: const Text('Clear all data'),
+                ),
+              ],
+            ),
+            if (status != null) ...[
+              const SizedBox(height: 8),
+              Text(status, key: const Key('dev-status'), style: text.bodySmall),
+            ],
+          ],
+        ],
       ),
     );
   }
