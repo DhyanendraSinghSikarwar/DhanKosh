@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,6 +52,8 @@ class _StartupTasksState extends ConsumerState<StartupTasks>
   /// Re-subscribes so day and month boundaries roll over (FR-30-04). Waits
   /// for onboarding to finish: there is nothing to show before that.
   void _startWidget() {
+    // The widget exists on Android only (also keeps host tests timer-free).
+    if (!Platform.isAndroid) return;
     final gate = ref.read(onboardingGateProvider);
     if (gate.hasValue && !gate.requireValue) {
       ref.read(widgetSyncProvider).start();
