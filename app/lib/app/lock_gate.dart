@@ -78,24 +78,28 @@ class _LockGateState extends ConsumerState<LockGate>
     });
     final enabled = ref.watch(appLockEnabledProvider);
     final lock = ref.watch(lockControllerProvider);
-    if (!enabled.hasValue) {
-      // FR-25-08: blank until the setting is known; no content flash.
-      return ColoredBox(
-        key: const Key('lock-splash'),
-        color: Theme.of(context).colorScheme.surface,
-      );
-    }
-    final locked = enabled.value! && lock.needsAuth;
+    // FR-25-08: until the setting is known, hide the child behind a blank
+    // splash (it stays mounted so startup work is not delayed).
+    final known = enabled.hasValue;
+    final locked = known && (enabled.value ?? false) && lock.needsAuth;
+    final hidden = !known || locked;
     return Stack(
       textDirection: TextDirection.ltr,
       children: [
         Positioned.fill(
           child: Offstage(
-            offstage: locked,
-            child: TickerMode(enabled: !locked, child: widget.child),
+            offstage: hidden,
+            child: TickerMode(enabled: !hidden, child: widget.child),
           ),
         ),
-        if (locked)
+        if (!known)
+          Positioned.fill(
+            child: ColoredBox(
+              key: const Key('lock-splash'),
+              color: Theme.of(context).colorScheme.surface,
+            ),
+          )
+        else if (locked)
           Positioned.fill(
             child: LockOverlay(
               failed: lock.failed,
