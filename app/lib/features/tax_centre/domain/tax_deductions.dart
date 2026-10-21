@@ -145,8 +145,9 @@ abstract final class TaxDeductionDetector {
       if (life.isNotEmpty) TaxItem('Life insurance premiums', sum(life)),
     ];
     final epfTotal = epf.fold(0, (a, h) => a + epfShare(h, fromMs, toMs));
-    if (epfTotal > 0)
+    if (epfTotal > 0) {
       items80C.add(TaxItem('EPF, your share (estimated)', epfTotal));
+    }
     final healthSum = sum(health);
     final used = {...qualifying.map((t) => t.id), ...nps.map((t) => t.id)};
     return DetectedDeductions(

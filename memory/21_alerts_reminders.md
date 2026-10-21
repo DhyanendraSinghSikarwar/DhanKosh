@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-21 |
-| Status | In progress (Phase 4: alert state stores done; channels, posting, workers, decision logic and Alerts screen pending) |
+| Status | In progress (pure alert decision logic done: budgets, low-balance bills, renewals, untracked changes, card-bill stages, new-transaction, balance-updated and statement-locked texts; channels, posting, persistence, worker and Alerts screen pending) |
 | Priority | P1 |
 | Phase | 4 |
 | Last Updated | 2026-10-21 |
@@ -469,23 +469,17 @@ Fixture messages (masked): `HDFC Bank: Rs 250.00 debited from a/c XX1234 on 17-1
 
 ## 18. Implementation Notes
 
-Phase 4 persistence only. Tables `alerted_keys`, `card_due_reminder_state`, `balance_notice_days` (schema v4). Settings keys (`transaction_notifications`, `budget_alert_percent` default 90, `card_due_reminders`) already exist in `SettingKeys`. Code: `lib/features/alerts_reminders/domain/{alerted_key_store,card_reminder_state_store,balance_notice_store}.dart`, `data/alert_state_stores_impl.dart`; providers `alertedKeyStoreProvider`, `cardReminderStateStoreProvider`, `balanceNoticeStoreProvider`. Tests: `test/features/phase4/phase4_repositories_test.dart`.
+Phase 4 domain logic (no OS code). Code in `lib/features/alerts_reminders/domain/`: `alert_models.dart`, `alert_text.dart`, `alert_rules.dart`. Decisions are plain `AlertDecision` values; posting, the 300-key alerted store, the lock and cancel calls are the callers' jobs. Card reminder staging reuses `CardReminderPlan` from `credit_cards/domain`; budget levels reuse `BudgetMath.pendingAlert` from `expense_tracking/domain`.
 
-FR status done: FR-21-04 (once per IST day store), 11 (state + 120-day prune on every write), 14 (keys persisted, newest 300), 18 (defaults exist). Pending: all others.
+FR status: done in domain: FR-21-02 and 03 (`newTransactionAlert`, `alternativeCategories`, `categorySavedAlert`), 04 (`balanceUpdatedAlert`; once per IST day per account is the caller's filter), 05 (`budgetAlerts`), 06 (`lowBalanceBillAlerts`), 07 (`renewalAlerts`), 08 (`gapAlerts`), 09 and 10 (`cardBillAlerts`, actions "Mark paid" / "Remind tomorrow"), 12 (`statementLockedAlert`), 15 (links), 18 (`AlertSettings` defaults), 20 (`AlertText.money`). Pending: FR-21-01, 11 (state store), 13, 14 (persisted keys), 16, 17, 19, and the Alerts screen.
 
-Stages are stored as `DueStage` names (`days5`, `days2`, `dueDay`, `overdue`) in a sorted CSV; the store API uses plain strings so it does not depend on the decision-logic entities.
+Public API:
+- `AlertRules.budgetAlerts({budgets, spentByCategory, year, month, settings, alerted}) -> List<AlertDecision>`; `lowBalanceBillAlerts({List<BillDueInput> bills, today, alerted})`; `renewalAlerts({List<RenewalInput> policies, today, alerted})`; `gapAlerts({List<GapInput> gaps, nowMs, settings, alerted})` (<= 3, <= 14 days); `cardBillAlerts({List<CardBillInput> cards, todayEpochDay, settings})` (includes cancel decisions); `newTransactionAlert({...}) -> AlertDecision?`; `categorySavedAlert`; `alternativeCategories({current, isCredit, usedMostFirst}) -> List<Category>`; `balanceUpdatedAlert({gaps, settings}) -> AlertDecision?`; `statementLockedAlert({statementId, bank})`.
+- `AlertDecision{kind, key, channel, notificationId, title, body, link, actions, stage, timeoutMs, cancel}` plus `AlertDecision.cancel(...)`; `AlertChannel{id}`, `AlertKind`, `AlertAction{id,label,payload}`, `AlertSettings{transactionNotifications=true, budgetAlertPercent=90, cardDueReminders=true}`; input values `BillDueInput`, `RenewalInput`, `GapInput`, `CardBillInput`, `BalanceGapInput`; `AlertText.money/monthYear/stableId`.
 
-API for UI/worker agents:
+Decisions: dedupe keys are to be stored only after a successful post (Open Question 1 closed: no lost alerts); notification ids for keyed alerts use `AlertText.stableId` (FNV-1a, Open Question 4 closed); budgets with a limit <= 0 never alert (Open Question 12 closed); renewal title says "in 1 day" (Open Question 6 closed); default percent 90 (Open Question 2 closed, memory 10). The bill alert resolves the paying account outside (merge map, then a debit card's linked account) and passes label, last4, balance and an `accountIsBank` flag. "Unusual spend" is not in memory 21 or the Kotlin app (only a v2 idea), so no rule was added; the nearest existing signal is the category-drift insight in [Analytics](18_analytics.md).
 
-```dart
-AlertedKeyStore { static const cap = 300; Future<bool> has(String key); Future<Set<String>> all(); Future<void> add(String key, int sentAtMs); Future<void> clear(); }
-CardReminderStateStore { Future<CardReminderRecord?> read(int cardId, int dueEpochDay);
-  Future<void> save(CardReminderRecord r, {required int todayEpochDay});
-  Future<void> markSent(int cardId, int dueEpochDay, String stage, {required int todayEpochDay});
-  Future<void> markPaid(int cardId, int dueEpochDay, {required int todayEpochDay});
-  Future<void> snooze(int cardId, int dueEpochDay, int untilEpochDay, {required int todayEpochDay}); }
-BalanceNoticeStore { Future<int?> lastDay(String key); Future<bool> shouldNotify(String key, int epochDay); Future<void> record(String key, int epochDay); }
-```
+Tests: `test/features/alerts_reminders/alert_rules_test.dart` (budget boundary values: 90% exactly vs one paisa under, 100, over, already alerted, percents 80/95/100, zero limit, new month; bills 0..3-day window and balance equal to amount; renewals 0..7; gaps 14-day boundary, cap 3, once each; card stage table days 10..-8, snooze ends today, paid cancels; new-transaction text, buttons, gating; balance and statement texts; money grouping).
 
 ## 19. Change Log (date | change | reason)
 
@@ -494,3 +488,4 @@ BalanceNoticeStore { Future<int?> lastDay(String key); Future<bool> shouldNotify
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
+| 2026-10-21 | Phase 4 domain logic landed | Phase 4 |

@@ -49,7 +49,7 @@ abstract final class TaxIncome {
   static final _dividend = RegExp(r'dividend|\bdiv\b', caseSensitive: false);
   static final _rent = RegExp(r'\brent\b', caseSensitive: false);
   static final _excluded = RegExp(
-    r'reimburs|refund|reversal|cashback',
+    'reimburs|refund|reversal|cashback',
     caseSensitive: false,
   );
 

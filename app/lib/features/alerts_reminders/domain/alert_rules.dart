@@ -213,7 +213,8 @@ abstract final class AlertRules {
       final due = c.dueEpochDay;
       if (billed == null || billed <= 0 || due == null) {
         out.add(
-            AlertDecision.cancel(kind: AlertKind.cardBill, notificationId: id));
+          AlertDecision.cancel(kind: AlertKind.cardBill, notificationId: id),
+        );
         continue;
       }
       if (!settings.cardDueReminders) continue;
@@ -345,13 +346,13 @@ abstract final class AlertRules {
         timeoutMs: 4000,
       );
 
-  static const _creditDefaults = [
+  static const List<Category> _creditDefaults = [
     Category.salary,
     Category.refund,
     Category.income,
     Category.transfer,
   ];
-  static const _debitDefaults = [
+  static const List<Category> _debitDefaults = [
     Category.food,
     Category.groceries,
     Category.shopping,
@@ -388,8 +389,7 @@ abstract final class AlertRules {
     if (gaps.isEmpty || !settings.transactionNotifications) return null;
     final lines = [
       for (final g in gaps)
-        '${g.label} · '
-            '${AlertText.money(g.unexplainedMinor.abs())} not explained',
+        '${g.label} · ${AlertText.money(g.unexplainedMinor.abs())} not explained',
     ];
     final single = gaps.length == 1;
     return AlertDecision(

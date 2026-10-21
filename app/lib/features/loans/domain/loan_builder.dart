@@ -5,7 +5,7 @@ import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// Builds loans from loan accounts and EMI payments (FR-15-01..04, 12, 14).
-/// Pure port of Kotlin `Loans`. Dates bucket at [offset] (default IST).
+/// Pure port of Kotlin `Loans`. Dates bucket at `offset` (default IST).
 abstract final class Loans {
   /// Detected EMI series need payments within this many days (FR-15-03).
   static const recencyDays = 75;
@@ -98,8 +98,9 @@ abstract final class Loans {
       if (withBal.isNotEmpty) {
         var best = withBal.first;
         for (final c in withBal.skip(1)) {
-          if ((c.balanceUpdatedAt ?? 0) > (best.balanceUpdatedAt ?? 0))
+          if ((c.balanceUpdatedAt ?? 0) > (best.balanceUpdatedAt ?? 0)) {
             best = c;
+          }
         }
         childBal = best.latestBalanceMinor;
       }
@@ -381,7 +382,10 @@ abstract final class Loans {
     final computed = terms == null
         ? null
         : Amortization.emi(
-            terms.principalMinor, terms.rateBps, terms.tenureMonths);
+            terms.principalMinor,
+            terms.rateBps,
+            terms.tenureMonths,
+          );
     final computedEmi = (computed != null && computed > 0) ? computed : null;
     final emi = series.isEmpty ? computedEmi : series.last.amountMinor;
     final days = series.map((t) => dateOf(t).day).toList()..sort();

@@ -14,7 +14,7 @@ import 'package:parser_core/parser_core.dart';
 /// keeps Kotlin parity for open questions 5 and 6.
 abstract final class AnalyticsMath {
   /// Scheduled spends excluded from the discretionary daily rate (FR-18-14).
-  static const fixedCategories = {
+  static const Set<Category> fixedCategories = {
     Category.rent,
     Category.bills,
     Category.emiLoan,
@@ -153,7 +153,7 @@ abstract final class AnalyticsMath {
   static SavingsRateSummary? savingsSummary(List<(DateTime, double)> rates) {
     if (rates.length < 2) return null;
     int round(double x) => (x + 0.5).floor();
-    final avg = rates.fold(0.0, (a, e) => a + e.$2) / rates.length;
+    final avg = rates.fold<double>(0, (a, e) => a + e.$2) / rates.length;
     return SavingsRateSummary(
       latestMonth: rates.last.$1,
       latestPercent: round(rates.last.$2),
@@ -196,7 +196,7 @@ abstract final class AnalyticsMath {
     final lines = BudgetMath.sortedUse(
       [
         for (final b in list)
-          if (b.monthlyLimitMinor > 0) b
+          if (b.monthlyLimitMinor > 0) b,
       ],
       spentByCategory,
       months: months,

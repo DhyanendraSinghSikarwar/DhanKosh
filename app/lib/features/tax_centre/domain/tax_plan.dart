@@ -66,6 +66,26 @@ class TaxPlan {
     required this.oldRegime,
   });
 
+  factory TaxPlan.compute({
+    required TaxPeriod period,
+    required int fyStartYear,
+    required TaxIncomeEstimate est,
+    DetectedDeductions deductions = const DetectedDeductions(),
+    TaxWhatIf whatIf = const TaxWhatIf(),
+  }) {
+    final rules = TaxRules.forYear(fyStartYear);
+    final input = inputOf(est: est, deductions: deductions, whatIf: whatIf);
+    return TaxPlan._(
+      period: period,
+      fyStartYear: fyStartYear,
+      est: est,
+      deductions: deductions,
+      whatIf: whatIf,
+      newRegime: TaxCalculator.compute(rules, Regime.newRegime, input),
+      oldRegime: TaxCalculator.compute(rules, Regime.oldRegime, input),
+    );
+  }
+
   final TaxPeriod period;
   final int fyStartYear;
   final TaxIncomeEstimate est;
@@ -130,28 +150,8 @@ class TaxPlan {
     );
   }
 
-  static TaxPlan compute({
-    required TaxPeriod period,
-    required int fyStartYear,
-    required TaxIncomeEstimate est,
-    DetectedDeductions deductions = const DetectedDeductions(),
-    TaxWhatIf whatIf = const TaxWhatIf(),
-  }) {
-    final rules = TaxRules.forYear(fyStartYear);
-    final input = inputOf(est: est, deductions: deductions, whatIf: whatIf);
-    return TaxPlan._(
-      period: period,
-      fyStartYear: fyStartYear,
-      est: est,
-      deductions: deductions,
-      whatIf: whatIf,
-      newRegime: TaxCalculator.compute(rules, Regime.newRegime, input),
-      oldRegime: TaxCalculator.compute(rules, Regime.oldRegime, input),
-    );
-  }
-
   /// Same plan with other what-if figures (period switch passes an empty one).
-  TaxPlan withWhatIf(TaxWhatIf o) => compute(
+  TaxPlan withWhatIf(TaxWhatIf o) => TaxPlan.compute(
         period: period,
         fyStartYear: fyStartYear,
         est: est,

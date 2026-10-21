@@ -55,7 +55,7 @@ class RegimeRules {
 }
 
 const _lakh = 10000000; // Rs 1 lakh in paise
-const _crore = 100 * _lakh;
+const int _crore = 100 * _lakh;
 
 Map<AgeBand, List<TaxSlab>> _same(List<TaxSlab> s) => {
       for (final a in AgeBand.values) a: s,
@@ -93,7 +93,7 @@ const _newSurcharge = [
   SurchargeTier(2 * _crore, 25),
 ];
 
-final _oldRegime = RegimeRules(
+const _oldRegime = RegimeRules(
   slabs: _oldSlabs,
   standardDeduction: 50000 * 100,
   familyPensionCap: 15000 * 100,
@@ -213,10 +213,10 @@ class TaxRules {
   );
 
   /// FY2026-27: copy of FY2025-26 (see the open question at the top).
-  static final fy2026_27 = fy2025_26.copyWith(fyStartYear: 2026);
+  static final TaxRules fy2026_27 = fy2025_26.copyWith(fyStartYear: 2026);
 
-  static final all = [fy2024_25, fy2025_26, fy2026_27];
-  static final latest = fy2026_27;
+  static final List<TaxRules> all = [fy2024_25, fy2025_26, fy2026_27];
+  static final TaxRules latest = fy2026_27;
 
   /// Last rule set with `fyStartYear <= year`, else FY2024-25.
   static TaxRules forYear(int fyStartYear) {
@@ -244,7 +244,7 @@ abstract final class FinancialYear {
 
   static String _yy(int y) => (y % 100).toString().padLeft(2, '0');
 
-  static DateTime start(int fyStartYear) => DateTime.utc(fyStartYear, 4, 1);
+  static DateTime start(int fyStartYear) => DateTime.utc(fyStartYear, 4);
   static DateTime end(int fyStartYear) => DateTime.utc(fyStartYear + 1, 3, 31);
 
   /// Period bounds (inclusive) for [period] at [today]: this FY, last FY, or

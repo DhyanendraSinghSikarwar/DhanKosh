@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-15 |
-| Status | In progress (Phase 4: link and dismissal stores done; loan detection, amortisation, summaries and Loans UI pending) |
+| Status | In progress (pure domain logic done: detection, summarise, amortisation, duplicates, link encodings, add-loan rule, EMI pairing; data/persistence and UI pending) |
 | Priority | P2 |
 | Phase | 4 |
 | Last Updated | 2026-10-21 |
@@ -361,22 +361,20 @@ Fixtures: Propelld EMI/disbursal SMS (Part B 8 sample 18), three monthly EMI deb
 
 ## 18. Implementation Notes
 
-Phase 4 persistence only. Tables `loan_link_rows`, `loan_dismissal_rows` (schema v4); loans themselves stay in `accounts`. Code: `lib/features/loans/domain/loan_link_repository.dart` (entity `LoanLinkSet`), `data/loan_link_repository_impl.dart`; provider `loanLinkRepositoryProvider`. Detection/amortisation/summaries are in the loans domain (separate Phase 4 work). Tests: `test/features/phase4/phase4_repositories_test.dart`.
+Phase 4 domain logic (no UI, no persistence). Code in `lib/features/loans/domain/`: `amortization.dart`, `loan_models.dart`, `loan_builder.dart`, `emi_pairing.dart`; shared date helpers in `lib/features/analytics/domain/civil_date.dart` (a "day" is a UTC-midnight `DateTime`; row times bucket at an `offset`, default IST `istOffset`, per memory 18 Open Question 9).
 
-FR status done: FR-15-10 (link/unlink, payee marks manual), 11 (dismissal store). Pending: all others.
+FR status: done in domain: FR-15-01..05 (list/assign/detect/summarise/amortise), FR-15-06 (`Loans.termsFromForm`, `Loans.validEmiDay`), FR-15-08 (source label via `OutstandingSource`, prepayment tag via `Amortization.isPrepayment`), FR-15-10 (`LoanLinks.keyOf/encodeTx/encodePayee/decode`), FR-15-12 (`Loans.duplicates`), FR-15-14. Pending: FR-15-07 UI, FR-15-09, FR-15-11 persistence (link/dismissal stores, S1), FR-15-13 (`applyLoanStatus`), FR-15-15, and every screen.
 
-API for UI agents:
+Public API:
+- `Amortization.emi(int principalMinor, int rateBps, int months) -> int`; `schedule(LoanTerms, {int? emiMinor}) -> List<Instalment>`; `dueOn(DateTime first, int n) -> DateTime`; `elapsed(DateTime first, DateTime today, int max) -> int`; `remainingEmis(int outstandingMinor, int emiMinor, int rateBps) -> int?`; `splitPaid(List<Instalment>, int paid) -> ({int principalMinor, int interestMinor})`; `isPrepayment(int amountMinor, int? emiMinor) -> bool`.
+- `LoanTerms{principalMinor, rateBps, tenureMonths, DateTime? startDay}`; `Instalment{number, due, emiMinor, interestMinor, principalMinor, balanceAfterMinor}` (the memory `ScheduleRow`).
+- `Loans.build({required List<LoanAccount> accounts, required List<LedgerTx> payments, required DateTime today, Set<String> dismissed, LoanLinks links, List<LoanAccount> merged, Duration offset}) -> List<Loan>`; `Loans.summarise(...)`, `Loans.duplicates(List<Loan>, {Set<String> ignored}) -> List<LoanDuplicate>`, `Loans.keyOf(LedgerTx)`, `Loans.isPayment(LedgerTx)`, `Loans.termsOf(LoanAccount)`, `Loans.termsFromForm({principalMinor, emiMinor, rateBps, tenureMonths, firstEmi}) -> LoanTerms?`, `Loans.validEmiDay(int)`.
+- `LoanAccount{id, bankName, last4, nickname, hidden, principalMinor, rateBps, tenureMonths, startDay (epoch day), currentBalanceMinor, latestBalanceMinor, balanceUpdatedAt, mergedIntoId}` is the input shape (the repository maps `accounts` rows to it); `Loan` carries the memory `LoanSummary` fields (`key, accountId, name, last4, detected, closed, emiMinor, emiDay, paidCount, totalEmis, remainingEmis, outstandingMinor, outstandingSource, nextDue, payoffDate, progress, terms, payments, mergedIds`) plus `trackedCount, totalPaidMinor, principalPaidMinor, interestPaidMinor, totalInterestMinor, upcoming (12), payingAccountId`.
+- `EmiPairing.pair({tx, accountId, txOnLoan, candidates, loanAccountIds}) -> EmiPair?` (`markTransferId`, note "EMI also debited from your bank account"); the ledger repository calls it after each DEBIT insert (FR-08-15).
 
-```dart
-class LoanLinkSet { Map<int,int> tx; Map<String,int> payee; Set<String> manualPayees; Set<String> dismissed; static String keyOf(String? merchant, String? upiId); }
-abstract interface class LoanLinkRepository {
-  Future<LoanLinkSet> read();  Stream<LoanLinkSet> watch();
-  Future<void> linkTx(int txId, int loanId);  Future<void> linkPayee(String payeeKey, int loanId);  // marks manual
-  Future<void> unlinkTx(int txId);  Future<void> unlinkPayee(String payeeKey);
-  Future<void> dismissPayee(String payeeKey);  Future<void> undismissPayee(String payeeKey);
-  Future<void> clearLoan(int loanId);
-}
-```
+Decisions: loan keys are `acct:<id>` / `payee:<key>` (memory model), not Kotlin `a<id>` / `e<key>`. Rounding: EMI and monthly interest use `double` math then `round()` (half away from zero = Kotlin `roundToLong` for non-negative values; Open Question 5 closed, all Kotlin vectors match to the paisa). Stable sorts are used where Kotlin sorts are stable. `progress` is a `double` ratio, not money.
+
+Tests: `test/features/loans/loans_test.dart` ports Kotlin `LoansTest` (EMI 867,823 / 888,488 / 1,000,000; schedule sums 100,000,000 principal + 108,277,663 interest, 240 rows, final balance 0; elapsed/dueOn clamp; remainingEmis 180; account + detected scenario; investments/dismissed; links by payee and tx; manual payee; merged child; duplicates) and adds worked examples 2 to 5, 75-day and month thresholds, review/non-INR/custom-category exclusion, closed loan, month-end nextDue, link encodings, add-loan validation, EMI pairing. Covers TC-15-01..05 and TC-15-08 in domain; TC-15-06 encodings only (stores pending), TC-15-07 and widget/integration cases pending.
 
 ## 19. Change Log (date | change | reason)
 
@@ -385,3 +383,4 @@ abstract interface class LoanLinkRepository {
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
+| 2026-10-21 | Phase 4 domain logic landed | Phase 4 |

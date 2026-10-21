@@ -1,5 +1,6 @@
 /// Calendar helpers shared by the Phase 4 domain logic. A "day" is a UTC
 /// midnight [DateTime] used only for its year, month and day. Pure Dart.
+library;
 
 /// India Standard Time, the default bucketing offset (see memory 18 Open
 /// Question 9: the old app used the device zone, the ledger day keys use IST).
@@ -15,8 +16,12 @@ DateTime dayOf(int epochMs, {Duration offset = istOffset}) {
 }
 
 /// Epoch ms of local [hour]:[minute] on [day] at [offset].
-int epochMsOf(DateTime day,
-        {int hour = 0, int minute = 0, Duration offset = istOffset}) =>
+int epochMsOf(
+  DateTime day, {
+  int hour = 0,
+  int minute = 0,
+  Duration offset = istOffset,
+}) =>
     DateTime.utc(day.year, day.month, day.day, hour, minute)
         .millisecondsSinceEpoch -
     offset.inMilliseconds;
@@ -49,7 +54,7 @@ DateTime addMonths(DateTime day, int n) {
   return DateTime.utc(y, m, d);
 }
 
-/// The day [dom] of the month of [ym], clamped to the month length.
+/// The day [dom] of month [month] of [year], clamped to the month length.
 DateTime clampedDay(int year, int month, int dom) {
   final len = daysInMonth(year, month);
   return DateTime.utc(year, month, dom < len ? dom : len);
@@ -64,9 +69,10 @@ List<T> stableSorted<T>(Iterable<T> items, int Function(T a, T b) compare) {
   final idx = <(int, T)>[
     for (final e in items.indexed) (e.$1, e.$2),
   ];
-  idx.sort((a, b) {
-    final c = compare(a.$2, b.$2);
-    return c != 0 ? c : a.$1.compareTo(b.$1);
-  });
-  return [for (final e in idx) e.$2];
+  final sorted = idx
+    ..sort((a, b) {
+      final c = compare(a.$2, b.$2);
+      return c != 0 ? c : a.$1.compareTo(b.$1);
+    });
+  return [for (final e in sorted) e.$2];
 }

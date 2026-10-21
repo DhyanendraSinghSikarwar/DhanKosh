@@ -44,8 +44,11 @@ LedgerTx row(
 
 List<LedgerTx> salaries(DateTime from, int count, int rupees) => [
       for (var i = 0; i < count; i++)
-        row(addMonths(DateTime.utc(from.year, from.month), i), rupees,
-            Category.salary),
+        row(
+          addMonths(DateTime.utc(from.year, from.month), i),
+          rupees,
+          Category.salary,
+        ),
     ];
 
 void main() {
@@ -54,15 +57,23 @@ void main() {
   group('TaxIncome.estimate (FR-19-02, FR-19-14)', () {
     test('part year is projected at the latest salary', () {
       final txs = [
-        ...salaries(DateTime.utc(2026, 4, 1), 6, 100000),
-        row(DateTime.utc(2026, 6, 30), 3000, Category.income,
-            merchant: 'Interest credit'),
-        row(DateTime.utc(2026, 7, 2), 500, Category.income,
-            merchant: 'Dividend Acme'),
+        ...salaries(DateTime.utc(2026, 4), 6, 100000),
+        row(
+          DateTime.utc(2026, 6, 30),
+          3000,
+          Category.income,
+          merchant: 'Interest credit',
+        ),
+        row(
+          DateTime.utc(2026, 7, 2),
+          500,
+          Category.income,
+          merchant: 'Dividend Acme',
+        ),
       ];
       final e = TaxIncome.estimate(
         txs,
-        DateTime.utc(2026, 4, 1),
+        DateTime.utc(2026, 4),
         DateTime.utc(2027, 3, 31),
         today,
       );
@@ -77,15 +88,23 @@ void main() {
     test('memory example: today 17 Oct, interest 3,000 over 6 months -> 6,000',
         () {
       final txs = [
-        row(DateTime.utc(2026, 4, 2), 1, Category.other,
-            type: TransactionType.debit),
-        ...salaries(DateTime.utc(2026, 4, 1), 6, 100000),
-        row(DateTime.utc(2026, 6, 30), 3000, Category.income,
-            merchant: 'Interest credit'),
+        row(
+          DateTime.utc(2026, 4, 2),
+          1,
+          Category.other,
+          type: TransactionType.debit,
+        ),
+        ...salaries(DateTime.utc(2026, 4), 6, 100000),
+        row(
+          DateTime.utc(2026, 6, 30),
+          3000,
+          Category.income,
+          merchant: 'Interest credit',
+        ),
       ];
       final e = TaxIncome.estimate(
         txs,
-        DateTime.utc(2026, 4, 1),
+        DateTime.utc(2026, 4),
         DateTime.utc(2027, 3, 31),
         DateTime.utc(2026, 10, 17),
       );
@@ -96,17 +115,17 @@ void main() {
     });
 
     test('month in progress counts once it is nearly over', () {
-      final txs = salaries(DateTime.utc(2026, 4, 1), 7, 100000);
+      final txs = salaries(DateTime.utc(2026, 4), 7, 100000);
       final late = TaxIncome.estimate(
         txs,
-        DateTime.utc(2026, 4, 1),
+        DateTime.utc(2026, 4),
         DateTime.utc(2027, 3, 31),
         DateTime.utc(2026, 10, 29), // 31-day month: 29 is not < 29
       );
       expect(late.monthsOfData, 7);
       final early = TaxIncome.estimate(
         txs,
-        DateTime.utc(2026, 4, 1),
+        DateTime.utc(2026, 4),
         DateTime.utc(2027, 3, 31),
         DateTime.utc(2026, 10, 28),
       );
@@ -116,13 +135,17 @@ void main() {
     test('full year needs no estimate; FD interest is not savings interest',
         () {
       final txs = [
-        ...salaries(DateTime.utc(2025, 4, 1), 12, 50000),
-        row(DateTime.utc(2025, 5, 1), 2000, Category.income,
-            merchant: 'FD interest'),
+        ...salaries(DateTime.utc(2025, 4), 12, 50000),
+        row(
+          DateTime.utc(2025, 5),
+          2000,
+          Category.income,
+          merchant: 'FD interest',
+        ),
       ];
       final e = TaxIncome.estimate(
         txs,
-        DateTime.utc(2025, 4, 1),
+        DateTime.utc(2025, 4),
         DateTime.utc(2026, 3, 31),
         today,
       );
@@ -135,21 +158,42 @@ void main() {
 
     test('refunds, reimbursements and transfers are left out', () {
       final txs = [
-        ...salaries(DateTime.utc(2025, 4, 1), 12, 10000),
-        row(DateTime.utc(2025, 6, 1), 9000, Category.income,
-            merchant: 'Reimbursement travel'),
-        row(DateTime.utc(2025, 6, 2), 9000, Category.refund,
-            merchant: 'Shop refund'),
-        row(DateTime.utc(2025, 6, 3), 9000, Category.transfer,
-            merchant: 'Own account', type: TransactionType.transfer),
-        row(DateTime.utc(2025, 6, 4), 4000, Category.income,
-            merchant: 'Freelance design'),
-        row(DateTime.utc(2025, 6, 5), 15000, Category.income,
-            merchant: 'Rent from tenant'),
+        ...salaries(DateTime.utc(2025, 4), 12, 10000),
+        row(
+          DateTime.utc(2025, 6),
+          9000,
+          Category.income,
+          merchant: 'Reimbursement travel',
+        ),
+        row(
+          DateTime.utc(2025, 6, 2),
+          9000,
+          Category.refund,
+          merchant: 'Shop refund',
+        ),
+        row(
+          DateTime.utc(2025, 6, 3),
+          9000,
+          Category.transfer,
+          merchant: 'Own account',
+          type: TransactionType.transfer,
+        ),
+        row(
+          DateTime.utc(2025, 6, 4),
+          4000,
+          Category.income,
+          merchant: 'Freelance design',
+        ),
+        row(
+          DateTime.utc(2025, 6, 5),
+          15000,
+          Category.income,
+          merchant: 'Rent from tenant',
+        ),
       ];
       final e = TaxIncome.estimate(
         txs,
-        DateTime.utc(2025, 4, 1),
+        DateTime.utc(2025, 4),
         DateTime.utc(2026, 3, 31),
         today,
       );
@@ -161,7 +205,7 @@ void main() {
     test('no data gives nothing', () {
       final e = TaxIncome.estimate(
         const [],
-        DateTime.utc(2026, 4, 1),
+        DateTime.utc(2026, 4),
         DateTime.utc(2027, 3, 31),
         today,
       );
@@ -171,30 +215,75 @@ void main() {
   });
 
   group('deduction detection (FR-19-05, FR-19-06)', () {
-    final from = epochMsOf(DateTime.utc(2026, 4, 1));
+    final from = epochMsOf(DateTime.utc(2026, 4));
     final to = epochMsOf(DateTime.utc(2027, 3, 31), hour: 23);
     DateTime d(int m) => DateTime.utc(2026, m, 10);
 
     test('80C items, NPS, health premiums and context investments', () {
       final txs = [
-        row(d(5), 5000, Category.investment,
-            merchant: 'PPF deposit', type: TransactionType.investment),
-        row(d(6), 3000, Category.investment,
-            merchant: 'Axis ELSS tax saver', type: TransactionType.investment),
-        row(d(7), 2000, Category.investment,
-            merchant: 'Sukanya Samriddhi', type: TransactionType.investment),
-        row(d(8), 1000, Category.investment,
-            merchant: 'NSC post office', type: TransactionType.investment),
-        row(d(9), 4000, Category.investment,
-            merchant: 'NPS Tier 1', type: TransactionType.investment),
-        row(d(9), 7000, Category.investment,
-            merchant: 'Index fund', type: TransactionType.investment),
-        row(d(5), 12000, Category.insurance,
-            merchant: 'Max Life premium', type: TransactionType.debit),
-        row(d(5), 8000, Category.insurance,
-            merchant: 'Niva Bupa Health', type: TransactionType.debit),
-        row(d(5), 9000, Category.insurance,
-            merchant: 'Car insurance', type: TransactionType.debit),
+        row(
+          d(5),
+          5000,
+          Category.investment,
+          merchant: 'PPF deposit',
+          type: TransactionType.investment,
+        ),
+        row(
+          d(6),
+          3000,
+          Category.investment,
+          merchant: 'Axis ELSS tax saver',
+          type: TransactionType.investment,
+        ),
+        row(
+          d(7),
+          2000,
+          Category.investment,
+          merchant: 'Sukanya Samriddhi',
+          type: TransactionType.investment,
+        ),
+        row(
+          d(8),
+          1000,
+          Category.investment,
+          merchant: 'NSC post office',
+          type: TransactionType.investment,
+        ),
+        row(
+          d(9),
+          4000,
+          Category.investment,
+          merchant: 'NPS Tier 1',
+          type: TransactionType.investment,
+        ),
+        row(
+          d(9),
+          7000,
+          Category.investment,
+          merchant: 'Index fund',
+          type: TransactionType.investment,
+        ),
+        row(
+          d(5),
+          12000,
+          Category.insurance,
+          merchant: 'Max Life premium',
+          type: TransactionType.debit,
+        ),
+        row(
+          d(5),
+          8000,
+          Category.insurance,
+          merchant: 'Niva Bupa Health',
+          type: TransactionType.debit,
+        ),
+        row(
+          d(5),
+          9000,
+          Category.insurance,
+          merchant: 'Car insurance',
+          type: TransactionType.debit,
+        ),
       ];
       final res = TaxDeductionDetector.detect(txs, from, to);
       final labels = {for (final i in res.items80C) i.label: i.amountMinor};
@@ -210,8 +299,13 @@ void main() {
     });
 
     test('rows outside the period or under review are ignored', () {
-      final out = row(DateTime.utc(2026, 3, 1), 5000, Category.investment,
-          merchant: 'PPF', type: TransactionType.investment);
+      final out = row(
+        DateTime.utc(2026, 3),
+        5000,
+        Category.investment,
+        merchant: 'PPF',
+        type: TransactionType.investment,
+      );
       final res = TaxDeductionDetector.detect([out], from, to);
       expect(res.items80C, isEmpty);
       expect(res.d80Calc, 0);
@@ -226,28 +320,35 @@ void main() {
     });
 
     test('EPF employee share of passbook growth', () {
-      final fromMs = epochMsOf(DateTime.utc(2026, 4, 1));
+      final fromMs = epochMsOf(DateTime.utc(2026, 4));
       final toMs = epochMsOf(DateTime.utc(2027, 3, 31));
-      final prev = epochMsOf(DateTime.utc(2026, 6, 1));
-      final at = epochMsOf(DateTime.utc(2026, 9, 1));
+      final prev = epochMsOf(DateTime.utc(2026, 6));
+      final at = epochMsOf(DateTime.utc(2026, 9));
       final h = EpfHolding(
-          valueMinor: r(115670),
-          previousValueMinor: r(100000),
-          asOf: at,
-          previousAsOf: prev);
+        valueMinor: r(115670),
+        previousValueMinor: r(100000),
+        asOf: at,
+        previousAsOf: prev,
+      );
       // Whole growth 15,670 inside the period; employee 12 / 15.67.
       expect(TaxDeductionDetector.epfShare(h, fromMs, toMs), r(12000));
       expect(
         TaxDeductionDetector.epfShare(
           const EpfHolding(
-              valueMinor: 5, previousValueMinor: 9, asOf: 2, previousAsOf: 1),
+            valueMinor: 5,
+            previousValueMinor: 9,
+            asOf: 2,
+            previousAsOf: 1,
+          ),
           fromMs,
           toMs,
         ),
         0,
       );
       expect(
-          TaxDeductionDetector.epfShare(const EpfHolding(), fromMs, toMs), 0);
+        TaxDeductionDetector.epfShare(const EpfHolding(), fromMs, toMs),
+        0,
+      );
       // Half the growth period lies before FY start: half the growth counts.
       final half = EpfHolding(
         valueMinor: r(115670),
@@ -261,10 +362,11 @@ void main() {
 
   group('TaxPlan (FR-19-04, FR-19-07, FR-19-08)', () {
     const est = TaxIncomeEstimate(
-        salary: 150000000,
-        interest: 600000,
-        savingsInterest: 600000,
-        monthsOfData: 12);
+      salary: 150000000,
+      interest: 600000,
+      savingsInterest: 600000,
+      monthsOfData: 12,
+    );
 
     test('derived values and recommendation', () {
       final p = TaxPlan.compute(
@@ -272,7 +374,8 @@ void main() {
         fyStartYear: 2026,
         est: est,
         deductions: const DetectedDeductions(
-            items80C: [TaxItem('PPF deposits', 15000000)]),
+          items80C: [TaxItem('PPF deposits', 15000000)],
+        ),
       );
       expect(p.hasIncome, isTrue);
       expect(p.c80, 15000000);
@@ -285,7 +388,10 @@ void main() {
 
     test('what-if overrides, back to calculated, and period label', () {
       final base = TaxPlan.compute(
-          period: TaxPeriod.last12, fyStartYear: 2026, est: est);
+        period: TaxPeriod.last12,
+        fyStartYear: 2026,
+        est: est,
+      );
       expect(base.fyLabel, 'Last 12 months');
       final w = base.withWhatIf(const TaxWhatIf(salary: 127500000));
       expect(w.whatIf.any, isTrue);
@@ -310,15 +416,19 @@ void main() {
 
     test('no income -> hasIncome false and nil tax', () {
       final p = TaxPlan.compute(
-          period: TaxPeriod.thisFy,
-          fyStartYear: 2026,
-          est: const TaxIncomeEstimate());
+        period: TaxPeriod.thisFy,
+        fyStartYear: 2026,
+        est: const TaxIncomeEstimate(),
+      );
       expect(p.hasIncome, isFalse);
       expect(p.newRegime.total, 0);
       expect(
-          TaxCalculator.slabLines(
-              p.newRegime.taxable, p.rules.newRegime.slabs[AgeBand.below60]!),
-          isEmpty);
+        TaxCalculator.slabLines(
+          p.newRegime.taxable,
+          p.rules.newRegime.slabs[AgeBand.below60]!,
+        ),
+        isEmpty,
+      );
     });
   });
 }

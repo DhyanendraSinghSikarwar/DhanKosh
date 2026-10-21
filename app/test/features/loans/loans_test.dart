@@ -68,7 +68,10 @@ void main() {
       expect(emi, closeTo(1074700, 100)); // about 10,747
       final s = Amortization.schedule(
         const LoanTerms(
-            principalMinor: 50000000, rateBps: 1050, tenureMonths: 60),
+          principalMinor: 50000000,
+          rateBps: 1050,
+          tenureMonths: 60,
+        ),
       );
       expect(s.first.interestMinor, 437500);
       expect(s.first.principalMinor, s.first.emiMinor - 437500);
@@ -116,13 +119,19 @@ void main() {
     test('too-small EMI is capped and never loops for ever', () {
       final s = Amortization.schedule(
         const LoanTerms(
-            principalMinor: 100000000, rateBps: 850, tenureMonths: 12),
+          principalMinor: 100000000,
+          rateBps: 850,
+          tenureMonths: 12,
+        ),
         emiMinor: 100000,
       );
       expect(s, isEmpty); // principal part <= 0 stops it
       final slow = Amortization.schedule(
         const LoanTerms(
-            principalMinor: 1000000, rateBps: 0, tenureMonths: 1000),
+          principalMinor: 1000000,
+          rateBps: 0,
+          tenureMonths: 1000,
+        ),
         emiMinor: 1,
       );
       expect(slow.length, 1000); // n == tenure is the last instalment
@@ -154,7 +163,10 @@ void main() {
     test('principal and interest split of paid instalments', () {
       final s = Amortization.schedule(
         const LoanTerms(
-            principalMinor: 12000000, rateBps: 1200, tenureMonths: 12),
+          principalMinor: 12000000,
+          rateBps: 1200,
+          tenureMonths: 12,
+        ),
       );
       final p = Amortization.splitPaid(s, 3);
       expect(
@@ -258,10 +270,12 @@ void main() {
     test('detection thresholds (FR-15-03): months, 75 days, dismissed, manual',
         () {
       final one = [
-        tx(d(2026, 10, 10), 700000, accountId: 1, merchant: 'Random Payee')
+        tx(d(2026, 10, 10), 700000, accountId: 1, merchant: 'Random Payee'),
       ];
-      expect(Loans.build(accounts: const [], payments: one, today: today),
-          isEmpty);
+      expect(
+        Loans.build(accounts: const [], payments: one, today: today),
+        isEmpty,
+      );
       final manual = Loans.build(
         accounts: const [],
         payments: one,
@@ -290,21 +304,32 @@ void main() {
       // Latest payment exactly 75 days old is kept, 76 dropped.
       final t75 = today.subtract(const Duration(days: 75));
       final keep = [
-        tx(t75.subtract(const Duration(days: 30)), 900000,
-            accountId: 1, merchant: 'Old Co'),
+        tx(
+          t75.subtract(const Duration(days: 30)),
+          900000,
+          accountId: 1,
+          merchant: 'Old Co',
+        ),
         tx(t75, 900000, accountId: 1, merchant: 'Old Co'),
       ];
       expect(
-          Loans.build(accounts: const [], payments: keep, today: today).length,
-          1);
+        Loans.build(accounts: const [], payments: keep, today: today).length,
+        1,
+      );
       final t76 = today.subtract(const Duration(days: 76));
       final drop = [
-        tx(t76.subtract(const Duration(days: 30)), 900000,
-            accountId: 1, merchant: 'Old Co'),
+        tx(
+          t76.subtract(const Duration(days: 30)),
+          900000,
+          accountId: 1,
+          merchant: 'Old Co',
+        ),
         tx(t76, 900000, accountId: 1, merchant: 'Old Co'),
       ];
-      expect(Loans.build(accounts: const [], payments: drop, today: today),
-          isEmpty);
+      expect(
+        Loans.build(accounts: const [], payments: drop, today: today),
+        isEmpty,
+      );
     });
 
     test('same month twice is one month; merchant under 2 chars ignored', () {
@@ -314,8 +339,10 @@ void main() {
         tx(d(2026, 9, 15), 800000, accountId: 1, merchant: 'X'),
         tx(d(2026, 10, 15), 800000, accountId: 1, merchant: 'X'),
       ];
-      expect(Loans.build(accounts: const [], payments: txs, today: today),
-          isEmpty);
+      expect(
+        Loans.build(accounts: const [], payments: txs, today: today),
+        isEmpty,
+      );
     });
 
     test(
@@ -323,18 +350,29 @@ void main() {
         () {
       final txs = [
         for (final m in [d(2026, 9, 10), d(2026, 10, 10)]) ...[
-          tx(m, 500000,
-              accountId: 1,
-              merchant: 'Tata Mutual Fund',
-              category: Category.investment),
+          tx(
+            m,
+            500000,
+            accountId: 1,
+            merchant: 'Tata Mutual Fund',
+            category: Category.investment,
+          ),
           tx(m, 500000, accountId: 1, merchant: 'Review Co', needsReview: true),
           tx(m, 500000, accountId: 1, merchant: 'Dollar Co', currency: 'USD'),
-          tx(m, 500000,
-              accountId: 1, merchant: 'Custom Co', customCategoryId: 3),
-          tx(m, 500000,
-              accountId: 1,
-              merchant: 'Credit Co',
-              type: TransactionType.credit),
+          tx(
+            m,
+            500000,
+            accountId: 1,
+            merchant: 'Custom Co',
+            customCategoryId: 3,
+          ),
+          tx(
+            m,
+            500000,
+            accountId: 1,
+            merchant: 'Credit Co',
+            type: TransactionType.credit,
+          ),
           tx(m, 900000, accountId: 1, merchant: 'Acme Finance'),
         ],
       ];
@@ -375,21 +413,34 @@ void main() {
       final acc = [loanAcc(9, 'Bajaj Finance', last4: '5678')];
       final txs = [
         tx(d(2026, 10, 10), 700000, accountId: 1, merchant: 'EMI LOAN 5678'),
-        tx(d(2026, 10, 11), 300000,
-            accountId: 1, merchant: 'Bajaj Finance emi'),
+        tx(
+          d(2026, 10, 11),
+          300000,
+          accountId: 1,
+          merchant: 'Bajaj Finance emi',
+        ),
         tx(d(2026, 10, 12), 100000, accountId: 1, merchant: 'Bajajx'),
-        tx(d(2026, 10, 13), 150000,
-            accountId: 1, merchant: 'Loan', note: 'x 5678 y'),
+        tx(
+          d(2026, 10, 13),
+          150000,
+          accountId: 1,
+          merchant: 'Loan',
+          note: 'x 5678 y',
+        ),
       ];
       final l = Loans.build(accounts: acc, payments: txs, today: today).first;
-      expect(l.payments.map((e) => e.amountMinor).toSet(),
-          {700000, 300000, 150000});
+      expect(
+        l.payments.map((e) => e.amountMinor).toSet(),
+        {700000, 300000, 150000},
+      );
     });
 
     test('hidden loan accounts are not listed', () {
       const a = LoanAccount(id: 1, bankName: 'X Bank', hidden: true);
-      expect(Loans.build(accounts: const [a], payments: const [], today: today),
-          isEmpty);
+      expect(
+        Loans.build(accounts: const [a], payments: const [], today: today),
+        isEmpty,
+      );
     });
 
     test('a merged loan counts payments and terms under the target', () {
@@ -552,11 +603,17 @@ void main() {
       expect(Loans.termsFromForm(emiMinor: 500, tenureMonths: 0), isNull);
       expect(
         Loans.termsFromForm(
-            principalMinor: 100, rateBps: 6001, tenureMonths: 3),
+          principalMinor: 100,
+          rateBps: 6001,
+          tenureMonths: 3,
+        ),
         isNull,
       );
       final p = Loans.termsFromForm(
-          principalMinor: 100, rateBps: 6000, tenureMonths: 3)!;
+        principalMinor: 100,
+        rateBps: 6000,
+        tenureMonths: 3,
+      )!;
       expect(p.rateBps, 6000);
       expect(Loans.validEmiDay(0), isFalse);
       expect(Loans.validEmiDay(31), isTrue);
@@ -568,8 +625,13 @@ void main() {
     final loanIds = {7};
 
     test('loan-side EMI pairs with a same-amount bank debit within 3 days', () {
-      final bank = tx(d(2026, 10, 7), 1234500,
-          accountId: 1, channel: Channel.autoDebit, category: Category.other);
+      final bank = tx(
+        d(2026, 10, 7),
+        1234500,
+        accountId: 1,
+        channel: Channel.autoDebit,
+        category: Category.other,
+      );
       final loanSide = tx(d(2026, 10, 5), 1234500, accountId: 7);
       final r = EmiPairing.pair(
         tx: loanSide,
@@ -603,8 +665,14 @@ void main() {
       expect(run(tx(d(2026, 10, 7), 1234501, accountId: 1)), isNull);
       expect(run(tx(d(2026, 10, 9), 1234500, accountId: 1)), isNull);
       expect(
-        run(tx(d(2026, 10, 6), 1234500,
-            accountId: 1, category: Category.other)),
+        run(
+          tx(
+            d(2026, 10, 6),
+            1234500,
+            accountId: 1,
+            category: Category.other,
+          ),
+        ),
         isNull,
       );
       expect(run(tx(d(2026, 10, 6), 1234500, accountId: 7)), isNull);

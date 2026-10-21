@@ -4,7 +4,7 @@ import 'package:hisaab/features/tax_centre/domain/tax_rules.dart';
 
 int r(int rupees) => rupees * 100;
 
-final rules = TaxRules.fy2026_27;
+final TaxRules rules = TaxRules.fy2026_27;
 
 RegimeTax newR(int salary, {int other = 0, TaxInput Function(TaxInput)? f}) {
   final i = TaxInput(salary: r(salary), otherIncome: r(other));
@@ -236,14 +236,14 @@ void main() {
     });
     test('financial year labels, file stem and period bounds', () {
       expect(FinancialYear.startYearOf(DateTime.utc(2026, 3, 31)), 2025);
-      expect(FinancialYear.startYearOf(DateTime.utc(2026, 4, 1)), 2026);
+      expect(FinancialYear.startYearOf(DateTime.utc(2026, 4)), 2026);
       expect(FinancialYear.label(2026), 'FY 2026-27');
       expect(FinancialYear.label(2099), 'FY 2099-00');
       expect(FinancialYear.fileStem(2026), 'DhanKosh-tax-estimate-2026-27');
       expect(FinancialYear.fileStem(2008), 'DhanKosh-tax-estimate-2008-09');
       final today = DateTime.utc(2026, 10, 17);
       final cur = FinancialYear.bounds(TaxPeriod.thisFy, today);
-      expect(cur.from, DateTime.utc(2026, 4, 1));
+      expect(cur.from, DateTime.utc(2026, 4));
       expect(cur.to, DateTime.utc(2027, 3, 31));
       final prev = FinancialYear.bounds(TaxPeriod.lastFy, today);
       expect(prev.fyStartYear, 2025);

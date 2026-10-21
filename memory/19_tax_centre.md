@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-19 |
-| Status | Existing |
+| Status | In progress (pure domain done: rules per FY, calculator for both regimes, income estimate, deduction detection, what-if plan, FY labels; UI, share/export and data wiring pending) |
 | Priority | P2 |
 | Phase | 4 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -491,7 +491,23 @@ Fixture messages (masked): `Salary credited Rs 1,00,000.00 to a/c XX1234 by ACME
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 4 domain logic (no UI, no export). Code in `lib/features/tax_centre/domain/`: `tax_rules.dart`, `tax_calculator.dart`, `tax_income.dart`, `tax_deductions.dart`, `tax_plan.dart`.
+
+OPEN QUESTION carried in `tax_rules.dart` header (Open Question 1): FY2026-27 is `fy2025_26.copyWith(fyStartYear: 2026)`; the old-regime rebate and capital-gains rates are not confirmed against the official 2026-27 page. No rules were invented.
+
+FR status: done in domain: FR-19-02 (`TaxIncome.estimate`), 03/04 (`TaxCalculator.compute`, `TaxPlan.newIsBetter/saving`), 05/06 (`TaxDeductionDetector.detect`), 07/08 (`TaxWhatIf`, `TaxPlan.withWhatIf`, in-memory only), 12 (`slabLines`), 13 (rounding), 14 (estimate fields), 15 (`TaxRules.all/forYear`), file stem of FR-19-10 (`FinancialYear.fileStem`). Pending: FR-19-01 (screen, period state), 09-11, 16, 17 (share, export, cache file; nothing to migrate), all UI.
+
+Public API:
+- `TaxRules{fyStartYear, newRegime, oldRegime, cessPct, stcgPermille=200, ltcgPermille=125, ltcgExempt, limit80C, ...}`; `TaxRules.fy2024_25/fy2025_26/fy2026_27/all/latest`, `TaxRules.forYear(int)`; `RegimeRules`, `TaxSlab(int? upTo, ratePct)` (null = open top slab), `SurchargeTier`; enums `Regime{newRegime, oldRegime}`, `AgeBand`, `TaxPeriod`.
+- `TaxCalculator.compute(TaxRules, Regime, TaxInput) -> RegimeTax`; `slabTax(int, List<TaxSlab>)`, `slabLines(int taxable, slabs) -> List<SlabLine>`, `roundRupee(int num, [int den = 1])`.
+- `TaxIncome.estimate(List<LedgerTx> txs, DateTime from, DateTime to, DateTime today, {Duration offset}) -> TaxIncomeEstimate`.
+- `TaxDeductionDetector.detect(List<LedgerTx> txs, int fromMs, int toMs, {List<EpfHolding> epf}) -> DetectedDeductions{items80C, items80D, npsDetected, otherInvested, c80Calc, d80Calc}`; `kindOf(String) -> InsuranceKind`, `epfShare(EpfHolding, fromMs, toMs)`.
+- `TaxPlan.compute({period, fyStartYear, est, deductions, whatIf}) -> TaxPlan` with the Kotlin `TaxState` getters (`c80, d80, salaryUsed, ..., income, hasIncome, newIsBetter, saving, left80C, fyLabel`) and `withWhatIf(TaxWhatIf)`; `TaxPlan.inputOf(...)` is the calculator input mapping.
+- `FinancialYear.startYearOf(day), label(fyStartYear) -> "FY 2026-27", fileStem(fyStartYear) -> "DhanKosh-tax-estimate-2026-27", bounds(TaxPeriod, today) -> ({from, to, fyStartYear, label})`.
+
+Decisions: rounding is exact integer arithmetic (half-up to the rupee on a fraction of paise), equal to Kotlin `Math.round(paise / 100.0) * 100` since a true half is exactly representable; capital-gains rates are per-mille integers (200, 125) instead of doubles. The age, parents and family-pension inputs exist but the plan always uses below 60 (Open Question 3). Insurance kind regexes and `QUALIFIES_80C` are copied from section 10 (Open Question 10 stands).
+
+Tests: `test/features/tax_centre/tax_calculator_test.dart` (worked examples A to H, the full Kotlin `TaxCalculatorTest` port incl. surcharge relief 7,000, 37% old-regime tier, senior bands, gains and rebate, rounding, slab lines, FY labels and bounds) and `tax_income_test.dart` (Kotlin `TaxIncomeTest` port, the 17 Oct example, month-in-progress boundary, deduction detection, EPF share, `TaxPlan` what-if and input mapping).
 
 ## 19. Change Log (date | change | reason)
 
@@ -500,3 +516,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | `cacheDir/shared` temp export (FR-19-16) and legacy `tax_overrides` store cleanup (FR-19-17); TC-19-10, TC-19-11 | Audit Gate gap, scan_3
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 4 domain logic landed | Phase 4 |

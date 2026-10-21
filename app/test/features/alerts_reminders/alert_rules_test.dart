@@ -16,10 +16,12 @@ void main() {
   group('budget thresholds (FR-21-05, TC-21)', () {
     final food = Budget(category: Category.food, monthlyLimitMinor: r(10000));
 
-    List<AlertDecision> run(int used,
-            {Set<String> alerted = const {},
-            AlertSettings s = s90,
-            Budget? b}) =>
+    List<AlertDecision> run(
+      int used, {
+      Set<String> alerted = const {},
+      AlertSettings s = s90,
+      Budget? b,
+    }) =>
         AlertRules.budgetAlerts(
           budgets: [b ?? food],
           spentByCategory: {Category.food: used},
@@ -68,13 +70,17 @@ void main() {
 
     test('user percent 80 and 95; percent 100 collapses the levels', () {
       expect(
-          run(r(8000), s: const AlertSettings(budgetAlertPercent: 80)).length,
-          1);
-      expect(run(r(9400), s: const AlertSettings(budgetAlertPercent: 95)),
-          isEmpty);
+        run(r(8000), s: const AlertSettings(budgetAlertPercent: 80)).length,
+        1,
+      );
       expect(
-          run(r(9500), s: const AlertSettings(budgetAlertPercent: 95)).length,
-          1);
+        run(r(9400), s: const AlertSettings(budgetAlertPercent: 95)),
+        isEmpty,
+      );
+      expect(
+        run(r(9500), s: const AlertSettings(budgetAlertPercent: 95)).length,
+        1,
+      );
       final d =
           run(r(10000), s: const AlertSettings(budgetAlertPercent: 100)).single;
       expect(d.key.endsWith(':100'), isTrue);
@@ -82,8 +88,12 @@ void main() {
 
     test('zero-limit budget never alerts; different month is a new key', () {
       expect(
-          run(r(100), b: Budget(category: Category.food, monthlyLimitMinor: 0)),
-          isEmpty);
+        run(
+          r(100),
+          b: const Budget(category: Category.food, monthlyLimitMinor: 0),
+        ),
+        isEmpty,
+      );
       final other = AlertRules.budgetAlerts(
         budgets: [food],
         spentByCategory: {Category.food: r(9500)},
@@ -104,12 +114,13 @@ void main() {
   });
 
   group('low balance bills (FR-21-06)', () {
-    BillDueInput bill(
-            {int days = 2,
-            int amount = 649,
-            int? balance = 300,
-            bool bank = true,
-            String? label = 'HDFC Bank'}) =>
+    BillDueInput bill({
+      int days = 2,
+      int amount = 649,
+      int? balance = 300,
+      bool bank = true,
+      String? label = 'HDFC Bank',
+    }) =>
         BillDueInput(
           name: 'Netflix',
           amountMinor: r(amount),
@@ -120,16 +131,23 @@ void main() {
           accountIsBank: bank,
         );
 
-    List<AlertDecision> run(List<BillDueInput> b,
-            {Set<String> alerted = const {}}) =>
+    List<AlertDecision> run(
+      List<BillDueInput> b, {
+      Set<String> alerted = const {},
+    }) =>
         AlertRules.lowBalanceBillAlerts(
-            bills: b, today: today, alerted: alerted);
+          bills: b,
+          today: today,
+          alerted: alerted,
+        );
 
     test('worked example: Netflix 649 in 2 days, balance 300', () {
       final d = run([bill()]).single;
       expect(d.title, 'Netflix ₹649 due in 2 days');
       expect(
-          d.body, "HDFC Bank ••1234 has ₹300. Add ₹349 so it doesn't bounce.");
+        d.body,
+        "HDFC Bank ••1234 has ₹300. Add ₹349 so it doesn't bounce.",
+      );
       expect(d.key, 'bill:Netflix:2026-10-19');
       expect(d.link, 'hisaab://bills');
     });
@@ -167,7 +185,10 @@ void main() {
         );
     List<AlertDecision> run(int days, {Set<String> alerted = const {}}) =>
         AlertRules.renewalAlerts(
-            policies: [pol(days)], today: today, alerted: alerted);
+          policies: [pol(days)],
+          today: today,
+          alerted: alerted,
+        );
 
     test('0..7 day window and wording', () {
       expect(run(0).single.title, 'Health insurance renews today');
@@ -176,8 +197,10 @@ void main() {
       expect(run(8), isEmpty);
       expect(run(-1), isEmpty);
       final d = run(5).single;
-      expect(d.body,
-          'HDFC Ergo: last premium ₹18,500 on 2025-10-22. Renew in time to stay covered.');
+      expect(
+        d.body,
+        'HDFC Ergo: last premium ₹18,500 on 2025-10-22. Renew in time to stay covered.',
+      );
       expect(d.key, 'renewal:HDFC Ergo:2026-10-22');
     });
 
@@ -188,11 +211,13 @@ void main() {
 
   group('untracked changes (FR-21-08)', () {
     final now = DateTime.utc(2026, 10, 17).millisecondsSinceEpoch;
-    GapInput gap(String k,
-            {bool card = false,
-            bool left = true,
-            int ageDays = 1,
-            int delta = -250000}) =>
+    GapInput gap(
+      String k, {
+      bool card = false,
+      bool left = true,
+      int ageDays = 1,
+      int delta = -250000,
+    }) =>
         GapInput(
           key: k,
           accountId: 5,
@@ -208,29 +233,48 @@ void main() {
           AlertRules.gapAlerts(gaps: [g], nowMs: now, settings: s90)
               .map((e) => e.body)
               .toList();
-      expect(bodies(gap('a', card: true)),
-          ['HDFC ••1234: ₹2,500 of limit used with no message. Add it?']);
-      expect(bodies(gap('a', card: true, left: false)),
-          ['HDFC ••1234: ₹2,500 of limit freed with no message. Add it?']);
-      expect(bodies(gap('a')),
-          ['HDFC ••1234: ₹2,500 left the account with no message. Add it?']);
-      expect(bodies(gap('a', left: false)),
-          ['HDFC ••1234: ₹2,500 came in with no message. Add it?']);
+      expect(
+        bodies(gap('a', card: true)),
+        ['HDFC ••1234: ₹2,500 of limit used with no message. Add it?'],
+      );
+      expect(
+        bodies(gap('a', card: true, left: false)),
+        ['HDFC ••1234: ₹2,500 of limit freed with no message. Add it?'],
+      );
+      expect(
+        bodies(gap('a')),
+        ['HDFC ••1234: ₹2,500 left the account with no message. Add it?'],
+      );
+      expect(
+        bodies(gap('a', left: false)),
+        ['HDFC ••1234: ₹2,500 came in with no message. Add it?'],
+      );
     });
 
     test('14-day window boundary, max 3 per run, once each, setting gate', () {
-      List<AlertDecision> run(List<GapInput> g,
-              {Set<String> alerted = const {}, AlertSettings s = s90}) =>
+      List<AlertDecision> run(
+        List<GapInput> g, {
+        Set<String> alerted = const {},
+        AlertSettings s = s90,
+      }) =>
           AlertRules.gapAlerts(
-              gaps: g, nowMs: now, settings: s, alerted: alerted);
+            gaps: g,
+            nowMs: now,
+            settings: s,
+            alerted: alerted,
+          );
       expect(run([gap('a', ageDays: 14)]).length, 1);
       expect(run([gap('a', ageDays: 15)]), isEmpty);
       final five = [for (var i = 0; i < 5; i++) gap('g$i')];
       expect(run(five).length, 3);
-      expect(run(five, alerted: {'gap:g0'}).map((e) => e.key),
-          ['gap:g1', 'gap:g2', 'gap:g3']);
-      expect(run(five, s: const AlertSettings(transactionNotifications: false)),
-          isEmpty);
+      expect(
+        run(five, alerted: {'gap:g0'}).map((e) => e.key),
+        ['gap:g1', 'gap:g2', 'gap:g3'],
+      );
+      expect(
+        run(five, s: const AlertSettings(transactionNotifications: false)),
+        isEmpty,
+      );
       final d = run([gap('x')]).single;
       expect(d.title, 'Untracked change');
       expect(d.link, 'hisaab://account/5');
@@ -239,15 +283,16 @@ void main() {
 
   group('card bill reminders (FR-21-09, FR-21-10)', () {
     final todayDay = epochDayOf(today);
-    CardBillInput card(
-            {int days = 5,
-            int? billed = 1234500,
-            int? min,
-            bool estimated = false,
-            bool paid = false,
-            Set<DueStage> sent = const {},
-            int? snooze,
-            int id = 4}) =>
+    CardBillInput card({
+      int days = 5,
+      int? billed = 1234500,
+      int? min,
+      bool estimated = false,
+      bool paid = false,
+      Set<DueStage> sent = const {},
+      int? snooze,
+      int id = 4,
+    }) =>
         CardBillInput(
           cardId: id,
           name: 'HDFC Regalia',
@@ -261,7 +306,10 @@ void main() {
         );
     List<AlertDecision> run(CardBillInput c, {AlertSettings s = s90}) =>
         AlertRules.cardBillAlerts(
-            cards: [c], todayEpochDay: todayDay, settings: s);
+          cards: [c],
+          todayEpochDay: todayDay,
+          settings: s,
+        );
 
     test('stage table: days -> stage', () {
       DueStage? stage(int days) {
@@ -282,7 +330,7 @@ void main() {
     });
 
     test('titles, body, id, actions and deep link', () {
-      final d = run(card(days: 5, min: 61725)).single;
+      final d = run(card(min: 61725)).single;
       expect(d.title, 'HDFC Regalia bill due in 5 days');
       expect(d.body, '₹12,345 · pay by 22 Oct. Minimum ₹617.');
       expect(d.notificationId, 30000 + 4 * 3);
@@ -293,15 +341,22 @@ void main() {
       expect(run(card(days: 1)).single.title, 'HDFC Regalia bill due tomorrow');
       expect(run(card(days: 0)).single.title, 'HDFC Regalia bill due today');
       expect(run(card(days: -2)).single.title, 'HDFC Regalia bill overdue');
-      expect(run(card(estimated: true)).single.body,
-          'About ₹12,345 · pay by 22 Oct.');
+      expect(
+        run(card(estimated: true)).single.body,
+        'About ₹12,345 · pay by 22 Oct.',
+      );
     });
 
     test('sent stage, paid and snoozed suppress; paid cancels', () {
-      expect(run(card(days: 5, sent: {DueStage.days5})), isEmpty);
-      expect(run(card(days: 1, sent: CardReminderPlanSent.days2)), isEmpty);
-      expect(run(card(days: 1, sent: {DueStage.days5})).single.stage,
-          DueStage.days2);
+      expect(run(card(sent: {DueStage.days5})), isEmpty);
+      expect(
+        run(card(days: 1, sent: {DueStage.days5, DueStage.days2})),
+        isEmpty,
+      );
+      expect(
+        run(card(days: 1, sent: {DueStage.days5})).single.stage,
+        DueStage.days2,
+      );
       final paid = run(card(paid: true)).single;
       expect(paid.cancel, isTrue);
       expect(paid.notificationId, 30012);
@@ -318,26 +373,29 @@ void main() {
             .cancel,
         isTrue,
       );
-      expect(run(card(), s: const AlertSettings(cardDueReminders: false)),
-          isEmpty);
+      expect(
+        run(card(), s: const AlertSettings(cardDueReminders: false)),
+        isEmpty,
+      );
     });
   });
 
   group('new transaction and other texts (FR-21-02..04, FR-21-12)', () {
-    AlertDecision? tx(
-            {bool inserted = true,
-            bool transfer = false,
-            bool credit = false,
-            int amount = 25000,
-            String cur = 'INR',
-            Category cat = Category.food,
-            List<Category> used = const [
-              Category.shopping,
-              Category.food,
-              Category.transport,
-              Category.other
-            ],
-            AlertSettings s = s90}) =>
+    AlertDecision? tx({
+      bool inserted = true,
+      bool transfer = false,
+      bool credit = false,
+      int amount = 25000,
+      String cur = 'INR',
+      Category cat = Category.food,
+      List<Category> used = const [
+        Category.shopping,
+        Category.food,
+        Category.transport,
+        Category.other,
+      ],
+      AlertSettings s = s90,
+    }) =>
         AlertRules.newTransactionAlert(
           txId: 77,
           amountMinor: amount,
@@ -359,14 +417,18 @@ void main() {
       expect(d.notificationId, 10077);
       expect(d.link, 'hisaab://transaction/77');
       expect(d.channel, AlertChannel.newTransactions);
-      expect(d.actions.map((a) => a.label),
-          ['Shopping', 'Transport', 'Groceries']);
+      expect(
+        d.actions.map((a) => a.label),
+        ['Shopping', 'Transport', 'Groceries'],
+      );
       expect(d.actions.first.payload, {'txId': '77', 'category': 'shopping'});
     });
 
     test('credit title, paise shown when non-zero, foreign symbol kept', () {
-      expect(tx(credit: true, amount: 123450)!.title,
-          '₹1,234.50 received from Swiggy');
+      expect(
+        tx(credit: true, amount: 123450)!.title,
+        '₹1,234.50 received from Swiggy',
+      );
       expect(tx(cur: 'USD', amount: 1000)!.title, r'$10 at Swiggy');
     });
 
@@ -374,24 +436,30 @@ void main() {
       expect(tx(inserted: false), isNull);
       expect(tx(transfer: true), isNull);
       expect(
-          tx(s: const AlertSettings(transactionNotifications: false)), isNull);
+        tx(s: const AlertSettings(transactionNotifications: false)),
+        isNull,
+      );
     });
 
     test('alternative categories: credit defaults, exclusions, cap of 3', () {
       expect(
         AlertRules.alternativeCategories(
-            current: Category.salary, isCredit: true, usedMostFirst: const []),
+          current: Category.salary,
+          isCredit: true,
+          usedMostFirst: const [],
+        ),
         [Category.refund, Category.income, Category.transfer],
       );
       expect(
         AlertRules.alternativeCategories(
-            current: Category.food,
-            isCredit: false,
-            usedMostFirst: const [
-              Category.other,
-              Category.food,
-              Category.food
-            ]),
+          current: Category.food,
+          isCredit: false,
+          usedMostFirst: const [
+            Category.other,
+            Category.food,
+            Category.food,
+          ],
+        ),
         [Category.groceries, Category.shopping, Category.transport],
       );
     });
@@ -406,7 +474,10 @@ void main() {
 
     test('balance updated: single, several and gating', () {
       const one = BalanceGapInput(
-          key: 'a', label: 'HDFC ••1234', unexplainedMinor: -500000);
+        key: 'a',
+        label: 'HDFC ••1234',
+        unexplainedMinor: -500000,
+      );
       final single =
           AlertRules.balanceUpdatedAlert(gaps: [one], settings: s90)!;
       expect(single.notificationId, 9000);
@@ -417,14 +488,19 @@ void main() {
       final multi =
           AlertRules.balanceUpdatedAlert(gaps: [one, two], settings: s90)!;
       expect(multi.title, '2 balances updated');
-      expect(multi.body,
-          'HDFC ••1234 · ₹5,000 not explained · SBI ••9 · ₹1,200 not explained');
-      expect(AlertRules.balanceUpdatedAlert(gaps: const [], settings: s90),
-          isNull);
+      expect(
+        multi.body,
+        'HDFC ••1234 · ₹5,000 not explained · SBI ••9 · ₹1,200 not explained',
+      );
+      expect(
+        AlertRules.balanceUpdatedAlert(gaps: const [], settings: s90),
+        isNull,
+      );
       expect(
         AlertRules.balanceUpdatedAlert(
-            gaps: [one],
-            settings: const AlertSettings(transactionNotifications: false)),
+          gaps: [one],
+          settings: const AlertSettings(transactionNotifications: false),
+        ),
         isNull,
       );
     });
@@ -436,8 +512,10 @@ void main() {
       expect(d.notificationId, 4009);
       expect(d.link, 'hisaab://statements?unlock=9');
       expect(d.channel, AlertChannel.statements);
-      expect(AlertRules.statementLockedAlert(statementId: 1).title,
-          'A statement detected');
+      expect(
+        AlertRules.statementLockedAlert(statementId: 1).title,
+        'A statement detected',
+      );
     });
 
     test('money text: en-IN grouping', () {
@@ -449,8 +527,4 @@ void main() {
       expect(AlertText.monthYear(2026, 10), 'October 2026');
     });
   });
-}
-
-abstract final class CardReminderPlanSent {
-  static const days2 = {DueStage.days5, DueStage.days2};
 }

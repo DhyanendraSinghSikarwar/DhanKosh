@@ -104,8 +104,11 @@ class PlanSnapshot {
 }
 
 class Insight {
-  const Insight(
-      {required this.title, required this.detail, required this.tone});
+  const Insight({
+    required this.title,
+    required this.detail,
+    required this.tone,
+  });
 
   final String title;
   final String detail;
@@ -167,7 +170,9 @@ class Forecast {
 
   /// Verdict against the sum of monthly budgets (FR-18-13).
   ForecastVerdict verdict(int budget) {
-    if (budget <= 0) return ForecastVerdict(ForecastVerdictKind.noBudget, 0, 0);
+    if (budget <= 0) {
+      return const ForecastVerdict(ForecastVerdictKind.noBudget, 0, 0);
+    }
     if (likely <= budget) {
       return ForecastVerdict(ForecastVerdictKind.within, budget, 0);
     }

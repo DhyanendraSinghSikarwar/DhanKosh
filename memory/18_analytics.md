@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-18 |
-| Status | Existing |
+| Status | In progress (pure domain aggregates, forecast, cash projection, compare, savings rate, Sankey inputs, heat grid and insights done; data wiring and UI pending) |
 | Priority | P1 |
 | Phase | 4 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -481,7 +481,18 @@ Fixtures (masked): `Salary credited Rs 85,000.00 to a/c XX1234`; `Rs 1,20,000.00
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 4 domain logic (no UI, no repository wiring). Code in `lib/features/analytics/domain/`: `ledger_math.dart`, `analytics_models.dart`, `analytics_math.dart`, `civil_date.dart` (shared day helpers, default IST offset per Open Question 9; `YearMonth` is a first-of-month UTC `DateTime`). Budget types are reused from `expense_tracking/domain` (`Budget`, `BudgetUse`, `BudgetSummary`, `BudgetMath`).
+
+FR status: done in domain: FR-18-03 (KPIs, categories), 05 (monthly, `averageExcludingLast`, `monthVsAverage`), 06 (`heat`, `heatPeak`, `peakText`, `topCategoryInCell`), 07 (`topMerchants`, `merchantPayments` 60 cap), 08 (`budgetSummary`), 09/10 (`sankey`, income classification), 11 (`savingsRates`, `savingsSummary`), 13/14 (`forecast`, `discretionaryRate`), 15 (`cash`), 16 (`changes`, `CategoryChange.barPercent`), 17 (`insights`), 18, plus weekly/daily buckets (`weekly`, `daily`) for FR-18-21 semantics on in-memory rows. Pending: FR-18-01/02/04/12/19/20/22/23 (UI, layout store, period state), the SQL-side aggregates of section 9 (repository, S1), and all screens.
+
+Public API:
+- `LedgerMath` (all static, paise): `rupees, isSpend, isIncome, isInvest, spent, income, invested, group(Category) -> SpendGroup, byCategory -> List<(Category,int)>, byGroup, byMerchant, topMerchants({n=6}), merchantPayments(txs, name, {limit=60}) -> ({payments, truncated}), monthly(txs, months, {offset}) -> List<MonthFlow>, heat(txs, {offset}) -> List<List<int>> (7x8, Monday first, slots 6a..3a), heatPeak(grid) -> HeatPeak?, peakText, topCategoryInCell, weekly, daily, cumulative(txs, month) -> List<int>, averageExcludingLast, monthVsAverage`.
+- `AnalyticsMath.build({required AnalyticsSlice slice, required PlanSnapshot plan, required List<Budget> budgets, required int alertPercent, required DateTime today, Duration offset}) -> AnalyticsData`; `discretionaryRate(year, today)`, `forecast(txs, plan, rate, today) -> Forecast` (`likely/lowEnd/highEnd`, `verdict(budget)`), `cash(slice, plan, rate, today) -> CashProjection?`, `savingsRates`, `savingsSummary`, `sankey(AnalyticsData) -> CashFlowSankey`, `budgetSummary`, `insights(txs, recurring, today, {max=5}) -> List<Insight>`, `rupeeText(int)`, `monthLabel`, `shortDay`.
+- Inputs defined here: `AnalyticsSlice{txs, previous, year, months, from, to, kind, month, previousFrom, previousTo, accounts, loaded}`, `CashAccount`, `PlannedPayment`, `UpcomingItem`, `PlanSnapshot` (reduced shapes of memory 12 `Recurring`/`UpcomingPayment`; the wiring agent maps to them).
+
+Decisions: budget `alertPercent` fallback is 90 (`BudgetMath.normaliseAlertPercent`, memory 10 canonical), overriding the Kotlin/FR-18-08 fallback 80 (Open Question 7 closed). Forecast keeps Kotlin parity for Open Questions 5 and 6 (bills double count, 0.8/1.2 scale on the discretionary part only). Insights keep parity for Open Question 4 (all DEBIT rows, raw INR `amountMinor`) and ignore recurring income rows. Savings-rate averages round half up. No time-of-day or anomaly ("unusual spend") analytics exist in memory 18 and none were added.
+
+Tests: `test/features/analytics/analytics_test.dart` (ledger math, IST bucketing, heat slots and peak widening, build KPIs, income classification, compare percent rules and labels, savings summary, budgets x months and pace, the section 10 worked example `priorRate 150,000 / curRate 160,000 / rate 155,000 / likely 9,434,900 / low 9,000,900 / high 9,868,900`, verdicts, cash projection events, insights thresholds incl. boundary values 10%, Rs 500, 45%).
 
 ## 19. Change Log (date | change | reason)
 
@@ -490,3 +501,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Added analytics SQL semantics (section 9), personal/business rule, chart-component inventory with StackedArea marked dead (section 10); FR-18-21..23, TC-18-17 | Audit Gate gap, scan_3, scan_5, scan_6 |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 4 domain logic landed | Phase 4 |

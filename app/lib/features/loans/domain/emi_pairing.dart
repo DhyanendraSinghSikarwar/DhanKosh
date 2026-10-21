@@ -13,7 +13,7 @@ class EmiPair {
 /// `pairEmi` (FR-08-15, memory 15 3.9): a loan-account EMI row and the bank
 /// debit of the same amount within +-3 days. The bank debit stays the spend.
 abstract final class EmiPairing {
-  static const windowMs = 3 * 24 * 60 * 60 * 1000;
+  static const int windowMs = 3 * 24 * 60 * 60 * 1000;
   static const note = 'EMI also debited from your bank account';
 
   /// [tx] is a freshly inserted DEBIT on [accountId]; [txOnLoan] says whether

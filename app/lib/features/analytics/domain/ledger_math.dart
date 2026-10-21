@@ -86,7 +86,7 @@ abstract final class LedgerMath {
   static int income(Iterable<LedgerTx> txs) => _sum(txs.where(isIncome));
   static int invested(Iterable<LedgerTx> txs) => _sum(txs.where(isInvest));
 
-  static const _essentials = {
+  static const Set<Category> _essentials = {
     Category.rent,
     Category.bills,
     Category.groceries,
@@ -100,7 +100,7 @@ abstract final class LedgerMath {
     Category.taxes,
     Category.fees,
   };
-  static const _lifestyle = {
+  static const Set<Category> _lifestyle = {
     Category.food,
     Category.shopping,
     Category.entertainment,
@@ -128,7 +128,7 @@ abstract final class LedgerMath {
     return stableSorted<(Category, int)>(
       [
         for (final e in m.entries)
-          if (e.value > 0) (e.key, e.value)
+          if (e.value > 0) (e.key, e.value),
       ],
       (a, b) => b.$2.compareTo(a.$2),
     );
@@ -173,12 +173,16 @@ abstract final class LedgerMath {
       );
     }
     return stableSorted<MerchantSpend>(
-        out, (a, b) => b.total.compareTo(a.total));
+      out,
+      (a, b) => b.total.compareTo(a.total),
+    );
   }
 
   /// The [n] largest merchants (FR-18-07: 6).
-  static List<MerchantSpend> topMerchants(Iterable<LedgerTx> txs,
-          {int n = 6}) =>
+  static List<MerchantSpend> topMerchants(
+    Iterable<LedgerTx> txs, {
+    int n = 6,
+  }) =>
       byMerchant(txs).take(n).toList();
 
   /// Payments behind a merchant, newest first, at most [limit] (FR-18-07).

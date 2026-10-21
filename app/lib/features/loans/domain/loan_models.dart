@@ -48,24 +48,7 @@ class LoanLinks {
     this.manualPayees = const {},
   });
 
-  static const none = LoanLinks();
-
-  /// txId -> loanId.
-  final Map<int, int> tx;
-
-  /// payeeKey -> loanId.
-  final Map<String, int> payee;
-  final Set<String> manualPayees;
-
-  /// `(merchant ?? upiId).trim().lowercase()`; '' when both are null.
-  static String keyOf(String? merchant, String? upiId) =>
-      (merchant ?? upiId ?? '').trim().toLowerCase();
-
-  /// Old DataStore encodings (backup and import, TC-15-06).
-  static String encodeTx(int txId, int loanId) => '$txId:$loanId';
-  static String encodePayee(int loanId, String payeeKey) => '$loanId:$payeeKey';
-
-  static LoanLinks decode({
+  factory LoanLinks.decode({
     Iterable<String> tx = const [],
     Iterable<String> payee = const [],
     Iterable<String> manual = const [],
@@ -85,6 +68,23 @@ class LoanLinks {
     }
     return LoanLinks(tx: t, payee: p, manualPayees: manual.toSet());
   }
+
+  static const none = LoanLinks();
+
+  /// txId -> loanId.
+  final Map<int, int> tx;
+
+  /// payeeKey -> loanId.
+  final Map<String, int> payee;
+  final Set<String> manualPayees;
+
+  /// `(merchant ?? upiId).trim().lowercase()`; '' when both are null.
+  static String keyOf(String? merchant, String? upiId) =>
+      (merchant ?? upiId ?? '').trim().toLowerCase();
+
+  /// Old DataStore encodings (backup and import, TC-15-06).
+  static String encodeTx(int txId, int loanId) => '$txId:$loanId';
+  static String encodePayee(int loanId, String payeeKey) => '$loanId:$payeeKey';
 
   Set<String> encodeTxSet() =>
       {for (final e in tx.entries) encodeTx(e.key, e.value)};
@@ -173,11 +173,13 @@ class Loan {
       return (1 - out / t.principalMinor).clamp(0, 1).toDouble();
     }
     final total = totalEmis;
-    if (total != null && total > 0)
+    if (total != null && total > 0) {
       return (paidCount / total).clamp(0, 1).toDouble();
+    }
     final rem = remainingEmis;
-    if (rem != null && paidCount + rem > 0)
+    if (rem != null && paidCount + rem > 0) {
       return paidCount / (paidCount + rem);
+    }
     return null;
   }
 }
