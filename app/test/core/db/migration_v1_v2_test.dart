@@ -4,6 +4,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/core/db/app_database.dart';
 
+import '../../support/v4_schema.dart';
+
 void main() {
   test('v1 database upgrades through v3 with data intact (F-03, Phase 3)',
       () async {
@@ -26,6 +28,7 @@ void main() {
     ]) {
       await v2.customStatement('DROP TABLE $t');
     }
+    await dropV4(v2);
     await v2.customStatement('PRAGMA user_version = 1');
     await v2.close();
 
@@ -45,6 +48,6 @@ void main() {
         );
     expect(await db.select(db.processedEmails).get(), hasLength(1));
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.read<int>('user_version'), 3);
+    expect(v.read<int>('user_version'), 4);
   });
 }

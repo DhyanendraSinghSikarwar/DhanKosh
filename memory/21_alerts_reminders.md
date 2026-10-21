@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-21 |
-| Status | Existing |
+| Status | In progress (Phase 4: alert state stores done; channels, posting, workers, decision logic and Alerts screen pending) |
 | Priority | P1 |
 | Phase | 4 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -469,7 +469,23 @@ Fixture messages (masked): `HDFC Bank: Rs 250.00 debited from a/c XX1234 on 17-1
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 4 persistence only. Tables `alerted_keys`, `card_due_reminder_state`, `balance_notice_days` (schema v4). Settings keys (`transaction_notifications`, `budget_alert_percent` default 90, `card_due_reminders`) already exist in `SettingKeys`. Code: `lib/features/alerts_reminders/domain/{alerted_key_store,card_reminder_state_store,balance_notice_store}.dart`, `data/alert_state_stores_impl.dart`; providers `alertedKeyStoreProvider`, `cardReminderStateStoreProvider`, `balanceNoticeStoreProvider`. Tests: `test/features/phase4/phase4_repositories_test.dart`.
+
+FR status done: FR-21-04 (once per IST day store), 11 (state + 120-day prune on every write), 14 (keys persisted, newest 300), 18 (defaults exist). Pending: all others.
+
+Stages are stored as `DueStage` names (`days5`, `days2`, `dueDay`, `overdue`) in a sorted CSV; the store API uses plain strings so it does not depend on the decision-logic entities.
+
+API for UI/worker agents:
+
+```dart
+AlertedKeyStore { static const cap = 300; Future<bool> has(String key); Future<Set<String>> all(); Future<void> add(String key, int sentAtMs); Future<void> clear(); }
+CardReminderStateStore { Future<CardReminderRecord?> read(int cardId, int dueEpochDay);
+  Future<void> save(CardReminderRecord r, {required int todayEpochDay});
+  Future<void> markSent(int cardId, int dueEpochDay, String stage, {required int todayEpochDay});
+  Future<void> markPaid(int cardId, int dueEpochDay, {required int todayEpochDay});
+  Future<void> snooze(int cardId, int dueEpochDay, int untilEpochDay, {required int todayEpochDay}); }
+BalanceNoticeStore { Future<int?> lastDay(String key); Future<bool> shouldNotify(String key, int epochDay); Future<void> record(String key, int epochDay); }
+```
 
 ## 19. Change Log (date | change | reason)
 
@@ -477,3 +493,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 4 data layer landed | Phase 4 |

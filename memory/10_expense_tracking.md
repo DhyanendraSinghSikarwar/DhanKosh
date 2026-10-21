@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-10 |
-| Status | Existing |
+| Status | In progress (Phase 4: budgets repository, spend calculators and budget maths done; Budgets screen, Home widgets, filters and alert posting pending) |
 | Priority | P0 |
 | Phase | 1 (totals, Book and Period filters, Home spent widget); 4 for Budgets screen, alerts and analytics budget bars |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -420,7 +420,30 @@ Fixtures: use corpus samples from [Dedup & Review](07_dedup_review.md) and maske
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 4 data/domain layer (no UI). Table `budgets` (schema v4; it is NOT in the Flutter v1 schema, so v3 -> v4 creates it). Code: `lib/core/db/tables/budgets.dart`; `lib/features/expense_tracking/domain/{budget,budget_math,spend_calc,budget_repository}.dart`, `data/budget_repository_impl.dart`; providers `budgetRepositoryProvider`, `budgetsProvider` in `lib/app/di/phase4_providers.dart`. Tests: `test/features/phase4/{phase4_logic,phase4_repositories}_test.dart`.
+
+FR status done (data/domain): FR-10-01..03 (`SpendCalc`), 06 (`changePercent` only), 09 (`BudgetRepository.save/delete`, excluded categories rejected), 10 (maths: `BudgetMath.sortedUse/dailyLeft/band`), 11 (`BudgetMath.pendingAlert`, key format, cap const), 12 (`normaliseAlertPercent`), 14 (`ringBand`), 15 (`analyticsLimit`, `paceTick`). Pending: FR-10-04, 05, 07, 08, 13, 16, 17 (filters, slice, UI, alert posting, widget).
+
+Decisions: alert default is 90 everywhere; `normaliseAlertPercent` falls back to 90 (not the Kotlin 80) when the stored value is outside 1..100 (open question 2 resolved). `categoryTotals` keeps Kotlin parity (no `needsReview`/duplicate filter, priced `inrMinor` only).
+
+API for UI agents:
+
+```dart
+abstract interface class BudgetRepository {
+  Stream<List<Budget>> watchAll();  Future<List<Budget>> all();
+  Future<void> save(Category category, int monthlyLimitMinor);   // ArgumentError if excluded or <= 0
+  Future<void> delete(Category category);
+  Future<Map<Category, int>> categoryTotals(int fromMs, int toMs);
+  Stream<Map<Category, int>> watchCategoryTotals(int fromMs, int toMs);
+}
+BudgetMath.sortedUse(List<Budget>, Map<Category,int> spent, {int months = 1}) -> List<BudgetUse>
+BudgetMath.band(used, limit, alertPercent) -> BudgetBand;  ringBand(used, limit)
+BudgetMath.daysLeft(y, m, dayOfMonth);  dailyLeft(limit, spent, daysLeft) -> int?  // null when over
+BudgetMath.pendingAlert({budget, usedMinor, alertPercent, yearMonth, alerted}) -> BudgetAlertHit?  // key budget:<CAT>:<yyyy-MM>:<level>
+SpendCalc.ledgerSpent / netSpent / outflow (Iterable<LedgerTx>) -> int;  unpricedCount;  changePercent(spent, prev)
+```
+
+Alert dedupe keys live in `AlertedKeyStore` ([21](21_alerts_reminders.md)); the alert percent is `SettingKeys.budgetAlertPercent`.
 
 ## 19. Change Log (date | change | reason)
 
@@ -429,3 +452,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Corrected: `budgets` table is in schema v1, not migration 7-8; `observeCategoryTotals` has no `needsReview` filter (open question 3 updated) | Audit Gate gap, scan_3
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 4 data layer landed | Phase 4 |

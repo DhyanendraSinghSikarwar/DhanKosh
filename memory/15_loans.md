@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-15 |
-| Status | Existing |
+| Status | In progress (Phase 4: link and dismissal stores done; loan detection, amortisation, summaries and Loans UI pending) |
 | Priority | P2 |
 | Phase | 4 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -361,7 +361,22 @@ Fixtures: Propelld EMI/disbursal SMS (Part B 8 sample 18), three monthly EMI deb
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 4 persistence only. Tables `loan_link_rows`, `loan_dismissal_rows` (schema v4); loans themselves stay in `accounts`. Code: `lib/features/loans/domain/loan_link_repository.dart` (entity `LoanLinkSet`), `data/loan_link_repository_impl.dart`; provider `loanLinkRepositoryProvider`. Detection/amortisation/summaries are in the loans domain (separate Phase 4 work). Tests: `test/features/phase4/phase4_repositories_test.dart`.
+
+FR status done: FR-15-10 (link/unlink, payee marks manual), 11 (dismissal store). Pending: all others.
+
+API for UI agents:
+
+```dart
+class LoanLinkSet { Map<int,int> tx; Map<String,int> payee; Set<String> manualPayees; Set<String> dismissed; static String keyOf(String? merchant, String? upiId); }
+abstract interface class LoanLinkRepository {
+  Future<LoanLinkSet> read();  Stream<LoanLinkSet> watch();
+  Future<void> linkTx(int txId, int loanId);  Future<void> linkPayee(String payeeKey, int loanId);  // marks manual
+  Future<void> unlinkTx(int txId);  Future<void> unlinkPayee(String payeeKey);
+  Future<void> dismissPayee(String payeeKey);  Future<void> undismissPayee(String payeeKey);
+  Future<void> clearLoan(int loanId);
+}
+```
 
 ## 19. Change Log (date | change | reason)
 
@@ -369,3 +384,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 4 data layer landed | Phase 4 |

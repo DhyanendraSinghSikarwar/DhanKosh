@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-12 |
-| Status | Existing |
+| Status | In progress (Phase 4: user items store, detection and next-due maths done; Bills screen, calendar, Home Upcoming, policies, loan merge and alerts pending) |
 | Priority | P1 |
 | Phase | 4 (recurring + analytics); detection functions are pure and can be built in Phase 1 for the Home Upcoming widget |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -445,7 +445,24 @@ Fixtures: three monthly transactions for Netflix/rent/SIP; an insurance yearly p
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 4 data/domain layer (no UI). Table `recurring` (Drift class `RecurringItems`, schema v4). Detected items stay derived (no table). Code: `lib/features/recurring_transactions/domain/{recurring,recurring_detector,recurring_repository}.dart`, `data/recurring_repository_impl.dart`; providers `recurringRepositoryProvider`, `recurringItemsProvider`. Tests: `test/features/phase4/phase4_{logic,repositories}_test.dart`.
+
+FR status done: FR-12-01, 02 (`RecurringDetector.detect`, Netflix example), 03 (repository CRUD with validation), 04 (`withManual`), 05 (`nextDueOf`, clamping), 10 (`occursOn`). Pending: FR-12-06 (loans), 07 (policies), 08, 09, 11, 12..14 (alerts, S2 decision logic), 15, 16 and all UI.
+
+Deviation: detection reads `LedgerTx` and IST dates (UTC-midnight `DateTime`s); the Kotlin window, 20% band (`median ~/ 5`), 6-day spread (non-wrapping, parity), 45-day recency are unchanged. No stored "dismissed/confirmed/paid" state (not in memory 9).
+
+API for UI agents:
+
+```dart
+RecurringDetector.detect(List<LedgerTx> txs, DateTime today) -> List<Recurring>   // today = IST date at UTC midnight
+RecurringDetector.withManual(List<Recurring>, List<RecurringItem>, DateTime today) -> List<Recurring>
+RecurringDetector.nextDueOf(RecurringItem, DateTime today);  occursOn(Recurring, DateTime date) -> bool
+abstract interface class RecurringRepository {
+  Stream<List<RecurringItem>> watchAll();  Future<List<RecurringItem>> all();
+  Future<int> add(RecurringDraft d);  Future<void> update(int id, RecurringDraft d);  // ArgumentError if d.validate() != null
+  Future<void> delete(int id);  Future<int> countForAccount(int accountId);
+}
+```
 
 ## 19. Change Log (date | change | reason)
 
@@ -453,3 +470,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 4 data layer landed | Phase 4 |

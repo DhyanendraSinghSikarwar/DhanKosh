@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-23 |
-| Status | Existing |
+| Status | In progress (Phase 4: rates table, inrMinor triggers, recompute and repository done; Forex rates screen and dialog pending) |
 | Priority | P2 |
 | Phase | 4 |
 | Last Updated | 2026-10-21 |
@@ -375,7 +375,24 @@ Fixture message (masked): `USD200.00 was spent on your SBI Corporate Card ending
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 4 data/domain layer (no UI). Table `forex_rates` (schema v4) and triggers `transactions_inr_insert` / `transactions_inr_update` created in `onCreate`, the v3 -> v4 upgrade and `beforeOpen` (`IF NOT EXISTS`); the upgrade also backfills `inr_minor`. SQL in `lib/core/db/forex_sql.dart` (`ForexSql.inr`, `triggers`, `recompute`); the formula matches section 2.3 with `ORDER BY ABS(day - istDay), day` (earlier day wins). Column names are Drift snake_case (`inr_minor`, `amount_minor`). Code: `lib/features/forex_rates/domain/{forex_rate,inr_minor_for,forex_repository,forex_rates_source}.dart`, `data/forex_repository_impl.dart`; providers `forexRepositoryProvider`, `forexRatesProvider`, `foreignSpendsProvider`. Tests: `test/features/phase4/forex_triggers_test.dart` (examples A..E, G, tie, markup, update re-fire), `phase4_logic_test.dart` (`inrMinorFor`).
+
+FR status done: FR-23-01, 04, 05, 06, 09, 10, 11, 12 (upper-cased, 3 letters validated), 13. Pending: FR-23-02, 03, 07 (consumers), 08, 14 (UI). The ledger repository still writes `inrMinor` on insert; the trigger overwrites it immediately, so the trigger is authoritative. After a card markup change call `ForexRepository.recompute()`.
+
+`ForexRatesSource` is a port only: memory 23 section 6 says no network and open question 8 keeps rates manual, so no HTTP implementation ships (deferred until approved).
+
+API for UI agents:
+
+```dart
+abstract interface class ForexRepository {
+  Stream<List<ForexRate>> watchRates();  Future<List<ForexRate>> rates();       // currency, day DESC
+  Future<ForexRate?> rateFor(String currency, int day);  Future<ForexRate?> latest(String currency);
+  Future<void> upsert(ForexRate rate);   // ArgumentError unless 3 letters and rate > 0; recomputes inrMinor
+  Future<void> delete(String currency, int day);  Future<void> recompute();
+  Stream<List<CurrencyCount>> watchForeign();    // count DESC, unpriced
+}
+int? inrMinorFor({amountMinor, currency, timestampMs, markupBps, ratesForCurrency});
+```
 
 ## 19. Change Log (date | change | reason)
 
@@ -384,3 +401,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Package `sqlcipher_flutter_libs` replaced by the `sqlite3` 3.x SQLCipher build hook | Package obsolete after sqlite3 3.x; see ADR-0003 |
+| 2026-10-21 | Phase 4 data layer landed | Phase 4 |

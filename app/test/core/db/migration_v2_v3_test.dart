@@ -5,6 +5,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/core/db/app_database.dart';
 
+import '../../support/v4_schema.dart';
+
 void main() {
   test('v2 database with data upgrades to v3, data intact (Phase 3)', () async {
     final dir = Directory.systemTemp.createTempSync('hisaab_mig3');
@@ -31,6 +33,7 @@ void main() {
     ]) {
       await seed.customStatement('DROP TABLE $t');
     }
+    await dropV4(seed);
     await seed.customStatement('PRAGMA user_version = 2');
     await seed.close();
 
@@ -65,6 +68,6 @@ void main() {
     expect(await db.select(db.cardDueNotices).get(), isEmpty);
     expect(await db.select(db.cardOverrides).get(), isEmpty);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.read<int>('user_version'), 3);
+    expect(v.read<int>('user_version'), 4);
   });
 }

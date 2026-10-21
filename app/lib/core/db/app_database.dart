@@ -1,14 +1,20 @@
 import 'package:drift/drift.dart';
+import 'package:hisaab/core/db/forex_sql.dart';
 import 'package:hisaab/core/db/tables/accounts.dart';
+import 'package:hisaab/core/db/tables/alert_state.dart';
+import 'package:hisaab/core/db/tables/budgets.dart';
 import 'package:hisaab/core/db/tables/card_due_notices.dart';
 import 'package:hisaab/core/db/tables/card_overrides.dart';
 import 'package:hisaab/core/db/tables/custom_categories.dart';
 import 'package:hisaab/core/db/tables/custom_subcategories.dart';
 import 'package:hisaab/core/db/tables/deleted_messages.dart';
+import 'package:hisaab/core/db/tables/forex_rates.dart';
 import 'package:hisaab/core/db/tables/holdings.dart';
+import 'package:hisaab/core/db/tables/loan_links.dart';
 import 'package:hisaab/core/db/tables/merchant_rules.dart';
 import 'package:hisaab/core/db/tables/net_worth_points.dart';
 import 'package:hisaab/core/db/tables/processed_emails.dart';
+import 'package:hisaab/core/db/tables/recurring_items.dart';
 import 'package:hisaab/core/db/tables/settings.dart';
 import 'package:hisaab/core/db/tables/statements.dart';
 import 'package:hisaab/core/db/tables/transaction_sources.dart';
@@ -34,6 +40,14 @@ part 'app_database.g.dart';
     NetWorthPoints,
     CardDueNotices,
     CardOverrides,
+    Budgets,
+    RecurringItems,
+    ForexRates,
+    LoanLinkRows,
+    LoanDismissalRows,
+    AlertedKeys,
+    CardDueReminderState,
+    BalanceNoticeDays,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -41,11 +55,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
+        onCreate: (m) async {
+          await m.createAll();
+          await _installTriggers();
+        },
         onUpgrade: (m, from, to) async {
           // v1 -> v2: email ingestion (F-03). Additive, existing rows stay.
           if (from < 2) await m.createTable(processedEmails);
@@ -57,9 +74,35 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(cardDueNotices);
             await m.createTable(cardOverrides);
           }
+          // v3 -> v4: budgets, recurring, forex, loan links, alert state
+          // (Phase 4). Additive; the forex triggers are installed below.
+          if (from < 4) {
+            await m.createTable(budgets);
+            await m.createTable(recurringItems);
+            await m.createTable(forexRates);
+            await m.createTable(loanLinkRows);
+            await m.createTable(loanDismissalRows);
+            await m.createTable(alertedKeys);
+            await m.createTable(cardDueReminderState);
+            await m.createTable(balanceNoticeDays);
+            await _installTriggers();
+            // FR-23-04: backfill so existing rows carry inrMinor.
+            await customStatement(ForexSql.recompute);
+            await customStatement(
+              'UPDATE transactions SET inr_minor = amount_minor '
+              "WHERE currency = 'INR' AND inr_minor IS NULL",
+            );
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
+          await _installTriggers();
         },
       );
+
+  Future<void> _installTriggers() async {
+    for (final t in ForexSql.triggers) {
+      await customStatement(t);
+    }
+  }
 }

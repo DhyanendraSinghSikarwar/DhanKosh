@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-11 |
-| Status | Existing |
+| Status | In progress (Phase 4: classification helpers, cash-flow and savings-rate maths, income queries done; Home cash-flow widget, Analysis segment and savings outlook UI pending) |
 | Priority | P0 |
 | Phase | 1 (credit detection and classification at ingest, Home cash-flow widget); 4 for Analysis cash-flow segment and savings sparkline |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -423,7 +423,25 @@ Fixtures: corpus samples in section 2.1 (HDFC NEFT, SBI, ICICI 3-digit, Kotak VP
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 4 data/domain layer (no UI). No new tables (section 9). Code: `lib/features/income_tracking/domain/{income_classifier,cash_flow,income_repository}.dart`, `data/income_repository_impl.dart`; provider `incomeRepositoryProvider`. Tests: `test/features/phase4/phase4_{logic,repositories}_test.dart`.
+
+FR status done: FR-11-02 (`IncomeClassifier.creditCategory`), 05 (`incomeBetween`), 06 (`CashFlow.savedMinor/ratePercent`), 07 (`CashFlowMath.bestInMonths`), 09 (`savingsRateSeries`), 10 (`IncomeClassifier.bucketOf`, TC-11-09 order), 11 (`estimateYearMinor`, `scaleToYear`). Already in earlier phases: FR-11-01, 03, 04 (parser/ledger). Pending: FR-11-08, 12, 13, 14 (Sankey, category change UI, outlook, forex flag UI).
+
+Months are IST (`strftime` on `timestamp + 19,800,000`). Income queries exclude TRANSFER, `needsReview` and duplicate rows and use `inr_minor` (0 when unpriced).
+
+API for UI agents:
+
+```dart
+abstract interface class IncomeRepository {
+  Future<int> incomeBetween(int fromMs, int toMs);
+  Future<CashFlow> cashFlow(int fromMs, int toMs);               // income/spent/invested, saved, ratePercent?
+  Future<List<MonthFlow>> monthlyFlows(int fromMs, int toMs);    // oldest first, yearMonth 'yyyy-MM'
+  Stream<List<MonthFlow>> watchMonthlyFlows(int fromMs, int toMs);
+}
+CashFlowMath.savingsRateSeries(List<MonthFlow>) -> List<SavingsRatePoint>   // empty when < 2 income months
+CashFlowMath.bestInMonths(int rate, List<int> otherRates) -> int?
+IncomeClassifier.creditCategory(String text) -> Category;  bucketOf({category, merchant, note, upiId}) -> IncomeBucket
+```
 
 ## 19. Change Log (date | change | reason)
 
@@ -431,3 +449,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 4 data layer landed | Phase 4 |
