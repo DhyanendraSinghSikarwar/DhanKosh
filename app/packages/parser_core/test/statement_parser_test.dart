@@ -11,7 +11,7 @@ void main() {
   const parser = StatementParser();
 
   test('credit card statement rows become card transactions', () {
-    final text = dedent(r'''
+    final text = dedent('''
       HDFC Bank Credit Card Statement
       Card No: 4893 XXXX XXXX 5678
       Statement Date 20/09/2026  Total Amount Due 12,345.00  Minimum Amount Due 620.00
@@ -47,7 +47,7 @@ void main() {
   });
 
   test('bank statement direction comes from the running balance', () {
-    final text = dedent(r'''
+    final text = dedent('''
       State Bank of India  Account Statement  A/c No XXXXXXX1234
       Date Narration Debit Credit Balance
       Opening Balance 50,000.00
@@ -70,7 +70,7 @@ void main() {
 
   test('rows outside the date window, zero amounts and skip lines are dropped',
       () {
-    final text = dedent(r'''
+    final text = dedent('''
       HDFC Bank Credit Card Statement
       Card No: 4893 XXXX XXXX 5678
       02/09/2020 OLD SPEND 100.00
@@ -86,7 +86,7 @@ void main() {
   });
 
   test('bank statement rows become transactions with the closing balance', () {
-    final text = dedent(r'''
+    final text = dedent('''
       HDFC Bank
       Statement of Account
       Account No: XXXXXXXX2779
@@ -117,7 +117,7 @@ void main() {
   });
 
   test('CAMS CAS gives mutual fund holdings', () {
-    final text = dedent(r'''
+    final text = dedent('''
       Consolidated Account Statement
       Folio No: 1234567 / 89
       128TSDGG-Axis Bluechip Fund - Direct Growth - ISIN: INF846K01EW2(Advisor: DIRECT)
@@ -139,7 +139,7 @@ void main() {
   });
 
   test('demat statement lines with an ISIN give stock holdings', () {
-    final text = dedent(r'''
+    final text = dedent('''
       NSDL Consolidated Account Statement
       ISIN Security Current Bal. Market Price Value
       INE009A01021 INFOSYS LIMITED 10 1,500.00 15,000.00
@@ -156,7 +156,7 @@ void main() {
   test(
       'card statement summary is read whether values share the line or sit '
       'below the labels', () {
-    final below = dedent(r'''
+    final below = dedent('''
       ICICI Bank Credit Card Statement  Card 4375 XXXX XXXX 9012
       Statement Date Payment Due Date Total Amount Due Minimum Amount Due
       20/09/2026 08/10/2026 24,560.75 1,230.00
@@ -181,7 +181,7 @@ void main() {
   test(
       'bank statement summary gives opening, debits, credits and closing, '
       'not the table header', () {
-    final text = dedent(r'''
+    final text = dedent('''
       HDFC Bank Statement of account  Account No : 50100012345678
       Date Narration Chq./Ref.No. Value Dt Withdrawal Amt. Deposit Amt. Closing Balance
       02/09/26 UPI-SWIGGY-SWIGGY@ICICI 0000123 02/09/26 450.00 49,550.00
@@ -205,7 +205,7 @@ void main() {
   test(
       'card summary with a previous balance column keeps each value with its '
       'label', () {
-    final text = dedent(r'''
+    final text = dedent('''
       Axis Bank Credit Card Statement  Card No 5241 XXXX XXXX 3344
       Previous Balance Payments/Credits Purchases/Debits Total Amount Due
       10,000.00 10,000.00 3,250.50 3,250.50

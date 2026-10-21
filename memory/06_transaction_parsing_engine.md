@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-06 |
-| Status | In progress (Phase 1: SMS/email/notification path done; statements pending) |
+| Status | In progress (Phase 1 SMS/email/notification path and Phase 3 card-due/investment SMS parsers done in parser_core; Flutter wrapper not built) |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-21 |
@@ -804,7 +804,7 @@ FR status:
 | FR-06-12 | Done | `feedback_cases_test`, `card_alerts_test` (93 cases), `card_spend_test` (TC-06-18) |
 | FR-06-13 | Done | `hash_test` (TC-06-19) |
 | FR-06-14 | Not in parser_core | account and type guessing at ingest belongs to the accounts feature |
-| FR-06-15 | Partial | lender EMI and loan status, FD/RD/PPF deposit status done (`lender_parser_test`, `deposit_messages_test`, TC-06-21); card-due notices, investment SMS, EPF/NPS pending (Phase 3, `statement/`) |
+| FR-06-15 | Done | lender EMI and loan status, FD/RD/PPF deposit status (`lender_parser_test`, `deposit_messages_test`), card-due notices (`ParserRegistry.cardDue`, `card_dues_test`), EPF/NPS investment SMS (`InvestmentParser`, `statement_parser_test`, `nps_and_groww_holdings_test`, `fund_emails_test`) (TC-06-21) |
 | FR-06-16 | Done | `FreeTextParser`; `notification_layouts_test` (61 layouts + 12 receipts), `payment_app_amounts_test`, `feedback_cases_test` (TC-06-22) |
 | FR-06-17 | Done | `Subcategories`; `subcategories_test` (TC-06-26) |
 | FR-06-18 | Done for the 10-bank corpus | `corpus_accuracy_test`: 940/940 fields (100%), 0 negative leaks, SMS/email hash equality (TC-06-23, AC-06-02, AC-06-03). New fixtures still to be added as real messages are masked and contributed |
@@ -812,9 +812,11 @@ FR status:
 | FR-06-20 | Done | `regex_parity_test` (TC-06-24); parity is mainly proven by the ported Kotlin suites passing unchanged |
 | FR-06-21 | Partial | `Guarded` kept; 10,000 corpus messages parse in about 1.7 s in the JIT on a desktop (about 0.17 ms each), asserted under 10 s (TC-06-25); device timing pending |
 
-Tests: 598 pass, 0 skipped (`dart test` in `packages/parser_core`), `dart analyze` and `dart format` clean. Ported from Kotlin: HDFC, ICICI, SBI, Axis, Kotak, IDFC, Yes, BoB, PNB and AU corpus contracts, `CorpusAccuracyTest`, `SmsToTransactionTest`, `FeedbackCasesTest`, `ExtractorsTest`, `AccountAttributionTest`, `CardBillTest`, `DepositMessagesTest`, `LenderParserTest`, `NotificationLayoutsTest`, `CardAlertsTest`, `CardSpendTest`, `PaymentAppAmountsTest`, `DuplicateMatcherTest`, `TransactionHasherTest`, `MerchantNormalizerTest`, `ParserRegistryTest`, `RejectionRulesTest`, `TextNormalizerTest`. New: `regex_parity_test`, `parse_api_test`, `subcategories_test`, more Money/SHA-256/date vectors. Corpus messages were reviewed for real personal data: only invented names, masked accounts (XX1234) and public bank helpline numbers appear; nothing needed masking.
+Tests: 716 pass, 0 skipped (598 Phase 1 + 118 Phase 3 statement ports) (`dart test` in `packages/parser_core`), `dart analyze` and `dart format` clean. Ported from Kotlin: HDFC, ICICI, SBI, Axis, Kotak, IDFC, Yes, BoB, PNB and AU corpus contracts, `CorpusAccuracyTest`, `SmsToTransactionTest`, `FeedbackCasesTest`, `ExtractorsTest`, `AccountAttributionTest`, `CardBillTest`, `DepositMessagesTest`, `LenderParserTest`, `NotificationLayoutsTest`, `CardAlertsTest`, `CardSpendTest`, `PaymentAppAmountsTest`, `DuplicateMatcherTest`, `TransactionHasherTest`, `MerchantNormalizerTest`, `ParserRegistryTest`, `RejectionRulesTest`, `TextNormalizerTest`. New: `regex_parity_test`, `parse_api_test`, `subcategories_test`, more Money/SHA-256/date vectors. Corpus messages were reviewed for real personal data: only invented names, masked accounts (XX1234) and public bank helpline numbers appear; nothing needed masking.
 
-Not ported (Phase 3, statements feature): `SmsToTransactionTest` statement-row test; `statement/` (StatementParser, CardDue and `ParserRegistry.cardDue`, holdings, InvestmentParser, MfOrderParser, PortfolioSummary, PasswordGuesser, NPS, EPF) and their tests (`StatementParserTest`, `CardDuesTest`, `CasHoldingsTest`, `FundEmailsTest`, `HoldingPlatformsTest`, `HoldingsSheetTest`, `MfOrderParserTest`, `NpsAndGrowwHoldingsTest`, `StatementToHoldingsTest`, `BankIdentityGuessTest`, `PasswordGuesserTest`). Kotlin `ParserPerformanceTest` is replaced by the 10,000-message test in `parse_api_test`. The thin Flutter wrapper `lib/features/parsing/` is not built yet.
+Ported in Phase 3 (2026-10-21): the `SmsToTransactionTest` statement-row test (in `statement_parser_test`), `ParserRegistry.cardDue` and the `statement/` package; see [Statement import](05_statement_import.md) notes for the API. Kotlin `ParserPerformanceTest` is replaced by the 10,000-message test in `parse_api_test`. The thin Flutter wrapper `lib/features/parsing/` is not built yet.
+
+Phase 3: `CardDue`/`ParserRegistry.cardDue` and `InvestmentParser` (EPF/NPS SMS and email) landed in `packages/parser_core/src/statement/` (FR-06-15 complete); API signatures are in [Statement import](05_statement_import.md) section 18.
 
 ## 19. Change Log (date | change | reason)
 
@@ -824,3 +826,4 @@ Not ported (Phase 3, statements feature): `SmsToTransactionTest` statement-row t
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Listed-bank count corrected to 51 (matches table); subcategory regexes now link to 09 section 3.3; stale section refs 2.8/2.10 updated | Audit Gate gap, scan_N |
 | 2026-10-21 | Phase 1 Dart port landed in app/packages/parser_core | Phase 1 |
+| 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |

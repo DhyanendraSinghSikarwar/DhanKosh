@@ -12,7 +12,7 @@ void main() {
 
   // The text PdfBox gives for a CDSL CAS: demat holdings, then mutual fund
   // units held with the RTA.
-  final cdslCas = dedent(r'''
+  final cdslCas = dedent('''
     CDSL
     Consolidated Account Statement
     Statement for the period from 01-05-2026 to 31-05-2026
@@ -82,7 +82,7 @@ void main() {
   });
 
   test('NSDL CAS mutual fund folio rows give value and cost', () {
-    final text = dedent(r'''
+    final text = dedent('''
       NSDL Consolidated Account Statement
       Mutual Fund Folios (F)
       ISIN ISIN Description Folio No. No. of Units Average Cost Per Units (₹) Total Cost (₹) Current NAV per unit (₹) Current Value (₹) Unrealised Profit/(Loss) (₹)
@@ -99,7 +99,7 @@ void main() {
   });
 
   test('CAMS closing balance wrapped over lines is still read', () {
-    final text = dedent(r'''
+    final text = dedent('''
       Consolidated Account Statement
       P8DG-Parag Parikh Flexi Cap Fund - Direct Plan Growth - ISIN: INF879O01027(Advisor: DIRECT) Registrar : CAMS
       Folio No: 12345678 / 90
@@ -118,7 +118,7 @@ void main() {
 
   test('CAMS closing balance without a market value is valued at units x NAV',
       () {
-    final text = dedent(r'''
+    final text = dedent('''
       Consolidated Account Statement
       Axis Bluechip Fund - Direct Growth - ISIN: INF846K01EW2(Advisor: DIRECT)
       Closing Unit Balance: 200.000 NAV on 31-May-2026: INR 52.10

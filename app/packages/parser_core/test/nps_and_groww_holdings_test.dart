@@ -66,7 +66,7 @@ void main() {
     );
   });
 
-  final npsSot = dedent(r'''
+  final npsSot = dedent('''
     NPS Transaction Statement for Tier I Account
     Protean eGov Technologies Limited - Central Recordkeeping Agency
     PRAN : 110012341234
@@ -114,7 +114,7 @@ void main() {
   });
 
   test('Groww holdings PDF text gives units, invested and current value', () {
-    final text = dedent(r'''
+    final text = dedent('''
       Groww
       Mutual Fund Holdings Statement
       Holdings as on 24-Sep-2026
@@ -130,7 +130,8 @@ void main() {
       (h) =>
           h.identifier ==
           MfOrderParser.identifierFor(
-              'Parag Parikh Flexi Cap Fund Direct Growth'),
+            'Parag Parikh Flexi Cap Fund Direct Growth',
+          ),
     );
     expect(ppfas.kind, HoldingKind.mutualFund);
     expect(ppfas.name, 'Parag Parikh Flexi Cap Fund Direct Growth');
@@ -184,7 +185,7 @@ void main() {
   });
 
   test('CAMS CAS cost value with a currency label is the amount invested', () {
-    final text = dedent(r'''
+    final text = dedent('''
       Consolidated Account Statement
       Folio No: 1234567 / 89
       P123-Parag Parikh Flexi Cap Fund - Direct Plan Growth - ISIN: INF879O01027(Advisor: DIRECT)
@@ -206,7 +207,8 @@ void main() {
     );
     expect(
       ParserRegistry.isStatementSubject(
-          'Holdings statement for September 2026'),
+        'Holdings statement for September 2026',
+      ),
       isTrue,
     );
     expect(

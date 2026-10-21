@@ -40,7 +40,7 @@ void main() {
   test('HDFC header row then values row with rupee glyph and cash limit column',
       () {
     check(
-      r'''
+      '''
       HDFC Bank Credit Cards Statement
       Name: A SHARMA
       Card No: 4000 00XX XXXX 5521
@@ -75,7 +75,7 @@ void main() {
 
   test('ICICI one label per line with the value on the next line and a Dr', () {
     check(
-      r'''
+      '''
       ICICI Bank Credit Card Statement
       Credit Card No: 4375 XXXX XXXX 8842
       STATEMENT DATE
@@ -104,7 +104,7 @@ void main() {
 
   test('SBI Card label block then value block', () {
     check(
-      r'''
+      '''
       SBI Card
       Credit Card Statement
       SBI Card ending XXXX XXXX XXXX 7310
@@ -129,7 +129,7 @@ void main() {
 
   test('Axis total payment due with Dr and statement period', () {
     check(
-      r'''
+      '''
       Axis Bank Credit Card Statement
       Card No: 4147XXXXXXXX3190
       Statement Period: 13/08/2026 To 12/09/2026
@@ -164,7 +164,7 @@ void main() {
 
   test('Kotak labels with colons on one line each', () {
     check(
-      r'''
+      '''
       Kotak Mahindra Bank Credit Card Statement
       Card Number: 5241 80XX XXXX 7788
       Statement Date: 15-Sep-2026
@@ -186,7 +186,7 @@ void main() {
 
   test('IDFC FIRST rupee sign and dd-mm-yyyy', () {
     check(
-      r'''
+      '''
       IDFC FIRST Bank Credit Card Statement
       Card Number XXXX XXXX XXXX 3321
       Statement Date 11/09/2026
@@ -208,7 +208,7 @@ void main() {
 
   test('Yes Bank due date without a year and INR amounts', () {
     check(
-      r'''
+      '''
       YES BANK Credit Card Statement
       Card Number: 4580 XXXX XXXX 9145
       Statement Date 10 Sep 2026
@@ -230,7 +230,7 @@ void main() {
 
   test('AU total payment due', () {
     check(
-      r'''
+      '''
       AU Small Finance Bank Credit Card Statement
       Card No: XXXX XXXX XXXX 6110
       Statement Date : 18/09/2026
@@ -252,7 +252,7 @@ void main() {
 
   test('RBL two header rows each followed by a values row', () {
     check(
-      r'''
+      '''
       RBL Bank Credit Card Statement
       Card No. 5236 XXXX XXXX 1450
       Statement Date Payment Due Date
@@ -275,7 +275,7 @@ void main() {
 
   test('IndusInd amounts with a trailing Dr', () {
     check(
-      r'''
+      '''
       IndusInd Bank Credit Card Statement
       Card Number XXXX XXXX XXXX 8802
       Statement Date 05/09/2026
@@ -297,7 +297,7 @@ void main() {
 
   test('American Express new balance and minimum payment due', () {
     check(
-      r'''
+      '''
       American Express Credit Card Statement
       Card Number: XXXX-XXXXXX-1007
       Statement Closing Date 10 Sep 2026
@@ -317,7 +317,7 @@ void main() {
 
   test('HSBC and Standard Chartered', () {
     check(
-      r'''
+      '''
       HSBC Credit Card Statement
       Card Number 4546 XXXX XXXX 3099
       Statement Date 22 Sep 2026
@@ -336,7 +336,7 @@ void main() {
       25000000,
     );
     check(
-      r'''
+      '''
       Standard Chartered Bank Credit Card Statement
       Card No XXXX XXXX XXXX 6677
       Statement Date 21-09-2026
@@ -356,7 +356,7 @@ void main() {
 
   test('Federal OneCard short labels', () {
     check(
-      r'''
+      '''
       OneCard Federal Bank Credit Card Statement
       Card Number XXXX XXXX XXXX 2024
       Statement Date 01/09/2026

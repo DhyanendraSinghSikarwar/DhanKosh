@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-16 |
-| Status | In progress (Phase 3 data/domain layer done: holdings, HoldingMatch, net worth, allocation, maturity; history estimate, MF order/NPS recording and UI pending) |
+| Status | In progress (Phase 3 data/domain layer done: holdings, HoldingMatch, net worth, allocation, maturity; holdings parsers done in parser_core; history estimate, MF order/NPS recording pipeline and UI pending) |
 | Priority | P1 |
 | Phase | 3 |
 | Last Updated | 2026-10-21 |
@@ -454,6 +454,8 @@ APIs for UI agents:
 Deviations: PPF deposit accounts are skipped when a PPF holding exists (no double count); Business book excludes holdings only, Personal book excludes business accounts, as written in FR-16-16; `NetWorthFilter` uses enums not strings.
 Tests: `test/features/phase3/phase3_repositories_test.dart` (holdings, summary, net worth, prefs, history cap).
 
+Parsers (2026-10-21): the holdings snapshot producers are ported to parser_core (`HoldingSnapshot`, `HoldingKind` in `src/model/holding.dart`): `parseStatement(...).holdings` (CAS, NSDL/CDSL, broker tables and sheets, NPS statements, EPF passbooks, USD tables at the statement rate), `parseInvestmentSms/Email` (EPF balance with `contributionMinor`, NPS value), `InvestmentParser.npsContribution` (`NpsContribution.key` is the dedup key), `parseMfOrder` (`MfOrder.identifier` = `MF:<normalised scheme>`) and `parsePortfolioSummary` (`AGG:INDMONEY:<class>`). Identifier schemes: ISIN, `EPF:<member>`, `NPS:<last4>[:T2]`, `MF:`, `STOCK:`, `US:<ticker>`, `AGG:`. `HoldingSnapshot.units` is the only `double`; the app maps these to the domain `HoldingSnapshot` used by `HoldingRepository.record`. Tests: `statement_to_holdings_test`, `cas_holdings_test`, `nps_and_groww_holdings_test`, `holdings_sheet_test`, `holding_platforms_test`, `fund_emails_test`, `mf_order_parser_test` (TC-16 parser fixtures).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -462,3 +464,4 @@ Tests: `test/features/phase3/phase3_repositories_test.dart` (holdings, summary, 
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Added 3.10 HoldingMatch, 3.11 record/dedupe/recordMfOrder, 3.12 NPS contributions; FR-16-17..21, TC-16-14..17. Corrected FR-16-09 ("upsert by identifier"), 2.2 step 1, 3.4 and 3.9 (MF orders also update holdings, not only transactions) | Audit Gate gap, scan_2 |
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |
+| 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |

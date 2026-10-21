@@ -38,6 +38,26 @@ class Identity {
   /// Kept with the sealed details so accounts can inherit it; not used to
   /// build guesses.
   final String? email;
+
+  /// A copy with the given fields replaced (a null argument keeps the field).
+  Identity copyWith({
+    String? name,
+    CivilDate? dob,
+    String? pan,
+    String? phone,
+    String? altName,
+    String? altPhone,
+    String? email,
+  }) =>
+      Identity(
+        name: name ?? this.name,
+        dob: dob ?? this.dob,
+        pan: pan ?? this.pan,
+        phone: phone ?? this.phone,
+        altName: altName ?? this.altName,
+        altPhone: altPhone ?? this.altPhone,
+        email: email ?? this.email,
+      );
 }
 
 /// What one bank account or card adds to [Identity]: details the bank itself
@@ -71,6 +91,24 @@ class BankIdentity {
 
   /// Emails on the account.
   final List<String> emails;
+
+  /// A copy with the given fields replaced (a null argument keeps the field).
+  BankIdentity copyWith({
+    String? customerId,
+    String? accountNumber,
+    String? ifsc,
+    List<String>? names,
+    List<String>? phones,
+    List<String>? emails,
+  }) =>
+      BankIdentity(
+        customerId: customerId ?? this.customerId,
+        accountNumber: accountNumber ?? this.accountNumber,
+        ifsc: ifsc ?? this.ifsc,
+        names: names ?? this.names,
+        phones: phones ?? this.phones,
+        emails: emails ?? this.emails,
+      );
 }
 
 /// Maps a bank's name, or an email sender, to a stable key, so accounts and

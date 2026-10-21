@@ -37,7 +37,13 @@ Zeta Mid Cap Fund Direct Growth|Zeta Mutual Fund|Equity|Mid Cap|8080808|25|1999.
   // The summary states the value 2 paise off the rows' sum, as Groww's
   // rounding does.
   List<List<String>> growwSheet() => [
-        ['Total Investments', 'Current Portfolio Value', 'Profit/Loss', 'Profit/Loss %', 'XIRR'],
+        [
+          'Total Investments',
+          'Current Portfolio Value',
+          'Profit/Loss',
+          'Profit/Loss %',
+          'XIRR',
+        ],
         ['32600.4', '35132.73', '2532.33', '7.77%', '8.4%'],
         [],
         [],
@@ -60,7 +66,11 @@ Zeta Mid Cap Fund Direct Growth|Zeta Mutual Fund|Equity|Mid Cap|8080808|25|1999.
     for (final row in groww) {
       schemes.putIfAbsent(row[0], () => []).add(row);
     }
-    expect(r.holdings, hasLength(schemes.length), reason: r.holdings.join('\n'));
+    expect(
+      r.holdings,
+      hasLength(schemes.length),
+      reason: r.holdings.join('\n'),
+    );
     expect(schemes, hasLength(6));
     schemes.forEach((name, rows) {
       final h = r.holdings.singleWhere((x) => x.name == name);
@@ -69,7 +79,11 @@ Zeta Mid Cap Fund Direct Growth|Zeta Mutual Fund|Equity|Mid Cap|8080808|25|1999.
         closeTo(rows.fold<double>(0, (a, x) => a + double.parse(x[5])), 1e-6),
         reason: name,
       );
-      expect(h.investedMinor, sumInt(rows.map((x) => minor(x[6]))), reason: name);
+      expect(
+        h.investedMinor,
+        sumInt(rows.map((x) => minor(x[6]))),
+        reason: name,
+      );
       expect(h.valueMinor, sumInt(rows.map((x) => minor(x[7]))), reason: name);
       // Gain = value - invested, as the sheet's Returns column states it.
       expect(
@@ -105,7 +119,8 @@ Zeta Mid Cap Fund Direct Growth|Zeta Mutual Fund|Equity|Mid Cap|8080808|25|1999.
     expect(check.mismatch, isFalse);
   });
 
-  test('second Groww sheet replaces by identifier, the summary sheet of a '
+  test(
+      'second Groww sheet replaces by identifier, the summary sheet of a '
       'workbook is read too', () {
     final workbook = <List<String>>[
       growwHead,
@@ -128,9 +143,30 @@ Zeta Mid Cap Fund Direct Growth|Zeta Mutual Fund|Equity|Mid Cap|8080808|25|1999.
     final rows = <List<String>>[
       ['Report'],
       [],
-      ['Scheme Name', 'Folio', 'Units', 'Invested Value (₹)', 'Current Value (₹)', 'Returns'],
-      ['Alpha Equity Fund Direct Growth', '123456789012', '1,234.5', '₹ 80,000.00', '₹96,445.12', '16,445.12'],
-      ['Beta Debt Fund Direct Growth', '98765', '(10)', '25,000', '23,500 Cr', '(1,500.00)'],
+      [
+        'Scheme Name',
+        'Folio',
+        'Units',
+        'Invested Value (₹)',
+        'Current Value (₹)',
+        'Returns',
+      ],
+      [
+        'Alpha Equity Fund Direct Growth',
+        '123456789012',
+        '1,234.5',
+        '₹ 80,000.00',
+        '₹96,445.12',
+        '16,445.12',
+      ],
+      [
+        'Beta Debt Fund Direct Growth',
+        '98765',
+        '(10)',
+        '25,000',
+        '23,500 Cr',
+        '(1,500.00)',
+      ],
       ['Total', '', '', '105000', '119945.12', ''],
       ['Disclaimer Fund Direct Growth', '1', '1', '1', '999', '0'],
     ];
@@ -169,11 +205,22 @@ Zeta Mid Cap Fund Direct Growth|Zeta Mutual Fund|Equity|Mid Cap|8080808|25|1999.
   test('transaction sheets are not holdings', () {
     final rows = [
       ['Scheme Name', 'Date', 'Type', 'Units', 'NAV', 'Amount'],
-      ['Alpha Equity Fund Direct Growth', '01/09/2026', 'Purchase', '10', '100', '1000'],
+      [
+        'Alpha Equity Fund Direct Growth',
+        '01/09/2026',
+        'Purchase',
+        '10',
+        '100',
+        '1000',
+      ],
     ];
     expect(
       parser
-          .parse(SpreadsheetLines.toText(rows), 'Groww <a@groww.in>', receivedAt)
+          .parse(
+            SpreadsheetLines.toText(rows),
+            'Groww <a@groww.in>',
+            receivedAt,
+          )
           .holdings,
       isEmpty,
     );
@@ -248,11 +295,38 @@ Zeta Mid Cap Fund Direct Growth|Zeta Mutual Fund|Equity|Mid Cap|8080808|25|1999.
   });
 
   test('Zerodha Console holdings value units at the previous close', () {
-    final p = HoldingProfiles.all.firstWhere((x) => x.label == 'Zerodha Console');
+    final p =
+        HoldingProfiles.all.firstWhere((x) => x.label == 'Zerodha Console');
     final rows = [
       p.header,
-      ['INFY', 'INE009A01021', 'IT', '10', '0', '10', '0', '0', '1500', '1600', '1000', '6.67'],
-      ['GOLDBEES', 'INF204KB17I5', 'Gold', '100', '0', '0', '0', '0', '50', '60', '1000', '20'],
+      [
+        'INFY',
+        'INE009A01021',
+        'IT',
+        '10',
+        '0',
+        '10',
+        '0',
+        '0',
+        '1500',
+        '1600',
+        '1000',
+        '6.67',
+      ],
+      [
+        'GOLDBEES',
+        'INF204KB17I5',
+        'Gold',
+        '100',
+        '0',
+        '0',
+        '0',
+        '0',
+        '50',
+        '60',
+        '1000',
+        '20',
+      ],
     ];
     final r = parser.parse(
       SpreadsheetLines.toText(rows),

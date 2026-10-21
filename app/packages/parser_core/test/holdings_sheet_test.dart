@@ -27,7 +27,7 @@ void main() {
       'Groww',
       '300',
       '30000',
-      '33150'
+      '33150',
     ],
     [
       'Parag Parikh Flexi Cap Fund Direct Growth',
@@ -38,7 +38,7 @@ void main() {
       'Groww',
       '400',
       '24000',
-      '30400'
+      '30400',
     ],
     [
       'Parag Parikh Flexi Cap Fund Direct Growth',
@@ -49,7 +49,7 @@ void main() {
       'Groww',
       '100',
       '6500',
-      '7600'
+      '7600',
     ],
     [
       'SBI Gold Direct Plan Growth',
@@ -60,7 +60,7 @@ void main() {
       'Groww',
       '1500',
       '22500',
-      '24600'
+      '24600',
     ],
     [
       'SBI Gold Direct Plan Growth',
@@ -71,7 +71,7 @@ void main() {
       'External',
       '500',
       '7000',
-      '8200'
+      '8200',
     ],
     [
       'Invesco India PSU Equity Fund Direct Growth',
@@ -82,7 +82,7 @@ void main() {
       'Groww',
       '250',
       '12500',
-      '14250'
+      '14250',
     ],
     [
       'Invesco India PSU Equity Fund Direct Growth',
@@ -93,7 +93,7 @@ void main() {
       'Groww',
       '50',
       '2800',
-      '2850'
+      '2850',
     ],
     [
       'LIC MF Gold ETF FoF Direct Growth',
@@ -104,7 +104,7 @@ void main() {
       'Groww',
       '1000',
       '15000',
-      '16400'
+      '16400',
     ],
     [
       'LIC MF Gold ETF FoF Direct Growth',
@@ -115,7 +115,7 @@ void main() {
       'Groww',
       '200',
       '2900',
-      '3280'
+      '3280',
     ],
     [
       'SBI Multi Asset Allocation Fund Direct Growth',
@@ -126,7 +126,7 @@ void main() {
       'Groww',
       '600',
       '30000',
-      '32400'
+      '32400',
     ],
     [
       'SBI Multi Asset Allocation Fund Direct Growth',
@@ -137,7 +137,7 @@ void main() {
       'Groww',
       '100',
       '5500',
-      '5400'
+      '5400',
     ],
     [
       'Axis Small Cap Fund Direct Growth',
@@ -148,7 +148,7 @@ void main() {
       'Groww',
       '500',
       '25000',
-      '23500'
+      '23500',
     ],
   ];
   const totalInvested = 183700.0;
@@ -178,14 +178,14 @@ void main() {
           'Current Portfolio Value',
           'Profit/Loss',
           'Profit/Loss %',
-          'XIRR'
+          'XIRR',
         ],
         [
           totals.$1,
           totals.$2,
           fmt(totalValue - totalInvested),
           '9.98%',
-          '7.84%'
+          '7.84%',
         ],
         [''],
         ['HOLDINGS AS ON $asOn'],
@@ -243,8 +243,11 @@ void main() {
       'Axis Small Cap Fund Direct Growth': 47.0,
     };
     for (final s in r.holdings) {
-      expect(nav[s.name]! * s.units!, closeTo(s.valueMinor! / 100.0, 0.01),
-          reason: s.name);
+      expect(
+        nav[s.name]! * s.units!,
+        closeTo(s.valueMinor! / 100.0, 0.01),
+        reason: s.name,
+      );
     }
     expect(
       (r.holdings.first.asOf - receivedAt).abs() < 40 * 86400000,
@@ -312,7 +315,7 @@ void main() {
         '',
         '',
         '',
-        ''
+        '',
       ],
     ];
     final r = parser.parse(SpreadsheetLines.toText(rows), sender, receivedAt);
@@ -335,7 +338,7 @@ void main() {
         'Total Investment',
         'Market Value',
         'P&L',
-        'Returns %'
+        'Returns %',
       ],
       [
         'Kotak Emerging Equity Fund Direct Growth',
@@ -345,7 +348,7 @@ void main() {
         '₹80,000.00',
         '₹96,445.12',
         '16,445.12',
-        '20.56%'
+        '20.56%',
       ],
       [
         'Axis Small Cap Fund Direct Growth',
@@ -355,7 +358,7 @@ void main() {
         '25,000',
         '23,500',
         '(1,500)',
-        '(6.00%)'
+        '(6.00%)',
       ],
       [''],
       ['Total', '', '', '', '1,05,000', '1,19,945.12', '14,945.12'],
@@ -401,7 +404,7 @@ void main() {
         'Cur. val',
         'P&L',
         'Net chg.',
-        'Day chg.'
+        'Day chg.',
       ],
       [
         'Parag Parikh Flexi Cap Fund - Direct Plan - Growth',
@@ -412,7 +415,7 @@ void main() {
         '7600',
         '1600',
         '26.67%',
-        '0.30%'
+        '0.30%',
       ],
     ];
     final b = parser

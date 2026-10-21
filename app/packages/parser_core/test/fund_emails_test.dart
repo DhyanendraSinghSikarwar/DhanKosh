@@ -16,8 +16,8 @@ void main() {
       () {
     final o = orders.parse(
       'Your SIP instalment of ₹5,000 for Parag Parikh Flexi Cap Fund Direct '
-      'Growth has been processed successfully.\n'
-      'Units allotted 61.234\nNAV ₹81.6543\nNAV date 23 Sep 2026',
+          'Growth has been processed successfully.\n'
+          'Units allotted 61.234\nNAV ₹81.6543\nNAV date 23 Sep 2026',
       'SIP instalment processed',
       'Groww <noreply@groww.in>',
       at,
@@ -26,7 +26,9 @@ void main() {
     expect(o.date, const CivilDate(2026, 9, 23));
     expect(
       o.identifier,
-      MfOrderParser.identifierFor('Parag Parikh Flexi Cap Fund - Direct Plan - Growth'),
+      MfOrderParser.identifierFor(
+        'Parag Parikh Flexi Cap Fund - Direct Plan - Growth',
+      ),
     );
     expect(o.isSip, isTrue);
     expect(o.units, closeTo(61.234, 1e-9));
@@ -58,7 +60,7 @@ void main() {
     expect(
       orders.parse(
         'Your SIP instalment for Axis Small Cap Fund Direct Growth has failed '
-        'due to insufficient balance.',
+            'due to insufficient balance.',
         'SIP failed',
         'Groww <noreply@groww.in>',
         at,

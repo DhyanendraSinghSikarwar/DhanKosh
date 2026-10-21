@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-14 |
-| Status | In progress (Phase 3 data/domain layer done: position math, notices, overrides, paid marks; reminders worker, notification, Home widget, card UI pending) |
+| Status | In progress (Phase 3 data/domain layer and the `CardDueParser` message parser in parser_core done; reminders worker, notification, Home widget, card UI pending) |
 | Priority | P0 |
 | Phase | 3 (statements + portfolio); card due SMS/email recording can start in Phase 2; reminders in Phase 2 |
 | Last Updated | 2026-10-21 |
@@ -465,6 +465,8 @@ APIs for UI agents:
 Rules: an override is replaced when a bill row with `arrivalMs > setAt` exists. Sent/snoozed reminder state is not stored yet (alerts feature). Statement CREDIT_CARD rows (status PARSED) feed positions through `StatementRepository`.
 Tests: `test/features/phase3/card_position_test.dart` (worked examples 1 to 5), `phase3_repositories_test.dart` (notices, service, actions).
 
+Message parser (2026-10-21): `CardDueParser` and `CardDue` are ported to `app/packages/parser_core/lib/src/statement/card_due.dart`; app code calls `parseCardDue(body, sender, timestamp)` or `ParserRegistry.cardDue(...)` and gets `CardDue{bank, last4, totalDueMinor, minDueMinor, dueEpochDay, statementEpochDay, paymentMinor, at}` (epoch days via `CivilDate.toEpochDay`) or null; lenders return null and the generic parser reads the issuer from the text. Statement PDFs give `StatementResult.summary` (total/min due, due date, credit limit, available, statement date). FR-14-06 parsing side: tests `card_dues_test` (27 cases, TC-14 parser fixtures from the Kotlin `CardDuesTest`). The pipeline that records the notices stays in the app layer.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -473,3 +475,4 @@ Tests: `test/features/phase3/card_position_test.dart` (worked examples 1 to 5), 
 | 2026-10-19 | Named `cardFlowSince` filters (`duplicateOfId IS NULL`, `inrMinor IS NOT NULL`): FR-14-17, edge case, TC-14-13 | Audit Gate gap, scan_3
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |
+| 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |

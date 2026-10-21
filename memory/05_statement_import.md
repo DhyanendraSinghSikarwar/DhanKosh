@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-05 |
-| Status | In progress (Phase 3 data layer done: statement rows, saved passwords, password source; parsers, import use cases and UI pending) |
+| Status | In progress (Phase 3 data layer and the pure-Dart statement/holdings/password parsers in parser_core done; import use cases, PDF text, ingest and UI pending) |
 | Priority | P1 |
 | Phase | 3 |
 | Last Updated | 2026-10-21 |
@@ -705,7 +705,7 @@ Fixtures: use synthetic text PDFs generated in tests (card statement text block,
 
 Phase 3 data layer (no UI, no parsers). Schema v3 table `statements` (section 9 columns, `transaction_count`/`holding_count` default 0); card bill/payment/override rows are NOT stored here (dedicated tables in [Credit cards](14_credit_cards.md)), so `StatementKind` has no CARD_* values. Code lives in `lib/features/statement_import/` (not `statements/`): `domain/{statement,statement_repository,saved_password,password_source}.dart`, `data/{statement_repository_impl,statement_password_store}.dart`; providers in `lib/app/di/phase3_providers.dart`.
 
-FR status: data parts of FR-05-01 (dedupe by key), FR-05-10 (sealed saved passwords), FR-05-11 (locked row, email text cap 4000), FR-05-19 (list/delete) and the password-source assembly of FR-05-09 are done. Pending: FR-05-02..08, 12..18, 20..25 (parsers, ingest, account effect, holdings extraction, UI).
+FR status: data parts of FR-05-01 (dedupe by key), FR-05-10 (sealed saved passwords), FR-05-11 (locked row, email text cap 4000), FR-05-19 (list/delete) and the password-source assembly of FR-05-09 are done. Parsers done in parser_core (2026-10-21): FR-05-03 (classification), 04 (rows), 05 (spreadsheet lines/CSV; byte sniffing and PROTECTED detection stay native/app), 06 (summary), 09 (candidate builder `PasswordGuesser`; the source assembly is above), 14 (holdings: CAS, NSDL/CDSL, broker tables and sheets, NPS, EPF, USD at the statement rate 40..200), 16 and 23..25 (`MfOrderParser`, `PortfolioSummary`, `InvestmentParser`; the pipeline order and side effects are app-layer), 17 (deposit status from statements), 18 (`HoldingsCheck`). Pending (app layer, not parser_core): FR-05-02, 05 (file sniffing), 07, 08, 12, 13, 15, 16 (pipeline), 20..22, 23 (pipeline), UI.
 
 APIs for UI/use-case agents (`statementRepositoryProvider`, `savedPasswordRepositoryProvider`):
 - `Future<StatementInsert> insert(NewStatement)` -> `StatementInserted | StatementAlreadyImported | StatementRetryLocked` (existing LOCKED key retries).
@@ -715,6 +715,19 @@ APIs for UI/use-case agents (`statementRepositoryProvider`, `savedPasswordReposi
 Ledger writes stay with `TransactionRepository.ingest` (called by the import use case later). Note: parser_core exports its own `StatementKind`; import ours with a prefix or `show`.
 Tests: `test/features/phase3/phase3_repositories_test.dart` (statements, passwords), `test/core/db/migration_v2_v3_test.dart`.
 
+Phase 3 parsers (parser_core `src/statement/`, pure Dart, 2026-10-21; Kotlin parity, Kotlin names kept). Public API in `lib/parser_core.dart`:
+- `StatementResult parseStatement(String text, String sender, int receivedAt, {ParserConfig config})` = `StatementParser(config).parse(...)`. `text` is the statement's text lines (PDF text, or `SpreadsheetLines.toText(rows)` for XLSX/XLS/CSV). `StatementResult{bankName, last4, kind(AccountKind), transactions, holdings(List<HoldingSnapshot>), lines, statementKind(StatementKind creditCard|bank|investment|other), summary(StatementSummary{totalDueMinor,minDueMinor,dueDate,creditLimitMinor,statementDate,openingMinor,closingMinor,debitsMinor,creditsMinor,availableMinor}), deposits(List<LoanStatus>), holdingsCheck(HoldingsCheck?{statedInvestedMinor,statedValueMinor,rowsInvestedMinor,rowsValueMinor,mismatch})}`; `StatementParser.summary(lines, [ref])`.
+- `CardDue? parseCardDue(String body, String sender, int timestamp, {ParserRegistry? registry})` = `ParserRegistry.cardDue(body, sender, timestamp)`; `CardDueParser.parse(body, bank, timestamp, {utcOffset})`, `CardDueParser.bankIn(text)`. `CardDue{bank, last4, totalDueMinor, minDueMinor, dueEpochDay, statementEpochDay, paymentMinor, at}` (epoch days = `CivilDate.toEpochDay()`).
+- `HoldingSnapshot{kind(HoldingKind), name, identifier, units(double?), valueMinor, investedMinor, asOf, contributionMinor, platform}` in `src/model/holding.dart`; `HoldingKind{epf,mutualFund,stock,etf,nps,ppf,bond,gold,fd,other}`. Units are the only `double`; all money is paise.
+- `HoldingSnapshot? parseInvestmentSms(String body, String sender, int timestamp)`, `parseInvestmentEmail(String body, int timestamp)`; `InvestmentParser.accepts(sender)`, `.npsContribution(body, timestamp, {config}) -> NpsContribution?{pranLast4,tier,amountMinor,date(CivilDate),identifier,key}`, `.npsValue`, `.epfMemberKey`, `.npsIdentifier/npsName`, `InvestmentParser.epfDefault`.
+- `MfOrder? parseMfOrder(String text, String? subject, String sender, int receivedAt, {config})`; `MfOrder{platform, schemeName, folio, amountMinor, units, nav, date(CivilDate), isSip, identifier}`; `MfOrderParser.identifierFor/normaliseScheme/platformOf`, `MfOrderParser.senderDomains`.
+- `List<HoldingSnapshot> parsePortfolioSummary(String text, String? subject, String sender, int receivedAt, {config})` (INDmoney, ids `AGG:INDMONEY:<US|MF|STOCKS>`); `PortfolioSummary.aggregate`.
+- `PasswordGuesser.candidates(Identity, [Iterable<String> last4s]) -> List<String>` (max 240), `PasswordGuesser.forBanks(Identity profile, List<BankIdentity> banks, {last4s, combos}) -> List<String>` (max 300); `Identity{name, dob(CivilDate?), pan, phone, altName, altPhone, email}`, `BankIdentity{customerId, accountNumber, ifsc, names, phones, emails}` (both with `copyWith`), `BankKeys.of(text)`.
+- Spreadsheets: `SpreadsheetLines.toLines(rows)/toText(rows)/parseCsv(text)/serialDate(cell)/isHoldingsHeader(row)`, `HoldingSheet.sep`, `HoldingColumns`, `HoldingField`, `HoldingProfiles.all/platformOf`.
+Not exported (internal): `HoldingLines`, `HoldingTable`, `NpsStatement`, `EpfPassbook`, `CardFigures`. parser_core exports its own `StatementKind`, `Identity` and `HoldingSnapshot`: the app layer imports them with a prefix or `show`.
+Deviations: dates use `CivilDate` and `DepositParser.parseDate` (clamps like Java's smart resolver; also accepts a few more spellings than the Kotlin formatter lists); `CardFigures.parse` takes `ref`/`forward` as named args and defaults `ref` to today only when null (all internal callers pass it); `Math.round(units * price * 100)` and holdings-table arithmetic stay `double` as in Kotlin (units x NAV cross-checks), converted to paise with half-up rounding; sums of paise and exact decimal parsing (`Money`) are used everywhere a figure is read as text, including `SpreadsheetLines` two-decimal formatting (exact, no double).
+Tests (parser_core, all passing): TC-05-02/03/04/06 `statement_parser_test`, `card_dues_test`; TC-05-05 `cas_holdings_test`; TC-05-09 `password_guesser_test`; TC-05-11 `cas_holdings_test`, `statement_to_holdings_test`; TC-05-12 `holdings_sheet_test`, `holding_platforms_test`, `nps_and_groww_holdings_test`; TC-05-13, 15 `statement_to_holdings_test`, `nps_and_groww_holdings_test`; TC-05-14, 21 `mf_order_parser_test`, `fund_emails_test`; TC-05-16 `holdings_sheet_test`; TC-05-22 `fund_emails_test`. Not covered by parser_core tests: TC-05-01, 07, 08, 10, 17..20, 23 (app layer). Intentionally skipped Kotlin tests: none; every test of the 11 Kotlin suites was ported (the Kotlin 'old API unchanged' checks became plain API checks, `Identity` takes named arguments in Dart). Fixtures use fictional names (A SHARMA), fictional BO ID/PRAN/folio numbers; no real data.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -723,3 +736,4 @@ Tests: `test/features/phase3/phase3_repositories_test.dart` (statements, passwor
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Added 3.9.1 holdings side effects of the email-body pipeline, 3.9.2 MfOrderParser rules, 3.9.3 PortfolioSummary rules; FR-05-23..25, TC-05-21..23 | Audit Gate gap, scan_2 |
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |
+| 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |

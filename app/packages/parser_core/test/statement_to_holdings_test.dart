@@ -13,7 +13,7 @@ void main() {
 
   test('EPF member passbook gives one EPF holding with value and contributions',
       () {
-    final text = dedent(r'''
+    final text = dedent('''
       Employees' Provident Fund Organisation, India
       Member Passbook
       Establishment ID/Name MHBAN0012345000 / ACME SOFTWARE PVT LTD
@@ -53,7 +53,7 @@ void main() {
   test(
       'PPF account statement updates the PPF account balance, not transactions',
       () {
-    final text = dedent(r'''
+    final text = dedent('''
       State Bank of India
       Public Provident Fund Account Statement
       PPF Account No: 00000012345673456
@@ -74,7 +74,7 @@ void main() {
   });
 
   test('FD advice PDF gives the deposit, its maturity and renewal', () {
-    final text = dedent(r'''
+    final text = dedent('''
       ICICI Bank
       Fixed Deposit Advice
       Deposit Account No: XXXXXXXX8899
@@ -135,7 +135,7 @@ void main() {
   });
 
   test('CDSL CAS forwarded by INDmoney gives stocks and funds by ISIN', () {
-    final text = dedent(r'''
+    final text = dedent('''
       CDSL Consolidated Account Statement (CAS)
       Statement for the period from 01-08-2026 to 31-08-2026
       Holdings as on 31-08-2026
@@ -162,7 +162,7 @@ void main() {
   });
 
   test('Groww stocks holdings table keys stocks by name', () {
-    final text = dedent(r'''
+    final text = dedent('''
       Groww
       Stocks Holdings Statement
       Holdings as on 24-Sep-2026
