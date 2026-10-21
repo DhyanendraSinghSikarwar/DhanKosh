@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-08 |
-| Status | Existing |
+| Status | In progress (Phase 1 data layer; UI pending) |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-21 |
@@ -446,7 +446,13 @@ Fixtures: corpus samples 1-14 (Part B 8), HDFC bill payment pair, own-transfer J
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 1 data layer (domain + data only; no UI yet). Code: `lib/core/db/tables/{transactions,transaction_sources,deleted_messages}.dart`, `features/transactions_ledger/{domain,data}` (`transaction_repository.dart`, `transaction_repository_impl.dart`, `ledger_tx.dart`, `ledger_filter.dart`, `ingest.dart`), provider `transactionRepositoryProvider` in `app/di/providers.dart`. Tests: `test/features/transactions_ledger/transaction_repository_test.dart`.
+
+Done: FR-08-17 (one DB transaction per batch, rollback tested, TC-08-06), FR-08-19 (review rows excluded from totals, balances and lists except the REVIEW kind, TC-08-08), FR-08-22 (tombstones written on delete, checked at ingest, TC-08-17), FR-08-09 data side (tombstones for every source, chunks of 900, TC-08-07), FR-08-05/06/07 data side (kind, source, bank, account with merged children, category, period filters; search over merchant, bank, note, reference, UPI id, category label, whole-rupee amount prefix, TC-08-01; the 120 ms debounce is UI), FR-08-10 data side (`setCategory`, `setSubcategory`, `setNote`, `setAccount`, `sourcesOf`), FR-08-11 data side (`addManual`, source MANUAL). Period totals follow `MonthSpend` (spent = DEBIT not TRANSFER; refunds and investments separate; income = CREDIT not TRANSFER/REFUND).
+
+Pending: FR-08-01..04, 08, 11 (screen), 12, 16, 20, 21 (UI/OCR/gaps); FR-08-13 (`addOwnTransfer` and leg folding), FR-08-14/15 (`pairTransfers`, `pairEmi`, `CardBill.mark`); FR-08-18 (`inrMinor` is set to the amount for INR and NULL otherwise, no forex triggers yet); manual merge/undo, split, CSV import, repair jobs.
+
+Deviations: column names are Drift snake_case (`amount_minor`), not Room camelCase, so an import from the Room file needs a column map (Open Question 6); folder is `features/transactions_ledger` (the existing skeleton) not `features/transactions`; enums come from `package:parser_core` and are stored as `SNAKE_UPPER` text; `source_message_id` uniqueness on `transaction_sources` doubles as the processed-id set (no extra table).
 
 ## 19. Change Log (date | change | reason)
 
@@ -456,3 +462,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-19 | Added `DeletedMessages` table block and table-ownership note; MessageView (3.10, FR-08-20); calendar captions/colour (3.11, FR-08-21); FR-08-22; TC-08-15..17 | Audit Gate gap, scan_3, scan_5, scan_6 |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Package `sqlcipher_flutter_libs` replaced by the `sqlite3` 3.x SQLCipher build hook | Package obsolete after sqlite3 3.x; see ADR-0003 |
+| 2026-10-21 | Phase 1 data layer landed (tables transactions, transaction_sources, deleted_messages; `TransactionRepository` ingest/edit/delete/read streams) | Phase 1 |

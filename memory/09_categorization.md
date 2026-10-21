@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-09 |
-| Status | Existing |
+| Status | In progress (Phase 1 data layer; UI pending) |
 | Priority | P0 |
 | Phase | 1 (core ledger + SMS; rule editor and category detail finish in Phase 4) |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -648,7 +648,13 @@ Fixtures: corpus samples in section 10; golden JSON of the directory (all keys),
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 1 data layer (rules store and learning only). Code: `lib/core/db/tables/{merchant_rules,custom_categories,custom_subcategories}.dart`, `features/categorization/{domain,data}` (`merchant_rule.dart`, `category_repository.dart`, `category_repository_impl.dart`), learning and apply-to-past in `TransactionRepository.setCategory/applyRuleToPast/countRuleMatches`. Tests: `test/features/categorization/category_repository_test.dart`, category cases in `test/features/transactions_ledger/transaction_repository_test.dart`.
+
+Done: FR-09-05 data side (single and bulk `setCategory`), FR-09-06 (clears sub/custom category, learned EXACT rule, never over a manual key, never TRANSFER), FR-09-07 (learned rule rewrites past OTHER rows), FR-09-08 data side (`saveManualRule`, key >= 2), FR-09-09 data side (count and `applyRuleToPast` with escaped LIKE), FR-09-10 (ingest applies manual EXACT, longest manual CONTAINS, learned EXACT; TRANSFER excluded), FR-09-11 (rule sub-category on merge only if row has none and categories agree), FR-09-13 data side (custom categories and sub-categories, unique `(parent, name)`), custom category files under OTHER with `customCategoryId`.
+
+Pending: FR-09-01..04 (catalogue, merchant normalisation, sub-category guess), FR-09-12, 14..19 (screens, logos, pickers, budgets).
+
+Deviations: category enum is parser_core's `Category`; the rule store is loaded once per ingest batch (`loadRuleSet`) rather than cached in memory.
 
 ## 19. Change Log (date | change | reason)
 
@@ -657,3 +663,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | `LogoPaths` vector logos: FR-09-18, FR-09-19, relation to WebP logos in 3.9, TC-09-18 | Audit Gate gap, scan_5
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 1 data layer landed (tables merchant_rules, custom_categories, custom_subcategories; `CategoryRepository`, `RuleSet`, learning in `setCategory`) | Phase 1 |

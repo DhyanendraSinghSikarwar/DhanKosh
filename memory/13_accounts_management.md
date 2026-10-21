@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-13 |
-| Status | Existing |
+| Status | In progress (Phase 1 data layer; UI pending) |
 | Priority | P0 |
 | Phase | 1 (account creation from messages, balances, lists); 2 for debit-card link, merge and gap detection; 3 for statement unlock details |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -501,7 +501,13 @@ Fixtures: SMS corpus lines (HDFC `A/c *1234`, ICICI `Acct XX123`, SBI Corporate 
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 1 data layer. Code: `lib/core/db/tables/accounts.dart`, `features/accounts_management/{domain/account,account_repository}.dart`, `data/account_repository_impl.dart`, provider `accountRepositoryProvider`. Tests: `test/features/accounts_management/account_repository_test.dart`, ensure-account cases in `test/features/transactions_ledger/transaction_repository_test.dart`.
+
+Done: FR-13-01 (no account without last4, phone-digit guard, unique `(bankName, last4)`), FR-13-02 (debit card and credit card typing; lender and text-based `AccountGuess` not ported), FR-13-03 (APP source attaches by exact or unique bank-prefix match, never creates), FR-13-05 data side (`create`, null when already listed; typed balance stored as manual balance), FR-13-07 (`updateBalance` newer-wins with COALESCE; `AccountWithActivity.usesManual`, `currentBalanceMinor`, `balanceIsEstimated`, signed effects incl. card TRANSFER and `xfer-out`/`xfer-in`/card-bill transfer legs, review and null-INR rows excluded), FR-13-08 (display-only merge/unmerge, figures roll up), FR-13-10 (hide/show), FR-13-11 data side (delete unmerges children, clears links, FK nulls transaction accounts; delete transactions first via `TransactionRepository.deleteTransactions(idsForAccount)` for tombstones), rename.
+
+Pending: FR-13-04 Book filtering and tabs (UI), FR-13-06 edit fields beyond rename/type/manual balance, FR-13-09 suggestions, FR-13-12 restore, FR-13-13 matured deposits, FR-13-14 unlock details, FR-13-15/16 gap detection and notifications, FR-13-17/18 (UI); debit-card link rule, `gapFor` check at ingest.
+
+Deviations: balance maths is Dart + one SQL aggregate per account (`watchWithActivity`), recomputed when accounts, transactions or sources change; the `Account` entity omits maturity, forex markup and loan fields (columns exist in the table).
 
 ## 19. Change Log (date | change | reason)
 
@@ -509,3 +515,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 1 data layer landed (tables accounts; `AccountRepository` ensure/create/rename/hide/merge/delete/balance streams) | Phase 1 |

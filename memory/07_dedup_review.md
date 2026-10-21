@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-07 |
-| Status | Existing |
+| Status | In progress (Phase 1 data layer; UI pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -377,7 +377,13 @@ Fixtures: corpus samples 1-17 of the analysis (Part B 8), HDFC UPI SMS + email p
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 1 data layer. Code: `features/dedup_review/domain/{dedup_policy,merge_rules}.dart` (pure Dart), ingest and `mergeFlagged`/`keepSeparate`/`watchReviewPairs`/`watchReviewCount` in `features/transactions_ledger/data/transaction_repository_impl.dart`. Tests: `test/features/dedup_review/dedup_policy_test.dart`, `test/features/transactions_ledger/transaction_repository_test.dart`.
+
+Done: FR-07-02..06 (reference, hash incl. same-source review and the 30 min / dated / missing-reference fall-through, fuzzy windows 30 min / 12 h / 36 h with the three review reasons, statement rule, rounded payment-app rule; TC-07-02..06), FR-07-07 (ingest steps 2-9, idempotent per `(source, sourceMessageId)`; TC-07-10 data side), FR-07-08 (flagged hash `"<hash>#<SOURCE>:<messageId>"`, excluded from balances and totals; TC-07-13), FR-07-09 (`mergeInto`, TC-07-07), FR-07-12 (`mergeFlagged`, `keepSeparate`), FR-07-15/16 (tombstones skip ingest, `IngestReport` counts; TC-07-09 tombstone half).
+
+Pending: FR-07-01 (hash is computed by the parser; parser_core's `TransactionHasher` owns TC-07-01), FR-07-10/11/17 (screens), FR-07-13 split and FR-07-14 manual merge/undo, `manualLegFor`, `reattributeAppRows`, `payee_accounts` remembered account.
+
+Deviations: `DedupPolicy` is a port shaped like parser_core's `DuplicateMatcher`; the repository loads nearby rows once (`DedupCandidate` list) instead of the matcher calling storage lookups; to be reconciled with parser_core's matcher. Flagged rows are not offered as match candidates. The "same local day" test of the rounded rule uses the IST day (deterministic) instead of the device zone. `mergeFlagged` fills gaps row-to-row and moves sources but does not re-apply a stated balance.
 
 ## 19. Change Log (date | change | reason)
 
@@ -386,3 +392,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Linked `deleted_messages` and `transaction_sources` to 08 as definition owner; FR-07-17 (shared MessageView) | Audit Gate gap, scan_3, scan_6 |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 1 data layer landed (`DedupPolicy` (reference/hash/fuzzy/rounded rules), merge rules, flagged-row actions) | Phase 1 |

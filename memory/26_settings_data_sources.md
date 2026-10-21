@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-26 |
-| Status | Existing |
+| Status | In progress (Phase 1 data layer; UI pending) |
 | Priority | P0 |
 | Phase | 1 (Data sources screen and settings store); 2 extends it with email and notification rows |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -515,7 +515,13 @@ Integration:
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 1 data layer (store only, no Data sources screen). Code: `lib/core/db/tables/settings.dart`, `features/settings_data_sources/{domain/setting_key,settings_repository,data/settings_repository_impl}.dart`, provider `settingsRepositoryProvider`. Tests: `test/features/settings_data_sources/settings_repository_test.dart`.
+
+Done: FR-26-12 (typed keys with defaults, streams, `hide_amounts` default true; keys implemented: `sms_enabled`, `sms_cursor`, `last_sms_scan`, `last_sms_result`, `sms_prompt_dismissed`, `app_notifications`, `notifications_asked`, `history_days`, `hide_amounts`, `app_lock`, `transaction_notifications`, `card_due_reminders`, `check_updates`, `budget_alert_percent`; the rest are added by their owners as `SettingKey`s), FR-26-13 (`appendCapped`), FR-26-14 (`sms_cursor` max on write, `remove` resets).
+
+Pending: FR-26-01..11, 15..25 (screens, permission flows, email, updates).
+
+Deviations: values are encoded text in one `settings(key, value)` table (bool, int, String, JSON string set); `history_days` is stored under this key rather than a separate DataStore name. The SMS ingestion agent's own settings store should be reconciled with this one.
 
 ## 19. Change Log (date | change | reason)
 
@@ -524,3 +530,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Added `nps-contributions`, `mf-orders`, full `gmail_settings` keys to inventory; More hub subtitles and footer (3.8); shared InfoButton placements with three inline dialogs (3.6; corrects "only four wired"); manifest and SDK platform facts; FR-26-21..25, TC-26-17..19; settings table named `settings` | Audit Gate gap, scan_4, scan_5, scan_6, scan_3 |
+| 2026-10-21 | Phase 1 data layer landed (tables settings (key-value); typed `SettingKey`s and `SettingsRepository`) | Phase 1 |
