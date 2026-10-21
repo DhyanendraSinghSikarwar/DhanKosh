@@ -1,0 +1,16 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - build/**
+    - android/**
+    - ios/**
+
+linter:
+  rules:
+    # App code, not a published package: doc comments are required only where
+    # they add meaning (domain interfaces, core), not on every screen.
+    public_member_api_docs: false
+    lines_longer_than_80_chars: false

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/hisaab.iml" filepath="$PROJECT_DIR$/hisaab.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android/hisaab_android.iml" filepath="$PROJECT_DIR$/android/hisaab_android.iml" />
+    </modules>
+  </component>
+</project>

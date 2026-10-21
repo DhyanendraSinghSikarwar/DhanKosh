@@ -1,0 +1,51 @@
+name: hisaab
+description: Hisaab - on-device personal finance tracker.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.5.0
+
+# NOTE: These caret ranges were hand-written without Flutter installed and have
+# NOT been resolved. Run `flutter pub upgrade` (or `flutter pub upgrade --major-versions`)
+# to re-resolve against the installed SDK, then pin in pubspec.lock.
+dependencies:
+  flutter:
+    sdk: flutter
+  csv: ^6.0.0
+  drift: ^2.20.0
+  enough_mail: ^2.1.6
+  excel: ^4.0.6
+  file_picker: ^8.1.2
+  fl_chart: ^0.69.0
+  flutter_riverpod: ^2.5.1
+  flutter_secure_storage: ^9.2.2
+  freezed_annotation: ^2.4.4
+  go_router: ^14.2.0
+  google_mlkit_text_recognition: ^0.13.1
+  home_widget: ^0.6.0
+  intl: ^0.19.0
+  json_annotation: ^4.9.0
+  local_auth: ^2.3.0
+  path: ^1.9.0
+  path_provider: ^2.1.4
+  riverpod_annotation: ^2.3.5
+  shared_preferences: ^2.3.2
+  # SQLCipher native libs (do not also depend on sqlite3_flutter_libs).
+  sqlcipher_flutter_libs: ^0.6.3
+  sqlite3: ^2.9.4
+  workmanager: ^0.5.2
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.12
+  drift_dev: ^2.20.0
+  freezed: ^2.5.7
+  integration_test:
+    sdk: flutter
+  json_serializable: ^6.8.0
+  mocktail: ^1.0.4
+  riverpod_generator: ^2.4.3
+  very_good_analysis: ^6.0.0
+flutter:
+  uses-material-design: true
