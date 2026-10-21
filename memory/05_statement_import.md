@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-05 |
-| Status | Existing |
+| Status | In progress (Phase 3 data layer done: statement rows, saved passwords, password source; parsers, import use cases and UI pending) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -703,7 +703,17 @@ Fixtures: use synthetic text PDFs generated in tests (card statement text block,
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 3 data layer (no UI, no parsers). Schema v3 table `statements` (section 9 columns, `transaction_count`/`holding_count` default 0); card bill/payment/override rows are NOT stored here (dedicated tables in [Credit cards](14_credit_cards.md)), so `StatementKind` has no CARD_* values. Code lives in `lib/features/statement_import/` (not `statements/`): `domain/{statement,statement_repository,saved_password,password_source}.dart`, `data/{statement_repository_impl,statement_password_store}.dart`; providers in `lib/app/di/phase3_providers.dart`.
+
+FR status: data parts of FR-05-01 (dedupe by key), FR-05-10 (sealed saved passwords), FR-05-11 (locked row, email text cap 4000), FR-05-19 (list/delete) and the password-source assembly of FR-05-09 are done. Pending: FR-05-02..08, 12..18, 20..25 (parsers, ingest, account effect, holdings extraction, UI).
+
+APIs for UI/use-case agents (`statementRepositoryProvider`, `savedPasswordRepositoryProvider`):
+- `Future<StatementInsert> insert(NewStatement)` -> `StatementInserted | StatementAlreadyImported | StatementRetryLocked` (existing LOCKED key retries).
+- `exists(key)`, `byKey(key)`, `byId(id)`, `Stream<List<Statement>> watchAll()`, `locked()`, `Stream<int> watchLockedCount()`.
+- `markProcessed(id, {status, at, kind, bankName, last4, transactionCount, holdingCount, totals, filePath})` (null args keep stored values), `markLocked(id, {at, emailText})`, `Future<String?> delete(id)` returns the stored file path for the caller to remove.
+- `SavedPasswordRepository.list/add(SavedPassword(label, secret))/remove(label)`; `assemblePasswordSource({identity, profile, cardLast4s, banks, saved}) -> PasswordSource` (profile fallback applied, FR-27-16).
+Ledger writes stay with `TransactionRepository.ingest` (called by the import use case later). Note: parser_core exports its own `StatementKind`; import ours with a prefix or `show`.
+Tests: `test/features/phase3/phase3_repositories_test.dart` (statements, passwords), `test/core/db/migration_v2_v3_test.dart`.
 
 ## 19. Change Log (date | change | reason)
 
@@ -712,3 +722,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Added 3.9.1 holdings side effects of the email-body pipeline, 3.9.2 MfOrderParser rules, 3.9.3 PortfolioSummary rules; FR-05-23..25, TC-05-21..23 | Audit Gate gap, scan_2 |
+| 2026-10-21 | Phase 3 data layer landed | Phase 3 |

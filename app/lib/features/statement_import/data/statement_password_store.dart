@@ -19,9 +19,10 @@ class StatementPasswordStore implements SavedPasswordRepository {
     if (raw == null) return [];
     try {
       return [
-        for (final e in jsonDecode(raw) as List<Object?>)
+        for (final e
+            in (jsonDecode(raw) as List<Object?>).cast<Map<String, Object?>>())
           SavedPassword(
-            label: (e! as Map<String, Object?>)['label']! as String,
+            label: e['label']! as String,
             secret: e['secret']! as String,
           ),
       ];

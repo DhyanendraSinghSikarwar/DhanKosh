@@ -19,9 +19,9 @@ abstract interface class HoldingRepository {
     required HoldingKind kind,
     required String name,
     required int valueMinor,
+    required int at,
     int? investedMinor,
     double? units,
-    required int at,
   });
 
   /// Edits a holding's name, kind, value, invested and units (FR-16-08).
@@ -31,9 +31,9 @@ abstract interface class HoldingRepository {
     required HoldingKind kind,
     required String name,
     required int valueMinor,
+    required int at,
     int? investedMinor,
     double? units,
-    required int at,
   });
 
   /// Removes a holding.

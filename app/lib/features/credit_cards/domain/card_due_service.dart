@@ -8,11 +8,14 @@ import 'package:hisaab/features/credit_cards/domain/card_models.dart';
 import 'package:hisaab/features/credit_cards/domain/card_position.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 import 'package:hisaab/features/statement_import/domain/statement_repository.dart';
+import 'package:parser_core/parser_core.dart' show AccountKind;
 
 /// True for a credit card account (FR-14-01): a card, not a debit card, typed
 /// credit card or untyped with a stated limit.
 bool isCreditCardAccount(Account a) =>
-    a.kind == AccountKind.card && !a.isDebitCard && !a.hidden &&
+    a.kind == AccountKind.card &&
+    !a.isDebitCard &&
+    !a.hidden &&
     a.mergedIntoId == null &&
     (a.accountType == AccountType.creditCard ||
         (a.accountType == null && a.availableLimitMinor != null));
@@ -101,7 +104,11 @@ class CardDueService {
     ];
     final refs = [
       for (final a in cardAccts)
-        CardRef(id: a.account.id, bankName: a.account.bankName, last4: a.account.last4),
+        CardRef(
+          id: a.account.id,
+          bankName: a.account.bankName,
+          last4: a.account.last4,
+        ),
     ];
     final stmtRows = [
       for (final s in statements)

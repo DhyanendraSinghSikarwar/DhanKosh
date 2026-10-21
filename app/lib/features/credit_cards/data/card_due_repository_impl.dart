@@ -100,7 +100,7 @@ class CardDueRepositoryImpl implements CardDueRepository {
       .map((rows) => rows.map(_row).toList());
 
   @override
-  Future<CardOverride?> override(String cardKey) async {
+  Future<CardOverride?> overrideFor(String cardKey) async {
     final r = await (_db.select(_db.cardOverrides)
           ..where((t) => t.cardKey.equals(cardKey)))
         .getSingleOrNull();
@@ -128,9 +128,9 @@ class CardDueRepositoryImpl implements CardDueRepository {
           );
 
   @override
-  Future<void> clearOverride(String cardKey) => (_db.delete(_db.cardOverrides)
-        ..where((t) => t.cardKey.equals(cardKey)))
-      .go();
+  Future<void> clearOverride(String cardKey) =>
+      (_db.delete(_db.cardOverrides)..where((t) => t.cardKey.equals(cardKey)))
+          .go();
 
   @override
   Future<int> pruneNotices(int beforeMs) => (_db.delete(_db.cardDueNotices)

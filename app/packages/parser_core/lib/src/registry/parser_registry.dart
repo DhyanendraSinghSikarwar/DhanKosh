@@ -10,6 +10,7 @@ import 'package:parser_core/src/parse_result.dart';
 import 'package:parser_core/src/parser_config.dart';
 import 'package:parser_core/src/registry/bank_parser.dart';
 import 'package:parser_core/src/registry/sender_keys.dart';
+import 'package:parser_core/src/statement/card_due.dart';
 import 'package:parser_core/src/text/rx.dart';
 
 /// Maps a sender to its parser through a hash map. The generic parser handles
@@ -114,6 +115,17 @@ class ParserRegistry {
       return parser.depositStatus(body, sender, timestamp, source);
     }
     return null;
+  }
+
+  /// What a card issuer's "statement generated / bill due" message says (total
+  /// and minimum due, due date), or the payment it acknowledges. Not a
+  /// transaction: the reminder rules reject these as transactions.
+  CardDue? cardDue(String body, String sender, int timestamp) {
+    final parser = _parserFor(sender, body);
+    if (parser is LenderParser) return null;
+    final bank =
+        parser == null || parser is GenericBankParser ? null : parser.bankName;
+    return CardDueParser.parse(body, bank, timestamp);
   }
 
   /// Parses one message, with the reason when it is not a transaction.

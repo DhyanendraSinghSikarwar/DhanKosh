@@ -32,11 +32,12 @@ int noonOf(CivilDate date, Duration offset) =>
 final RegExp _ws = RegExp(r'\s+');
 
 /// [s] split on runs of white space, empty pieces dropped.
-List<String> words(String s) => s.split(_ws).where((w) => w.isNotEmpty).toList();
+List<String> words(String s) =>
+    s.split(_ws).where((w) => w.isNotEmpty).toList();
 
 /// A date and amount spelling card statements and messages use.
 const String _mon =
-    r'(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
+    '(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
 
 /// Dates and amounts as card statements and messages print them.
 abstract final class CardFigures {
@@ -44,7 +45,7 @@ abstract final class CardFigures {
   /// October 12, 2026.
   static const String datePattern =
       r'(?<!\d)(?:\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{4}-\d{2}-\d{2}|'
-      r'\d{1,2}(?:st|nd|rd|th)?[\s-]+' +
+              r'\d{1,2}(?:st|nd|rd|th)?[\s-]+' +
           _mon +
           r'\b\.?(?:[\s,-]+\d{4}\b|-\d{2}\b)?|' +
           _mon +
@@ -78,7 +79,8 @@ abstract final class CardFigures {
   static int? minor(String number) =>
       Money.parseSigned(trimChars(number.replaceAll(',', ''), '.'));
 
-  static final RegExp _numeric = RegExp(r'^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$');
+  static final RegExp _numeric =
+      RegExp(r'^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$');
   static final RegExp _iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$');
   static final RegExp _dayFirst =
       rx(r'^(\d{1,2})(?:st|nd|rd|th)?[\s-]+([a-z]+)\.?(?:[\s,-]+(\d{2,4}))?$');
@@ -157,6 +159,8 @@ abstract final class CardFigures {
 /// An amount and whether it is a credit (Cr).
 class CardAmount {
   /// Creates an amount.
+  // Enum constant arguments are positional.
+  // ignore: avoid_positional_boolean_parameters
   const CardAmount(this.minor, this.credit);
 
   /// Paise.

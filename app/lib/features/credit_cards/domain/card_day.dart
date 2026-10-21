@@ -11,8 +11,7 @@ abstract final class CardDay {
   /// Epoch ms at the start of [day] in IST.
   static int startMs(int day) => day * _dayMs - istOffsetMs;
 
-  static DateTime _date(int day) =>
-      DateTime.utc(1970).add(Duration(days: day));
+  static DateTime _date(int day) => DateTime.utc(1970).add(Duration(days: day));
 
   /// Epoch day of a calendar date.
   static int fromYmd(int y, int m, int d) =>

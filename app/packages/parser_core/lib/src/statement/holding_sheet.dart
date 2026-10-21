@@ -20,7 +20,8 @@ abstract final class HoldingSheet {
   static final RegExp _total =
       rx(r'^(?:grand\s+|sub\s*-?\s*)?totals?\b|\bportfolio\s+total\b');
   static final RegExp _isin = RegExp(r'^[A-Z]{2}[A-Z0-9]{9}\d$');
-  static final RegExp _commodity = rx(r'\bcommodit(?:y|ies)\b|\b(?:gold|silver)\b');
+  static final RegExp _commodity =
+      rx(r'\bcommodit(?:y|ies)\b|\b(?:gold|silver)\b');
   static final RegExp _etfName = rx(r'\bETF\b|\bBEES\b');
   static final RegExp _fundWords =
       rx(r'\b(?:fund|scheme|plan|growth|IDCW|FoF|index|dividend)\b');
@@ -114,7 +115,7 @@ abstract final class HoldingSheet {
       final units = num(HoldingField.units);
       final gain = num(HoldingField.gain);
       final investedCell = num(HoldingField.invested);
-      double? current = num(HoldingField.current);
+      var current = num(HoldingField.current);
       if (current == null && units != null) {
         final p = num(HoldingField.price);
         if (p != null) current = units * p;
@@ -123,7 +124,7 @@ abstract final class HoldingSheet {
         current = investedCell + gain;
       }
       if (current == null || current <= 0) continue;
-      double? invested = investedCell;
+      var invested = investedCell;
       if (invested == null && units != null) {
         final a = num(HoldingField.avgPrice);
         if (a != null) invested = units * a;
@@ -180,9 +181,10 @@ abstract final class HoldingSheet {
                   ? null
                   : (p.units ?? 0.0) + (snap.units ?? 0.0),
               valueMinor: (p.valueMinor ?? 0) + snap.valueMinor!,
-              investedMinor: p.investedMinor == null && snap.investedMinor == null
-                  ? null
-                  : (p.investedMinor ?? 0) + (snap.investedMinor ?? 0),
+              investedMinor:
+                  p.investedMinor == null && snap.investedMinor == null
+                      ? null
+                      : (p.investedMinor ?? 0) + (snap.investedMinor ?? 0),
             );
     }
     if (!sawHeader) return null;

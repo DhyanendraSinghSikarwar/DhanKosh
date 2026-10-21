@@ -34,6 +34,7 @@ class CivilDate implements Comparable<CivilDate> {
       DateTime.utc(year, month, day).millisecondsSinceEpoch ~/ 86400000;
 
   /// The date [days] after 1970-01-01.
+  // ignore: prefer_constructors_over_static_methods
   static CivilDate ofEpochDay(int days) {
     final d = DateTime.fromMillisecondsSinceEpoch(days * 86400000, isUtc: true);
     return CivilDate(d.year, d.month, d.day);

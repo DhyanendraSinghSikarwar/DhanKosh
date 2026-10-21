@@ -1,6 +1,7 @@
+import 'package:hisaab/features/portfolio/domain/asset_class.dart';
 import 'package:hisaab/features/portfolio/domain/holding.dart';
 
-/// Figures of an existing holding after [snapshot] is merged (FR-16-09).
+/// Figures of an existing holding after `snapshot` is merged (FR-16-09).
 class HoldingUpdate {
   /// Creates an update.
   const HoldingUpdate({
@@ -61,7 +62,8 @@ HoldingUpdate mergeSnapshot(
     note: existing.source == HoldingSource.manual
         ? existing.note
         : (s.platform ?? existing.note),
-    previousValueMinor: moved ? existing.valueMinor : existing.previousValueMinor,
+    previousValueMinor:
+        moved ? existing.valueMinor : existing.previousValueMinor,
     previousAsOf: moved ? existing.asOf : existing.previousAsOf,
   );
 }

@@ -15,8 +15,10 @@ enum _Col {
   returns(false),
   pct(true);
 
-  const _Col(this.pct);
-  final bool pct;
+  // Enum constant arguments are positional.
+  // ignore: avoid_positional_boolean_parameters
+  const _Col(this.isPct);
+  final bool isPct;
 }
 
 class _Tok {
@@ -120,7 +122,8 @@ abstract final class HoldingTable {
     r'^(.*?\b(?:Growth|IDCW|Dividend|Bonus)(?:\s+(?:Option|Plan|Payout|Reinvestment))?)\b',
   );
   static final RegExp _isin = RegExp(r'\b[A-Z]{2}[A-Z0-9]{9}\d\b');
-  static final RegExp _commodity = rx(r'\bcommodit(?:y|ies)\b|\b(?:gold|silver)\b');
+  static final RegExp _commodity =
+      rx(r'\bcommodit(?:y|ies)\b|\b(?:gold|silver)\b');
   static final RegExp _cells = RegExp(r'\s{2,}');
   static final RegExp _ws = RegExp(r'\s+');
 
@@ -143,9 +146,9 @@ abstract final class HoldingTable {
   static List<HoldingSnapshot> read(
     List<String> lines,
     int asOf, {
+    required bool Function(String) hasIsin,
     double? usdRate,
     String? platform,
-    required bool Function(String) hasIsin,
   }) {
     final sheet = HoldingSheet.read(lines, asOf, platform);
     if (sheet != null) return sheet;
@@ -162,9 +165,7 @@ abstract final class HoldingTable {
       if (i == skip) continue;
       // The header, on one line or wrapped onto the next.
       var head = _header(line);
-      if (head == null &&
-          i + 1 < lines.length &&
-          _nameHead.hasMatch(line)) {
+      if (head == null && i + 1 < lines.length && _nameHead.hasMatch(line)) {
         head = _header('$line ${lines[i + 1]}');
         if (head != null) skip = i + 1;
       }
@@ -241,7 +242,8 @@ abstract final class HoldingTable {
       final String id;
       if (fx != 1.0 && kind != HoldingKind.mutualFund) {
         final first = name.split(' ').first;
-        id = 'US:${_ticker.hasMatch(first) ? first : MfOrderParser.normaliseScheme(name).toUpperCase()}';
+        id =
+            'US:${_ticker.hasMatch(first) ? first : MfOrderParser.normaliseScheme(name).toUpperCase()}';
       } else if (isin != null) {
         id = isin;
       } else if (kind == HoldingKind.stock) {
@@ -267,9 +269,10 @@ abstract final class HoldingTable {
                   ? null
                   : (p.units ?? 0.0) + (units ?? 0.0),
               valueMinor: (p.valueMinor ?? 0) + snap.valueMinor!,
-              investedMinor: p.investedMinor == null && snap.investedMinor == null
-                  ? null
-                  : (p.investedMinor ?? 0) + (snap.investedMinor ?? 0),
+              investedMinor:
+                  p.investedMinor == null && snap.investedMinor == null
+                      ? null
+                      : (p.investedMinor ?? 0) + (snap.investedMinor ?? 0),
             );
     }
     return out.values.toList();
@@ -314,8 +317,7 @@ abstract final class HoldingTable {
     }
     final toks = <_Tok>[
       for (final raw in tokens.sublist(start))
-        if (!_currency.hasMatch(clean(raw)))
-          _tokOf(clean(raw)),
+        if (!_currency.hasMatch(clean(raw))) _tokOf(clean(raw)),
     ];
     return (tokens.sublist(0, start).join(' '), toks);
   }
@@ -346,8 +348,10 @@ abstract final class HoldingTable {
     }
     final words = namePart
         .split(' ')
-        .where((w) => !(w.split('').every((ch) => isDigit(ch) || ch == '/') &&
-            w.length >= 6))
+        .where(
+          (w) => !(w.split('').every((ch) => isDigit(ch) || ch == '/') &&
+              w.length >= 6),
+        )
         .join(' ');
     final m = _nameEnd.firstMatch(words);
     return HoldingLines.cleanName(m == null ? words : grp(m, 1));
@@ -375,7 +379,7 @@ abstract final class HoldingTable {
           continue;
         }
         assignedCount++;
-        if (!t.pct && c.pct) penalty += 0.25;
+        if (!t.pct && c.isPct) penalty += 0.25;
         final v = t.value;
         if (v != null) map[c] = v;
       }
@@ -423,7 +427,7 @@ abstract final class HoldingTable {
         go(ti + 1, ci);
       }
       for (var cj = ci; cj < cols.length; cj++) {
-        if (toks[ti].pct && !cols[cj].pct) continue;
+        if (toks[ti].pct && !cols[cj].isPct) continue;
         assigned[ti] = cols[cj];
         go(ti + 1, cj + 1);
         assigned[ti] = null;

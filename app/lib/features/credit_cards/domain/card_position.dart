@@ -1,6 +1,6 @@
 import 'package:hisaab/features/credit_cards/domain/card_day.dart';
 import 'package:hisaab/features/credit_cards/domain/card_models.dart';
-import 'package:parser_core/parser_core.dart';
+import 'package:parser_core/parser_core.dart' show TransactionType;
 
 /// Tuning constants of the card position (memory 14 section 10).
 abstract final class CardDueRules {
@@ -22,7 +22,9 @@ int _net(List<CardFlow> flow, int fromMs, [int? toMs]) => _floor0(
       _sum(
         flow
             .where(
-              (f) => f.timestampMs >= fromMs && (toMs == null || f.timestampMs < toMs),
+              (f) =>
+                  f.timestampMs >= fromMs &&
+                  (toMs == null || f.timestampMs < toMs),
             )
             .map(
               (f) => switch (f.type) {
@@ -37,7 +39,8 @@ int _net(List<CardFlow> flow, int fromMs, [int? toMs]) => _floor0(
 int _transfers(List<CardFlow> flow, int fromMs) => _sum(
       flow
           .where(
-            (f) => f.type == TransactionType.transfer && f.timestampMs >= fromMs,
+            (f) =>
+                f.type == TransactionType.transfer && f.timestampMs >= fromMs,
           )
           .map((f) => f.inrMinor),
     );
@@ -80,7 +83,9 @@ CardPosition basePosition({
     final fromRows = _sum(
       payments
           .where(
-            (p) => day == null || (p.statementEpochDay ?? CardDay.ofMs(p.arrivalMs)) >= day,
+            (p) =>
+                day == null ||
+                (p.statementEpochDay ?? CardDay.ofMs(p.arrivalMs)) >= day,
           )
           .map((p) => p.paymentMinor ?? 0),
     );
@@ -88,8 +93,8 @@ CardPosition basePosition({
   }
 
   final bill = _newest(bills.where((r) => r.totalDueMinor != null));
-  final limit = _newest(bills.where((r) => r.creditLimitMinor != null))
-      ?.creditLimitMinor;
+  final limit =
+      _newest(bills.where((r) => r.creditLimitMinor != null))?.creditLimitMinor;
   final dueDay = bill?.dueEpochDay;
   final billStmt = bill == null ? null : _stmtDay(bill);
   final gap = (dueDay != null && billStmt != null)
@@ -104,8 +109,9 @@ CardPosition basePosition({
       ? null
       : (ref.statementEpochDay ??
           (ref.dueEpochDay != null ? ref.dueEpochDay! - gap : null));
-  final expected =
-      refStmt == null ? null : CardDay.latestWithDom(CardDay.dayOfMonth(refStmt), today);
+  final expected = refStmt == null
+      ? null
+      : CardDay.latestWithDom(CardDay.dayOfMonth(refStmt), today);
 
   final covered = bill != null &&
       !stale &&
@@ -127,7 +133,8 @@ CardPosition basePosition({
 
   if (expected != null && refStmt != null) {
     final prev = CardDay.sameDomPrevMonth(expected);
-    final carried = bill != null && !stale && billStmt != null && billStmt >= prev - 3;
+    final carried =
+        bill != null && !stale && billStmt != null && billStmt >= prev - 3;
     final base = carried ? billStmt : prev;
     final gross = (carried ? bill.totalDueMinor! : 0) +
         _net(flow, CardDay.startMs(base + 1), CardDay.startMs(expected + 1)) -
@@ -170,10 +177,14 @@ CardPosition cardPosition({
 }) {
   final o = (override == null || override.isEmpty) ? null : override;
   if (o == null) {
-    return basePosition(rows: rows, available: available, flow: flow, today: today);
+    return basePosition(
+      rows: rows,
+      available: available,
+      flow: flow,
+      today: today,
+    );
   }
-  final arrivedAfter =
-      rows.any((r) => r.carriesBill && r.arrivalMs > o.setAt);
+  final arrivedAfter = rows.any((r) => r.carriesBill && r.arrivalMs > o.setAt);
   if (arrivedAfter) {
     return basePosition(
       rows: rows,
@@ -183,12 +194,15 @@ CardPosition cardPosition({
       trust: true,
     );
   }
-  final base = basePosition(rows: rows, available: available, flow: flow, today: today);
+  final base =
+      basePosition(rows: rows, available: available, flow: flow, today: today);
   final setDay = CardDay.ofMs(o.setAt);
   final fromRows = _sum(
     rows
         .where(
-          (r) => r.isPayment && (r.statementEpochDay ?? CardDay.ofMs(r.arrivalMs)) >= setDay,
+          (r) =>
+              r.isPayment &&
+              (r.statementEpochDay ?? CardDay.ofMs(r.arrivalMs)) >= setDay,
         )
         .map((r) => r.paymentMinor ?? 0),
   );
@@ -204,15 +218,15 @@ CardPosition cardPosition({
   }
   return CardPosition(
     billedMinor: billed ?? base.billedMinor,
-    minDueMinor:
-        o.billedMinor != null ? o.minDueMinor : (o.minDueMinor ?? base.minDueMinor),
+    minDueMinor: o.billedMinor != null
+        ? o.minDueMinor
+        : (o.minDueMinor ?? base.minDueMinor),
     dueDay: o.dueEpochDay ?? base.dueDay,
     statementDay: base.statementDay,
     limitMinor: base.limitMinor,
     unbilledMinor:
         o.unbilledMinor == null ? base.unbilledMinor : o.unbilledMinor! + spent,
     outstandingMinor: outstanding ?? base.outstandingMinor,
-    estimated: false,
     billedEdited: o.billedMinor != null,
     minDueEdited: o.minDueMinor != null,
     dueEdited: o.dueEpochDay != null,

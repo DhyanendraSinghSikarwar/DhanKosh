@@ -1,5 +1,16 @@
 /// Kind of holding (FR-16-08).
-enum HoldingKind { mutualFund, stock, etf, epf, nps, ppf, bond, gold, fd, other }
+enum HoldingKind {
+  mutualFund,
+  stock,
+  etf,
+  epf,
+  nps,
+  ppf,
+  bond,
+  gold,
+  fd,
+  other
+}
 
 /// Where a holding figure came from.
 enum HoldingSource { sms, email, statement, manual }
@@ -31,7 +42,9 @@ AssetClass assetClassOf(HoldingKind kind) => switch (kind) {
       HoldingKind.stock ||
       HoldingKind.etf =>
         AssetClass.equity,
-      HoldingKind.epf || HoldingKind.nps || HoldingKind.ppf =>
+      HoldingKind.epf ||
+      HoldingKind.nps ||
+      HoldingKind.ppf =>
         AssetClass.retirement,
       HoldingKind.fd || HoldingKind.bond => AssetClass.debt,
       HoldingKind.gold => AssetClass.gold,

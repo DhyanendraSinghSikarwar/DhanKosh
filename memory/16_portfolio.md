@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-16 |
-| Status | Existing |
+| Status | In progress (Phase 3 data/domain layer done: holdings, HoldingMatch, net worth, allocation, maturity; history estimate, MF order/NPS recording and UI pending) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -442,7 +442,17 @@ Fixtures: Part B 8 sample 21 (EPF, NPS, MF order), CAS excerpt (masked ISIN `INF
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 3 data/domain layer (no UI). Tables `holdings`, `net_worth_points` (schema v3, section 9). Exclusions persist as settings keys `nw_excluded_classes|liabilities|accounts` (not `net_worth_prefs`). Code: `lib/features/portfolio/domain/{asset_class,holding,holding_match,holding_merge,holding_repository,net_worth,compute_net_worth,net_worth_repository,net_worth_service,portfolio_summary,maturity_items}.dart`, `data/{holding_repository_impl,net_worth_repository_impl}.dart`; providers in `lib/app/di/phase3_providers.dart`.
+
+FR status done: FR-16-02 (`summarisePortfolio`), 03 (allocation `byClass`), 04 (`computeNetWorth`), 05 (record: one point per day, last 1,100 kept; estimate NOT done), 06 (parts), 08 (add/edit/delete manual), 09, 12 (`maturityItems`), 14 (prefs), 16, 17 (`HoldingMatch`), 18 (`dedupe` after every `record`). Pending: FR-16-01, 07, 10, 11, 13, 15 (UI, parsers), 19..21 (`recordMfOrder`, NPS contributions), history estimate (`estimate_worth_history`), app-start `dedupe()` call.
+
+APIs for UI agents:
+- `HoldingRepository`: `record(List<HoldingSnapshot>, HoldingSource) -> int`, `dedupe() -> int`, `addManual({kind, name, valueMinor, investedMinor, units, at}) -> id`, `edit(id, {kind, name, valueMinor, investedMinor, units, at})`, `delete(id)`, `byId`, `list()`, `watch()`.
+- `NetWorthService.watch({Book book}) -> Stream<NetWorth>` (`netWorthProvider` for all books), `recordToday(epochDay)`; `computeNetWorth({accounts, holdings, cards, filter, book})` is pure. `NetWorth{assetsMinor, liabilitiesMinor, netMinor, parts, cards}`.
+- `NetWorthRepository.recordPoint(day, a, l)`, `watchPoints({sinceDay})`, `points`; `NetWorthPrefsRepository.watch/read/save(NetWorthFilter)`.
+- `summarisePortfolio(holdings, {cashMinor})`, `maturityItems(accounts, maturityDays, today)` (the accounts domain has no `maturityDay` yet, so the caller passes a map).
+Deviations: PPF deposit accounts are skipped when a PPF holding exists (no double count); Business book excludes holdings only, Personal book excludes business accounts, as written in FR-16-16; `NetWorthFilter` uses enums not strings.
+Tests: `test/features/phase3/phase3_repositories_test.dart` (holdings, summary, net worth, prefs, history cap).
 
 ## 19. Change Log (date | change | reason)
 
@@ -451,3 +461,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Added 3.10 HoldingMatch, 3.11 record/dedupe/recordMfOrder, 3.12 NPS contributions; FR-16-17..21, TC-16-14..17. Corrected FR-16-09 ("upsert by identifier"), 2.2 step 1, 3.4 and 3.9 (MF orders also update holdings, not only transactions) | Audit Gate gap, scan_2 |
+| 2026-10-21 | Phase 3 data layer landed | Phase 3 |

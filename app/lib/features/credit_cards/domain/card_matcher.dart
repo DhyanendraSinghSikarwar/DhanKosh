@@ -3,7 +3,11 @@ import 'package:hisaab/features/credit_cards/domain/card_models.dart';
 /// A credit card account as far as row matching is concerned.
 class CardRef {
   /// Creates a reference.
-  const CardRef({required this.id, required this.bankName, required this.last4});
+  const CardRef({
+    required this.id,
+    required this.bankName,
+    required this.last4,
+  });
 
   final int id;
   final String bankName;
@@ -51,7 +55,9 @@ abstract final class CardMatcher {
     final y = issuerKey(b);
     if (x.isEmpty || y.isEmpty) return false;
     if (x == y) return true;
-    return x.length >= 3 && y.length >= 3 && (x.startsWith(y) || y.startsWith(x));
+    return x.length >= 3 &&
+        y.length >= 3 &&
+        (x.startsWith(y) || y.startsWith(x));
   }
 
   /// Key under which a card's override is stored: `<bank lower>:<last4>`.
@@ -64,7 +70,8 @@ abstract final class CardMatcher {
     List<CardRef> cards,
     List<CardRow> rows,
   ) {
-    final sameIssuer = cards.where((c) => bankMatches(c.bankName, card.bankName));
+    final sameIssuer =
+        cards.where((c) => bankMatches(c.bankName, card.bankName));
     final only = sameIssuer.length == 1;
     final knownLast4 = {for (final c in cards) c.last4};
     return [

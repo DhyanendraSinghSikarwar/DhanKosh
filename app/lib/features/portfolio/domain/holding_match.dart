@@ -53,7 +53,8 @@ abstract final class HoldingMatch {
   static bool isAggregate(String id) => id.startsWith('AGG:');
 
   /// Class suffix of an aggregate id (`MF`, `STOCKS`, `US`).
-  static String aggregateClass(String id) => id.substring(id.lastIndexOf(':') + 1);
+  static String aggregateClass(String id) =>
+      id.substring(id.lastIndexOf(':') + 1);
 
   static Set<String> _family(HoldingKind k) => switch (k) {
         HoldingKind.mutualFund => {'fund'},

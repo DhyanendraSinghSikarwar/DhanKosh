@@ -77,7 +77,7 @@ class CardDue {
 
 /// Reads card due and payment messages. See [CardDue].
 abstract final class CardDueParser {
-  static const _date = CardFigures.datePattern;
+  static const String _date = CardFigures.datePattern;
   static const _ccy = r'(?:\b(?:rs\.?|inr)|₹)';
   static const _amt = r'(\d[\d,]*(?:\.\d{1,2})?)';
 
@@ -102,12 +102,12 @@ abstract final class CardDueParser {
   static final RegExp _dueDate = rx(
     r'(?:due\s+(?:date|on|by)|pay(?:ment)?\s+(?:by|before)|payable\s+by|on\s+or\s+before)[\s:|–-]*(?:is\s+)?(' +
         _date +
-        r')',
+        ')',
   );
   static final RegExp _statementDate = rx(
     r'(?:statement|bill)\s+(?:dated|date|generated\s+on|generated\s+for|of)[\s:|–-]*(?:is\s+)?(' +
         _date +
-        r')',
+        ')',
   );
   static final RegExp _statementWord = rx(r'\b(?:statement|bill|due)\b');
   static final RegExp _failed = rx(
@@ -150,7 +150,7 @@ abstract final class CardDueParser {
     (rx(r'\bFederal\s+Bank\b'), 'Federal Bank'),
     (rx(r'\bStandard\s+Chartered\b'), 'Standard Chartered'),
   ];
-  static final RegExp _spaces = RegExp('[\\s ]+');
+  static final RegExp _spaces = RegExp(r'[\s ]+');
 
   /// The issuer named in [text], or null.
   static String? bankIn(String text) {

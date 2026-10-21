@@ -66,7 +66,9 @@ abstract final class HoldingLines {
     var start = tokens.length;
     while (start > 0) {
       final t = trimChars(tokens[start - 1], ',;|');
-      if (_numeric.hasMatch(t) || _placeholder.hasMatch(t) || _currency.hasMatch(t)) {
+      if (_numeric.hasMatch(t) ||
+          _placeholder.hasMatch(t) ||
+          _currency.hasMatch(t)) {
         start--;
       } else {
         break;
@@ -79,7 +81,8 @@ abstract final class HoldingLines {
         .toList();
     // Placeholders keep their column, but count as no number.
     final nums = <double?>[
-      for (final t in run) _numeric.hasMatch(t) ? number(t) : null,
+      for (final t in run)
+        if (_numeric.hasMatch(t)) number(t) else null,
     ];
     final raw = [...run];
     // A folio number made of digits only ("91012345678") sits before the
@@ -96,7 +99,9 @@ abstract final class HoldingLines {
     // short number stays ("NIFTY 50").
     final wordsAfter = tokens
         .sublist(0, start)
-        .where((t) => !(_folio.hasMatch(t) && (t.contains('/') || t.length >= 6)))
+        .where(
+          (t) => !(_folio.hasMatch(t) && (t.contains('/') || t.length >= 6)),
+        )
         .join(' ');
     final name = cleanName(
       [before, wordsAfter].where((s) => s.trim().isNotEmpty).join(' '),
@@ -128,9 +133,8 @@ abstract final class HoldingLines {
       final value = nums[best.$2]!;
       // Invested: an earlier units x average-cost pair, else a number between
       // the price and the value.
-      final earlier = pairs
-          .where((p) => p.$2 < best.$2 && p.$2 != best.$1)
-          .toList();
+      final earlier =
+          pairs.where((p) => p.$2 < best.$2 && p.$2 != best.$1).toList();
       double? invested;
       if (earlier.isNotEmpty) {
         var e = earlier.first;
@@ -162,7 +166,13 @@ abstract final class HoldingLines {
     final present = nums.whereType<double>().toList();
     final value = present.last;
     if (value <= 0) return null;
-    return HoldingRow(name, present.first, paise(value), null, consistent: false);
+    return HoldingRow(
+      name,
+      present.first,
+      paise(value),
+      null,
+      consistent: false,
+    );
   }
 
   /// A figure: plain, grouped, in brackets (negative) or with a leading minus.

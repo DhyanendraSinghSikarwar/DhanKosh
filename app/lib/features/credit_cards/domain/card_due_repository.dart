@@ -14,7 +14,7 @@ abstract interface class CardDueRepository {
   Stream<List<CardRow>> watchNotices();
 
   /// Override of [cardKey], or null.
-  Future<CardOverride?> override(String cardKey);
+  Future<CardOverride?> overrideFor(String cardKey);
 
   /// All overrides by card key.
   Stream<Map<String, CardOverride>> watchOverrides();

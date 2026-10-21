@@ -1,5 +1,5 @@
 import 'package:hisaab/features/accounts_management/domain/account.dart';
-import 'package:parser_core/parser_core.dart';
+import 'package:parser_core/parser_core.dart' show TransactionType;
 
 /// Where a card bill figure came from.
 enum CardDueSource { sms, email, statement, manual }

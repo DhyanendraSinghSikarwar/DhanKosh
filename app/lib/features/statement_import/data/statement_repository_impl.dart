@@ -14,7 +14,8 @@ class StatementRepositoryImpl implements StatementRepository {
   static Statement _map(StatementRow r) => Statement(
         id: r.id,
         key: r.key,
-        source: enumFromDb(StatementSource.values, r.source, StatementSource.file),
+        source:
+            enumFromDb(StatementSource.values, r.source, StatementSource.file),
         sender: r.sender,
         subject: r.subject,
         fileName: r.fileName,

@@ -1,3 +1,6 @@
+import 'package:hisaab/features/statement_import/domain/statement_repository.dart'
+    show StatementRepository;
+
 /// Lifecycle of a statement row (memory 05 section 10): LOCKED -> PARSED or
 /// EMPTY on unlock; UNREADABLE is terminal.
 enum StatementStatus { parsed, locked, empty, unreadable }

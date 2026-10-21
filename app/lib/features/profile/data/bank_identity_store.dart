@@ -19,7 +19,7 @@ class BankIdentityStore implements BankIdentityRepository {
     if (raw == null) return {};
     try {
       return (jsonDecode(raw) as Map<String, Object?>).map(
-        (k, v) => MapEntry(k, (v! as Map<String, Object?>)),
+        (k, v) => MapEntry(k, v! as Map<String, Object?>),
       );
     } on Object {
       return {};

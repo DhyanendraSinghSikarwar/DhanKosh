@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-27 |
-| Status | Existing |
+| Status | In progress (Phase 3 data layer done: sealed bank details, own-number guard, draft rules; Welcome/Profile UI, photo, hero tint pending) |
 | Priority | P1 |
 | Phase | 1 (first-run identity and Profile screen); statement-password use lands in Phase 3 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -421,7 +421,12 @@ Fixtures: name `Rahul Sharma`, DOB `1990-05-01`, PAN `ABCDE1234F`, phone `987654
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 3 data layer (no UI). No Drift table (as specified). The identity (`IdentityRepository`), plain profile (`ProfileRepository`) and `SecureStore` already exist in `features/onboarding_permissions` (Phase 1) and are reused; this round adds `lib/features/profile/domain/{bank_identity,bank_identity_repository,effective_bank_identity,own_numbers,profile_draft}.dart` and `data/bank_identity_store.dart` (sealed JSON map under secure key `statement_passwords.accounts`). Provider `bankIdentityRepositoryProvider` in `lib/app/di/phase3_providers.dart`.
+
+FR status done: FR-27-07/08 (`ProfileDraft.canSave`, PAN rule via `OnboardingValidators`), FR-27-13 and 15 (sealed per-account details with field limits, count via `readAll().length`), FR-27-16 (`effectiveBankIdentity`), FR-27-17 (`ownLast4s`), FR-27-18 (identity read through the existing port; password inputs via `assemblePasswordSource` in statement_import). Pending: the UI, photo (FR-27-09..12, 20), the first-run gate wiring, the own-number guard hook into the ledger.
+Deviation: the identity is stored as JSON under `identity_v1` (Phase 1), not the U+001F seven-field blob of FR-27-14; revisit if Android data import is added.
+APIs: `BankIdentityRepository.read(accountId)/readAll()/save(BankIdentity)` (an empty identity removes the entry; `customerId` alnum <= 20, `accountNumber` <= 24, `ifsc` upper <= 11), `ownLast4s(Iterable<String?>) -> Set<String>`, `ProfileDraft(name, pan, dirty).canSave`.
+Tests: `test/features/phase3/phase3_repositories_test.dart` (profile and passwords group).
 
 ## 19. Change Log (date | change | reason)
 
@@ -429,3 +434,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 3 data layer landed | Phase 3 |

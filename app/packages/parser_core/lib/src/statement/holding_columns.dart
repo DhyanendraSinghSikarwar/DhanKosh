@@ -46,13 +46,24 @@ abstract final class HoldingColumns {
       'sector', 'type',
     },
     HoldingField.subCategory: {
-      'subcategory', 'subcat', 'schemesubcategory', 'subassetclass',
+      'subcategory',
+      'subcat',
+      'schemesubcategory',
+      'subassetclass',
     },
     HoldingField.folio: {
-      'foliono', 'folio', 'folionumber', 'folioid', 'folionos',
+      'foliono',
+      'folio',
+      'folionumber',
+      'folioid',
+      'folionos',
     },
     HoldingField.source: {
-      'source', 'platform', 'broker', 'distributor', 'channel',
+      'source',
+      'platform',
+      'broker',
+      'distributor',
+      'channel',
     },
     HoldingField.units: {
       'units', 'unit', 'closingunits', 'closingunitbalance', 'unitbalance', //
@@ -62,7 +73,8 @@ abstract final class HoldingColumns {
       'currentquantity', 'openquantity', 'shares', 'noofshares',
     },
     HoldingField.avgPrice: {
-      'averageprice', 'avgprice', 'avgcost', 'averagecost', 'averagebuyprice', //
+      'averageprice', 'avgprice', 'avgcost', 'averagecost',
+      'averagebuyprice', //
       'avgbuyprice', 'averagenav', 'avgnav', 'buyaverage', 'buyavg',
       'avgcostprice', 'averagecostprice', 'purchasenav', 'buyprice',
       'costprice', 'unitcost', 'averagepurchaseprice', 'avgpurchaseprice',
@@ -152,7 +164,14 @@ abstract final class HoldingColumns {
     ),
     (
       HoldingField.price,
-      ['ltp', 'closingprice', 'currentprice', 'marketprice', 'currentnav', 'latestnav'],
+      [
+        'ltp',
+        'closingprice',
+        'currentprice',
+        'marketprice',
+        'currentnav',
+        'latestnav',
+      ],
     ),
     (
       HoldingField.gainPct,

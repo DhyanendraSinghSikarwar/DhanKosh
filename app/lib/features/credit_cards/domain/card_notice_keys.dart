@@ -7,20 +7,20 @@ abstract final class CardNoticeKeys {
 
   /// `carddue:<bank>:<last4 or "any"+total>:<day>`.
   static String due({
+    required int day,
     String? bank,
     String? last4,
     int? totalMinor,
-    required int day,
   }) =>
       'carddue:${_bank(bank)}:'
       '${(last4 == null || last4.isEmpty) ? 'any${totalMinor ?? ''}' : last4}:$day';
 
   /// `cardpay:<bank>:<last4>:<day>:<amount>`.
   static String payment({
-    String? bank,
-    String? last4,
     required int day,
     required int amountMinor,
+    String? bank,
+    String? last4,
   }) =>
       'cardpay:${_bank(bank)}:${last4 ?? 'any'}:$day:$amountMinor';
 }

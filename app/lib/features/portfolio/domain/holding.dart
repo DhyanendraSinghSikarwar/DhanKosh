@@ -1,4 +1,6 @@
 import 'package:hisaab/features/portfolio/domain/asset_class.dart';
+import 'package:hisaab/features/portfolio/domain/holding_repository.dart'
+    show HoldingRepository;
 
 /// A stored holding (FR-16-09). Units are not money, so they are a double;
 /// every amount is in paise.
@@ -42,7 +44,8 @@ class Holding {
   AssetClass get assetClass => assetClassOf(kind);
 
   /// Manual rows are never touched by matching.
-  bool get isManual => source == HoldingSource.manual || identifier.startsWith('manual:');
+  bool get isManual =>
+      source == HoldingSource.manual || identifier.startsWith('manual:');
 
   /// Value minus invested, only when a cost is known (FR-16-02).
   int? get gainMinor {

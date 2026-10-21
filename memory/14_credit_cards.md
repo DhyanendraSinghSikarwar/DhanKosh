@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-14 |
-| Status | Existing |
+| Status | In progress (Phase 3 data/domain layer done: position math, notices, overrides, paid marks; reminders worker, notification, Home widget, card UI pending) |
 | Priority | P0 |
 | Phase | 3 (statements + portfolio); card due SMS/email recording can start in Phase 2; reminders in Phase 2 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -453,7 +453,17 @@ Fixtures: Axis statement SMS, HDFC payment ack, ICICI/HDFC card spend emails, SB
 
 ## 18. Implementation Notes
 
-N/A - not built yet. Filled during the build (decisions, deviations).
+Phase 3 data/domain layer (no UI). Tables `card_due_notices`, `card_overrides` (schema v3, section 9 as written). Code: `lib/features/credit_cards/domain/{card_models,card_day,card_position,card_matcher,card_notice_keys,card_reminder_plan,card_due_repository,card_due_service,card_due_actions}.dart`, `data/{card_due_repository_impl,card_paid_store_impl,card_flow_source_impl}.dart`; providers in `lib/app/di/phase3_providers.dart`.
+
+FR status done (domain/data): FR-14-01 (`isCreditCardAccount`), 02..05 (`basePosition`/`cardPosition`), 06 (keys, matching, record rule), 07 (override store, `saveEdit` skips equal-to-calculated), 08, 09 (Mark paid stores `cardId|dueEpochDay` in settings key `card_due_paid`, clears the override, writes nothing to the ledger, so no ledger port is needed), 10 (`CardReminderPlan.next/markSent`, pure), 14, 16 (`CardLimit.owedMinor`), 17 (`CardFlowSourceImpl` reads `TransactionRepository.watch(LedgerFilter(accountId, fromMs))`, drops rows without `inrMinor` or with `duplicateOfId`). Pending: FR-14-11, 12, 13, 15 (UI, notification actions, widget, forex markup).
+
+APIs for UI agents:
+- `cardLimitsProvider` / `CardDueService.watchCards() -> Stream<List<CardLimit>>` (sorted by available limit desc), `card(int accountId)`. `CardLimit`: `id, name, bankName, last4, position, paid, availableMinor, availableEstimated, network`, getters `limitMinor, billedMinor, unbilledMinor, minDueMinor, outstandingMinor, dueDay (epoch day), estimated, owedMinor, limitLeftMinor`. `CardPosition` has edit flags, `calculated`, `source`, `sourceAtMs`, `totalMinor`, `limitLeft(limit, available)`.
+- `CardDueActions.markPaid(CardLimit)`, `undoPaid(CardLimit)`, `saveEdit(CardLimit, {calculated, billedMinor, minDueMinor, dueEpochDay, unbilledMinor, outstandingMinor})`, `resetAll(CardLimit)`.
+- `CardDueRepository.recordNotice(NewCardNotice) -> bool` (the SMS/email/statement pipelines call it), `pruneNotices(beforeMs)`.
+- `CardReminderPlan.next({today, due, sent, paid, snoozedUntilDay}) -> DueStage?` (days are IST epoch days, `CardDay`).
+Rules: an override is replaced when a bill row with `arrivalMs > setAt` exists. Sent/snoozed reminder state is not stored yet (alerts feature). Statement CREDIT_CARD rows (status PARSED) feed positions through `StatementRepository`.
+Tests: `test/features/phase3/card_position_test.dart` (worked examples 1 to 5), `phase3_repositories_test.dart` (notices, service, actions).
 
 ## 19. Change Log (date | change | reason)
 
@@ -462,3 +472,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Named `cardFlowSince` filters (`duplicateOfId IS NULL`, `inrMinor IS NOT NULL`): FR-14-17, edge case, TC-14-13 | Audit Gate gap, scan_3
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Phase 3 data layer landed | Phase 3 |
