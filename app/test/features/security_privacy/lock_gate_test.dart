@@ -95,12 +95,18 @@ void main() {
     expect(find.byKey(_secret), findsOneWidget);
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     await t.pump();
+    // Frames are off while paused; the state flips at once.
     expect(c.read(lockControllerProvider).status, LockStatus.locked);
-    expect(find.byKey(_secret), findsNothing);
     final before = fake.calls;
+    fake.ok = false;
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await settle(t);
     expect(fake.calls, before + 1);
+    expect(find.byKey(_secret), findsNothing);
+    expect(find.text('DhanKosh is locked'), findsOneWidget);
+    fake.ok = true;
+    await t.tap(find.byKey(const Key('lock-unlock')));
+    await settle(t);
     expect(find.byKey(_secret), findsOneWidget);
     await teardownApp(t);
   });
@@ -114,8 +120,7 @@ void main() {
     await settle(t);
     expect(find.byKey(_secret), findsOneWidget);
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    await t.pump();
-    expect(find.byKey(_secret), findsNothing);
+    expect(c.read(lockControllerProvider).status, LockStatus.locked);
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await teardownApp(t);
   });

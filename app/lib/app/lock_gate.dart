@@ -90,10 +90,9 @@ class _LockGateState extends ConsumerState<LockGate>
       textDirection: TextDirection.ltr,
       children: [
         Positioned.fill(
-          child: Visibility(
-            visible: !locked,
-            maintainState: true,
-            child: widget.child,
+          child: Offstage(
+            offstage: locked,
+            child: TickerMode(enabled: !locked, child: widget.child),
           ),
         ),
         if (locked)

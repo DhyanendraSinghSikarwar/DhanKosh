@@ -171,6 +171,9 @@ void main() {
   });
 
   Future<void> pump(WidgetTester t) async {
+    t.view.physicalSize = const Size(800, 3000);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
     await t.pumpWidget(
       ProviderScope(
         overrides: [
@@ -183,12 +186,14 @@ void main() {
     await settle(t);
   }
 
-  testWidgets('empty state, then rows, filter and clear (TC-22-10/11)',
-      (t) async {
+  testWidgets('empty state (TC-22-10)', (t) async {
     await pump(t);
     expect(find.text('No activity yet'), findsOneWidget);
     expect(find.byKey(const Key('activity-clear')), findsNothing);
+    await teardownApp(t);
+  });
 
+  testWidgets('rows, filter and clear (TC-22-10/11)', (t) async {
     await t.runAsync(() async {
       await repo.record(
         _e(ActivitySource.smsScan, _t(21, 9), read: 5, relevant: 5, added: 1),
@@ -198,7 +203,7 @@ void main() {
       );
       await repo.record(_e(ActivitySource.imap, _t(9, 9), emails: 3));
     });
-    await settle(t);
+    await pump(t);
     expect(find.text('Today'), findsWidgets);
     expect(find.text('Yesterday'), findsOneWidget);
     expect(find.text('Fri, 9 Oct 2026'), findsOneWidget);
