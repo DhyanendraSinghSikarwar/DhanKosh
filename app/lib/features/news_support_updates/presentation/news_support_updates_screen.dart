@@ -8,8 +8,11 @@ class NewsSupportUpdatesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('News, Support & Updates placeholder',
-              key: Key('news_support_updates_placeholder'))),
+        child: Text(
+          'News, Support & Updates placeholder',
+          key: Key('news_support_updates_placeholder'),
+        ),
+      ),
     );
   }
 }

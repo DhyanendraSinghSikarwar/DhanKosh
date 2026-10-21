@@ -6,7 +6,7 @@ sealed class Failure implements Exception {
   final String message;
 
   @override
-  String toString() => '$runtimeType: $message';
+  String toString() => 'Failure: $message';
 }
 
 /// Local database or file storage problem.

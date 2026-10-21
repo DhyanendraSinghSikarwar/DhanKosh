@@ -8,8 +8,11 @@ class DedupReviewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Dedup & Review placeholder',
-              key: Key('dedup_review_placeholder'))),
+        child: Text(
+          'Dedup & Review placeholder',
+          key: Key('dedup_review_placeholder'),
+        ),
+      ),
     );
   }
 }

@@ -8,8 +8,11 @@ class TaxCentreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Tax Centre placeholder',
-              key: Key('tax_centre_placeholder'))),
+        child: Text(
+          'Tax Centre placeholder',
+          key: Key('tax_centre_placeholder'),
+        ),
+      ),
     );
   }
 }

@@ -8,8 +8,11 @@ class TransactionsLedgerScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Transactions Ledger placeholder',
-              key: Key('transactions_ledger_placeholder'))),
+        child: Text(
+          'Transactions Ledger placeholder',
+          key: Key('transactions_ledger_placeholder'),
+        ),
+      ),
     );
   }
 }

@@ -8,8 +8,11 @@ class SettingsDataSourcesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Settings & Data Sources placeholder',
-              key: Key('settings_data_sources_placeholder'))),
+        child: Text(
+          'Settings & Data Sources placeholder',
+          key: Key('settings_data_sources_placeholder'),
+        ),
+      ),
     );
   }
 }

@@ -8,8 +8,11 @@ class StatementImportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Statement Import placeholder',
-              key: Key('statement_import_placeholder'))),
+        child: Text(
+          'Statement Import placeholder',
+          key: Key('statement_import_placeholder'),
+        ),
+      ),
     );
   }
 }

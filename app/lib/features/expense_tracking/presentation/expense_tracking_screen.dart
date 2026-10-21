@@ -8,8 +8,11 @@ class ExpenseTrackingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Expense Tracking & Budgets placeholder',
-              key: Key('expense_tracking_placeholder'))),
+        child: Text(
+          'Expense Tracking & Budgets placeholder',
+          key: Key('expense_tracking_placeholder'),
+        ),
+      ),
     );
   }
 }

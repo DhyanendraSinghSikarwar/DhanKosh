@@ -8,8 +8,11 @@ class OnboardingPermissionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Onboarding & Permissions placeholder',
-              key: Key('onboarding_permissions_placeholder'))),
+        child: Text(
+          'Onboarding & Permissions placeholder',
+          key: Key('onboarding_permissions_placeholder'),
+        ),
+      ),
     );
   }
 }

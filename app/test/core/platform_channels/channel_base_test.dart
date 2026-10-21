@@ -5,7 +5,7 @@ import 'package:hisaab/core/platform_channels/secure_channel.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  const channel = SecureChannel.channel;
+  final channel = const SecureChannel().channel;
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 

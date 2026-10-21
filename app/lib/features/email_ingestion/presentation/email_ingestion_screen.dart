@@ -8,8 +8,11 @@ class EmailIngestionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Email Ingestion placeholder',
-              key: Key('email_ingestion_placeholder'))),
+        child: Text(
+          'Email Ingestion placeholder',
+          key: Key('email_ingestion_placeholder'),
+        ),
+      ),
     );
   }
 }

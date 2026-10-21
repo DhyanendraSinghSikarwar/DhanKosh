@@ -6,7 +6,7 @@
 | Status | Proposed |
 | Priority | P1 |
 | Phase | 5 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -270,7 +270,7 @@ Features:
 - [Security and privacy](25_security_privacy.md): Keystore, encrypted database.
 - [Transactions ledger](08_transactions_ledger.md), [Dedup and review](07_dedup_review.md), [Accounts](13_accounts_management.md), [Statement import](05_statement_import.md), [Email ingestion](03_email_ingestion.md), [Portfolio](16_portfolio.md), [Loans](15_loans.md): the data the import writes.
 
-Packages: `drift`, `sqlite3` (read the legacy file), `sqlcipher_flutter_libs`, `path_provider`, `file_picker` or SAF channel, `freezed`.
+Packages: `drift`, `sqlite3` (read the legacy file), SQLCipher via the `sqlite3` build hook, `path_provider`, `file_picker` or SAF channel, `freezed`.
 
 ## 13. Folder Location (lib/features/<name>/...)
 
@@ -357,3 +357,4 @@ N/A - not built yet.
 | Date | Change | Reason |
 |---|---|---|
 | 2026-10-19 | Created | Audit Gate gap |
+| 2026-10-21 | Package `sqlcipher_flutter_libs` replaced by the `sqlite3` 3.x SQLCipher build hook | Package obsolete after sqlite3 3.x; see ADR-0003 |

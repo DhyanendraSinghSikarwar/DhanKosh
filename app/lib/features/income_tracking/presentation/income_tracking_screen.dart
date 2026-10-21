@@ -8,8 +8,11 @@ class IncomeTrackingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Income Tracking placeholder',
-              key: Key('income_tracking_placeholder'))),
+        child: Text(
+          'Income Tracking placeholder',
+          key: Key('income_tracking_placeholder'),
+        ),
+      ),
     );
   }
 }

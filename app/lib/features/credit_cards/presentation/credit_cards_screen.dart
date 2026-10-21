@@ -8,8 +8,11 @@ class CreditCardsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Credit Cards placeholder',
-              key: Key('credit_cards_placeholder'))),
+        child: Text(
+          'Credit Cards placeholder',
+          key: Key('credit_cards_placeholder'),
+        ),
+      ),
     );
   }
 }

@@ -8,8 +8,11 @@ class RecurringTransactionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Recurring Transactions & Bills placeholder',
-              key: Key('recurring_transactions_placeholder'))),
+        child: Text(
+          'Recurring Transactions & Bills placeholder',
+          key: Key('recurring_transactions_placeholder'),
+        ),
+      ),
     );
   }
 }

@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart' show immutable;
+
 /// Money in minor units (paise). Never use double for amounts.
+@immutable
 class Money implements Comparable<Money> {
   /// Creates an amount of [minor] minor units (paise for INR).
   const Money(this.minor, {this.currency = 'INR'});

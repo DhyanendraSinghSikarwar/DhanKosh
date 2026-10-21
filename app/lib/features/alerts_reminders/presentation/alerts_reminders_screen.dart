@@ -8,8 +8,11 @@ class AlertsRemindersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Alerts & Reminders placeholder',
-              key: Key('alerts_reminders_placeholder'))),
+        child: Text(
+          'Alerts & Reminders placeholder',
+          key: Key('alerts_reminders_placeholder'),
+        ),
+      ),
     );
   }
 }

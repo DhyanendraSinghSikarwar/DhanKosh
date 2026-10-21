@@ -8,8 +8,11 @@ class ForexRatesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Forex Rates placeholder',
-              key: Key('forex_rates_placeholder'))),
+        child: Text(
+          'Forex Rates placeholder',
+          key: Key('forex_rates_placeholder'),
+        ),
+      ),
     );
   }
 }

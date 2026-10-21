@@ -8,8 +8,11 @@ class CategorizationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Categorization & Rules placeholder',
-              key: Key('categorization_placeholder'))),
+        child: Text(
+          'Categorization & Rules placeholder',
+          key: Key('categorization_placeholder'),
+        ),
+      ),
     );
   }
 }

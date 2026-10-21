@@ -8,8 +8,11 @@ class AccountsManagementScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Accounts Management placeholder',
-              key: Key('accounts_management_placeholder'))),
+        child: Text(
+          'Accounts Management placeholder',
+          key: Key('accounts_management_placeholder'),
+        ),
+      ),
     );
   }
 }

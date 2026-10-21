@@ -8,8 +8,11 @@ class PortfolioScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Portfolio & Net Worth placeholder',
-              key: Key('portfolio_placeholder'))),
+        child: Text(
+          'Portfolio & Net Worth placeholder',
+          key: Key('portfolio_placeholder'),
+        ),
+      ),
     );
   }
 }

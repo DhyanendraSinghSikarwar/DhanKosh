@@ -8,8 +8,11 @@ class DashboardHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Dashboard (Home) placeholder',
-              key: Key('dashboard_home_placeholder'))),
+        child: Text(
+          'Dashboard (Home) placeholder',
+          key: Key('dashboard_home_placeholder'),
+        ),
+      ),
     );
   }
 }

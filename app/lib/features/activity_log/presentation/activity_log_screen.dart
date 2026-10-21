@@ -8,8 +8,11 @@ class ActivityLogScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Activity Log placeholder',
-              key: Key('activity_log_placeholder'))),
+        child: Text(
+          'Activity Log placeholder',
+          key: Key('activity_log_placeholder'),
+        ),
+      ),
     );
   }
 }

@@ -12,14 +12,14 @@
 
 ## 2. Tech Stack
 
-Versions: use the latest stable at scaffold time, then pin in `pubspec.lock`. Record the pinned versions in `CLAUDE.md` once chosen.
+Versions: latest stable at scaffold time (Flutter 3.47.7), pinned in `app/pubspec.lock`. `sqlcipher_flutter_libs` is obsolete from sqlite3 3.x; see [ADR-0003](docs/adr/0003-sqlcipher-encrypted-db.md).
 
 | Area | Choice | Why |
 |---|---|---|
 | Framework | Flutter (stable), Dart 3 | One codebase, iOS stays open |
 | State | Riverpod with code-gen (`riverpod_annotation`) | Compile-safe DI plus state; testable overrides |
 | Navigation | `go_router` | Deep links (`hisaab://budgets`, `bills`, `transaction/{id}`, `account/{id}`, `statements`) and a shell route for the 5-tab bar |
-| Local DB | Drift (SQLite) + SQLCipher (`sqlcipher_flutter_libs`) | Typed SQL, migrations, FTS, triggers; encryption at rest (the Android app has none beyond app-private storage) |
+| Local DB | Drift (SQLite) + SQLCipher (`package:sqlite3` build hook, `source: sqlcipher`) | Typed SQL, migrations, FTS, triggers; encryption at rest (the Android app has none beyond app-private storage) |
 | Models | `freezed` + `json_serializable` | Immutable entities, value equality |
 | Background | `workmanager` | Nightly SMS catch-up and email sync (about 02:30), constraints |
 | Native (Kotlin) | Platform channels | `SmsReceiver` + inbox reader, `NotificationListenerService`, Keystore sealing, PDF text (PdfBox-Android), home widget |
@@ -237,4 +237,4 @@ Backlog (not in the existing app; from `v2_design/Hisaab_Product_Spec.md`): iOS,
 3. Play Store distribution or APK only (decides the SMS-permission strategy)?
 4. Reuse the existing `lang/` packs and logo assets as-is (licence check for Simple Icons logos is already CC0 per the Android README)?
 5. Android inconsistencies to settle during porting: email sync cadence (UI says hourly, scheduler nightly), budget alert default (80 vs 90), card-pair window (5 days vs comment 3), FY2026-27 tax rules (copy of FY2025-26, unconfirmed). Tracked in the relevant feature files.
-6. Flutter SDK is not installed on the authoring machine; the skeleton in `app/` was not compiled (see CLAUDE.md).
+6. Resolved 2026-10-21: skeleton compiled, analysed and tested with Flutter 3.47.7. Open: first on-device run of the CI debug APK.

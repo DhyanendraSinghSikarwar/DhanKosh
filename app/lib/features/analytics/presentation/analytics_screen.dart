@@ -8,8 +8,8 @@ class AnalyticsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child:
-              Text('Analytics placeholder', key: Key('analytics_placeholder'))),
+        child: Text('Analytics placeholder', key: Key('analytics_placeholder')),
+      ),
     );
   }
 }

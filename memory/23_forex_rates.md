@@ -6,7 +6,7 @@
 | Status | Existing |
 | Priority | P2 |
 | Phase | 4 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -289,7 +289,7 @@ None. No permissions, no background work. The date picker uses Flutter's `showDa
 
 Features: [08_transactions_ledger.md](08_transactions_ledger.md) (`inrMinor`, transaction detail row), [06_transaction_parsing_engine.md](06_transaction_parsing_engine.md) (currency capture), [13_accounts_management.md](13_accounts_management.md) and [14_credit_cards.md](14_credit_cards.md) (card markup field), [24_backup_export.md](24_backup_export.md) (CSV currency column), [10_expense_tracking.md](10_expense_tracking.md), [17_dashboard_home.md](17_dashboard_home.md), [18_analytics.md](18_analytics.md), [19_tax_centre.md](19_tax_centre.md) (all consume rupee values), [26_settings_data_sources.md](26_settings_data_sources.md) (More entry), [29_localization.md](29_localization.md).
 
-Packages: `drift` (with `customStatement` for triggers), `flutter_riverpod`, `freezed`, `intl` (currency symbols/formatting), `sqlcipher_flutter_libs`.
+Packages: `drift` (with `customStatement` for triggers), `flutter_riverpod`, `freezed`, `intl` (currency symbols/formatting), SQLCipher via the `sqlite3` build hook.
 
 ## 13. Folder Location (lib/features/<name>/...)
 
@@ -383,3 +383,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Package `sqlcipher_flutter_libs` replaced by the `sqlite3` 3.x SQLCipher build hook | Package obsolete after sqlite3 3.x; see ADR-0003 |

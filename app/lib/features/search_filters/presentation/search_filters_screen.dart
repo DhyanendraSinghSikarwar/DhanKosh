@@ -8,8 +8,11 @@ class SearchFiltersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Search & Filters placeholder',
-              key: Key('search_filters_placeholder'))),
+        child: Text(
+          'Search & Filters placeholder',
+          key: Key('search_filters_placeholder'),
+        ),
+      ),
     );
   }
 }

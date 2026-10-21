@@ -8,7 +8,8 @@ class LoansScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Loans placeholder', key: Key('loans_placeholder'))),
+        child: Text('Loans placeholder', key: Key('loans_placeholder')),
+      ),
     );
   }
 }

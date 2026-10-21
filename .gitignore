@@ -1,0 +1,39 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+*.iml
+.vscode/
+
+# Flutter / Dart (app/.gitignore covers the rest of the project)
+.dart_tool/
+.flutter-plugins*
+.packages
+build/
+*.g.dart
+*.freezed.dart
+*.drift.dart
+
+# Android
+*.jks
+*.keystore
+key.properties
+local.properties
+.gradle/
+captures/
+
+# Secrets and real data (never commit)
+.env
+.env.*
+secrets/
+*.sms.json
+fixtures_real/
+*.apk
+*.aab
+
+# Local scratch
+.claude/settings.local.json
+scratch/
+__pycache__/
+*.pyc

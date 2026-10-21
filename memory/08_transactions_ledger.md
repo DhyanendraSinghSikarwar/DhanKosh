@@ -6,7 +6,7 @@
 | Status | Existing |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-19 |
+| Last Updated | 2026-10-21 |
 
 ## 1. Description
 
@@ -360,7 +360,7 @@ Worked examples:
 - [Accounts Management](13_accounts_management.md): accounts, balances, GapCard, `ensureAccount`.
 - [Credit Cards](14_credit_cards.md): card TRANSFER semantics, limits. [Loans](15_loans.md): LoanLinkPrompt, EMI pairing.
 - [Search & Filters](20_search_filters.md): Book/Period state. [Forex Rates](23_forex_rates.md): `inrMinor`. [Backup & Export](24_backup_export.md): CSV import calls `importTransactions`. [Expense Tracking](10_expense_tracking.md), [Income Tracking](11_income_tracking.md), [Analytics](18_analytics.md): consumers.
-- Packages: `drift`, `sqlcipher_flutter_libs`, `riverpod`, `freezed`, `go_router`, `intl`, `google_mlkit_text_recognition`, `image_picker`, `uuid`, `crypto`.
+- Packages: `drift`, SQLCipher via the `sqlite3` build hook, `riverpod`, `freezed`, `go_router`, `intl`, `google_mlkit_text_recognition`, `image_picker`, `uuid`, `crypto`.
 
 ## 13. Folder Location (lib/features/<name>/...)
 
@@ -455,3 +455,4 @@ N/A - not built yet. Filled during the build (decisions, deviations).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Added `DeletedMessages` table block and table-ownership note; MessageView (3.10, FR-08-20); calendar captions/colour (3.11, FR-08-21); FR-08-22; TC-08-15..17 | Audit Gate gap, scan_3, scan_5, scan_6 |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-21 | Package `sqlcipher_flutter_libs` replaced by the `sqlite3` 3.x SQLCipher build hook | Package obsolete after sqlite3 3.x; see ADR-0003 |

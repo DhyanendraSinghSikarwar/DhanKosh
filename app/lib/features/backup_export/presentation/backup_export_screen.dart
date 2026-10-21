@@ -8,8 +8,11 @@ class BackupExportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Backup & Export placeholder',
-              key: Key('backup_export_placeholder'))),
+        child: Text(
+          'Backup & Export placeholder',
+          key: Key('backup_export_placeholder'),
+        ),
+      ),
     );
   }
 }

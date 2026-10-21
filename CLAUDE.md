@@ -5,12 +5,13 @@ Flutter rebuild (Android first) of the Kotlin app `hisaab_apk` v2.9.8; parity wi
 All parsing and storage are on-device. Native code (SMS, notifications, Keystore, PDF text, widget) is Kotlin behind platform channels; everything else is Dart.
 
 - Master plan (app-wide structure only): [plan.md](plan.md)
+- Agent map: [AGENTS.md](AGENTS.md); decisions: [docs/adr/](docs/adr/); research: [docs/research/](docs/research/)
 - Feature memory index: [memory/_index.md](memory/_index.md)
 - Screen GIF index: [assets_reference/_screens_index.md](assets_reference/_screens_index.md)
 
-## Status of the skeleton (unverified)
+## Status of the skeleton
 
-The Flutter SDK was not installed when the skeleton was authored, so nothing has been compiled. Treat the skeleton as unverified until `flutter pub get`, `flutter analyze` and `flutter test` have been run and pass. Fix what they report before building on it.
+Verified 2026-10-21 with Flutter 3.47.7: `flutter pub get`, `dart run build_runner build -d`, `flutter analyze` (0 issues) and `flutter test` (22 pass) are green. The debug APK is built by CI (`.github/workflows/ci.yml`, artifact `hisaab-debug-apk`); it has not been built or run on a device yet. Setup and phone install: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Reference sources
 
@@ -32,7 +33,7 @@ Skills in `.claude/skills/` implement these workflows: `add-feature`, `update-fe
 
 ## Tech Stack
 
-Flutter stable + Dart 3; Riverpod with codegen (`riverpod_annotation`); `go_router` (5-tab shell, deep links); Drift + SQLCipher (`sqlcipher_flutter_libs`); `freezed` + `json_serializable`; `workmanager`; Kotlin platform channels `sms`, `notifications`, `secure`, `pdf`, `widget`; `enough_mail`; `fl_chart`; `local_auth`, `flutter_secure_storage`; `very_good_analysis`; tests with `flutter_test`, `mocktail`, `integration_test`. Full table in plan.md section 2. Record pinned versions here once chosen (from `pubspec.lock`).
+Flutter stable + Dart 3; Riverpod with codegen (`riverpod_annotation`); `go_router` (5-tab shell, deep links); Drift + SQLCipher (via `package:sqlite3` build hook, ADR-0003); `freezed` + `json_serializable`; `workmanager`; Kotlin platform channels `sms`, `notifications`, `secure`, `pdf`, `widget`; `enough_mail`; `fl_chart`; `local_auth`, `flutter_secure_storage`; `very_good_analysis`; tests with `flutter_test`, `mocktail`, `integration_test`. Full table in plan.md section 2. Pinned in `app/pubspec.lock` (resolved 2026-10-21: Riverpod 3, go_router 17, freezed 4, drift 2.35, sqlite3 3.7).
 
 ## Architecture Rules
 
@@ -63,11 +64,16 @@ flutter test
 flutter analyze
 dart run build_runner build -d
 dart format .
+python3 tools/check_memory.py        # memory/index/plan consistency
+python3 tools/check_architecture.py  # layer, money and ledger rules
 ```
+
+Run the Flutter commands from `app/`.
 
 ## Definition of Done
 
 - [ ] Feature memory file read before work and updated after (FR-ids, models, tables, rules, tests, acceptance criteria, Change Log, Last Updated).
+- [ ] `tools/check_memory.py` and `tools/check_architecture.py` pass; ADR added if a decision changed.
 - [ ] `dart run build_runner build -d` clean; `dart format .` applied.
 - [ ] `flutter analyze` reports zero issues.
 - [ ] `flutter test` passes; new rules have fixtures/tests; parser changes keep the parity gate green.

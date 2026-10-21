@@ -8,8 +8,11 @@ class SecurityPrivacyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Security & Privacy placeholder',
-              key: Key('security_privacy_placeholder'))),
+        child: Text(
+          'Security & Privacy placeholder',
+          key: Key('security_privacy_placeholder'),
+        ),
+      ),
     );
   }
 }

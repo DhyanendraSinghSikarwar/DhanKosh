@@ -8,8 +8,11 @@ class ThemingCustomisationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-          child: Text('Theming & Customisation placeholder',
-              key: Key('theming_customisation_placeholder'))),
+        child: Text(
+          'Theming & Customisation placeholder',
+          key: Key('theming_customisation_placeholder'),
+        ),
+      ),
     );
   }
 }
