@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hisaab/app/di/email_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
@@ -46,18 +47,23 @@ Future<bool> smsDrainTask({ProviderContainer Function()? create}) =>
       create: create,
     );
 
-/// Nightly catch-up: re-read the last 14 days; skipped while SMS reading is
-/// paused (FR-02-14, FR-02-05).
+/// Nightly catch-up: re-read the last 14 days of SMS (skipped while SMS
+/// reading is paused, FR-02-14, FR-02-05), then sync email (FR-03-17; a no-op
+/// without a connected account). Retry only on retryable errors.
 Future<bool> smsNightlyTask({ProviderContainer Function()? create}) =>
     _withContainer(
       (c) async {
+        var ok = true;
         final settings = await c.read(smsSettingsRepositoryProvider).read();
-        if (!settings.enabled) return true;
-        final r = await c.read(scanSmsFactoryProvider)(null)(
-          const SmsScanRequest.recent(nightlyScanDays),
-        );
-        // No permission is not retryable; other errors are.
-        return r.error == null || r.error == 'permission';
+        if (settings.enabled) {
+          final r = await c.read(scanSmsFactoryProvider)(null)(
+            const SmsScanRequest.recent(nightlyScanDays),
+          );
+          // No permission is not retryable; other errors are.
+          ok = r.error == null || r.error == 'permission';
+        }
+        final email = await c.read(emailSyncRunnerProvider).run();
+        return ok && !email.retryable;
       },
       create: create,
     );

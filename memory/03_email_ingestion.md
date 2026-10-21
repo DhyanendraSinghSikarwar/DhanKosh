@@ -636,3 +636,4 @@ Not done: Gmail API and OAuth, mailed verification code, multiple accounts, atta
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 2 email ingestion landed | Phase 2 |
+| 2026-10-21 | Nightly job (02:30, shared with the SMS catch-up in `smsNightlyTask`) now runs `EmailSyncRunner`; retry only when `retryable`. Runs only while the nightly job is registered (SMS reading on) | FR-03-17 scheduling |
