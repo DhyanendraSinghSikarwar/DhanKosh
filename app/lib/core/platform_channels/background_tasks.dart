@@ -9,6 +9,9 @@ abstract final class BackgroundTasks {
   /// Nightly 14-day inbox re-read (FR-02-14).
   static const smsNightly = 'sms.nightly';
 
+  /// Alert check (budgets, bills, renewals; FR-21-13).
+  static const alertsCheck = 'alerts.check';
+
   /// Unique work name for [smsDrain].
   static const smsDrainUnique = 'sms-live-drain';
 

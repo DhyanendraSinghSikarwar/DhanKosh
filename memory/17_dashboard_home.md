@@ -532,3 +532,4 @@ Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insight
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Stated Safe to spend is NOT in the rebuilt Home (FR-17-23, link to 34_planned_insights_backlog.md); More hub subtitles delegated to 26 (FR-17-24); settings key-value table renamed to `settings` to match 26 | Audit Gate gap, scan_5, scan_6 |
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
+| 2026-10-21 | Home gained budget rings (`HomeBudgetsCard`) and cash-flow card (`HomeCashFlowCard`) after the spent card, always visible (not yet customisable); see [10](10_expense_tracking.md), [11](11_income_tracking.md) | Phase 4 |

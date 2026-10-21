@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-23 |
-| Status | In progress (Phase 4: rates table, inrMinor triggers, recompute and repository done; Forex rates screen and dialog pending) |
+| Status | In progress (rates table, triggers, repository and Forex rates screen with rate dialog done; transaction detail row and consumers of FR-23-07 owned by other features) |
 | Priority | P2 |
 | Phase | 4 |
 | Last Updated | 2026-10-21 |
@@ -394,6 +394,8 @@ abstract interface class ForexRepository {
 int? inrMinorFor({amountMinor, currency, timestampMs, markupBps, ratesForCurrency});
 ```
 
+Phase 4 UI: `ForexRatesScreen` (`/settings/forex`, More tile `ForexTile`): "Your spends abroad" card from `watchForeign` ("{n} need a rate" opens the dialog with the currency preselected, else "All counted"), help line, rate list (currency, newest day) with delete (no confirmation), FAB and tap-to-edit opening the rate dialog (currency chips from currencies in use plus USD, EUR, GBP, AED, SGD; letters-only 3-char field; date picker; decimal rate; `RateDraft.canSave`). Saves go through `ForexRepository.upsert`/`delete`. Tests: `test/features/alerts_reminders/alerts_forex_screens_test.dart`. FR status additions: done FR-23-02, 03, 13, 14 partly (strings not yet localised); still pending FR-23-08 (transaction detail row).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -402,3 +404,4 @@ int? inrMinorFor({amountMinor, currency, timestampMs, markupBps, ratesForCurrenc
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Package `sqlcipher_flutter_libs` replaced by the `sqlite3` 3.x SQLCipher build hook | Package obsolete after sqlite3 3.x; see ADR-0003 |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
+| 2026-10-21 | Phase 4 alerts posting + forex UI landed | Phase 4 |

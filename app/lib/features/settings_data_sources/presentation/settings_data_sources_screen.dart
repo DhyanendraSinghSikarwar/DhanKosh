@@ -11,6 +11,11 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
   const SettingsDataSourcesScreen({
     this.notificationCard,
     this.statementsTile,
+    this.billsTile,
+    this.loansTile,
+    this.alertsTile,
+    this.forexTile,
+    this.taxTile,
     super.key,
   });
 
@@ -19,6 +24,21 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
 
   /// Statements entry (F-05), composed in `app/router.dart`.
   final Widget? statementsTile;
+
+  /// Bills & insurance entry (F-12), composed in `app/router.dart`.
+  final Widget? billsTile;
+
+  /// Loans entry (F-15), composed in `app/router.dart`.
+  final Widget? loansTile;
+
+  /// Alerts entry (F-21), composed in `app/router.dart`.
+  final Widget? alertsTile;
+
+  /// Forex rates entry (F-23), composed in `app/router.dart`.
+  final Widget? forexTile;
+
+  /// Tax Centre entry (F-19), composed in `app/router.dart`.
+  final Widget? taxTile;
 
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
@@ -80,6 +100,11 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
             onTap: () => context.push('/settings/email'),
           ),
           if (statementsTile != null) statementsTile!,
+          if (billsTile != null) billsTile!,
+          if (loansTile != null) loansTile!,
+          if (taxTile != null) taxTile!,
+          if (alertsTile != null) alertsTile!,
+          if (forexTile != null) forexTile!,
           if (notificationCard != null) ...[
             const SizedBox(height: 12),
             notificationCard!,

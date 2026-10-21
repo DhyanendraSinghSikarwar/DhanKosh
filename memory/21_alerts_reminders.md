@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-21 |
-| Status | In progress (pure alert decision logic done: budgets, low-balance bills, renewals, untracked changes, card-bill stages, new-transaction, balance-updated and statement-locked texts; channels, posting, persistence, worker and Alerts screen pending) |
+| Status | In progress (rules done; posting engine, native `alerts` channel, Alerts settings screen and launch-route handling landed but native Kotlin unverified on device; card reminders, untracked-change alerts, new-transaction/balance/statement notifications, action buttons and AlertsWorker scheduling pending) |
 | Priority | P1 |
 | Phase | 4 |
 | Last Updated | 2026-10-21 |
@@ -481,6 +481,10 @@ Decisions: dedupe keys are to be stored only after a successful post (Open Quest
 
 Tests: `test/features/alerts_reminders/alert_rules_test.dart` (budget boundary values: 90% exactly vs one paisa under, 100, over, already alerted, percents 80/95/100, zero limit, new month; bills 0..3-day window and balance equal to amount; renewals 0..7; gaps 14-day boundary, cap 3, once each; card stage table days 10..-8, snooze ends today, paid cancels; new-transaction text, buttons, gating; balance and statement texts; money grouping).
 
+Phase 4 posting and settings (wave 2). `AlertsEngine` (`domain/alerts_engine.dart`) gathers budgets + month spend, user recurring bills (paying account balance, merge resolved) and yearly insurance items, runs `AlertRules`, posts through the `AlertPoster` port and stores a key only after a successful post; runs are serialised and each check is isolated. Triggers: app start/resume (`lib/app/alerts_lifecycle.dart`), after SMS drain/start in `pipelineSync`, nightly `smsNightlyTask` and a registered `alerts.check` task. Native channel `com.hisaab/alerts` (`android/.../com/hisaab/alerts/AlertsBridge.kt`, UNVERIFIED, not compiled or run): `post{id, channelId in budget|bills|cards|info, title, body, route?}` -> bool (false when POST_NOTIFICATIONS denied or notifications blocked), `cancel{id}`, `areEnabled`, `takeLaunchRoute` (route extra `hisaab_route` stored by MainActivity from the launch intent / onNewIntent; read on start/resume, unknown routes fall back to /home). Channels are created on demand; also attached in the headless engine. Settings screen `/settings/alerts` (More tile `AlertsTile`): off banner with how-to and Allow, transaction alerts, card reminders, budget 80/90/95. Tests: `test/features/alerts_reminders/alerts_engine_test.dart`, `alerts_forex_screens_test.dart`.
+
+FR status additions: done FR-21-05, 06, 07 (posted), 14, 16, 17 (no resume re-check of the banner beyond lifecycle), 18, 19; FR-21-15 partly (links map to routes, `/budgets` and `/bills` exist only if those screens are routed). Pending: FR-21-01 channel ids/names (native uses budget/bills/cards/info instead of memory ids), 02, 03, 04, 08, 09, 10, 11, 12, 13 (daily scheduling of `alerts.check` not enqueued natively; piggybacks the nightly sms task), action buttons.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -489,3 +493,4 @@ Tests: `test/features/alerts_reminders/alert_rules_test.dart` (budget boundary v
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
+| 2026-10-21 | Phase 4 alerts posting + forex UI landed | Phase 4 |

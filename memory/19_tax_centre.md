@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-19 |
-| Status | In progress (pure domain done: rules per FY, calculator for both regimes, income estimate, deduction detection, what-if plan, FY labels; UI, share/export and data wiring pending) |
+| Status | In progress (domain plus Tax Centre screen at /tax: period, income, regime comparison, slabs, detected deductions, what-if sheet; share, export, EPF and FR-19-09..11, 16, 17 deferred) |
 | Priority | P2 |
 | Phase | 4 |
 | Last Updated | 2026-10-21 |
@@ -509,6 +509,9 @@ Decisions: rounding is exact integer arithmetic (half-up to the rupee on a fract
 
 Tests: `test/features/tax_centre/tax_calculator_test.dart` (worked examples A to H, the full Kotlin `TaxCalculatorTest` port incl. surcharge relief 7,000, 37% old-regime tier, senior bands, gains and rebate, rounding, slab lines, FY labels and bounds) and `tax_income_test.dart` (Kotlin `TaxIncomeTest` port, the 17 Oct example, month-in-progress boundary, deduction detection, EPF share, `TaxPlan` what-if and input mapping).
 
+Phase 4 UI: `presentation/tax_centre_screen.dart`, `tax_what_if_sheet.dart`, `tax_tile.dart` (More entry, composed in `app/router.dart`); route `/tax`. Wiring in `lib/app/di/analytics_providers.dart` (`taxBaselineProvider`, `taxPeriodChoiceProvider`, `taxWhatIfStateProvider`, in-memory only); `TaxBaseline` added to `domain/tax_plan.dart`. UI done: FR-19-01, 02, 03, 04, 05, 06, 07, 08, 12. The screen notes that FY 2026-27 rules are unconfirmed (Open Question 1). Deferred: share and export (FR-19-09..11, 16, 17), EPF holdings input (detector called without EPF), what-if fields beyond salary, 80C, 80D, NPS.
+Tests: `test/features/tax_centre/tax_centre_screen_test.dart` (examples B and C totals Rs 97,500 / Rs 2,10,600, empty income, what-if example A gives Rs 0 then reset, period change, light/dark).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -517,3 +520,4 @@ Tests: `test/features/tax_centre/tax_calculator_test.dart` (worked examples A to
 | 2026-10-19 | `cacheDir/shared` temp export (FR-19-16) and legacy `tax_overrides` store cleanup (FR-19-17); TC-19-10, TC-19-11 | Audit Gate gap, scan_3
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
+| 2026-10-21 | Phase 4 UI landed | Phase 4 |

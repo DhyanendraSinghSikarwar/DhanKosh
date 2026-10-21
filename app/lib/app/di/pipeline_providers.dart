@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:hisaab/app/di/alerts_providers.dart';
 import 'package:hisaab/app/di/notification_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -182,6 +183,8 @@ Future<void> Function() pipelineSync(Ref ref) => () async {
         } else {
           await engine.start();
         }
+        // After ingest: alert checks (FR-21-13); never throws.
+        unawaited(ref.read(alertsEngineProvider).run());
       } on Object {
         // Native side missing (tests, desktop).
       }

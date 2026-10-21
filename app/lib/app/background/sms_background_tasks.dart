@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hisaab/app/di/alerts_providers.dart';
 import 'package:hisaab/app/di/email_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -63,7 +64,19 @@ Future<bool> smsNightlyTask({ProviderContainer Function()? create}) =>
           ok = r.error == null || r.error == 'permission';
         }
         final email = await c.read(emailSyncRunnerProvider).run();
+        // Daily alert check (FR-21-13); never throws.
+        await c.read(alertsEngineProvider).run();
         return ok && !email.retryable;
+      },
+      create: create,
+    );
+
+/// Alert check on its own (FR-21-13): budgets, bills, renewals.
+Future<bool> alertsCheckTask({ProviderContainer Function()? create}) =>
+    _withContainer(
+      (c) async {
+        await c.read(alertsEngineProvider).run();
+        return true;
       },
       create: create,
     );

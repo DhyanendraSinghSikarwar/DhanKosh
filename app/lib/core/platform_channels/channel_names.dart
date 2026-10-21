@@ -8,4 +8,5 @@ abstract final class ChannelNames {
   static const pdf = 'com.hisaab/pdf';
   static const widget = 'com.hisaab/widget';
   static const background = 'com.hisaab/background';
+  static const alerts = 'com.hisaab/alerts';
 }

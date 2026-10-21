@@ -159,3 +159,28 @@ class TaxPlan {
         whatIf: o,
       );
 }
+
+/// Detected inputs of a [TaxPlan] before what-if values (FR-19-02).
+class TaxBaseline {
+  /// Creates a baseline.
+  const TaxBaseline({
+    required this.period,
+    required this.fyStartYear,
+    required this.est,
+    required this.deductions,
+  });
+
+  final TaxPeriod period;
+  final int fyStartYear;
+  final TaxIncomeEstimate est;
+  final DetectedDeductions deductions;
+
+  /// The plan with [whatIf] applied.
+  TaxPlan plan([TaxWhatIf whatIf = const TaxWhatIf()]) => TaxPlan.compute(
+        period: period,
+        fyStartYear: fyStartYear,
+        est: est,
+        deductions: deductions,
+        whatIf: whatIf,
+      );
+}

@@ -88,11 +88,15 @@ void main() {
         '₹85,000.00',
       );
       expect(find.text('Swiggy'), findsOneWidget);
+      await t.drag(find.byType(ListView), const Offset(0, -600));
+      await t.pump();
       expect(find.text('HDFC Bank ••1234'), findsOneWidget);
       expect(
         t.widget<Text>(find.byKey(const Key('home_balance'))).data,
         '₹1,32,549.50',
       );
+      await t.drag(find.byType(ListView), const Offset(0, 600));
+      await t.pump();
       await t.tap(find.text('Swiggy'));
       await settle(t);
       expect(visited, ['/transaction/1']);

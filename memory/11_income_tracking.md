@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-11 |
-| Status | In progress (Phase 4: classification helpers, cash-flow and savings-rate maths, income queries done; Home cash-flow widget, Analysis segment and savings outlook UI pending) |
+| Status | In progress (Phase 4: classification helpers, cash-flow and savings-rate maths, income queries done; Income screen and Home cash-flow card done; income-source list, Analysis segment and savings outlook UI pending) |
 | Priority | P0 |
 | Phase | 1 (credit detection and classification at ingest, Home cash-flow widget); 4 for Analysis cash-flow segment and savings sparkline |
 | Last Updated | 2026-10-21 |
@@ -429,6 +429,8 @@ FR status done: FR-11-02 (`IncomeClassifier.creditCategory`), 05 (`incomeBetween
 
 Months are IST (`strftime` on `timestamp + 19,800,000`). Income queries exclude TRANSFER, `needsReview` and duplicate rows and use `inr_minor` (0 when unpriced).
 
+UI (Phase 4): `lib/features/income_tracking/presentation/income_tracking_screen.dart` (route `/income`: month nav, Income/Spent/Invested/Saved, savings rate, "Best in n months", 12-month income-vs-spent bar chart, savings-rate list), Home `HomeCashFlowCard` (taps open `/income`), providers `incomeMonthProvider`, `monthlyFlowsProvider(month)` in `lib/app/di/budget_providers.dart`. Tests: `test/features/income_tracking/income_screen_test.dart`. FR UI done: FR-11-05, 06, 07, 09 display. Deferred: income-source/bucket breakdown list (no repository query for classified credits yet), Sankey (FR-11-08), category change UI (12), outlook (13), forex flag (14).
+
 API for UI agents:
 
 ```dart
@@ -450,3 +452,4 @@ IncomeClassifier.creditCategory(String text) -> Category;  bucketOf({category, m
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
+| 2026-10-21 | Phase 4 UI landed | Phase 4 |

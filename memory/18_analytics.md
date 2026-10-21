@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-18 |
-| Status | In progress (pure domain aggregates, forecast, cash projection, compare, savings rate, Sankey inputs, heat grid and insights done; data wiring and UI pending) |
+| Status | In progress (domain plus Analysis tab UI: period, four views, donut, trend, heatmap, merchants, budgets, income flow bars, savings rate, forecast, cash projection, compare, insights; Sankey, category-tap filter, layout store, month sheet, recurring plan wiring deferred) |
 | Priority | P1 |
 | Phase | 4 |
 | Last Updated | 2026-10-21 |
@@ -494,6 +494,10 @@ Decisions: budget `alertPercent` fallback is 90 (`BudgetMath.normaliseAlertPerce
 
 Tests: `test/features/analytics/analytics_test.dart` (ledger math, IST bucketing, heat slots and peak widening, build KPIs, income classification, compare percent rules and labels, savings summary, budgets x months and pace, the section 10 worked example `priorRate 150,000 / curRate 160,000 / rate 155,000 / likely 9,434,900 / low 9,000,900 / high 9,868,900`, verdicts, cash projection events, insights thresholds incl. boundary values 10%, Rs 500, 45%).
 
+Phase 4 UI: `presentation/analytics_screen.dart` (period segmented This/Last month, four views Spend/Cash/Forecast/Compare) and `analytics_cards.dart` (fl_chart donut, 12-month bars, cash and forecast lines; heatmap as a coloured grid; income flow as bars). Wiring in `lib/app/di/analytics_providers.dart` (`analyticsViewProvider`, `analyticsPeriodChoiceProvider`); `domain/analytics_view.dart` holds `AnalyticsView` and `AnalyticsPeriod`. UI done: FR-18-01 (partial: four views, opens on Spend), 03, 05, 06, 07, 08, 09 (bars), 11, 13, 14, 15, 16, 17.
+Deferred: Sankey drawing (bars instead), category-tap filter (FR-18-04), month sheet, custom period (FR-18-12), layout store (FR-18-19/20), recurring/upcoming plan input (forecast and cash use an empty `PlanSnapshot`), time-of-day beyond heat grid, FR-18-22/23.
+Tests: `test/features/analytics/analytics_screen_test.dart` (empty, populated light/dark, period change, views).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -502,3 +506,4 @@ Tests: `test/features/analytics/analytics_test.dart` (ledger math, IST bucketing
 | 2026-10-19 | Added analytics SQL semantics (section 9), personal/business rule, chart-component inventory with StackedArea marked dead (section 10); FR-18-21..23, TC-18-17 | Audit Gate gap, scan_3, scan_5, scan_6 |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
+| 2026-10-21 | Phase 4 UI landed | Phase 4 |

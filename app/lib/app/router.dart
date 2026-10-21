@@ -5,12 +5,23 @@ import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/ledger_shell.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_detail_screen.dart';
 import 'package:hisaab/features/accounts_management/presentation/accounts_management_screen.dart';
+import 'package:hisaab/features/alerts_reminders/presentation/alerts_reminders_screen.dart';
+import 'package:hisaab/features/alerts_reminders/presentation/alerts_tile.dart';
 import 'package:hisaab/features/analytics/presentation/analytics_screen.dart';
 import 'package:hisaab/features/credit_cards/presentation/cards_home_strip.dart';
 import 'package:hisaab/features/credit_cards/presentation/credit_cards_screen.dart';
 import 'package:hisaab/features/dashboard_home/presentation/dashboard_home_screen.dart';
 import 'package:hisaab/features/dedup_review/presentation/dedup_review_screen.dart';
+import 'package:hisaab/features/loans/presentation/loan_detail_screen.dart';
+import 'package:hisaab/features/loans/presentation/loans_screen.dart';
+import 'package:hisaab/features/loans/presentation/loans_tile.dart';
+import 'package:hisaab/features/recurring_transactions/presentation/bills_tile.dart';
+import 'package:hisaab/features/recurring_transactions/presentation/recurring_transactions_screen.dart';
 import 'package:hisaab/features/email_ingestion/presentation/email_settings_screen.dart';
+import 'package:hisaab/features/expense_tracking/presentation/expense_tracking_screen.dart';
+import 'package:hisaab/features/forex_rates/presentation/forex_rates_screen.dart';
+import 'package:hisaab/features/forex_rates/presentation/forex_tile.dart';
+import 'package:hisaab/features/income_tracking/presentation/income_tracking_screen.dart';
 import 'package:hisaab/features/notification_ingestion/presentation/notification_access_card.dart';
 import 'package:hisaab/features/onboarding_permissions/presentation/welcome_screen.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_screen.dart';
@@ -18,6 +29,8 @@ import 'package:hisaab/features/profile/presentation/profile_screen.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_data_sources_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_tile.dart';
+import 'package:hisaab/features/tax_centre/presentation/tax_centre_screen.dart';
+import 'package:hisaab/features/tax_centre/presentation/tax_tile.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/add_transaction_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -52,6 +65,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/transactions/add',
         builder: (_, __) => const AddTransactionScreen(),
       ),
+      GoRoute(
+        path: '/budgets',
+        builder: (_, __) => const ExpenseTrackingScreen(),
+      ),
+      GoRoute(
+        path: '/income',
+        builder: (_, __) => const IncomeTrackingScreen(),
+      ),
+      GoRoute(path: '/tax', builder: (_, __) => const TaxCentreScreen()),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/cards', builder: (_, __) => const CreditCardsScreen()),
       GoRoute(
@@ -59,6 +81,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const StatementsScreen(),
       ),
       GoRoute(path: '/review', builder: (_, __) => const DedupReviewScreen()),
+      GoRoute(
+        path: '/bills',
+        builder: (_, __) => const RecurringTransactionsScreen(),
+      ),
+      GoRoute(
+        path: '/loans',
+        builder: (_, __) => const LoansScreen(),
+        routes: [
+          GoRoute(
+            path: ':key',
+            builder: (_, state) =>
+                LoanDetailScreen(loanKey: state.pathParameters['key']!),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/settings/alerts',
+        builder: (_, __) => const AlertsRemindersScreen(),
+      ),
+      GoRoute(
+        path: '/settings/forex',
+        builder: (_, __) => const ForexRatesScreen(),
+      ),
       GoRoute(
         path: '/settings/email',
         builder: (_, __) => const EmailSettingsScreen(),
@@ -119,6 +164,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (_, __) => const SettingsDataSourcesScreen(
                   notificationCard: NotificationAccessCard(),
                   statementsTile: StatementsTile(),
+                  billsTile: BillsTile(),
+                  loansTile: LoansTile(),
+                  alertsTile: AlertsTile(),
+                  forexTile: ForexTile(),
+                  taxTile: TaxTile(),
                 ),
               ),
             ],

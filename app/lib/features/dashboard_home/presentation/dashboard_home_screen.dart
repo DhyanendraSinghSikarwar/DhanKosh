@@ -5,6 +5,7 @@ import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_accounts_strip.dart';
+import 'package:hisaab/features/dashboard_home/presentation/home_budget_widgets.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_providers.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_recent_list.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
@@ -43,6 +44,8 @@ class DashboardHomeScreen extends ConsumerWidget {
                       const _ReviewNotice(),
                       const _SpentCard(),
                       const SizedBox(height: 16),
+                      const HomeCashFlowCard(),
+                      const HomeBudgetsCard(),
                       if (cardsSection != null) ...[
                         cardsSection!,
                         const SizedBox(height: 16),

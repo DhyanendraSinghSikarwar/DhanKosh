@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-10 |
-| Status | In progress (Phase 4: budgets repository, spend calculators and budget maths done; Budgets screen, Home widgets, filters and alert posting pending) |
+| Status | In progress (Phase 4: budgets repository, maths, Budgets screen (`/budgets`) and Home budget rings done; global Book/Period filters, spent-widget chart, alert posting, widget and tap-through pending) |
 | Priority | P0 |
 | Phase | 1 (totals, Book and Period filters, Home spent widget); 4 for Budgets screen, alerts and analytics budget bars |
 | Last Updated | 2026-10-21 |
@@ -443,6 +443,10 @@ BudgetMath.pendingAlert({budget, usedMinor, alertPercent, yearMonth, alerted}) -
 SpendCalc.ledgerSpent / netSpent / outflow (Iterable<LedgerTx>) -> int;  unpricedCount;  changePercent(spent, prev)
 ```
 
+UI (Phase 4): `lib/features/expense_tracking/presentation/{expense_tracking_screen,budget_widgets}.dart` (route `/budgets` in `router.dart`), Home `dashboard_home/presentation/home_budget_widgets.dart` (`HomeBudgetsCard`), view state in `lib/app/di/budget_providers.dart` (`budgetMonthProvider`, `budgetAlertPercentProvider`, `budgetUsesProvider(month)`, `monthCategorySpendProvider`). Tests: `test/features/expense_tracking/budgets_screen_test.dart`.
+
+FR UI done: FR-10-09 (add/edit/delete sheet, excluded categories not offered), FR-10-10 (month nav incl. past months, overview, percent, left per day or "Over by", bands from the alert percent setting, pace tick, spent-by-category list), FR-10-12 (read from settings), FR-10-14 (Home rings, tap opens `/budgets`; always shown, with "Set budgets" empty state, instead of hidden-by-default until the Home widget customiser exists). Deferred: FR-10-04/05/07/08/13/16/17 (global filters, cumulative chart and by-account list, alert posting, Android widget, tap-through to filtered Transactions), an in-screen alert-percent selector (owned by the alerts screen), info dialog.
+
 Alert dedupe keys live in `AlertedKeyStore` ([21](21_alerts_reminders.md)); the alert percent is `SettingKeys.budgetAlertPercent`.
 
 ## 19. Change Log (date | change | reason)
@@ -453,3 +457,4 @@ Alert dedupe keys live in `AlertedKeyStore` ([21](21_alerts_reminders.md)); the 
 | 2026-10-19 | Corrected: `budgets` table is in schema v1, not migration 7-8; `observeCategoryTotals` has no `needsReview` filter (open question 3 updated) | Audit Gate gap, scan_3
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
+| 2026-10-21 | Phase 4 UI landed | Phase 4 |

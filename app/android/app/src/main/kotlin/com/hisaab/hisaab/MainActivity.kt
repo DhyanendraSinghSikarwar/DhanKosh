@@ -1,5 +1,7 @@
 package com.hisaab.hisaab
 
+import android.content.Intent
+import com.hisaab.alerts.AlertsBridge
 import com.hisaab.notifications.NotificationsBridge
 import com.hisaab.pdf.PdfBridge
 import com.hisaab.sms.SmsBridge
@@ -10,6 +12,7 @@ class MainActivity : FlutterActivity() {
     private var smsBridge: SmsBridge? = null
     private var notificationsBridge: NotificationsBridge? = null
     private var pdfBridge: PdfBridge? = null
+    private var alertsBridge: AlertsBridge? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -18,6 +21,15 @@ class MainActivity : FlutterActivity() {
             it.attach(flutterEngine.dartExecutor.binaryMessenger)
         }
         pdfBridge = PdfBridge(this).also { it.attach(flutterEngine.dartExecutor.binaryMessenger) }
+        alertsBridge = AlertsBridge(this).also {
+            it.attach(flutterEngine.dartExecutor.binaryMessenger)
+        }
+        AlertsBridge.captureRoute(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        AlertsBridge.captureRoute(intent)
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
@@ -27,6 +39,8 @@ class MainActivity : FlutterActivity() {
         notificationsBridge = null
         pdfBridge?.detach()
         pdfBridge = null
+        alertsBridge?.detach()
+        alertsBridge = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
 

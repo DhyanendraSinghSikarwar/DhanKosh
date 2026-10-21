@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/theme/app_theme.dart';
+import 'package:hisaab/features/expense_tracking/data/budget_repository_impl.dart';
+import 'package:hisaab/features/income_tracking/data/income_repository_impl.dart';
 
 import 'test_env.dart';
 
@@ -22,6 +25,10 @@ Future<void> pumpApp(
         accountRepositoryProvider.overrideWithValue(env.accounts),
         transactionRepositoryProvider.overrideWithValue(env.txs),
         settingsRepositoryProvider.overrideWithValue(env.settings),
+        budgetRepositoryProvider
+            .overrideWithValue(BudgetRepositoryImpl(env.db)),
+        incomeRepositoryProvider
+            .overrideWithValue(IncomeRepositoryImpl(env.db)),
       ],
       child: MaterialApp.router(
         routerConfig: router,

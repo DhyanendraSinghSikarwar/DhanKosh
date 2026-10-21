@@ -17,7 +17,8 @@ class BackgroundRegistry {
   /// The registry the app ships with.
   factory BackgroundRegistry.standard() => BackgroundRegistry()
     ..register(BackgroundTasks.smsDrain, smsDrainTask)
-    ..register(BackgroundTasks.smsNightly, smsNightlyTask);
+    ..register(BackgroundTasks.smsNightly, smsNightlyTask)
+    ..register(BackgroundTasks.alertsCheck, alertsCheckTask);
 
   final Map<String, BackgroundHandler> _handlers = {};
 
