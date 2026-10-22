@@ -10,6 +10,7 @@ class EmailSyncReport {
     this.flagged = 0,
     this.skipped = 0,
     this.failed = 0,
+    this.statements = 0,
     this.millis = 0,
     this.error,
   });
@@ -42,6 +43,9 @@ class EmailSyncReport {
   /// Emails that threw while processing; retried next sync.
   final int failed;
 
+  /// Emailed statement files imported or waiting for a password (FR-03-16).
+  final int statements;
+
   /// Duration in ms.
   final int millis;
 
@@ -55,7 +59,7 @@ class EmailSyncReport {
   bool get retryable => error == 'network';
 
   /// True when Home should refresh.
-  bool get changed => inserted + merged + flagged > 0;
+  bool get changed => inserted + merged + flagged + statements > 0;
 
   /// `"<mode>: N emails, M transactions (a new, b merged, c to review) in Xs"`
   String get summary => error != null
@@ -67,6 +71,7 @@ class EmailSyncReport {
           _ => 'Email sync failed',
         }
       : '$mode: $emails emails, $parsed transactions '
-          '($inserted new, $merged merged, $flagged to review) '
+          '($inserted new, $merged merged, $flagged to review'
+          '${statements > 0 ? ', $statements statements' : ''}) '
           'in ${(millis / 1000).toStringAsFixed(1)}s';
 }

@@ -12,6 +12,34 @@ class PickedFile {
   final Uint8List bytes;
 }
 
+/// Largest statement file read, bytes (FR-05-22).
+const int maxStatementBytes = 25 * 1024 * 1024;
+
+/// Where an emailed statement came from (FR-05-16).
+class EmailOrigin {
+  /// Creates the origin of attachment [index] of message [messageId].
+  const EmailOrigin({
+    required this.messageId,
+    required this.index,
+    required this.sender,
+    required this.receivedAt,
+    this.subject,
+    this.emailText,
+  });
+
+  final String messageId;
+  final int index;
+  final String sender;
+  final String? subject;
+  final int receivedAt;
+
+  /// Mail body, kept with a locked statement.
+  final String? emailText;
+
+  /// Statement row key.
+  String get key => 'email:$messageId#$index';
+}
+
 /// Chooses a statement file (system document picker; FR-05-01).
 abstract interface class FileSource {
   /// The chosen file, or null when cancelled.

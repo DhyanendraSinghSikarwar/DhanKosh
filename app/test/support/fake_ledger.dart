@@ -73,6 +73,28 @@ class FakeTxRepo implements TransactionRepository {
   final applied = <MerchantRule>[];
   final manual = <Map<String, Object?>>[];
 
+  final mergedRows = <List<int>>[];
+
+  @override
+  Future<int?> mergeRows(List<int> ids) async {
+    mergedRows.add(ids);
+    return ids.isEmpty ? null : ids.first;
+  }
+
+  final ownTransfers = <(int?, int?, int)>[];
+
+  @override
+  Future<List<int>> addOwnTransfer({
+    required int? fromAccountId,
+    required int? toAccountId,
+    required int amountMinor,
+    required int timestamp,
+    String? note,
+  }) async {
+    ownTransfers.add((fromAccountId, toAccountId, amountMinor));
+    return const [];
+  }
+
   bool _matches(LedgerTx t, LedgerFilter f) {
     if (f.fromMs != null && t.timestamp < f.fromMs!) return false;
     if (f.toMs != null && t.timestamp >= f.toMs!) return false;

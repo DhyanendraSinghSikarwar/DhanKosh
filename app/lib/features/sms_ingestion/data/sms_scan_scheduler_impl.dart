@@ -6,21 +6,34 @@ import 'package:hisaab/features/sms_ingestion/domain/sms_ports.dart';
 /// [SmsScanScheduler] over native WorkManager (FR-02-14).
 class SmsScanSchedulerImpl implements SmsScanScheduler {
   /// Creates the scheduler.
-  const SmsScanSchedulerImpl(this._channel, {DateTime Function()? now})
-      : _now = now ?? DateTime.now;
+  const SmsScanSchedulerImpl(
+    this._channel, {
+    DateTime Function()? now,
+    this.onPlanned,
+  }) : _now = now ?? DateTime.now;
 
   final BackgroundChannel _channel;
   final DateTime Function() _now;
 
-  @override
-  Future<void> scheduleNightly() => _channel.schedulePeriodic(
-        uniqueName: BackgroundTasks.nightlyUnique,
-        task: BackgroundTasks.smsNightly,
-        intervalMinutes: Duration.minutesPerDay,
-        initialDelayMinutes: nextNightlyDelay(_now()).inMinutes,
-      );
+  /// Told the next planned run (null when cancelled) so the Activity log can
+  /// show "Next scheduled sync" (FR-22-08).
+  final Future<void> Function(DateTime? next)? onPlanned;
 
   @override
-  Future<void> cancelNightly() =>
-      _channel.cancel(BackgroundTasks.nightlyUnique);
+  Future<void> scheduleNightly() async {
+    final delay = nextNightlyDelay(_now());
+    await _channel.schedulePeriodic(
+      uniqueName: BackgroundTasks.nightlyUnique,
+      task: BackgroundTasks.smsNightly,
+      intervalMinutes: Duration.minutesPerDay,
+      initialDelayMinutes: delay.inMinutes,
+    );
+    await onPlanned?.call(_now().add(delay));
+  }
+
+  @override
+  Future<void> cancelNightly() async {
+    await _channel.cancel(BackgroundTasks.nightlyUnique);
+    await onPlanned?.call(null);
+  }
 }

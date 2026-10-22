@@ -39,6 +39,7 @@ void main() {
   Future<void> seed(WidgetTester t, {bool hide = false}) =>
       t.runAsync(() async {
         await env.settings.write(SettingKeys.hideAmounts, hide);
+        await env.settings.write(SettingKeys.smsPromptDismissed, true);
         await env.accounts.create(
           const NewAccount(
             kind: AccountKind.account,

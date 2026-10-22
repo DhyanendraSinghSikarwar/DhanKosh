@@ -41,6 +41,7 @@ import 'package:hisaab/features/recurring_transactions/presentation/recurring_tr
 import 'package:hisaab/features/security_privacy/presentation/security_privacy_screen.dart';
 import 'package:hisaab/features/security_privacy/presentation/security_tile.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_data_sources_screen.dart';
+import 'package:hisaab/features/statement_import/presentation/statement_detail_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_tile.dart';
 import 'package:hisaab/features/tax_centre/presentation/tax_centre_screen.dart';
@@ -94,7 +95,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/cards', builder: (_, __) => const CreditCardsScreen()),
       GoRoute(
         path: '/statements',
-        builder: (_, __) => const StatementsScreen(),
+        builder: (_, state) => StatementsScreen(
+          unlockId: int.tryParse(state.uri.queryParameters['unlock'] ?? ''),
+        ),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (_, state) => StatementDetailScreen(
+              id: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
+          ),
+        ],
       ),
       GoRoute(path: '/review', builder: (_, __) => const DedupReviewScreen()),
       GoRoute(

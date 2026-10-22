@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:hisaab/core/errors/failure.dart';
 import 'package:hisaab/features/email_ingestion/domain/email_ports.dart';
 import 'package:hisaab/features/email_ingestion/domain/email_text.dart';
@@ -8,6 +10,21 @@ import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart'
     show IngestOutcome;
 
 /// Parses one email body and stores the transaction through the ledger.
+/// Outcome of handing one emailed statement file over (FR-03-16).
+enum StatementFileOutcome { imported, locked, skipped }
+
+/// Hands an emailed statement file to the statement importer (FR-05-16).
+typedef IngestStatementFile = Future<StatementFileOutcome> Function({
+  required String sender,
+  required String subject,
+  required String emailText,
+  required int receivedAt,
+  required String messageId,
+  required int index,
+  required String fileName,
+  required Uint8List bytes,
+});
+
 typedef IngestEmail = Future<IngestOutcome> Function({
   required String sender,
   required String body,
@@ -28,12 +45,14 @@ class SyncEmail {
     required EmailCredentialStore credentials,
     required ProcessedEmailRepository processed,
     required IngestEmail ingest,
+    IngestStatementFile? ingestStatement,
     DateTime Function()? now,
   })  : _imap = imap,
         _settings = settings,
         _credentials = credentials,
         _processed = processed,
         _ingest = ingest,
+        _statement = ingestStatement,
         _now = now ?? DateTime.now;
 
   final ImapClient _imap;
@@ -41,6 +60,7 @@ class SyncEmail {
   final EmailCredentialStore _credentials;
   final ProcessedEmailRepository _processed;
   final IngestEmail _ingest;
+  final IngestStatementFile? _statement;
   final DateTime Function() _now;
 
   static const _overlap = Duration(days: 1);
@@ -104,6 +124,7 @@ class SyncEmail {
     var flagged = 0;
     var skipped = 0;
     var failed = 0;
+    var statements = 0;
     for (final m in mails) {
       if (seen.contains(m.id)) {
         skipped++;
@@ -111,12 +132,34 @@ class SyncEmail {
       }
       emails++;
       try {
+        final text = EmailText.choose(m.plain, m.html);
         final outcome = await _ingest(
           sender: m.from,
-          body: EmailText.choose(m.plain, m.html),
+          body: text,
           receivedAt: m.receivedAt,
           messageId: m.id,
         );
+        // FR-03-16: statement files go to the statement importer; a file
+        // already imported answers skipped, so a retry never repeats it.
+        var fileCount = 0;
+        final handler = _statement;
+        if (handler != null) {
+          for (var i = 0; i < m.attachments.length; i++) {
+            final a = m.attachments[i];
+            final r = await handler(
+              sender: m.from,
+              subject: m.subject,
+              emailText: text,
+              receivedAt: m.receivedAt,
+              messageId: m.id,
+              index: i,
+              fileName: a.name,
+              bytes: a.bytes,
+            );
+            if (r != StatementFileOutcome.skipped) fileCount++;
+          }
+        }
+        statements += fileCount;
         switch (outcome) {
           case IngestOutcome.inserted:
             inserted++;
@@ -129,7 +172,9 @@ class SyncEmail {
         }
         await _processed.mark(
           m.id,
-          outcome == IngestOutcome.rejected ? 'REJECTED' : 'PARSED',
+          outcome == IngestOutcome.rejected && fileCount == 0
+              ? 'REJECTED'
+              : 'PARSED',
           at: _now().millisecondsSinceEpoch,
         );
       } on Object {
@@ -145,6 +190,7 @@ class SyncEmail {
       flagged: flagged,
       skipped: skipped,
       failed: failed,
+      statements: statements,
       millis: elapsed(),
     );
     await _settings.setNeedsReauth(value: false);

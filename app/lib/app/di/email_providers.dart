@@ -43,6 +43,7 @@ ProcessedEmailRepository processedEmailRepository(Ref ref) =>
 @Riverpod(keepAlive: true)
 SyncEmail syncEmail(Ref ref) {
   final ingest = ref.watch(ingestMessageProvider);
+  final statements = ref.watch(importStatementProvider);
   return SyncEmail(
     imap: ref.watch(imapClientProvider),
     settings: ref.watch(emailSettingsRepositoryProvider),
@@ -53,13 +54,50 @@ SyncEmail syncEmail(Ref ref) {
       required body,
       required receivedAt,
       required messageId,
-    }) async =>
-        (await ingest.detail(
-      InboxSms(sender: sender, body: body, receivedAt: receivedAt),
-      source: Source.email,
-      messageId: messageId,
-    ))
-            .outcome,
+    }) async {
+      final outcome = (await ingest.detail(
+        InboxSms(sender: sender, body: body, receivedAt: receivedAt),
+        source: Source.email,
+        messageId: messageId,
+      ))
+          .outcome;
+      if (outcome == IngestOutcome.rejected &&
+          await statements.readEmailBody(
+            body: body,
+            sender: sender,
+            receivedAt: receivedAt,
+          )) {
+        return IngestOutcome.skipped; // holdings only, no transaction
+      }
+      return outcome;
+    },
+    ingestStatement: ({
+      required sender,
+      required subject,
+      required emailText,
+      required receivedAt,
+      required messageId,
+      required index,
+      required fileName,
+      required bytes,
+    }) async {
+      final r = await statements.importEmailAttachment(
+        PickedFile(name: fileName, bytes: bytes),
+        EmailOrigin(
+          messageId: messageId,
+          index: index,
+          sender: sender,
+          subject: subject,
+          receivedAt: receivedAt,
+          emailText: emailText,
+        ),
+      );
+      return switch (r) {
+        ImportDone() => StatementFileOutcome.imported,
+        ImportLocked() => StatementFileOutcome.locked,
+        _ => StatementFileOutcome.skipped,
+      };
+    },
   );
 }
 

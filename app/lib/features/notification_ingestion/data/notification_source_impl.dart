@@ -1,6 +1,7 @@
 import 'package:hisaab/core/platform_channels/notifications_channel.dart';
 import 'package:hisaab/features/notification_ingestion/domain/entities/app_notification.dart';
 import 'package:hisaab/features/notification_ingestion/domain/notification_ports.dart';
+import 'package:hisaab/shared/ports/lock_skipper.dart';
 
 AppNotification _toDomain(RawNotification r) => AppNotification(
       packageName: r.packageName,
@@ -17,9 +18,15 @@ AppNotification _toDomain(RawNotification r) => AppNotification(
 /// [NotificationSource] over the `notifications` channel (FR-04-01).
 class NotificationSourceImpl implements NotificationSource {
   /// Creates the source.
-  const NotificationSourceImpl(this._channel);
+  const NotificationSourceImpl(
+    this._channel, {
+    this.lockSkipper = const NoLockSkipper(),
+  });
 
   final NotificationsChannel _channel;
+
+  /// Skips the app lock before the listener settings open (FR-25-06).
+  final LockSkipper lockSkipper;
 
   @override
   Stream<AppNotification> get live =>
@@ -37,7 +44,10 @@ class NotificationSourceImpl implements NotificationSource {
   Future<int> sdkInt() => _channel.sdkInt();
 
   @override
-  Future<void> openAccessSettings() => _channel.openAccessSettings();
+  Future<void> openAccessSettings() {
+    lockSkipper.skipNextLock();
+    return _channel.openAccessSettings();
+  }
 
   @override
   Future<void> configure({

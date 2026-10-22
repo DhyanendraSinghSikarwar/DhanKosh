@@ -26,6 +26,17 @@ abstract interface class TransactionRepository {
     String? note,
   });
 
+  /// FR-08-13: two linked TRANSFER legs (`xfer-out:` / `xfer-in:` sources);
+  /// one account may be null when the other side is not tracked. Returns the
+  /// leg ids. A later bank message for the same payment folds into the leg.
+  Future<List<int>> addOwnTransfer({
+    required int? fromAccountId,
+    required int? toAccountId,
+    required int amountMinor,
+    required int timestamp,
+    String? note,
+  });
+
   /// Changes the category of [ids]; clears sub/custom category and learns
   /// merchant rules (FR-09-06/07). [customCategoryId] files under OTHER.
   Future<void> setCategory(
@@ -45,6 +56,10 @@ abstract interface class TransactionRepository {
 
   /// Merges a flagged row into its target and deletes it (FR-07-12).
   Future<void> mergeFlagged(int id);
+
+  /// Merges selected rows into the oldest one (FR-08-08); returns its id,
+  /// null when fewer than two rows exist.
+  Future<int?> mergeRows(List<int> ids);
 
   /// Clears the review flag, keeping both rows (FR-07-12).
   Future<void> keepSeparate(int id);

@@ -77,10 +77,16 @@ class LockController extends Notifier<LockState> {
   /// Maps lifecycle events to locking (FR-25-03, FR-25-06).
   void onLifecycle(AppLifecycleState s, {required bool enabled}) {
     if (!enabled) return;
+    // The skip covers the whole hop (Android sends hidden then paused), so it
+    // is cleared on resume, not on the first background event.
+    if (s == AppLifecycleState.resumed) {
+      _skipUntil = null;
+      return;
+    }
     if (s != AppLifecycleState.paused && s != AppLifecycleState.hidden) return;
     final skip = _skipUntil;
-    _skipUntil = null;
     if (skip != null && now().isBefore(skip)) return;
+    _skipUntil = null;
     if (state.status == LockStatus.unlocked) {
       state = state.copyWith(status: LockStatus.locked);
     }

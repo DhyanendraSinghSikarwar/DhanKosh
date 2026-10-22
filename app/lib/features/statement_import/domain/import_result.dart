@@ -1,5 +1,14 @@
+import 'package:hisaab/features/statement_import/domain/statement_outcome.dart';
+
 /// Why a file could not be read at all.
-enum UnsupportedReason { scanned, protectedSheet, unreadable, unknownType }
+enum UnsupportedReason {
+  scanned,
+  protectedSheet,
+  unreadable,
+  unknownType,
+  xls,
+  tooLarge,
+}
 
 /// Outcome of importing one statement file (FR-05-01, FR-05-11, FR-05-12).
 sealed class ImportResult {
@@ -17,6 +26,9 @@ class ImportDone extends ImportResult {
     required this.holdings,
     this.cardNotice = false,
     this.empty = false,
+    this.accountEffect = AccountEffect.none,
+    this.deposits = 0,
+    this.mismatch,
   });
 
   /// Stored statement row.
@@ -39,6 +51,15 @@ class ImportDone extends ImportResult {
 
   /// Nothing useful was found.
   final bool empty;
+
+  /// Card limit or balance set from the totals (FR-05-07).
+  final AccountEffect accountEffect;
+
+  /// Deposit or loan accounts updated (FR-05-17).
+  final int deposits;
+
+  /// Holdings differ from the stated totals (FR-05-18).
+  final HoldingsMismatch? mismatch;
 }
 
 /// The file was imported before.

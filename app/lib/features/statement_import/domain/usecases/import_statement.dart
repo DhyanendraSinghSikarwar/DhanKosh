@@ -13,8 +13,10 @@ import 'package:hisaab/features/statement_import/domain/password_candidates.dart
 import 'package:hisaab/features/statement_import/domain/password_source.dart';
 import 'package:hisaab/features/statement_import/domain/saved_password.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
+import 'package:hisaab/features/statement_import/domain/statement_outcome.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
 import 'package:hisaab/features/statement_import/domain/statement_repository.dart';
+import 'package:hisaab/features/statement_import/domain/usecases/apply_statement_accounts.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
 import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
 import 'package:parser_core/parser_core.dart' as pc;
@@ -48,6 +50,9 @@ class ImportStatement {
     required HoldingRepository holdings,
     required CardDueRepository cardDues,
     required Future<PasswordSource> Function() passwordSource,
+    ApplyStatementAccounts? accounts,
+    StatementOutcomeStore? outcomes,
+    StatementLockedNotifier? lockedNotifier,
     int Function()? clock,
   })  : _statements = statements,
         _saved = savedPasswords,
@@ -58,6 +63,9 @@ class ImportStatement {
         _holdings = holdings,
         _cardDues = cardDues,
         _source = passwordSource,
+        _accounts = accounts,
+        _outcomes = outcomes,
+        _notifier = lockedNotifier,
         _clock = clock ?? (() => DateTime.now().millisecondsSinceEpoch);
 
   final StatementRepository _statements;
@@ -69,17 +77,36 @@ class ImportStatement {
   final HoldingRepository _holdings;
   final CardDueRepository _cardDues;
   final Future<PasswordSource> Function() _source;
+  final ApplyStatementAccounts? _accounts;
+  final StatementOutcomeStore? _outcomes;
+  final StatementLockedNotifier? _notifier;
   final int Function() _clock;
 
   /// Imports [file] picked by the user (FR-05-01). An already imported file
   /// answers [ImportAlreadyDone] unless its row is LOCKED, which is retried.
-  Future<ImportResult> call(PickedFile file) async {
+  Future<ImportResult> call(PickedFile file) => _import(file, null);
+
+  /// Imports a statement attached to an email (FR-05-16, FR-03-16). The row
+  /// key is `email:<messageId>#<index>`, so a re-sync never imports it twice.
+  Future<ImportResult> importEmailAttachment(
+    PickedFile file,
+    EmailOrigin origin,
+  ) =>
+      _import(file, origin);
+
+  Future<ImportResult> _import(PickedFile file, EmailOrigin? origin) async {
+    if (file.bytes.length > maxStatementBytes) {
+      return const ImportUnsupported(UnsupportedReason.tooLarge);
+    }
     final type = sniffStatement(file.bytes, file.name);
-    if (type == StatementFileType.unknown || type == StatementFileType.xls) {
+    if (type == StatementFileType.xls) {
+      return const ImportUnsupported(UnsupportedReason.xls);
+    }
+    if (type == StatementFileType.unknown) {
       return const ImportUnsupported(UnsupportedReason.unknownType);
     }
     final digest = sha256.convert(file.bytes).toString();
-    final key = 'file:$digest';
+    final key = origin?.key ?? 'file:$digest';
     final existing = await _statements.byKey(key);
     if (existing != null && !existing.isLocked) {
       return ImportAlreadyDone(existing.id);
@@ -91,6 +118,7 @@ class ImportStatement {
         file,
         kind: StatementKind.protected,
         reason: UnsupportedReason.protectedSheet,
+        origin: origin,
       );
     }
     return await _run(
@@ -100,6 +128,7 @@ class ImportStatement {
       digest.substring(0, 16),
       type,
       existing,
+      origin: origin,
     );
   }
 
@@ -161,10 +190,62 @@ class ImportStatement {
     return opened;
   }
 
+  /// Reads the stored file of statement [id] again (FR-05-20). Rows already
+  /// in the ledger merge, so nothing is added twice.
+  Future<ImportResult> readAgain(int id) async {
+    final row = await _statements.byId(id);
+    final path = row?.filePath;
+    if (row == null || path == null) return const ImportFileMissing();
+    final bytes = await _files.read(path);
+    if (bytes == null) return const ImportFileMissing();
+    return await _run(
+      bytes,
+      row.fileName,
+      row.key,
+      null,
+      sniffStatement(bytes, row.fileName),
+      row,
+    );
+  }
+
+  /// Email body without a file: an INDmoney-style portfolio summary records
+  /// its aggregate holdings (FR-05-16, FR-05-23 step 1). True when handled.
+  Future<bool> readEmailBody({
+    required String body,
+    required String sender,
+    required int receivedAt,
+    String? subject,
+  }) async {
+    final snaps = [
+      for (final h in pc.parsePortfolioSummary(
+        body,
+        subject,
+        sender,
+        receivedAt,
+      ))
+        if ((h.valueMinor ?? 0) > 0)
+          pf.HoldingSnapshot(
+            kind: HoldingKind.values.byName(h.kind.name),
+            name: h.name,
+            identifier: h.identifier,
+            asOf: h.asOf,
+            units: h.units,
+            valueMinor: h.valueMinor,
+            investedMinor: h.investedMinor,
+            contributionMinor: h.contributionMinor,
+            platform: h.platform,
+          ),
+    ];
+    if (snaps.isEmpty) return false;
+    await _holdings.record(snaps, HoldingSource.email);
+    return true;
+  }
+
   /// Deletes the row and its stored file (FR-05-19).
   Future<void> delete(int id) async {
     final path = await _statements.delete(id);
     if (path != null) await _files.delete(path);
+    await _outcomes?.delete(id);
   }
 
   Future<ImportResult> _unreadable(
@@ -173,18 +254,20 @@ class ImportStatement {
     PickedFile file, {
     required UnsupportedReason reason,
     StatementKind? kind,
+    EmailOrigin? origin,
   }) async {
     final now = _clock();
     if (existing == null) {
       await _statements.insert(
         NewStatement(
           key: key,
-          source: StatementSource.file,
-          sender: file.name,
+          source: origin == null ? StatementSource.file : StatementSource.email,
+          sender: origin?.sender ?? file.name,
           fileName: file.name,
-          receivedAt: now,
+          receivedAt: origin?.receivedAt ?? now,
           processedAt: now,
           status: StatementStatus.unreadable,
+          subject: origin?.subject,
           kind: kind,
         ),
       );
@@ -207,6 +290,7 @@ class ImportStatement {
     StatementFileType type,
     Statement? existing, {
     String? explicit,
+    EmailOrigin? origin,
   }) async {
     final now = _clock();
     final file = PickedFile(name: name, bytes: bytes);
@@ -214,11 +298,13 @@ class ImportStatement {
       final opened = await _openPdf(bytes, explicit);
       switch (opened) {
         case _Text(:final text):
-          return await _apply(text, file, key, namePrefix, existing, now);
+          return await _apply(
+              text, file, key, namePrefix, existing, now, origin,);
         case _Fail(:final failure):
           if (failure == PdfFailure.passwordRequired ||
               failure == PdfFailure.wrongPassword) {
-            final id = await _lock(file, key, namePrefix, existing, now);
+            final id =
+                await _lock(file, key, namePrefix, existing, now, origin);
             return explicit != null && failure == PdfFailure.wrongPassword
                 ? ImportWrongPassword(id)
                 : ImportLocked(id);
@@ -230,6 +316,7 @@ class ImportStatement {
             reason: failure == PdfFailure.scanned
                 ? UnsupportedReason.scanned
                 : UnsupportedReason.unreadable,
+            origin: origin,
           );
       }
     }
@@ -247,9 +334,10 @@ class ImportStatement {
         key,
         file,
         reason: UnsupportedReason.unreadable,
+        origin: origin,
       );
     }
-    return await _apply(text, file, key, namePrefix, existing, now);
+    return await _apply(text, file, key, namePrefix, existing, now, origin);
   }
 
   /// No password, then (explicit | derived then saved); first success wins.
@@ -287,6 +375,7 @@ class ImportStatement {
     String? namePrefix,
     Statement? existing,
     int now,
+    EmailOrigin? origin,
   ) async {
     final path = existing?.filePath ??
         await _files.save('${namePrefix ?? _short(key)}.bin', file.bytes);
@@ -294,24 +383,34 @@ class ImportStatement {
       await _statements.markLocked(existing.id, at: now);
       return existing.id;
     }
+    final text = origin?.emailText;
     final r = await _statements.insert(
       NewStatement(
         key: key,
-        source: StatementSource.file,
-        sender: file.name,
+        source: origin == null ? StatementSource.file : StatementSource.email,
+        sender: origin?.sender ?? file.name,
         fileName: file.name,
-        receivedAt: now,
+        receivedAt: origin?.receivedAt ?? now,
         processedAt: now,
         status: StatementStatus.locked,
+        subject: origin?.subject,
+        emailText: text == null
+            ? null
+            : (text.length > emailTextCap
+                ? text.substring(0, emailTextCap)
+                : text),
         filePath: path,
       ),
     );
-    return switch (r) {
+    final id = switch (r) {
       StatementInserted(:final statement) ||
       StatementAlreadyImported(:final statement) ||
       StatementRetryLocked(:final statement) =>
         statement.id,
     };
+    // FR-05-11: an emailed statement can arrive while the app is closed.
+    if (origin != null) await _notifier?.notify(id);
+    return id;
   }
 
   static String _short(String key) =>
@@ -327,6 +426,7 @@ class ImportStatement {
     String? namePrefix,
     Statement? existing,
     int now,
+    EmailOrigin? origin,
   ) async {
     final result = await Isolate.run(
       () => _parseOnWorker((text, file.name, now)),
@@ -362,6 +462,21 @@ class ImportStatement {
         : await _holdings.record(snaps, HoldingSource.statement);
 
     final s = result.summary;
+    // FR-05-07: totals set the card limit or account balance, no transaction.
+    final effect = await _accounts?.applyTotals(result, receivedAt: now) ??
+        AccountEffect.none;
+    // FR-05-17: deposit accounts from deposit statements.
+    final deposits = await _accounts?.applyDeposits(result.deposits) ?? 0;
+    // FR-05-18
+    final check = result.holdingsCheck;
+    final mismatch = check != null && check.mismatch
+        ? HoldingsMismatch(
+            statedValueMinor: check.statedValueMinor,
+            rowsValueMinor: check.rowsValueMinor,
+            statedInvestedMinor: check.statedInvestedMinor,
+            rowsInvestedMinor: check.rowsInvestedMinor,
+          )
+        : null;
     final kind = _kind(result.statementKind);
     var notice = false;
     if (kind == StatementKind.creditCard &&
@@ -422,12 +537,13 @@ class ImportStatement {
       final r = await _statements.insert(
         NewStatement(
           key: key,
-          source: StatementSource.file,
-          sender: file.name,
+          source: origin == null ? StatementSource.file : StatementSource.email,
+          sender: origin?.sender ?? file.name,
           fileName: file.name,
-          receivedAt: now,
+          receivedAt: origin?.receivedAt ?? now,
           processedAt: now,
           status: status,
+          subject: origin?.subject,
           filePath: path,
           bankName: result.bankName,
           last4: result.last4,
@@ -444,6 +560,16 @@ class ImportStatement {
           statement.id,
       };
     }
+    final outcome = StatementOutcome(
+      added: report.inserted,
+      merged: report.merged,
+      review: report.flagged,
+      holdingsUpdated: held,
+      depositsUpdated: deposits,
+      effect: effect,
+      mismatch: mismatch,
+    );
+    await _outcomes?.save(id, outcome);
     return ImportDone(
       statementId: id,
       added: report.inserted,
@@ -452,6 +578,9 @@ class ImportStatement {
       holdings: held,
       cardNotice: notice,
       empty: empty,
+      accountEffect: effect,
+      deposits: deposits,
+      mismatch: mismatch,
     );
   }
 }

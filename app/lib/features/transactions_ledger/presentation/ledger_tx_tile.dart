@@ -23,13 +23,29 @@ String txAmountText(LedgerTx t, {required bool masked}) {
 /// (FR-08-02).
 class LedgerTxTile extends StatelessWidget {
   /// Creates a tile.
-  const LedgerTxTile({required this.tx, required this.masked, super.key});
+  const LedgerTxTile({
+    required this.tx,
+    required this.masked,
+    this.selecting = false,
+    this.selected = false,
+    this.onToggle,
+    super.key,
+  });
 
   /// The row.
   final LedgerTx tx;
 
   /// Hide-amounts setting.
   final bool masked;
+
+  /// Multi-select mode: a tap toggles instead of opening (FR-08-08).
+  final bool selecting;
+
+  /// Whether the row is selected.
+  final bool selected;
+
+  /// Toggles selection; a long press starts it.
+  final VoidCallback? onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +61,15 @@ class LedgerTxTile extends StatelessWidget {
       key: Key('tx-${tx.id}'),
       dense: true,
       contentPadding: EdgeInsets.zero,
-      onTap: () => context.push('/transaction/${tx.id}'),
+      selected: selected,
+      selectedTileColor: theme.colorScheme.secondaryContainer,
+      leading: selecting
+          ? Icon(selected ? Icons.check_circle : Icons.circle_outlined)
+          : null,
+      onLongPress: onToggle,
+      onTap: selecting && onToggle != null
+          ? onToggle
+          : () => context.push('/transaction/${tx.id}'),
       title: Text(tx.title, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
         [

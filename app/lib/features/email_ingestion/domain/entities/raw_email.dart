@@ -1,3 +1,5 @@
+import 'package:hisaab/features/email_ingestion/domain/statement_attachments.dart';
+
 /// One fetched message, body parts still undecided (FR-03-15).
 class RawEmail {
   /// Creates a message.
@@ -8,6 +10,7 @@ class RawEmail {
     required this.receivedAt,
     this.plain = '',
     this.html,
+    this.attachments = const [],
   });
 
   /// `imap:<Message-ID>` or `imap:uid:<n>` (FR-03-10).
@@ -27,4 +30,7 @@ class RawEmail {
 
   /// The text/html part, when present.
   final String? html;
+
+  /// Statement files attached (FR-03-16).
+  final List<EmailAttachment> attachments;
 }

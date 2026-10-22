@@ -8,6 +8,7 @@ import 'package:hisaab/features/dashboard_home/presentation/home_accounts_strip.
 import 'package:hisaab/features/dashboard_home/presentation/home_budget_widgets.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_providers.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_recent_list.dart';
+import 'package:hisaab/features/dashboard_home/presentation/home_sms_card.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -41,6 +42,7 @@ class DashboardHomeScreen extends ConsumerWidget {
                     children: [
                       _Header(masked: masked),
                       const SizedBox(height: 16),
+                      const HomeSmsCard(),
                       const _ReviewNotice(),
                       const _SpentCard(),
                       const SizedBox(height: 16),
@@ -249,6 +251,10 @@ class _EmptyHome extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: HomeSmsCard(),
+        ),
         const EmptyState(
           icon: Icons.account_balance_wallet_outlined,
           title: 'No transactions yet',

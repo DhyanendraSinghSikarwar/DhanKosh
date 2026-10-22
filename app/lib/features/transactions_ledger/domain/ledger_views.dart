@@ -1,0 +1,58 @@
+import 'package:hisaab/features/transactions_ledger/domain/day_groups.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:parser_core/parser_core.dart';
+
+/// Transactions tab segments (FR-08-02..04).
+enum LedgerSegment { list, calendar, merchant }
+
+/// Caption above the calendar by kind (FR-08-21, memory 08 3.11).
+String calendarCaption(TxKind kind) => switch (kind) {
+      TxKind.all || TxKind.spends => 'Daily spend',
+      TxKind.income => 'Daily income',
+      TxKind.transfers => 'Daily transfers',
+      TxKind.investments => 'Daily investments',
+      TxKind.review => 'Flagged amounts by day',
+    };
+
+/// Per local day value in paise for the calendar (FR-08-03): kind ALL sums
+/// spends only; other kinds sum the rows listed for that kind.
+Map<DateTime, int> dayValues(Iterable<LedgerTx> rows, TxKind kind) {
+  final out = <DateTime, int>{};
+  for (final t in rows) {
+    if (kind == TxKind.all && t.type != TransactionType.debit) continue;
+    final v = inrOf(t);
+    if (v == null) continue;
+    final d = DateTime.fromMillisecondsSinceEpoch(t.timestamp);
+    final day = DateTime(d.year, d.month, d.day);
+    out[day] = (out[day] ?? 0) + v;
+  }
+  return out;
+}
+
+/// Rows of one merchant (FR-08-04).
+class MerchantGroup {
+  const MerchantGroup(this.name, this.rows, this.grossMinor);
+  final String name;
+  final List<LedgerTx> rows;
+
+  /// Sum of INR values, transfers included.
+  final int grossMinor;
+}
+
+/// Groups by `merchant ?: bankName`, largest gross first (FR-08-04).
+List<MerchantGroup> groupByMerchant(Iterable<LedgerTx> rows) {
+  final map = <String, List<LedgerTx>>{};
+  for (final t in rows) {
+    map.putIfAbsent(t.title, () => []).add(t);
+  }
+  final out = [
+    for (final e in map.entries)
+      MerchantGroup(
+        e.key,
+        e.value,
+        e.value.fold(0, (s, t) => s + (inrOf(t) ?? 0)),
+      ),
+  ]..sort((a, b) => b.grossMinor.compareTo(a.grossMinor));
+  return out;
+}

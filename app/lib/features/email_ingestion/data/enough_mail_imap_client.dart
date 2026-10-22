@@ -6,6 +6,7 @@ import 'package:hisaab/core/errors/failure.dart';
 import 'package:hisaab/features/email_ingestion/domain/email_ports.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/email_account.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/raw_email.dart';
+import 'package:hisaab/features/email_ingestion/domain/statement_attachments.dart';
 
 /// [ImapClient] over `enough_mail` (FR-02, FR-03-09). TLS only, read-only
 /// folder, one envelope fetch, bodies only for accepted mail. Never logs.
@@ -103,7 +104,42 @@ class EnoughMailImapClient implements ImapClient {
       receivedAt: date?.millisecondsSinceEpoch ?? 0,
       plain: body.decodeTextPlainPart() ?? '',
       html: body.decodeTextHtmlPart(),
+      attachments: attachmentsOf(body),
     );
+  }
+
+  /// Statement files of [m] (PDF, XLSX, XLS, CSV), at most
+  /// [StatementAttachments.maxPerMail], skipping oversized ones (FR-03-16).
+  static List<EmailAttachment> attachmentsOf(em.MimeMessage m) {
+    final out = <EmailAttachment>[];
+    try {
+      for (final info in m.findContentInfo()) {
+        if (out.length >= StatementAttachments.maxPerMail) break;
+        final mime = info.mediaType?.text;
+        if (!StatementAttachments.accepts(
+          name: info.fileName,
+          mime: mime,
+          size: info.size,
+        )) {
+          continue;
+        }
+        final bytes = m.getPart(info.fetchId)?.decodeContentBinary();
+        if (bytes == null ||
+            bytes.isEmpty ||
+            bytes.length > StatementAttachments.maxBytes) {
+          continue;
+        }
+        out.add(
+          EmailAttachment(
+            name: StatementAttachments.nameOf(info.fileName, mime),
+            bytes: bytes,
+          ),
+        );
+      }
+    } on Object {
+      // One undecodable attachment never stops the sync.
+    }
+    return out;
   }
 
   Future<T> _session<T>(

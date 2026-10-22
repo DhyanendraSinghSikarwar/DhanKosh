@@ -1,4 +1,6 @@
+import 'package:hisaab/app/di/lock_skipper_provider.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
+import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/core/platform_channels/notifications_channel.dart';
 import 'package:hisaab/features/notification_ingestion/data/notification_settings_store.dart';
 import 'package:hisaab/features/notification_ingestion/data/notification_source_impl.dart';
@@ -18,8 +20,10 @@ NotificationsChannel notificationsChannel(Ref ref) =>
 
 /// Native listener bridge.
 @Riverpod(keepAlive: true)
-NotificationSource notificationSource(Ref ref) =>
-    NotificationSourceImpl(ref.watch(notificationsChannelProvider));
+NotificationSource notificationSource(Ref ref) => NotificationSourceImpl(
+      ref.watch(notificationsChannelProvider),
+      lockSkipper: ref.watch(lockSkipperProvider),
+    );
 
 /// Persisted `app_notifications` switch.
 @Riverpod(keepAlive: true)
@@ -36,6 +40,7 @@ NotificationEngine notificationEngine(Ref ref) {
       settings: ref.watch(notificationSettingsProvider),
       ingest: ref.watch(ingestMessageProvider),
     ),
+    activity: ref.watch(activityLoggerProvider),
   );
   ref.onDispose(engine.stop);
   return engine;

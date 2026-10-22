@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:hisaab/core/db/app_database.dart';
 import 'package:hisaab/core/db/enum_codec.dart';
 import 'package:hisaab/core/db/tables/transactions.dart';
+import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/accounts_management/domain/account_repository.dart';
 import 'package:hisaab/features/categorization/domain/category_repository.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
@@ -14,6 +15,7 @@ import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
+import 'package:hisaab/features/transactions_ledger/domain/transfer_pairing.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// The single ledger write path (FR-08-17, FR-07-07).
@@ -102,6 +104,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
     final accountId = item.accountId ??
         await _accounts.ensureAccount(p, phoneLast4s: item.phoneLast4s);
 
+    // FR-08-13: a bank message for a hand-entered transfer folds into its leg.
+    if (decision is DedupNew) {
+      final leg = await _manualLegFor(p, accountId);
+      if (leg != null) decision = DedupDuplicate(leg, DuplicateReason.fuzzy);
+    }
+
     // Unique-hash race: a stored row with this hash absorbs the message.
     if (decision is DedupNew) {
       final same = candidates
@@ -119,8 +127,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
       case DedupDuplicate(:final existingId):
         txId = existingId;
         outcome = IngestOutcome.merged;
+        final known = candidates.where((c) => c.id == existingId);
         await _merge(
-          candidates.firstWhere((c) => c.id == existingId),
+          known.isNotEmpty ? known.first : await _loadCandidate(existingId),
           p,
           accountId,
           rule,
@@ -146,6 +155,13 @@ class TransactionRepositoryImpl implements TransactionRepository {
           rule: rule,
         );
     }
+
+    final accountForPair = outcome == IngestOutcome.inserted
+        ? (await (_db.select(_db.transactions)..where((t) => t.id.equals(txId)))
+                .getSingle())
+            .accountId
+        : null;
+    if (accountForPair != null) await _pairTransfers(txId);
 
     // FR-07-07 step 8: always record the source so a rescan is idempotent.
     final raw = item.rawText;
@@ -193,6 +209,153 @@ class TransactionRepositoryImpl implements TransactionRepository {
       at: p.transactionTime,
     );
   }
+
+  // FR-08-13: same amount, direction and account within 36 h of a leg
+  // that has an `xfer-out:` / `xfer-in:` source.
+  static const int manualLegWindowMs = 36 * 60 * 60 * 1000;
+
+  Future<int?> _manualLegFor(ParsedTransaction p, int? accountId) async {
+    if (accountId == null ||
+        (p.type != TransactionType.debit && p.type != TransactionType.credit)) {
+      return null;
+    }
+    final prefix = p.type == TransactionType.debit ? 'xfer-out:' : 'xfer-in:';
+    final rows = await _db.customSelect(
+      'SELECT t.id AS id, t.timestamp AS ts FROM transactions t '
+      "WHERE t.type = 'TRANSFER' AND t.account_id = ? AND t.amount_minor = ? "
+      'AND t.timestamp BETWEEN ? AND ? AND t.id IN '
+      '(SELECT transaction_id FROM transaction_sources '
+      "WHERE source_message_id LIKE ? || '%')",
+      variables: [
+        Variable<int>(accountId),
+        Variable<int>(p.amountMinor),
+        Variable<int>(p.transactionTime - manualLegWindowMs),
+        Variable<int>(p.transactionTime + manualLegWindowMs),
+        Variable<String>(prefix),
+      ],
+      readsFrom: {_db.transactions, _db.transactionSources},
+    ).get();
+    if (rows.isEmpty) return null;
+    rows.sort(
+      (a, b) => (a.read<int>('ts') - p.transactionTime)
+          .abs()
+          .compareTo((b.read<int>('ts') - p.transactionTime).abs()),
+    );
+    return rows.first.read<int>('id');
+  }
+
+  Future<DedupCandidate> _loadCandidate(int id) async {
+    final r = await (_db.select(_db.transactions)
+          ..where((t) => t.id.equals(id)))
+        .getSingle();
+    final srcs = await (_db.select(_db.transactionSources)
+          ..where((s) => s.transactionId.equals(id)))
+        .get();
+    return toCandidate(r, srcs);
+  }
+
+  Future<void> _pairTransfers(int id) async {
+    final row = await (_db.select(_db.transactions)
+          ..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    if (row == null) return;
+    final cands = await (_db.select(_db.transactions)
+          ..where(
+            (t) =>
+                t.amountMinor.equals(row.amountMinor) &
+                t.id.equals(id).not() &
+                t.needsReview.equals(false) &
+                t.timestamp.isBetweenValues(
+                  row.timestamp - TransferPairing.fetchWindowMs,
+                  row.timestamp + TransferPairing.fetchWindowMs,
+                ),
+          ))
+        .get();
+    if (cands.isEmpty) return;
+    final loans = await (_db.select(_db.accounts)
+          ..where((a) => a.accountType.equals('LOAN')))
+        .get();
+    final marks = TransferPairing.pair(
+      tx: toLedgerTx(row),
+      candidates: cands.map(toLedgerTx),
+      loanAccountIds: {for (final a in loans) a.id},
+    );
+    for (final m in marks) {
+      final r = m.id == id ? row : cands.firstWhere((c) => c.id == m.id);
+      await _patch(
+        m.id,
+        TransactionsCompanion(
+          type: Value(enumToDb(TransactionType.transfer)),
+          category: Value(enumToDb(Category.transfer)),
+          note: Value(r.note ?? m.note),
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<List<int>> addOwnTransfer({
+    required int? fromAccountId,
+    required int? toAccountId,
+    required int amountMinor,
+    required int timestamp,
+    String? note,
+  }) =>
+      _db.transaction(() async {
+        if (amountMinor <= 0 ||
+            (fromAccountId == null && toAccountId == null)) {
+          throw ArgumentError('amount > 0 and at least one account');
+        }
+        final from =
+            fromAccountId == null ? null : await _accounts.byId(fromAccountId);
+        final to =
+            toAccountId == null ? null : await _accounts.byId(toAccountId);
+        final pair = '${_now()}-${Random().nextInt(1 << 31).toRadixString(36)}';
+        final ids = <int>[];
+        Future<void> leg(Account a, Account? other, {required bool out}) async {
+          final hash = 'manual-xfer:$pair:${out ? 'out' : 'in'}';
+          final id = await _db.into(_db.transactions).insert(
+                TransactionsCompanion.insert(
+                  amountMinor: amountMinor,
+                  currency: 'INR',
+                  type: enumToDb(TransactionType.transfer),
+                  bankName: a.bankName,
+                  accountLast4: Value(a.last4),
+                  accountKind: enumToDb(a.kind),
+                  accountId: Value(a.id),
+                  merchant: Value(
+                    other == null
+                        ? null
+                        : '${out ? 'To' : 'From'} ${other.label}',
+                  ),
+                  channel: enumToDb(Channel.other),
+                  timestamp: timestamp,
+                  hasExplicitTime: true,
+                  category: enumToDb(Category.transfer),
+                  transactionHash: hash,
+                  confidence: 1,
+                  note: Value(note),
+                  createdAt: _now(),
+                  inrMinor: Value(amountMinor),
+                ),
+              );
+          await _db.into(_db.transactionSources).insert(
+                TransactionSourcesCompanion.insert(
+                  transactionId: id,
+                  source: enumToDb(Source.manual),
+                  sourceMessageId: '${out ? 'xfer-out:' : 'xfer-in:'}$pair',
+                  sender: 'Manual',
+                  parsedHash: hash,
+                  receivedAt: _now(),
+                ),
+              );
+          ids.add(id);
+        }
+
+        if (from != null) await leg(from, to, out: true);
+        if (to != null) await leg(to, from, out: false);
+        return ids;
+      });
 
   Future<List<DedupCandidate>> _candidates(ParsedTransaction p) async {
     const span = DedupPolicy.statementWindowMillis;
@@ -261,7 +424,13 @@ class TransactionRepositoryImpl implements TransactionRepository {
             needsReview: Value(flagged != null),
             duplicateOfId: Value(flagged?.$1),
             reviewReason: Value(flagged?.$2),
-            note: Value(item.note),
+            note: Value(
+              item.note ??
+                  (p.type == TransactionType.transfer &&
+                          p.accountKind == AccountKind.account
+                      ? TransferPairing.cardBillNote
+                      : null),
+            ),
             createdAt: _now(),
             subcategory: Value(rule?.subcategory),
             customCategoryId: Value(rule?.customCategoryId),
@@ -483,37 +652,57 @@ class TransactionRepositoryImpl implements TransactionRepository {
           await keepSeparate(id);
           return;
         }
-        final tLast4 = target.accountLast4;
-        await _patch(
-          target.id,
-          TransactionsCompanion(
-            merchant: Value(
-              isWeakMerchant(target.merchant) && !isWeakMerchant(f.merchant)
-                  ? f.merchant
-                  : (target.merchant ?? f.merchant),
-            ),
-            upiId: Value(target.upiId ?? f.upiId),
-            referenceNumber: Value(target.referenceNumber ?? f.referenceNumber),
-            balanceMinor: Value(target.balanceMinor ?? f.balanceMinor),
-            availableLimitMinor:
-                Value(target.availableLimitMinor ?? f.availableLimitMinor),
-            accountId: Value(target.accountId ?? f.accountId),
-            accountLast4: Value(
-              tLast4 == null || ((f.accountLast4?.length ?? 0) > tLast4.length)
-                  ? (f.accountLast4 ?? tLast4)
-                  : tLast4,
-            ),
-            note: Value(target.note ?? f.note),
-            confidence: Value(max(target.confidence, f.confidence)),
-          ),
-        );
-        await (_db.update(_db.transactionSources)
-              ..where((s) => s.transactionId.equals(id)))
-            .write(
-          TransactionSourcesCompanion(transactionId: Value(target.id)),
-        );
-        await (_db.delete(_db.transactions)..where((t) => t.id.equals(id)))
-            .go();
+        await _foldInto(target, f);
+      });
+
+  /// Folds [f] into [target]: fills gaps, moves sources, deletes [f].
+  Future<void> _foldInto(TransactionRow target, TransactionRow f) async {
+    final tLast4 = target.accountLast4;
+    await _patch(
+      target.id,
+      TransactionsCompanion(
+        merchant: Value(
+          isWeakMerchant(target.merchant) && !isWeakMerchant(f.merchant)
+              ? f.merchant
+              : (target.merchant ?? f.merchant),
+        ),
+        upiId: Value(target.upiId ?? f.upiId),
+        referenceNumber: Value(target.referenceNumber ?? f.referenceNumber),
+        balanceMinor: Value(target.balanceMinor ?? f.balanceMinor),
+        availableLimitMinor:
+            Value(target.availableLimitMinor ?? f.availableLimitMinor),
+        accountId: Value(target.accountId ?? f.accountId),
+        accountLast4: Value(
+          tLast4 == null || ((f.accountLast4?.length ?? 0) > tLast4.length)
+              ? (f.accountLast4 ?? tLast4)
+              : tLast4,
+        ),
+        note: Value(target.note ?? f.note),
+        confidence: Value(max(target.confidence, f.confidence)),
+      ),
+    );
+    await (_db.update(_db.transactionSources)
+          ..where((s) => s.transactionId.equals(f.id)))
+        .write(
+      TransactionSourcesCompanion(transactionId: Value(target.id)),
+    );
+    await (_db.delete(_db.transactions)..where((t) => t.id.equals(f.id))).go();
+  }
+
+  // FR-08-08: manual merge of selected rows into the oldest one.
+  @override
+  Future<int?> mergeRows(List<int> ids) => _db.transaction(() async {
+        if (ids.length < 2) return null;
+        final rows = await (_db.select(_db.transactions)
+              ..where((t) => t.id.isIn(ids))
+              ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+            .get();
+        if (rows.length < 2) return null;
+        final target = rows.first;
+        for (final f in rows.skip(1)) {
+          await _foldInto(target, f);
+        }
+        return target.id;
       });
 
   @override

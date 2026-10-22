@@ -5,6 +5,7 @@ import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
+import 'package:hisaab/features/sms_ingestion/domain/nightly_schedule.dart';
 import 'package:hisaab/features/sms_ingestion/domain/usecases/drain_pending_sms.dart';
 import 'package:hisaab/features/sms_ingestion/domain/usecases/handle_live_sms.dart';
 
@@ -68,6 +69,13 @@ Future<bool> smsNightlyTask({ProviderContainer Function()? create}) =>
         final email = await c.read(emailSyncRunnerProvider).run();
         // Daily alert check (FR-21-13); never throws.
         await c.read(alertsEngineProvider).run();
+        // The periodic job fires again at the next 02:30 (FR-22-08).
+        final planned = DateTime.now().add(nextNightlyDelay(DateTime.now()));
+        try {
+          await recordNextSync(c.read(settingsRepositoryProvider), planned);
+        } on Object {
+          // Display only.
+        }
         return ok && !email.retryable;
       },
       create: create,

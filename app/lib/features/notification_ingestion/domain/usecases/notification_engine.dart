@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:hisaab/features/activity_log/domain/activity_logger.dart';
+import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/notification_ingestion/domain/entities/app_notification.dart';
 import 'package:hisaab/features/notification_ingestion/domain/entities/payment_app.dart';
 import 'package:hisaab/features/notification_ingestion/domain/notification_ports.dart';
 import 'package:hisaab/features/notification_ingestion/domain/usecases/handle_app_notification.dart';
+import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
 
 /// On, Needs access or Off (FR-04-16).
 enum NotificationState {
@@ -55,7 +58,9 @@ class NotificationEngine {
     required NotificationSettingsRepository settings,
     required HandleAppNotification handle,
     void Function(NotificationResult result)? onResult,
-  })  : _source = source,
+    ActivityLogger? activity,
+  })  : _activity = activity,
+        _source = source,
         _settings = settings,
         _handle = handle,
         _onResult = onResult;
@@ -64,6 +69,7 @@ class NotificationEngine {
   final NotificationSettingsRepository _settings;
   final HandleAppNotification _handle;
   final void Function(NotificationResult)? _onResult;
+  final ActivityLogger? _activity;
 
   StreamSubscription<AppNotification>? _sub;
 
@@ -144,9 +150,38 @@ class NotificationEngine {
 
   Future<void> _safe(AppNotification n) async {
     try {
-      _onResult?.call(await _handle(n));
+      final started = DateTime.now();
+      final r = await _handle(n);
+      _onResult?.call(r);
+      await _record(r, started);
     } on Object {
       // One bad notification never stops the engine.
     }
+  }
+
+  /// FR-22-01: one live entry per payment-app notification, counts only.
+  /// Unwatched, summary, empty and switched-off ones are not logged.
+  Future<void> _record(NotificationResult r, DateTime started) async {
+    final skip = r.skip;
+    if (skip != null &&
+        skip != NotificationSkip.parser &&
+        skip != NotificationSkip.chat) {
+      return;
+    }
+    final o = r.outcome;
+    await _activity?.record(
+      ActivityEntry(
+        at: started,
+        source: ActivitySource.notifications,
+        read: 1,
+        relevant: skip == null ? 1 : 0,
+        added: o == IngestOutcome.inserted ? 1 : 0,
+        merged: o == IngestOutcome.merged ? 1 : 0,
+        review: o == IngestOutcome.flagged ? 1 : 0,
+        skipped: skip != null || o == IngestOutcome.skipped ? 1 : 0,
+        millis: DateTime.now().difference(started).inMilliseconds,
+        note: skip == null ? null : (r.reason ?? skip.text),
+      ),
+    );
   }
 }

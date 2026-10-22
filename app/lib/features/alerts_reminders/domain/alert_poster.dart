@@ -50,7 +50,8 @@ String alertRouteFor(String link) {
     case 'bills':
       return '/bills';
     case 'statements':
-      return '/statements';
+      final unlock = int.tryParse(uri.queryParameters['unlock'] ?? '');
+      return unlock == null ? '/statements' : '/statements?unlock=$unlock';
     default:
       return '/home';
   }

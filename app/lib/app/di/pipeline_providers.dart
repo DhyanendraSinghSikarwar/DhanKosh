@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:hisaab/app/di/alerts_providers.dart';
+import 'package:hisaab/app/di/lock_skipper_provider.dart';
 import 'package:hisaab/app/di/notification_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -65,12 +66,18 @@ ProfileRepository profileRepository(Ref ref) =>
 /// SMS permission state machine over the native channel.
 @Riverpod(keepAlive: true)
 SmsPermissionRepository smsPermissionRepository(Ref ref) =>
-    SmsPermissionRepositoryImpl(ref.watch(permissionsChannelProvider));
+    SmsPermissionRepositoryImpl(
+      ref.watch(permissionsChannelProvider),
+      lockSkipper: ref.watch(lockSkipperProvider),
+    );
 
 /// POST_NOTIFICATIONS request.
 @Riverpod(keepAlive: true)
 NotificationPermission notificationPermission(Ref ref) =>
-    NotificationPermissionImpl(ref.watch(permissionsChannelProvider));
+    NotificationPermissionImpl(
+      ref.watch(permissionsChannelProvider),
+      lockSkipper: ref.watch(lockSkipperProvider),
+    );
 
 /// Persisted SMS settings (F-02).
 @Riverpod(keepAlive: true)
@@ -149,7 +156,11 @@ SmsEngine smsEngine(Ref ref) {
     ),
     scan: () => scan(null),
     senderPattern: SmsEngine.senderPatternDefault,
-    scheduler: const SmsScanSchedulerImpl(BackgroundChannel()),
+    scheduler: SmsScanSchedulerImpl(
+      const BackgroundChannel(),
+      onPlanned: (next) =>
+          recordNextSync(ref.read(settingsRepositoryProvider), next),
+    ),
   );
   ref.onDispose(engine.stop);
   return engine;

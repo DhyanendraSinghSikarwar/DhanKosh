@@ -26,6 +26,11 @@ class TransactionsTab extends ConsumerWidget {
         PeriodKind.all => 'All time',
       },
       filterBuilder: (context, count) => LedgerFilterBar(resultCount: count),
+      pickCategory: (ctx, t) => showCategorySheet(
+        ctx,
+        current: t.category,
+        currentCustomId: t.customCategoryId,
+      ),
     );
   }
 }

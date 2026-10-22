@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/features/statement_import/domain/import_result.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
@@ -10,7 +11,10 @@ import 'package:hisaab/features/statement_import/presentation/unlock_statement_s
 /// (FR-05-01, FR-05-11, FR-05-19).
 class StatementsScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
-  const StatementsScreen({super.key});
+  const StatementsScreen({super.key, this.unlockId});
+
+  /// Locked statement to open the password sheet for, once (FR-05-19).
+  final int? unlockId;
 
   @override
   ConsumerState<StatementsScreen> createState() => _StatementsScreenState();
@@ -18,6 +22,7 @@ class StatementsScreen extends ConsumerStatefulWidget {
 
 class _StatementsScreenState extends ConsumerState<StatementsScreen> {
   bool _busy = false;
+  bool _deepLinked = false;
 
   void _say(String m) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -85,6 +90,17 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
     final list = ref.watch(statementsProvider).value ?? const <Statement>[];
     final locked = ref.watch(lockedStatementCountProvider).value ?? 0;
     final scheme = Theme.of(context).colorScheme;
+    final link = widget.unlockId;
+    if (link != null && !_deepLinked) {
+      for (final s in list) {
+        if (s.id == link && s.isLocked) {
+          _deepLinked = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _unlock(s.id, s.fileName);
+          });
+        }
+      }
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Statements'),
@@ -126,8 +142,9 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
                         ),
                         title: Text(s.fileName, maxLines: 1),
                         subtitle: Text(_subtitle(s)),
-                        onTap:
-                            s.isLocked ? () => _unlock(s.id, s.fileName) : null,
+                        onTap: s.isLocked
+                            ? () => _unlock(s.id, s.fileName)
+                            : () => context.push('/statements/${s.id}'),
                         trailing: IconButton(
                           key: Key('statement-delete-${s.id}'),
                           tooltip: 'Delete',
