@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-09 |
-| Status | In progress (Phase 1 data layer and category picker done; Rules screen, Category detail, logos, taxonomy catalogue pending) |
+| Status | In progress (data layer, category picker, Rules screen and editor done; Category detail, logos, taxonomy catalogue pending) |
 | Priority | P0 |
 | Phase | 1 (core ledger + SMS; rule editor and category detail finish in Phase 4) |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -662,6 +662,8 @@ UI done: FR-09-05 (change category from the detail screen), FR-09-06 (every chan
 
 Deferred: FR-09-12 Rules screen, FR-09-14 Category detail, FR-09-15/18/19 logos, FR-09-16 groups and translated search, FR-09-17 budgets, sub-category edit, bulk change from multi-select.
 
+2026-10-22: FR-09-08/09/12 done: `/rules` (`RulesScreen`, `RuleEditorSheet`, `RulesTile` embedded in More via `rulesTile`), Your rules and Learned sections, Undo on removal, live match count, apply to past. Bulk category from multi-select and free-text sub-category edit on detail. Tests: `test/features/categorization/rules_screen_test.dart`. Deferred: FR-09-14 Category detail, logos, groups, budgets, sub-category picker from the custom list.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -671,3 +673,4 @@ Deferred: FR-09-12 Rules screen, FR-09-14 Category detail, FR-09-15/18/19 logos,
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 1 data layer landed (tables merchant_rules, custom_categories, custom_subcategories; `CategoryRepository`, `RuleSet`, learning in `setCategory`) | Phase 1 |
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
+| 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |

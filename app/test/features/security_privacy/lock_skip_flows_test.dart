@@ -44,13 +44,13 @@ void main() {
     env = TestEnv();
     fake = _FakeLock();
   });
-  tearDown(() {
+  tearDown(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
       const MethodChannel(ChannelNames.permissions),
       null,
     );
-    env.close();
+    await env.close();
   });
 
   Future<ProviderContainer> pump(WidgetTester t) async {
@@ -71,6 +71,8 @@ void main() {
       ),
     );
     await settle(t);
+    // Known starting state, as on a device.
+    t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     expect(find.byKey(_secret), findsOneWidget);
     return c;
   }
@@ -80,8 +82,11 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(const MethodChannel(ChannelNames.permissions),
             (call) async {
-      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      if (call.method != 'smsStatus') {
+        t.binding
+          ..handleAppLifecycleStateChanged(AppLifecycleState.paused)
+          ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      }
       return switch (call.method) {
         'smsStatus' => {'granted': false, 'rationale': true},
         'requestNotifications' => true,

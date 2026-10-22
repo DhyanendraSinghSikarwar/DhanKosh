@@ -6,7 +6,7 @@
 | Status | In progress (Dart sync, Kotlin provider, XML and manifest landed; native code uncompiled and unrun on a device, CI compiles it; midnight rollover, language re-render and background refresh pending) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -325,6 +325,8 @@ Deviations and pending: Dart-owned data means the widget shows the last snapshot
 
 Tests: `test/features/home_widget/home_widget_test.dart` (TC-30-03, 04, 05; payload keys FR-30-15; WidgetSync against the real ledger repository and a failing updater, TC-30-12). TC-30-01/02/07 rely on the ledger `watchTotals` tests; TC-30-08..11, 13 need CI or a device.
 
+- Hardening 2026-10-22: the widget already refreshes on start and every resume (`StartupTasks`). A midnight/DATE_CHANGED native receiver is DEFERRED (Kotlin cannot be compiled here).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -332,3 +334,4 @@ Tests: `test/features/home_widget/home_widget_test.dart` (TC-30-03, 04, 05; payl
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 5 widget + updates + release pipeline landed | Phase 5 |
+| 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |

@@ -144,6 +144,63 @@ class _Body extends ConsumerWidget {
     _refresh(ref);
   }
 
+  // FR-08-10: sub-category as free text; empty clears it.
+  Future<void> _editSubcategory(BuildContext context, WidgetRef ref) async {
+    final c = TextEditingController(text: t.subcategory ?? '');
+    final sub = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sub-category'),
+        content: TextField(
+          key: const Key('sub_field'),
+          controller: c,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('sub_save'),
+            onPressed: () => Navigator.pop(ctx, c.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (sub == null) return;
+    await ref
+        .read(transactionRepositoryProvider)
+        .setSubcategory(t.id, sub.isEmpty ? null : sub);
+    _refresh(ref);
+  }
+
+  // FR-08-10: move the row to another account.
+  Future<void> _editAccount(BuildContext context, WidgetRef ref) async {
+    final accounts =
+        await ref.read(accountRepositoryProvider).watchVisible().first;
+    if (!context.mounted) return;
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Account'),
+        children: [
+          for (final a in accounts)
+            SimpleDialogOption(
+              key: Key('acct_${a.id}'),
+              onPressed: () => Navigator.pop(ctx, a.id),
+              child: Text(a.label),
+            ),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    await ref.read(transactionRepositoryProvider).setAccount(t.id, picked);
+    ref.invalidate(_accountLabelProvider);
+    _refresh(ref);
+  }
+
   Future<void> _editNote(BuildContext context, WidgetRef ref) async {
     final c = TextEditingController(text: t.note ?? '');
     final note = await showDialog<String>(
@@ -219,7 +276,18 @@ class _Body extends ConsumerWidget {
                 tag: 'detail_category',
                 onTap: () => _editCategory(context, ref),
               ),
-              _Row('Account', account ?? fallbackAccount),
+              _Row(
+                'Sub-category',
+                t.subcategory ?? 'Add',
+                tag: 'detail_subcategory',
+                onTap: () => _editSubcategory(context, ref),
+              ),
+              _Row(
+                'Account',
+                account ?? fallbackAccount,
+                tag: 'detail_account',
+                onTap: () => _editAccount(context, ref),
+              ),
               _Row('Date', when),
               _Row('Channel', t.channel.name.toUpperCase()),
               if (t.upiId != null) _Row('UPI id', t.upiId!),

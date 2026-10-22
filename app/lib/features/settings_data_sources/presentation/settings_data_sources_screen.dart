@@ -17,6 +17,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
     this.forexTile,
     this.backupTile,
     this.taxTile,
+    this.rulesTile,
     this.securityTile,
     this.activityTile,
     this.customiseTile,
@@ -50,6 +51,9 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
 
   /// Tax Centre entry (F-19), composed in `app/router.dart`.
   final Widget? taxTile;
+
+  /// Rules entry (F-09), composed in `app/router.dart`.
+  final Widget? rulesTile;
 
   /// Security & privacy entry (F-25), embedded by the app.
   final Widget? securityTile;
@@ -137,6 +141,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
           if (customiseTile != null) customiseTile!,
           if (languageTile != null) languageTile!,
           if (taxTile != null) taxTile!,
+          if (rulesTile != null) rulesTile!,
           if (alertsTile != null) alertsTile!,
           if (forexTile != null) forexTile!,
           if (activityTile != null) activityTile!,

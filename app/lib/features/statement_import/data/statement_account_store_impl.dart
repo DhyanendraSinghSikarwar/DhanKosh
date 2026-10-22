@@ -47,7 +47,7 @@ class StatementAccountStoreImpl implements StatementAccountStore {
     AccountType? type,
   }) async {
     if (await find(bank, last4) != null) return null;
-    return _db.into(_db.accounts).insert(
+    return await _db.into(_db.accounts).insert(
           AccountsCompanion.insert(
             bankName: bank,
             last4: last4,

@@ -299,7 +299,14 @@ class ImportStatement {
       switch (opened) {
         case _Text(:final text):
           return await _apply(
-              text, file, key, namePrefix, existing, now, origin,);
+            text,
+            file,
+            key,
+            namePrefix,
+            existing,
+            now,
+            origin,
+          );
         case _Fail(:final failure):
           if (failure == PdfFailure.passwordRequired ||
               failure == PdfFailure.wrongPassword) {

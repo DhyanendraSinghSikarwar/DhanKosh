@@ -6,7 +6,7 @@
 | Status | In progress (Phase 3: data/domain layer and Portfolio tab UI done: net worth hero, history chart, allocation, holdings CRUD, maturities, exclusions; history estimate, MF order/NPS recording pipeline, loans card, sparklines and statement link pending) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -459,6 +459,8 @@ Deferred UI: Book filter chips (FR-16-16 UI), breakdown by bank/deposit/loan (FR
 
 Parsers (2026-10-21): the holdings snapshot producers are ported to parser_core (`HoldingSnapshot`, `HoldingKind` in `src/model/holding.dart`): `parseStatement(...).holdings` (CAS, NSDL/CDSL, broker tables and sheets, NPS statements, EPF passbooks, USD tables at the statement rate), `parseInvestmentSms/Email` (EPF balance with `contributionMinor`, NPS value), `InvestmentParser.npsContribution` (`NpsContribution.key` is the dedup key), `parseMfOrder` (`MfOrder.identifier` = `MF:<normalised scheme>`) and `parsePortfolioSummary` (`AGG:INDMONEY:<class>`). Identifier schemes: ISIN, `EPF:<member>`, `NPS:<last4>[:T2]`, `MF:`, `STOCK:`, `US:<ticker>`, `AGG:`. `HoldingSnapshot.units` is the only `double`; the app maps these to the domain `HoldingSnapshot` used by `HoldingRepository.record`. Tests: `statement_to_holdings_test`, `cas_holdings_test`, `nps_and_groww_holdings_test`, `holdings_sheet_test`, `holding_platforms_test`, `fund_emails_test`, `mf_order_parser_test` (TC-16 parser fixtures).
 
+Hardening 2026-10-22: statement holdings mismatch (FR-05-18) is surfaced by [Statement import](05_statement_import.md) from parser_core `HoldingsCheck`; no portfolio code changed.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -469,3 +471,4 @@ Parsers (2026-10-21): the holdings snapshot producers are ported to parser_core 
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |
 | 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |
 | 2026-10-21 | Phase 3 Portfolio + Profile UI landed | Phase 3 |
+| 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |

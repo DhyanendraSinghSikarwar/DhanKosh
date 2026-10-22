@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/ledger_shell.dart';
+import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/add_transaction_screen.dart';
 import 'package:parser_core/parser_core.dart';
@@ -177,5 +178,38 @@ void main() {
     expect(m['amountMinor'], 125050);
     expect(m['type'], TransactionType.credit);
     expect(m['merchant'], 'Chai Point');
+  });
+
+  // FR-08-10: sub-category and account edit.
+  testWidgets('FR-08-10: edit sub-category and account', (t) async {
+    tall(t);
+    final r = repo();
+    await pumpLedgerApp(
+      t,
+      txs: r,
+      accounts: FakeAccountRepo([
+        Account(
+          id: 7,
+          bankName: 'ICICI Bank',
+          last4: '4321',
+          kind: AccountKind.account,
+          createdAt: 0,
+        ),
+      ]),
+      home: const TransactionDetailRoute(id: 1),
+    );
+    await t.pump();
+    await t.pump();
+    await t.tap(find.byKey(const Key('detail_subcategory')));
+    await t.pumpAndSettle();
+    await t.enterText(find.byKey(const Key('sub_field')), 'Dinner');
+    await t.tap(find.byKey(const Key('sub_save')));
+    await t.pumpAndSettle();
+    expect(r.subs.single, (1, 'Dinner'));
+    await t.tap(find.byKey(const Key('detail_account')));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('acct_7')));
+    await t.pumpAndSettle();
+    expect(r.accountSets.single, (1, 7));
   });
 }

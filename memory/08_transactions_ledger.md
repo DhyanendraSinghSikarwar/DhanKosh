@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-08 |
-| Status | In progress (Phase 1 data layer and core UI done; Calendar, By merchant, multi-select, OCR, gaps pending) |
+| Status | In progress (data layer, core UI, transfer/EMI pairing, Calendar, By merchant, multi-select done; OCR, gaps, own-transfer form, split pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -462,6 +462,10 @@ Deferred UI: FR-08-03 Calendar view, FR-08-04 By-merchant view, FR-08-08 multi-s
 
 Deviation: features cannot import each other's presentation, so `app/ledger_shell.dart` composes the tab (search header from search_filters) and binds the category sheet into the detail screen via a `CategoryPicker` callback.
 
+2026-10-22 hardening. Done: FR-08-13 data side (`addOwnTransfer`: two TRANSFER legs, `xfer-out:`/`xfer-in:` MANUAL sources, later bank message within 36 h folds into the leg; no account balance move yet), FR-08-14/15 (`domain/transfer_pairing.dart` pure `TransferPairing.pair`, run by the repository after each INSERT, not merges or flagged rows: own accounts 2 h, card bill 5 days, card-side payment pulls nearest bank debit, EMI via `EmiPairing` 3 days; both legs become TRANSFER so spend/income totals skip them; bank-parser TRANSFER rows get the note "Credit card bill payment"), FR-08-03/21 (`LedgerCalendarView`, month grid inside the filter period, caption by kind), FR-08-04 (`LedgerMerchantView`), FR-08-08 (long-press multi-select, select all, bulk category via shell-bound picker, Merge via `mergeRows` into the oldest row, Delete with confirm and tombstones), account and sub-category edit on detail (FR-08-10). Tests: `test/features/transactions_ledger/{transfer_pairing_test,ledger_views_test,transaction_detail_test}.dart`.
+
+Still deferred: own-transfer form in the Add screen, `reclassifyCardBills` sweep, FR-08-12 OCR, FR-08-16 gaps, split, undo for bulk delete, source chips. GIFs not captured.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -472,3 +476,4 @@ Deviation: features cannot import each other's presentation, so `app/ledger_shel
 | 2026-10-21 | Package `sqlcipher_flutter_libs` replaced by the `sqlite3` 3.x SQLCipher build hook | Package obsolete after sqlite3 3.x; see ADR-0003 |
 | 2026-10-21 | Phase 1 data layer landed (tables transactions, transaction_sources, deleted_messages; `TransactionRepository` ingest/edit/delete/read streams) | Phase 1 |
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
+| 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |

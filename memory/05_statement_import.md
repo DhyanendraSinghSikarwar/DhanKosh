@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-05 |
-| Status | In progress (Phase 3: data layer, parsers, import pipeline, PDF channel and Statements UI done; the Kotlin PdfBox bridge and the APK are not compiled or run on a device; statement detail screen, email attachments, deposit/account-balance application and locked notification pending) |
+| Status | In progress (Phase 3 + hardening: import pipeline, UI, account balance/limit, deposits, detail screen, mismatch warning, emailed attachments and locked notice done; Kotlin PdfBox bridge and APK not run on a device; MF-order/NPS email-body steps and XLSX entry caps pending) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -736,6 +736,8 @@ Phase 3 import pipeline + native + UI (2026-10-21; UNVERIFIED on a device, Kotli
 - FR status: done FR-05-01 (file import, dedupe by key), 02 (channel; unverified native), 04 (rows via ledger), 05 (CSV, XLSX, protected detection; XLS unsupported), 06 (totals persisted), 09, 10, 11 (row + file; no notification), 12, 13 (after unlock and on demand; Home-refresh hook pending), 14, 15 (record; no per-statement sidecar), 19 (list, delete; no deep link), 21. Partial: FR-05-08 (bill notice only; payment acks and overrides are F-14), FR-05-12 (retries others after a remembered unlock). Pending: FR-05-07 (apply totals to account balance/limit), 16 and 23 (email-body pipeline), 17 (deposit accounts, `StatementResult.deposits` is ignored), 18 (mismatch not surfaced), 20 (detail screen), 22 (caps only from the `excel` package defaults), email attachments, locked notification, deep link `hisaab://statements?unlock=<id>`.
 - Tests: `test/features/statement_import/import_statement_test.dart` (TC-05-01, 07, 08, 10, 17: real in-memory ledger, holdings, card notice, password order, locked/unlock/retry, duplicate file, scanned, protected, delete), `statements_screen_test.dart` (TC-05-18/19 list, banner, delete, unlock sheet), `pdf_text_reader_test.dart` (channel contract). Fixtures are fictional.
 
+Hardening 2026-10-22 (app layer, `statement_import`): FR-05-07 done: `ApplyStatementAccounts.applyTotals` sets a card's available limit (`available ?? max(0, limit - totalDue)`) or a bank account's closing balance (summary, else last row balance) on the account through `StatementAccountStore` (raw `accounts` update, newer `at` wins, statement date 23:59 IST), never `transactions`; the Kotlin `reconcile` gap report is not ported (belongs to FR-13-15). FR-05-17 done: `applyDeposits` creates or updates FD/RD/PPF accounts (type, maturity day/action by the Kotlin `DepositTerms` rules, hide when closed, balance) and loan balances. FR-05-18 done: `HoldingsCheck.mismatch` is kept in `StatementOutcome` (settings key `stmt_outcome_<id>`), shown on the detail screen and in the import snackbar. FR-05-20 done: route `/statements/:id` (`StatementDetailScreen`: bank, date, rows imported/merged, balance applied, holdings, deposits, totals, mismatch, Read again); list rows open it. FR-05-16 (files): `ImportStatement.importEmailAttachment(file, EmailOrigin)`, row key `email:<msgId>#<i>`, size cap 25 MB; `.xls` answers "Save as .xlsx" (`UnsupportedReason.xls`). FR-05-16 body: INDmoney portfolio summary records holdings (`readEmailBody`, wired in `email_providers.dart`). FR-05-11: a new emailed LOCKED statement posts `AlertRules.statementLockedAlert` via `StatementLockedNotifier`; `hisaab://statements?unlock=<id>` opens the sheet once (`alertRouteFor` keeps the query). Provider `retryLockedStatementsProvider` (`Future<int> Function()`) is for the lead to call on Home refresh/resume. Still pending: FR-05-23 MF-order/EPF/NPS body steps (needs `recordMfOrder` in portfolio), FR-05-22 XLSX entry caps, payment-ack/override rows (F-14). Tests: `statement_effects_test`, `statement_detail_screen_test`.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -746,3 +748,4 @@ Phase 3 import pipeline + native + UI (2026-10-21; UNVERIFIED on a device, Kotli
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |
 | 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |
 | 2026-10-21 | Phase 3 statement import pipeline + UI landed | Phase 3 |
+| 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |

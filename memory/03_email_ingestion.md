@@ -6,7 +6,7 @@
 | Status | In progress (Phase 2: IMAP app-password sync, sender whitelist, screen and tests done; Gmail OAuth/API, verification code, attachments, multi-account and scheduling NOT built) |
 | Priority | P1 |
 | Phase | 2 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -629,6 +629,8 @@ Tests: `test/features/email_ingestion/sync_email_test.dart` (TC-03-01, 03-03, 03
 
 Not done: Gmail API and OAuth, mailed verification code, multiple accounts, attachments and statement import, loan status and card-due from email, nightly 02:30 job and retry wiring (lead), Home sync pill, GIFs, raising look-back clearing the cursor.
 
+Hardening 2026-10-22: FR-03-16 done for IMAP: `EnoughMailImapClient.attachmentsOf` picks PDF/XLSX/XLS/CSV (name or MIME, max 5 per mail, 25 MB cap, default names) into `RawEmail.attachments`; `SyncEmail` hands each to `IngestStatementFile` (wired to `ImportStatement.importEmailAttachment` in `email_providers.dart`), counts `EmailSyncReport.statements`, marks the mail PARSED; re-sync is idempotent by statement key. A rejected body that is an INDmoney summary records holdings. Tests: `email_statement_attachments_test`. Not done: MF-order/EPF/NPS body pipeline, Gmail API.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -637,3 +639,4 @@ Not done: Gmail API and OAuth, mailed verification code, multiple accounts, atta
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 2 email ingestion landed | Phase 2 |
 | 2026-10-21 | Nightly job (02:30, shared with the SMS catch-up in `smsNightlyTask`) now runs `EmailSyncRunner`; retry only when `retryable`. Runs only while the nightly job is registered (SMS reading on) | FR-03-17 scheduling |
+| 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |

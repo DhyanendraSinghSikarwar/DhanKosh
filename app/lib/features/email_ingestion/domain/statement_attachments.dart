@@ -15,14 +15,15 @@ class EmailAttachment {
 /// Rules for which attachments are read as statements (memory 03 2.11).
 abstract final class StatementAttachments {
   /// At most this many per mail (IMAP).
-  static const maxPerMail = 5;
+  static const int maxPerMail = 5;
 
   /// Larger files are skipped, bytes (FR-05-22).
-  static const maxBytes = 25 * 1024 * 1024;
+  static const int maxBytes = 25 * 1024 * 1024;
 
-  static final _name = RegExp(r'\.(pdf|xlsx|xlsm|xls|csv)$', caseSensitive: false);
+  static final RegExp _name =
+      RegExp(r'\.(pdf|xlsx|xlsm|xls|csv)$', caseSensitive: false);
 
-  static const _mimes = {
+  static const Set<String> _mimes = {
     'application/pdf',
     'application/vnd.ms-excel',
     'text/csv',

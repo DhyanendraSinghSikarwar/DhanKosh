@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1: native, data, parser wiring, engine, Data sources UI, headless background drain, nightly scan and off-isolate parse implemented; the new Kotlin is not compiled or run on a device; Home progress pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -504,6 +504,8 @@ Phase 1 status (2026-10-21): native + Dart data/domain, parser wiring, live engi
 - Unverified / risks: all Kotlin (compile and runtime); entrypoint library URI and function name are string-coupled between `HeadlessRunner.kt` and `background_dispatcher.dart`; the headless engine and a foreground UI engine can both hold the SQLCipher DB for a moment (writes serialise in SQLite, ids make ingest idempotent, no lock-timeout tuning yet); a message that fails to ingest after `drainPending` cleared the native queue is only recovered by the next 14-day scan; Doze can delay the one-off job; no new-transaction notification or widget refresh is fired from the headless path yet (belongs to Notifications/Widget features); `sms.drain` while the UI engine is attached but Dart is not listening is possible.
 - Tests: `test/app/background/background_dispatcher_test.dart` (registry, runner), `test/features/sms_ingestion/background_sms_test.dart` (nightly delay and registration args, engine schedule on/pause/resume, drain pending, isolate-vs-sequential parse, batch idempotency).
 
+- Hardening 2026-10-22: the nightly scheduler reports its next run (`SmsScanSchedulerImpl.onPlanned`, also rewritten after each nightly task) into `next_sms_sync_at`/`next_email_sync_at` (FR-22-08). The unused `workmanager` Dart package was removed from pubspec; native WorkManager comes from the direct `androidx.work` dependency.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -514,3 +516,4 @@ Phase 1 status (2026-10-21): native + Dart data/domain, parser wiring, live engi
 | 2026-10-21 | Phase 1 native SMS channel + Dart data/domain landed | Phase 1 |
 | 2026-10-21 | Phase 1 pipeline wiring + UI landed | Phase 1 |
 | 2026-10-21 | Phase 1 hardening: background SMS, nightly scan, off-isolate parse, dedup reconcile | Phase 1 |
+| 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |

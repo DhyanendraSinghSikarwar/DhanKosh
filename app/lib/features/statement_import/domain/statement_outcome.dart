@@ -13,6 +13,15 @@ class AccountEffect {
     this.last4,
   });
 
+  /// Reads [toJson].
+  factory AccountEffect.fromJson(Map<String, Object?> j) => AccountEffect(
+        kind: AccountEffectKind.values.asNameMap()[j['k']] ??
+            AccountEffectKind.none,
+        amountMinor: j['a'] as int?,
+        bankName: j['b'] as String?,
+        last4: j['l'] as String?,
+      );
+
   /// Nothing applied.
   static const none = AccountEffect();
 
@@ -30,15 +39,6 @@ class AccountEffect {
         'b': bankName,
         'l': last4,
       };
-
-  /// Reads [toJson].
-  static AccountEffect fromJson(Map<String, Object?> j) => AccountEffect(
-        kind: AccountEffectKind.values.asNameMap()[j['k']] ??
-            AccountEffectKind.none,
-        amountMinor: j['a'] as int?,
-        bankName: j['b'] as String?,
-        last4: j['l'] as String?,
-      );
 }
 
 /// Holdings rows differ from the statement's stated totals (FR-05-18).
@@ -51,6 +51,14 @@ class HoldingsMismatch {
     this.rowsInvestedMinor,
   });
 
+  /// Reads [toJson].
+  factory HoldingsMismatch.fromJson(Map<String, Object?> j) => HoldingsMismatch(
+        statedValueMinor: j['sv'] as int?,
+        rowsValueMinor: j['rv'] as int?,
+        statedInvestedMinor: j['si'] as int?,
+        rowsInvestedMinor: j['ri'] as int?,
+      );
+
   final int? statedValueMinor;
   final int? rowsValueMinor;
   final int? statedInvestedMinor;
@@ -62,14 +70,6 @@ class HoldingsMismatch {
         'si': statedInvestedMinor,
         'ri': rowsInvestedMinor,
       };
-
-  /// Reads [toJson].
-  static HoldingsMismatch fromJson(Map<String, Object?> j) => HoldingsMismatch(
-        statedValueMinor: j['sv'] as int?,
-        rowsValueMinor: j['rv'] as int?,
-        statedInvestedMinor: j['si'] as int?,
-        rowsInvestedMinor: j['ri'] as int?,
-      );
 }
 
 /// What one import did, kept for the detail screen (FR-05-20).
@@ -84,6 +84,21 @@ class StatementOutcome {
     this.effect = AccountEffect.none,
     this.mismatch,
   });
+
+  /// Reads [toJson].
+  factory StatementOutcome.fromJson(Map<String, Object?> j) => StatementOutcome(
+        added: j['ad'] as int? ?? 0,
+        merged: j['me'] as int? ?? 0,
+        review: j['re'] as int? ?? 0,
+        holdingsUpdated: j['ho'] as int? ?? 0,
+        depositsUpdated: j['de'] as int? ?? 0,
+        effect: j['ef'] is Map
+            ? AccountEffect.fromJson((j['ef']! as Map).cast())
+            : AccountEffect.none,
+        mismatch: j['mm'] is Map
+            ? HoldingsMismatch.fromJson((j['mm']! as Map).cast())
+            : null,
+      );
 
   final int added;
   final int merged;
@@ -102,21 +117,6 @@ class StatementOutcome {
         'ef': effect.toJson(),
         'mm': mismatch?.toJson(),
       };
-
-  /// Reads [toJson].
-  static StatementOutcome fromJson(Map<String, Object?> j) => StatementOutcome(
-        added: j['ad'] as int? ?? 0,
-        merged: j['me'] as int? ?? 0,
-        review: j['re'] as int? ?? 0,
-        holdingsUpdated: j['ho'] as int? ?? 0,
-        depositsUpdated: j['de'] as int? ?? 0,
-        effect: j['ef'] is Map
-            ? AccountEffect.fromJson((j['ef']! as Map).cast())
-            : AccountEffect.none,
-        mismatch: j['mm'] is Map
-            ? HoldingsMismatch.fromJson((j['mm']! as Map).cast())
-            : null,
-      );
 }
 
 /// Keeps the [StatementOutcome] of each statement.

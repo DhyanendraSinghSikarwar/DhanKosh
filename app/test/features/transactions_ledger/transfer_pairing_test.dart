@@ -218,8 +218,10 @@ void main() {
     expect(out.type, TransactionType.transfer);
     expect(out.merchant, 'To ICICI Bank ••4321');
     expect((await row(ids[1])).merchant, 'From HDFC Bank ••1234');
-    expect((await env.txs.sourcesOf(ids[0])).single.sourceMessageId,
-        startsWith('xfer-out:'),);
+    expect(
+      (await env.txs.sourcesOf(ids[0])).single.sourceMessageId,
+      startsWith('xfer-out:'),
+    );
     final r = await env.ingest(
       parsed(amountMinor: 500000, time: t0 + 35 * hour, ref: 'x1'),
     );
@@ -239,5 +241,22 @@ void main() {
       ),
     );
     expect(late.transactionId, isNot(ids[0]));
+  });
+
+  // FR-08-08: manual merge keeps the oldest row and moves sources.
+  test('mergeRows folds selected rows into the oldest', () async {
+    final a = await ingest(10000, TransactionType.debit, '1111', t0, ref: 'a');
+    final b = await ingest(
+      10000,
+      TransactionType.debit,
+      '1111',
+      t0 + 3 * hour,
+      ref: 'b',
+    );
+    expect(b, isNot(a));
+    expect(await env.txs.mergeRows([a, b]), a);
+    expect(await env.count('transactions'), 1);
+    expect((await env.txs.sourcesOf(a)).length, 2);
+    expect(await env.txs.mergeRows([a]), isNull);
   });
 }

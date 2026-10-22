@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -52,6 +54,8 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
     if (r != null && mounted) _say(importResultText(r));
   }
 
+  void _open(Statement s) => unawaited(context.push('/statements/${s.id}'));
+
   Future<void> _delete(Statement s) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -96,7 +100,7 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
         if (s.id == link && s.isLocked) {
           _deepLinked = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _unlock(s.id, s.fileName);
+            if (mounted) unawaited(_unlock(s.id, s.fileName));
           });
         }
       }
@@ -144,7 +148,7 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
                         subtitle: Text(_subtitle(s)),
                         onTap: s.isLocked
                             ? () => _unlock(s.id, s.fileName)
-                            : () => context.push('/statements/${s.id}'),
+                            : () => _open(s),
                         trailing: IconButton(
                           key: Key('statement-delete-${s.id}'),
                           tooltip: 'Delete',

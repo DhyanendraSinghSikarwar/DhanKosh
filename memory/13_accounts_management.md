@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-13 |
-| Status | In progress (Phase 1 data layer and basic UI; tabs, edit fields, suggestions, gaps pending) |
+| Status | In progress (Phase 1 data layer and basic UI; tabs, edit fields, suggestions, gaps pending; own-transfer legs in ledger done) |
 | Priority | P0 |
 | Phase | 1 (account creation from messages, balances, lists); 2 for debit-card link, merge and gap detection; 3 for statement unlock details |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -511,6 +511,8 @@ Pending: FR-13-04 Book filtering and count tabs, FR-13-06 edit fields beyond ren
 
 Deviations: balance maths is Dart + one SQL aggregate per account (`watchWithActivity`), recomputed when accounts, transactions or sources change; the `Account` entity omits maturity, forex markup and loan fields (columns exist in the table).
 
+2026-10-22: account change on a transaction (`setAccount` from the detail screen) and own-transfer legs (`addOwnTransfer`, see [Transactions](08_transactions_ledger.md)) use the existing account domain; no schema change.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -519,3 +521,4 @@ Deviations: balance maths is Dart + one SQL aggregate per account (`watchWithAct
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 1 data layer landed (tables accounts; `AccountRepository` ensure/create/rename/hide/merge/delete/balance streams) | Phase 1 |
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
+| 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |

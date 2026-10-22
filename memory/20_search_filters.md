@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-20 |
-| Status | In progress (Phase 1: Transactions search and filters done; global Book/Period store pending) |
+| Status | In progress (Phase 1: search and filters done; Calendar and By-merchant honour the filters; global Book/Period store pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -438,6 +438,8 @@ Done: FR-20-03/04/05 partial (This month, Last month, Custom range via "Choose d
 
 Deferred: FR-20-01/02 (global Book store, persistence), FR-20-03 This week / FY / 12 months, FR-20-06..10 (previous period, ViewFilter slice, Book rule, account visibility by book), FR-20-14/15 (bank and source chips), FR-20-20, FR-20-08.
 
+2026-10-22: Calendar and By-merchant segments of the Transactions tab operate on the filtered rows and period (see [Transactions](08_transactions_ledger.md)).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -445,3 +447,4 @@ Deferred: FR-20-01/02 (global Book store, persistence), FR-20-03 This week / FY 
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
+| 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |

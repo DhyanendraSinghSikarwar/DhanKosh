@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-07 |
-| Status | In progress (Phase 1: matcher and data layer done; Review screen basic, Compare/split/manual merge pending) |
+| Status | In progress (Phase 1: matcher and data layer done; Review screen basic; manual merge via ledger multi-select; Compare and split pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -395,6 +395,8 @@ Deferred: full Compare view and source messages, FR-07-11 sheet details, FR-07-1
 
 Reconciliation note (2026-10-21, Phase 1 hardening): done. The ledger has ONE matcher, parser_core's `DuplicateMatcher` (Kotlin parity). `DedupPolicy.decide` is now `Future<DedupDecision>` and only adapts: `DedupCandidate` -> `StoredTransaction` (sources via `sourceKey`, empty reference treated as none), an in-memory `DedupLookup` over the candidate list loaded once by the repository (`byHash` also matches hashes of messages already merged into a row, as before), and the matcher's `Duplicate/PossibleDuplicate/NewTransaction` -> `DedupDuplicate/DedupPossible/DedupNew`. The old 200-line rule copy was deleted; `DedupPolicy.windowMillis` etc. and `last4Match`/`merchantsAgree` delegate to the matcher. No behavioural test failed: all 13 dedup policy tests (now `async`, `await policy.decide`) and the ledger tests pass unchanged apart from that. Known differences, all toward Kotlin parity: merchant "generic" phrases now come from parser_core `GenericPhrases` (UI captions such as "view details"), so names like "payment" or "UPI" no longer count as agreeing with any merchant (Kotlin behaviour; no test depended on it); equal-distance candidates keep storage order (stable sort) instead of an unstable sort.
 
+2026-10-22: manual merge of selected rows is `TransactionRepository.mergeRows` (oldest kept, sources moved), reached from Transactions multi-select (see [Transactions](08_transactions_ledger.md)). Compare view and split remain deferred.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -407,3 +409,4 @@ Reconciliation note (2026-10-21, Phase 1 hardening): done. The ledger has ONE ma
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
 | 2026-10-21 | Phase 1 pipeline wiring + UI landed (matcher reconciliation deferred, note only) | Phase 1 |
 | 2026-10-21 | Phase 1 hardening: background SMS, nightly scan, off-isolate parse, dedup reconcile | Phase 1 |
+| 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |

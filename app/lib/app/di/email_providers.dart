@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
+import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/email_ingestion/data/email_settings_store.dart';
 import 'package:hisaab/features/email_ingestion/data/enough_mail_imap_client.dart';
@@ -13,6 +14,10 @@ import 'package:hisaab/features/email_ingestion/domain/usecases/email_sync_runne
 import 'package:hisaab/features/email_ingestion/domain/usecases/manage_email_account.dart';
 import 'package:hisaab/features/email_ingestion/domain/usecases/sync_email.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart';
+import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart'
+    show IngestOutcome;
+import 'package:hisaab/features/statement_import/domain/import_result.dart';
+import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
 import 'package:parser_core/parser_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

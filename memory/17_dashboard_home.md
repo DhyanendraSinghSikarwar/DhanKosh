@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1 core Home; widgets, sync, bell, permissions cards pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -524,6 +524,8 @@ Phase 1 core Home. Code: `features/dashboard_home/domain/home_logic.dart` (`gree
 
 Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insights, categories, budgets widgets, bell sheet, SMS and notification permission cards, sync FAB and pill, tab layout store (FR-17-04, 05, 07-11, 13, 15-18, 20-22).
 
+- Hardening 2026-10-22: Home shows `HomeSmsCard` (FR-01-13) above the review notice and in the empty state while SMS access is missing and not dismissed.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -533,3 +535,4 @@ Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insight
 | 2026-10-19 | Stated Safe to spend is NOT in the rebuilt Home (FR-17-23, link to 34_planned_insights_backlog.md); More hub subtitles delegated to 26 (FR-17-24); settings key-value table renamed to `settings` to match 26 | Audit Gate gap, scan_5, scan_6 |
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
 | 2026-10-21 | Home gained budget rings (`HomeBudgetsCard`) and cash-flow card (`HomeCashFlowCard`) after the spent card, always visible (not yet customisable); see [10](10_expense_tracking.md), [11](11_income_tracking.md) | Phase 4 |
+| 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |

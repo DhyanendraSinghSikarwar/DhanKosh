@@ -12,6 +12,8 @@ import 'package:hisaab/features/alerts_reminders/presentation/alerts_tile.dart';
 import 'package:hisaab/features/analytics/presentation/analytics_screen.dart';
 import 'package:hisaab/features/backup_export/presentation/backup_export_screen.dart';
 import 'package:hisaab/features/backup_export/presentation/backup_tile.dart';
+import 'package:hisaab/features/categorization/presentation/rules_screen.dart';
+import 'package:hisaab/features/categorization/presentation/rules_tile.dart';
 import 'package:hisaab/features/credit_cards/presentation/cards_home_strip.dart';
 import 'package:hisaab/features/credit_cards/presentation/credit_cards_screen.dart';
 import 'package:hisaab/features/dashboard_home/presentation/dashboard_home_screen.dart';
@@ -91,6 +93,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const IncomeTrackingScreen(),
       ),
       GoRoute(path: '/tax', builder: (_, __) => const TaxCentreScreen()),
+      GoRoute(path: '/rules', builder: (_, __) => const RulesScreen()),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/cards', builder: (_, __) => const CreditCardsScreen()),
       GoRoute(
@@ -223,6 +226,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   forexTile: ForexTile(),
                   backupTile: BackupTile(),
                   taxTile: TaxTile(),
+                  rulesTile: RulesTile(),
                   securityTile: SecurityTile(),
                   activityTile: ActivityTile(),
                   newsTile: NewsTile(),

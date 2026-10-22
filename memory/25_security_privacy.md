@@ -6,7 +6,7 @@
 | Status | In progress (Phase 5: app lock gate, Security & privacy screen and More tile done; native biometric prompt, theme and FragmentActivity change are not compiled or run on a device; Keystore sealing stays on flutter_secure_storage; hosted text size and backup rows, skip-hop callers, FLAG_SECURE, widget masking pending) |
 | Priority | P0 |
 | Phase | 5 (secure-storage helper is built in Phase 0 and reused by Phase 2 email) |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -406,6 +406,8 @@ Phase 5 (2026-10-21). Code: `features/security_privacy/{domain,data,presentation
 - Not done: `skipNextLock` callers at file pickers, consent and settings hops (owners call `lockControllerProvider.notifier.skipNextLock()`), hosted text size and backup rows, auto-disable when the device lock is removed (the app stays locked and Unlock re-prompts), TC-25-03/04 (vault tests, N/A while on flutter_secure_storage), TC-25-14/15.
 - Tests: `test/features/security_privacy/lock_gate_test.dart` (TC-25-06/07/08/09/11/12/13).
 
+- Hardening 2026-10-22: `skipNextLock` is now armed through the `LockSkipper` port before SMS and notification permission requests, App info, notification access settings, the statement file picker (`LockSkippingFileSource`) and the backup picker. The skip now spans the whole hop (cleared on resume, not on the first `hidden`), since Android sends `hidden` then `paused`. Tests: `test/features/security_privacy/lock_skip_flows_test.dart`. No UPI/URL hand-offs exist yet (no `url_launcher`).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -413,3 +415,4 @@ Phase 5 (2026-10-21). Code: `features/security_privacy/{domain,data,presentation
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 5 security + activity log landed | Phase 5 |
+| 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |

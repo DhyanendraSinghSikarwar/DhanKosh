@@ -6,7 +6,7 @@
 | Status | In progress (Phase 5: schema v5 table, repository with coalescing and 200 cap, ActivityLogger port wired into SMS scan, live SMS and email runs, Activity screen and More tile done; notification, statements and email statement counts not recorded; native-only live runs not logged) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-22 |
 
 ## 1. Description
 
@@ -424,6 +424,8 @@ Phase 5 (2026-10-21). Code: `features/activity_log/{domain,data,presentation}`; 
 - Not done: FR-22-05 `statements`/`locked` counts (email run records 0), FR-22-06 notification entries (no notification ingest path exists yet), STATEMENTS source, native receiver logging when the engine is dead. TC-22-07/08/09/12 not covered by an end-to-end test; the recorder takes no free text by construction.
 - Tests: `test/features/activity_log/activity_log_test.dart` (TC-22-01..06, 10, 11), `test/core/db/migration_v4_v5_test.dart`.
 
+- Hardening 2026-10-22: payment-app notifications now log one `notifications` entry per watched-app notification (`NotificationEngine` with optional `ActivityLogger`; unwatched, summary, empty and switched-off ones are not logged). Statement import logging is PENDING: the statement owner must call `activityLoggerProvider` (`ActivitySource.statements`) from the import flow. Next scheduled sync is now written when the nightly job is (re)registered and after each run.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -431,3 +433,4 @@ Phase 5 (2026-10-21). Code: `features/activity_log/{domain,data,presentation}`; 
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 5 security + activity log landed | Phase 5 |
+| 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |
