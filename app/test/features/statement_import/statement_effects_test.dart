@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Variable;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/features/credit_cards/data/card_due_repository_impl.dart';
 import 'package:hisaab/features/portfolio/data/holding_repository_impl.dart';
+import 'package:hisaab/features/settings_data_sources/data/settings_key_value_store.dart';
 import 'package:hisaab/features/statement_import/data/statement_account_store_impl.dart';
 import 'package:hisaab/features/statement_import/data/statement_outcome_store.dart';
 import 'package:hisaab/features/statement_import/data/statement_password_store.dart';
@@ -11,7 +12,6 @@ import 'package:hisaab/features/statement_import/domain/statement_outcome.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
 import 'package:hisaab/features/statement_import/domain/usecases/apply_statement_accounts.dart';
 import 'package:hisaab/features/statement_import/domain/usecases/import_statement.dart';
-import 'package:hisaab/features/settings_data_sources/data/settings_key_value_store.dart';
 import 'package:parser_core/parser_core.dart' as pc;
 
 import '../../support/test_env.dart';
@@ -95,8 +95,11 @@ void main() {
   // FR-05-07: an older figure never replaces a newer one.
   test('older statement figure does not overwrite a newer balance', () async {
     final store = StatementAccountStoreImpl(env.db, clock: () => env.clock);
-    final id = (await store.insert('Demo Bank', '1111',
-        kind: pc.AccountKind.account))!;
+    final id = (await store.insert(
+      'Demo Bank',
+      '1111',
+      kind: pc.AccountKind.account,
+    ))!;
     await store.updateBalance(id, at: 2000, balanceMinor: 500);
     await store.updateBalance(id, at: 1000, balanceMinor: 900);
     expect((await account('1111'))['b'], 500);

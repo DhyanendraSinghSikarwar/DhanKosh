@@ -35,7 +35,9 @@ void main() {
       isFalse,
     );
     expect(
-        StatementAttachments.nameOf(null, 'application/pdf'), 'statement.pdf');
+      StatementAttachments.nameOf(null, 'application/pdf'),
+      'statement.pdf',
+    );
   });
 
   test('enough_mail message yields its PDF attachment only', () {
