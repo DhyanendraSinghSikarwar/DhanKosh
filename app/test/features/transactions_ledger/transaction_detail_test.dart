@@ -188,7 +188,7 @@ void main() {
       t,
       txs: r,
       accounts: FakeAccountRepo([
-        Account(
+        const Account(
           id: 7,
           bankName: 'ICICI Bank',
           last4: '4321',

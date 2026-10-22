@@ -79,7 +79,9 @@ void main() {
     expect(b.currentBalanceMinor, 5170000);
   });
 
-  test('review rows and transfers without direction do not move balance',
+  // FR-08-14: a parser TRANSFER on a bank account is a card bill payment
+  // (note "Credit card bill payment") and lowers the balance.
+  test('bank-side parser transfer is a bill payment and lowers balance',
       () async {
     await env.ingest(parsed(balance: 1000000, ref: 'AAAAAA111'));
     await env.ingest(
@@ -91,7 +93,7 @@ void main() {
         time: t0 + hour,
       ),
     );
-    expect((await one(env, 1)).currentBalanceMinor, 1000000);
+    expect((await one(env, 1)).currentBalanceMinor, 950000);
   });
 
   test('card transfer (bill payment) frees limit', () async {

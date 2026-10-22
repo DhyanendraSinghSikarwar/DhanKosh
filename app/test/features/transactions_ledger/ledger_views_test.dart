@@ -22,10 +22,8 @@ void main() {
     final all = dayValues(rows, TxKind.all);
     expect(all[DateTime(2026, 9, 5)], 95000);
     expect(all[DateTime(2026, 9, 12)], 50000);
-    expect(
-        dayValues(rows.where((r) => r.type == TransactionType.credit),
-            TxKind.income)[DateTime(2026, 9, 5)],
-        900000);
+    final credits = rows.where((r) => r.type == TransactionType.credit);
+    expect(dayValues(credits, TxKind.income)[DateTime(2026, 9, 5)], 900000);
     expect(calendarCaption(TxKind.review), 'Flagged amounts by day');
     expect(calendarCaption(TxKind.all), 'Daily spend');
   });
