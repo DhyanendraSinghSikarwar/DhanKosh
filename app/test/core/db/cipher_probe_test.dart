@@ -12,8 +12,8 @@ void main() {
     expect(v, isNotEmpty, reason: 'not SQLCipher');
     db
       ..execute("PRAGMA key = \"x'${'ab' * 32}'\";")
-      ..execute('create table t(a); insert into t values (1);');
-    db.close();
+      ..execute('create table t(a); insert into t values (1);')
+      ..close();
     // Wrong key must fail; right key must read.
     final bad = sqlite3.open(file.path)
       ..execute("PRAGMA key = \"x'${'cd' * 32}'\";");
