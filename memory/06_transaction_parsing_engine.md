@@ -817,6 +817,7 @@ Tests: 716 pass, 0 skipped (598 Phase 1 + 118 Phase 3 statement ports) (`dart te
 Ported in Phase 3 (2026-10-21): the `SmsToTransactionTest` statement-row test (in `statement_parser_test`), `ParserRegistry.cardDue` and the `statement/` package; see [Statement import](05_statement_import.md) notes for the API. Kotlin `ParserPerformanceTest` is replaced by the 10,000-message test in `parse_api_test`. The thin Flutter wrapper `lib/features/parsing/` is not built yet.
 
 Phase 3: `CardDue`/`ParserRegistry.cardDue` and `InvestmentParser` (EPF/NPS SMS and email) landed in `packages/parser_core/src/statement/` (FR-06-15 complete); API signatures are in [Statement import](05_statement_import.md) section 18.
+- Coverage matrix: docs/research/capture-coverage.md
 
 ## 19. Change Log (date | change | reason)
 
@@ -827,3 +828,4 @@ Phase 3: `CardDue`/`ParserRegistry.cardDue` and `InvestmentParser` (EPF/NPS SMS 
 | 2026-10-19 | Listed-bank count corrected to 51 (matches table); subcategory regexes now link to 09 section 3.3; stale section refs 2.8/2.10 updated | Audit Gate gap, scan_N |
 | 2026-10-21 | Phase 1 Dart port landed in app/packages/parser_core | Phase 1 |
 | 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |
+| 2026-10-25 | Capture coverage matrix + e2e tests | Verification |
