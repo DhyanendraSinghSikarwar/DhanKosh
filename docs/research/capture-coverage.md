@@ -21,11 +21,11 @@ A test passing here proves the Dart logic. It does not prove the Kotlin side, a 
 |---|---|---|---|
 | a | Transactions from SMS, email, notifications | Yes | 10 bank parsers + 51 listed banks + 17 lenders + payment apps; SMS and email of one payment merge |
 | b | Statements by mail or file (bank, card) | Partial | Text PDFs, CSV, XLSX parse; scanned PDF and `.xls` refused; real PDF text unverified |
-| c | Mutual funds | Partial | CAS (CAMS, CDSL, NSDL), Groww/other platform sheets, INDmoney summary mail yes; SIP/order mails not recorded |
+| c | Mutual funds | Yes | CAS (CAMS, CDSL, NSDL), platform sheets, INDmoney summary mail, SIP/order confirmation mails and SMS (units and invested added once); no fund transaction history |
 | d | Stocks and ETFs | Partial | Holdings statements and sheets yes; contract notes and trade SMS no |
 | e | PF / EPF | Yes | EPFO SMS and passbook PDF share one holding key |
-| f | NPS | Partial | Statement and holding-value SMS yes; contribution SMS parsed but not recorded |
-| g | FD / RD / PPF and loans | Partial | From statements and advices yes; FD/loan SMS and mail not recorded; EMI receipts yes |
+| f | NPS | Yes | Statement, holding-value SMS and contribution SMS/mail (holding plus INVESTMENT row unless the bank debit is already there) |
+| g | FD / RD / PPF and loans | Yes | Statements, advices and FD/RD/PPF/loan status SMS and mail update accounts; EMI receipts are transactions |
 | h | Card due notices | Yes | SMS, mail and statements; app notifications deliberately excluded |
 
 ## a. Bank and card transactions
@@ -65,18 +65,19 @@ Limitations:
 
 ## c. Mutual funds
 
-Supported: **Partial**.
+Supported: **Yes**.
 
 Covered:
 - CAS text (CAMS closing-balance blocks with ISIN and value, CDSL CAS MF section, NSDL CAS folio rows) gives mutual fund holdings with units, value and invested amount. Verified: CAMS text via PDF import; CAS attached to a CAMS mail via sync; re-read adds no duplicate.
 - Platform holdings sheets by column names (profiles): Groww (MF and stocks), Zerodha Coin, Kuvera, INDmoney, Paytm Money, ET Money; MFCentral/CAMS/KFintech by sender. Verified in the app with a real `.xlsx` Groww MF sheet (equity MF plus a gold fund classified as gold).
 - INDmoney-style portfolio summary mail (body only) records aggregate holdings.
+- SIP / order confirmation mail or SMS (`parseMfOrder`, when the message is not also a bank transaction): `recordMfOrder` adds units and invested to the matching fund (ISIN/name match), once per message id and order; skipped when a statement dated on or after the order already counts it.
 - A SIP debit SMS from the bank is an INVESTMENT transaction (not a spend).
 
-Evidence: `c mutual funds` group (CAMS CAS PDF, CAS re-read, CAS by mail, Groww XLSX, INDmoney summary mail, SIP debit SMS, SIP mail limitation). Parser-level: `cas_holdings_test`, `holding_platforms_test`, `holdings_sheet_test`, `statement_to_holdings_test`.
+Evidence: `c mutual funds` group (CAMS CAS PDF, CAS re-read, CAS by mail, Groww XLSX, INDmoney summary mail, SIP debit SMS, SIP mail adds a holding once). Parser-level: `cas_holdings_test`, `holding_platforms_test`, `holdings_sheet_test`, `statement_to_holdings_test`.
 
 Limitations:
-- **Not recorded: SIP/order confirmation mails** (Groww, INDmoney, etc.). `MfOrderParser` exists in parser_core and is tested there, but no app code calls it. Test `LIMITATION: SIP / order confirmation mail records nothing` pins this. Holdings update only from statements, sheets and summaries.
+- Order mails are read only from the mail body (subject not passed); a fund known only from orders has an `MF:<name>` key until a statement brings the ISIN.
 - No transaction history for funds (CAS transaction rows are not turned into ledger rows); holdings are snapshots by identifier.
 - Zerodha Coin, Kuvera, Paytm Money, ET Money profiles are tested at parser level only (and Groww in-app); the layouts are not confirmed from live exports.
 - Value is as of the statement date, not live NAV.
@@ -107,31 +108,30 @@ Limitations: EPFO SMS sender codes beyond `EPFOHO` are routed by registry only i
 
 ## f. NPS
 
-Supported: **Partial**.
+Supported: **Yes**.
 
-Covered: NPS statement of transactions PDF text (Tier I holding by PRAN last 4, value and total contribution); holding-value SMS from CRA/NPS Trust senders (`NPSTRS`, `NPSCRA`, `PFRDAI`, `NSDLPR`, `KFINTN`, `CAMSNP`).
+Covered: NPS statement of transactions PDF text (Tier I holding by PRAN last 4, value and total contribution); contribution SMS/mail ("Contribution of Rs... credited to PRAN"): added to invested (and value when newer), once per contribution key, plus an INVESTMENT transaction unless a same-amount DEBIT/INVESTMENT exists within -4/+2 days; holding-value SMS from CRA/NPS Trust senders (`NPSTRS`, `NPSCRA`, `PFRDAI`, `NSDLPR`, `KFINTN`, `CAMSNP`).
 
-Evidence: `f NPS` group (holding SMS, statement PDF, contribution limitation).
+Evidence: `f NPS` group (holding SMS, statement PDF, contribution SMS).
 
 Limitations:
-- **A contribution SMS alone records nothing** (`InvestmentParser.npsContribution` exists and is unit-tested but is not called by ingest). Test `LIMITATION: a contribution SMS alone records nothing`.
 - Tier II appears only when the statement lists it; the test statement covers Tier I.
-- Contributions are not ledgered as transactions.
+- A contribution a newer statement already counts adds no INVESTMENT row.
 
 ## g. Deposits (FD, RD, PPF) and loans
 
-Supported: **Partial**.
+Supported: **Yes**.
 
 Covered:
 - FD advice PDF text creates an FD account (balance = principal, maturity date and action), no transaction. PPF statement PDF sets a PPF account balance. RD uses the same path (parser-level tests in `deposit_messages_test`, `statement_to_holdings_test`).
 - Lender EMI receipts by SMS or mail are DEBIT rows on the loan account with the EMI category. Lenders: Propelld, Aditya Birla Capital, Bajaj Finance, Tata Capital, HDFC Credila, Avanse, InCred, SMFG India Credit, Home Credit, KreditBee, Navi, Poonawalla Fincorp, HDB Financial, L&T Finance, Hero FinCorp, Cholamandalam, Mahindra Finance. Loan statements apply the outstanding balance to a loan account.
 - Loan reminders ("EMI due on ...") are not transactions.
+- FD/RD/PPF booking, renewal, maturity and balance SMS or mail, and lender disbursal/outstanding messages, update the account (type, balance, maturity, hidden when closed; loan principal only when none) with no transaction; an older message never rewinds a newer one; the user's own phone tail is never made an account.
 
-Evidence: `g deposits and loans` group (FD advice PDF, PPF PDF, FD SMS limitation, lender EMI SMS, lender EMI mail, EMI reminder limitation).
+Evidence: `g deposits and loans` group (FD advice PDF, PPF PDF, FD booking SMS, lender EMI SMS, lender EMI mail, EMI reminder); `ingest_capture_gaps_test.dart`.
 
 Limitations:
-- **FD/RD/PPF booking SMS and mails are not recorded**: `registry.loanStatus` parses them but `IngestMessage` never calls it; only statements feed deposit and loan accounts. Test `LIMITATION: FD booking SMS is not recorded as a deposit`.
-- Loan disbursal or outstanding-balance SMS are likewise parser-only.
+- Status messages are matched by the same sender registry as transactions; wording the parsers do not know is ignored.
 - Interest credits on FDs appear only as bank-account credits if the bank SMS is read.
 - Only the HDFC FD SMS, ICICI FD advice and SBI PPF layouts are tested.
 

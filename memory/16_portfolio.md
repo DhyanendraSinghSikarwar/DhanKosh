@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-16 |
-| Status | In progress (Phase 3: data/domain layer and Portfolio tab UI done: net worth hero, history chart, allocation, holdings CRUD, maturities, exclusions; history estimate, MF order/NPS recording pipeline, loans card, sparklines and statement link pending) |
+| Status | In progress (Phase 3: MF order and NPS contribution recording wired (FR-16-19..21); data/domain layer and Portfolio tab UI done: net worth hero, history chart, allocation, holdings CRUD, maturities, exclusions; history estimate, loans card, sparklines and statement link pending) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-25 |
 
 ## 1. Description
 
@@ -461,6 +461,8 @@ Parsers (2026-10-21): the holdings snapshot producers are ported to parser_core 
 
 Hardening 2026-10-22: statement holdings mismatch (FR-05-18) is surfaced by [Statement import](05_statement_import.md) from parser_core `HoldingsCheck`; no portfolio code changed.
 
+Capture gaps (2026-10-25): `IngestMessage._recordSide` now also records, besides card dues and EPF/NPS values: (1) MF purchase confirmations (`parseMfOrder`, SMS and mail bodies that yield no bank transaction) via `HoldingRepository.recordMfOrder` (FR-16-19); (2) NPS contributions (`InvestmentParser.npsContribution`) via `recordNpsContribution` plus an INVESTMENT transaction through the ledger unless a DEBIT/INVESTMENT of the same amount sits in [date-4d, date+2d] (FR-16-20, FR-16-21); (3) `registry.loanStatus` results through `ApplyStatementAccounts.applyDeposits` (FD/RD/PPF account type, balance, maturity, hide on close; loan account, principal only when none, outstanding as balance; no transactions; skipped when the number is the user's own phone tail; mail only when it is not also a transaction). Claims (MF message id and order key, NPS key) live in the `settings` row `holding_claims` (newline list, cap 500), written in the same DB transaction, so no schema change. Tests: `test/features/sms_ingestion/ingest_capture_gaps_test.dart`, `test/e2e/capture_matrix_test.dart`. Deviations: a contribution already counted by a newer statement returns false from `recordNpsContribution`, so no INVESTMENT row is added for it; broker trade SMS and contract notes are not recorded (the Kotlin app does not either).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -472,3 +474,4 @@ Hardening 2026-10-22: statement holdings mismatch (FR-05-18) is surfaced by [Sta
 | 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |
 | 2026-10-21 | Phase 3 Portfolio + Profile UI landed | Phase 3 |
 | 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |
+| 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |

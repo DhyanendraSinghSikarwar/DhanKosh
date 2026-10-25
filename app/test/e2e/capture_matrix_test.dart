@@ -571,21 +571,25 @@ void main() {
       expect(hs.map((h) => h.valueMinor), contains(12345600), reason: '$hs');
     });
 
-    test('LIMITATION: SIP / order confirmation mail records nothing', () async {
-      // MfOrderParser exists in parser_core but no app code calls it, so a
-      // Groww/INDmoney order mail neither adds a holding nor a transaction.
+    test('SIP / order confirmation mail adds a holding once, no transaction',
+        () async {
       p = Pipeline();
-      final r = await p.syncMails([
-        p.mail(
-          'imap:<sip@x>',
-          'Groww <noreply@groww.in>',
-          'Your SIP instalment for Parag Parikh Flexi Cap Fund is successful',
-          growwSipEmail,
-        ),
-      ]);
+      final mail = p.mail(
+        'imap:<sip@x>',
+        'Groww <noreply@groww.in>',
+        'Your SIP instalment for Parag Parikh Flexi Cap Fund is successful',
+        growwSipEmail,
+      );
+      final r = await p.syncMails([mail]);
       expect(r.emails, 1);
       expect(await p.txs(), isEmpty);
-      expect(await p.holdings.list(), isEmpty);
+      final h = (await p.holdings.list()).single;
+      expect(h.kind, HoldingKind.mutualFund);
+      expect(h.units, closeTo(61.234, 1e-6));
+      expect(h.investedMinor, 500000);
+      // A re-sync of the same mail adds nothing.
+      await p.syncMails([mail]);
+      expect((await p.holdings.list()).single.units, closeTo(61.234, 1e-6));
     });
 
     test('bank SMS for a SIP debit is an INVESTMENT row', () async {
@@ -701,13 +705,22 @@ void main() {
       expect(h.investedMinor, 35000000);
     });
 
-    test('LIMITATION: a contribution SMS alone records nothing', () async {
-      // InvestmentParser.npsContribution exists but is not called by ingest.
+    test('a contribution SMS adds to the NPS holding once, with an investment',
+        () async {
       p = Pipeline();
       final d = await p.sms('AX-NPSCRA', npsContribSms);
-      expect(d.outcome, IngestOutcome.rejected);
-      expect(await p.holdings.list(), isEmpty);
-      expect(await p.txs(), isEmpty);
+      expect(d.outcome, IngestOutcome.inserted);
+      final h = (await p.holdings.list()).single;
+      expect(h.kind, HoldingKind.nps);
+      expect(h.identifier, 'NPS:1234');
+      expect(h.investedMinor, 500000);
+      final t = (await p.txs()).single;
+      expect(t.type, 'INVESTMENT');
+      expect(t.amountMinor, 500000);
+      // Same SMS again: nothing changes.
+      await p.sms('AX-NPSCRA', npsContribSms);
+      expect((await p.holdings.list()).single.investedMinor, 500000);
+      expect(await p.txs(), hasLength(1));
     });
   });
 
@@ -735,14 +748,19 @@ void main() {
       expect(a['latest_balance_minor'], 25567800);
     });
 
-    test('LIMITATION: FD booking SMS is not recorded as a deposit', () async {
-      // registry.loanStatus parses it, but IngestMessage never calls it:
-      // only statements feed deposit and loan accounts.
+    test('FD booking SMS opens an FD account, no transaction', () async {
       p = Pipeline();
       final d = await p.sms(hdfcSms, hdfcFdSms);
       expect(d.parse.transaction, isNull);
+      expect(d.outcome, IngestOutcome.inserted);
       expect(await p.txs(), isEmpty);
-      expect(await p.account('HDFC Bank', '5678'), isNull);
+      final a = await p.account('HDFC Bank', '5678');
+      expect(a, isNotNull);
+      expect(a!['account_type'], anyOf('FD', 'fd'));
+      expect(a['latest_balance_minor'], isNotNull);
+      expect(a['maturity_day'], isNotNull);
+      await p.sms(hdfcSms, hdfcFdSms);
+      expect(await p.env.count('accounts'), 1);
     });
 
     test('lender EMI SMS is a debit on the loan account (EMI category)',
@@ -773,7 +791,7 @@ void main() {
       expect(t.last4, '2345');
     });
 
-    test('LIMITATION: loan EMI reminder is not a transaction', () async {
+    test('loan EMI reminder is not a transaction', () async {
       p = Pipeline();
       final d = await p.sms(
         'VM-PROPLD',

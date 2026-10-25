@@ -108,6 +108,9 @@ class Pipeline {
       ledger: env.txs,
       cardDues: dues,
       holdings: holdings,
+      accounts: ApplyStatementAccounts(
+        StatementAccountStoreImpl(env.db, clock: () => env.clock),
+      ),
     );
     this.pdf = pdf ?? TaggedPdf(const {});
     statements = ImportStatement(

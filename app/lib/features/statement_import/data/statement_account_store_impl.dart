@@ -28,6 +28,7 @@ class StatementAccountStoreImpl implements StatementAccountStore {
           ? null
           : enumFromDb(AccountType.values, r.accountType, AccountType.savings),
       balanceUpdatedAt: r.balanceUpdatedAt,
+      loanPrincipalMinor: r.loanPrincipalMinor,
       maturityDay: r.maturityDay,
       maturityAction: r.maturityAction == null
           ? null
@@ -74,6 +75,12 @@ class StatementAccountStoreImpl implements StatementAccountStore {
           maturityDay: Value(day),
           maturityAction: Value(action == null ? null : enumToDb(action)),
         ),
+      );
+
+  @override
+  Future<void> setLoanPrincipal(int id, int principalMinor) =>
+      (_db.update(_db.accounts)..where((t) => t.id.equals(id))).write(
+        AccountsCompanion(loanPrincipalMinor: Value(principalMinor)),
       );
 
   @override

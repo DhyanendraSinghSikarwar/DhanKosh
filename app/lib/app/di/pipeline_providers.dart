@@ -6,6 +6,7 @@ import 'package:hisaab/app/di/notification_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
+import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/core/platform_channels/background_channel.dart';
 import 'package:hisaab/core/platform_channels/permissions_channel.dart';
 import 'package:hisaab/core/platform_channels/sms_channel.dart';
@@ -115,6 +116,7 @@ IngestMessage ingestMessage(Ref ref) => IngestMessage(
       ownNumberTails: () => _ownTails(ref),
       cardDues: ref.watch(cardDueRepositoryProvider),
       holdings: ref.watch(holdingRepositoryProvider),
+      accounts: ref.watch(applyStatementAccountsProvider),
     );
 
 /// Builds a ScanSms; onProgress feeds the Settings progress line.

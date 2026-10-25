@@ -10,6 +10,16 @@ abstract interface class HoldingRepository {
   /// rows inserted or updated.
   Future<int> record(List<HoldingSnapshot> snapshots, HoldingSource source);
 
+  /// Adds a mutual fund purchase to its holding (FR-16-19). Returns false when
+  /// [claimKey] or the order itself was applied before, or a statement dated
+  /// on or after the order already counts it.
+  Future<bool> recordMfOrder(MfOrderEntry order, {required String claimKey});
+
+  /// Adds an NPS contribution to its tier's holding (FR-16-20, FR-16-21).
+  /// Returns false when the contribution was applied before or a statement
+  /// dated on or after it already counts it.
+  Future<bool> recordNpsContribution(NpsContributionEntry c);
+
   /// Merges duplicates (keeps the statement copy, else the newest) and drops
   /// aggregates covered by itemised rows (FR-16-18). Returns rows removed.
   Future<int> dedupe();
@@ -47,4 +57,57 @@ abstract interface class HoldingRepository {
 
   /// Stream of [list].
   Stream<List<Holding>> watch();
+}
+
+/// A mutual fund purchase (SIP instalment or lump sum) from a mail or SMS.
+class MfOrderEntry {
+  /// Creates an order.
+  const MfOrderEntry({
+    required this.schemeName,
+    required this.identifier,
+    required this.at,
+    this.platform,
+    this.folio,
+    this.amountMinor,
+    this.units,
+    this.nav,
+  });
+
+  final String schemeName;
+
+  /// `MF:` + normalised scheme name.
+  final String identifier;
+
+  /// Epoch ms of the order.
+  final int at;
+  final String? platform;
+  final String? folio;
+  final int? amountMinor;
+  final double? units;
+
+  /// Rupees per unit (a price, not an amount).
+  final double? nav;
+}
+
+/// An NPS contribution credited to a PRAN tier.
+class NpsContributionEntry {
+  /// Creates a contribution.
+  const NpsContributionEntry({
+    required this.identifier,
+    required this.name,
+    required this.amountMinor,
+    required this.at,
+    required this.key,
+  });
+
+  /// `NPS:1234` or `NPS:1234:T2`.
+  final String identifier;
+  final String name;
+  final int amountMinor;
+
+  /// Epoch ms.
+  final int at;
+
+  /// Stable key: the same contribution by SMS and mail counts once.
+  final String key;
 }

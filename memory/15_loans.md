@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-15 |
-| Status | In progress (domain, link store and core UI done: Loans list, detail with schedule and payoff, add/edit loan, link/unlink, Not a loan; terms editor, link prompt, merge/duplicates UI, lender status pending) |
+| Status | In progress (domain, link store and core UI done: Loans list, detail with schedule and payoff, add/edit loan, link/unlink, Not a loan; terms editor, link prompt, merge/duplicates UI, lender status wired (FR-15-13) through `ApplyStatementAccounts`; Phase 4 UI items above still pending) |
 | Priority | P2 |
 | Phase | 4 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-25 |
 
 ## 1. Description
 
@@ -378,6 +378,8 @@ Decisions: loan keys are `acct:<id>` / `payee:<key>` (memory model), not Kotlin 
 
 Tests: `test/features/loans/loans_test.dart` ports Kotlin `LoansTest` (EMI 867,823 / 888,488 / 1,000,000; schedule sums 100,000,000 principal + 108,277,663 interest, 240 rows, final balance 0; elapsed/dueOn clamp; remainingEmis 180; account + detected scenario; investments/dismissed; links by payee and tx; manual payee; merged child; duplicates) and adds worked examples 2 to 5, 75-day and month thresholds, review/non-INR/custom-category exclusion, closed loan, month-end nextDue, link encodings, add-loan validation, EMI pairing. Covers TC-15-01..05 and TC-15-08 in domain; TC-15-06 encodings only (stores pending), TC-15-07 and widget/integration cases pending.
 
+FR-15-13 done (2026-10-25): lender status messages (disbursal, outstanding) reach `ApplyStatementAccounts.applyDeposits` from `IngestMessage`; principal set only when the account has none, outstanding stored as balance. Test `ingest_capture_gaps_test.dart`.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -387,3 +389,4 @@ Tests: `test/features/loans/loans_test.dart` ports Kotlin `LoansTest` (EMI 867,8
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
+| 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |

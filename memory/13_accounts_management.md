@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-13 |
-| Status | In progress (Phase 1 data layer and basic UI; tabs, edit fields, suggestions, gaps pending; own-transfer legs in ledger done) |
+| Status | In progress (Phase 1 data layer and basic UI; FD/RD/PPF and loan status SMS/mail create and update accounts via the ingest pipeline; tabs, edit fields, suggestions, gaps pending; own-transfer legs in ledger done) |
 | Priority | P0 |
 | Phase | 1 (account creation from messages, balances, lists); 2 for debit-card link, merge and gap detection; 3 for statement unlock details |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-25 |
 
 ## 1. Description
 
@@ -513,6 +513,8 @@ Deviations: balance maths is Dart + one SQL aggregate per account (`watchWithAct
 
 2026-10-22: account change on a transaction (`setAccount` from the detail screen) and own-transfer legs (`addOwnTransfer`, see [Transactions](08_transactions_ledger.md)) use the existing account domain; no schema change.
 
+Deposit messages (2026-10-25): an FD/RD/PPF booking, renewal, maturity or balance SMS/mail sets the deposit account's type, balance, maturity day and action, and hides it when closed (`ApplyStatementAccounts.applyDeposits`, same code as statements; no transactions). Older messages never rewind a newer balance. Test `capture_matrix_test.dart` `FD booking SMS opens an FD account`.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -522,3 +524,4 @@ Deviations: balance maths is Dart + one SQL aggregate per account (`watchWithAct
 | 2026-10-21 | Phase 1 data layer landed (tables accounts; `AccountRepository` ensure/create/rename/hide/merge/delete/balance streams) | Phase 1 |
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
+| 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |

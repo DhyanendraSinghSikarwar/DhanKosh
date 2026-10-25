@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-06 |
-| Status | In progress (Phase 1 SMS/email/notification path and Phase 3 card-due/investment SMS parsers done in parser_core; Flutter wrapper not built) |
+| Status | In progress (Phase 1 SMS/email/notification path and Phase 3 card-due/investment SMS parsers done in parser_core; Flutter wrapper not built; ingest wires MF orders, NPS contributions, deposit and loan status, 2026-10-25) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-25 |
 
 ## 1. Description
 
@@ -819,6 +819,8 @@ Ported in Phase 3 (2026-10-21): the `SmsToTransactionTest` statement-row test (i
 Phase 3: `CardDue`/`ParserRegistry.cardDue` and `InvestmentParser` (EPF/NPS SMS and email) landed in `packages/parser_core/src/statement/` (FR-06-15 complete); API signatures are in [Statement import](05_statement_import.md) section 18.
 - Coverage matrix: docs/research/capture-coverage.md
 
+Ingest wiring (2026-10-25): `parseMfOrder`, `InvestmentParser.npsContribution` and `registry.loanStatus` are now consumed by `IngestMessage` (see [Portfolio](16_portfolio.md), [Loans](15_loans.md), [Accounts](13_accounts_management.md)). Broker trade SMS stay unparsed, as in the Kotlin app.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -829,3 +831,4 @@ Phase 3: `CardDue`/`ParserRegistry.cardDue` and `InvestmentParser` (EPF/NPS SMS 
 | 2026-10-21 | Phase 1 Dart port landed in app/packages/parser_core | Phase 1 |
 | 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |
 | 2026-10-25 | Capture coverage matrix + e2e tests | Verification |
+| 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |

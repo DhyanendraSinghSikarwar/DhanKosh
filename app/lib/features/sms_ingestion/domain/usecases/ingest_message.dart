@@ -8,7 +8,9 @@ import 'package:hisaab/features/portfolio/domain/holding_repository.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart'
     as sms;
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
+import 'package:hisaab/features/statement_import/domain/usecases/apply_statement_accounts.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart' as led;
+import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -36,7 +38,9 @@ class IngestMessage {
     ParserRegistry? registry,
     CardDueRepository? cardDues,
     HoldingRepository? holdings,
+    ApplyStatementAccounts? accounts,
   })  : _ledger = ledger,
+        _accounts = accounts,
         _cardDues = cardDues,
         _holdings = holdings,
         _tails = ownNumberTails,
@@ -46,6 +50,7 @@ class IngestMessage {
   final TransactionRepository _ledger;
   final CardDueRepository? _cardDues;
   final HoldingRepository? _holdings;
+  final ApplyStatementAccounts? _accounts;
   final Future<Set<String>> Function()? _tails;
   final ParserRegistry _registry;
   final bool _customRegistry;
@@ -110,7 +115,12 @@ class IngestMessage {
     String? messageId,
   ) async {
     final tx = result.transaction;
-    final side = await _recordSide(message, source);
+    final side = await _recordSide(
+      message,
+      source,
+      messageId ?? message.messageId,
+      hasTransaction: tx != null,
+    );
     if (tx == null) {
       return MessageIngestDetail(
         side ? IngestOutcome.inserted : IngestOutcome.rejected,
@@ -138,7 +148,12 @@ class IngestMessage {
   /// from [message]; neither is a transaction. Both run independently of the
   /// transaction parse, so a message can feed more than one. Notifications
   /// (Source.app) never carry either. True when something was stored.
-  Future<bool> _recordSide(sms.InboxSms message, Source source) async {
+  Future<bool> _recordSide(
+    sms.InboxSms message,
+    Source source,
+    String messageId, {
+    required bool hasTransaction,
+  }) async {
     if (source == Source.app) return false;
     final at = message.receivedAt;
     var stored = false;
@@ -168,6 +183,33 @@ class IngestMessage {
     }
     final holdings = _holdings;
     if (holdings != null) {
+      // FR-16-21: an NPS contribution adds to the tier's invested total.
+      final c = InvestmentParser.npsContribution(message.body, at);
+      if (c != null) {
+        return await _recordNps(c, message, source, messageId, holdings) ||
+            stored;
+      }
+      // FR-16-19: a fund purchase confirmation (SIP instalment, units
+      // allotted) when no bank transaction was read from the message.
+      if (!hasTransaction) {
+        final o = parseMfOrder(message.body, null, message.sender, at);
+        if (o != null &&
+            await holdings.recordMfOrder(
+              MfOrderEntry(
+                schemeName: o.schemeName,
+                identifier: o.identifier,
+                at: _orderTime(o.date, at),
+                platform: o.platform,
+                folio: o.folio,
+                amountMinor: o.amountMinor,
+                units: o.units,
+                nav: o.nav,
+              ),
+              claimKey: messageId,
+            )) {
+          return true;
+        }
+      }
       final h = source == Source.email
           ? parseInvestmentEmail(message.body, at)
           : parseInvestmentSms(message.body, message.sender, at);
@@ -193,6 +235,101 @@ class IngestMessage {
         stored = stored || n > 0;
       }
     }
+    // FR-13-19, FR-15-13: a lender's or bank's status message (loan
+    // outstanding, FD/RD/PPF booking or maturity). Mail only when it is not
+    // also a transaction.
+    final accounts = _accounts;
+    if (accounts != null && (source == Source.sms || !hasTransaction)) {
+      final st = _registry.loanStatus(message.body, message.sender, at, source);
+      if (st != null &&
+          !(await _tails?.call() ?? const {}).contains(st.last4)) {
+        if (await accounts.applyDeposits([st]) > 0) stored = true;
+      }
+    }
     return stored;
+  }
+
+  static const _istMs = 19800000;
+
+  /// Order time: the message time when dated that day, else noon IST.
+  static int _orderTime(CivilDate d, int receivedAt) {
+    final today = ((receivedAt + _istMs) / 86400000).floor();
+    return d.toEpochDay() == today
+        ? receivedAt
+        : d.toEpochDay() * 86400000 + 12 * 3600000 - _istMs;
+  }
+
+  /// Adds [c] to its holding once, and records an INVESTMENT transaction
+  /// unless the bank already reported a debit of that amount (FR-16-21).
+  Future<bool> _recordNps(
+    NpsContribution c,
+    sms.InboxSms message,
+    Source source,
+    String messageId,
+    HoldingRepository holdings,
+  ) async {
+    final at = _orderTime(c.date, message.receivedAt);
+    final fresh = await holdings.recordNpsContribution(
+      NpsContributionEntry(
+        identifier: c.identifier,
+        name: InvestmentParser.npsName(c.pranLast4, c.tier),
+        amountMinor: c.amountMinor,
+        at: at,
+        key: c.key,
+      ),
+    );
+    if (!fresh) return false;
+    const day = 86400000;
+    final near = await _ledger
+        .watch(
+          LedgerFilter(
+            fromMs: at - 4 * day - 12 * 3600000,
+            toMs: at + 2 * day + 12 * 3600000,
+          ),
+        )
+        .first;
+    final already = near.any(
+      (t) =>
+          t.amountMinor == c.amountMinor &&
+          (t.type == TransactionType.debit ||
+              t.type == TransactionType.investment),
+    );
+    if (!already) {
+      await _ledger.ingest(
+        led.IngestItem(
+          parsed: ParsedTransaction(
+            amountMinor: c.amountMinor,
+            currency: 'INR',
+            type: TransactionType.investment,
+            bankName: 'NPS',
+            accountLast4: null,
+            accountKind: AccountKind.account,
+            merchant: c.tier == 2 ? 'NPS Tier II' : 'NPS Tier I',
+            upiId: null,
+            referenceNumber: null,
+            channel: Channel.other,
+            balanceMinor: null,
+            availableLimitMinor: null,
+            transactionTime: at,
+            hasExplicitTime: at == message.receivedAt,
+            category: Category.investment,
+            source: source,
+            sender: message.sender,
+            messageTimestamp: message.receivedAt,
+            confidence: 0.8,
+            transactionHash: TransactionHasher.hash(
+              c.amountMinor,
+              TransactionType.investment,
+              null,
+              c.date,
+              null,
+            ),
+          ),
+          sourceMessageId: '$messageId#nps',
+          rawText: message.body,
+        ),
+      );
+    }
+    return true;
   }
 }

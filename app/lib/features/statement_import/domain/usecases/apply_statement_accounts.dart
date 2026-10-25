@@ -96,6 +96,10 @@ class ApplyStatementAccounts {
       if (existing != null && existing.accountType == null) {
         await _store.setType(id, AccountType.loan);
       }
+      final principal = s.principalMinor;
+      if (principal != null && existing?.loanPrincipalMinor == null) {
+        await _store.setLoanPrincipal(id, principal);
+      }
       await _store.updateBalance(
         id,
         at: s.at,

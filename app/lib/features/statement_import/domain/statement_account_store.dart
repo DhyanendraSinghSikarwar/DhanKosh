@@ -11,6 +11,7 @@ class StatementAccount {
     this.balanceUpdatedAt,
     this.maturityDay,
     this.maturityAction,
+    this.loanPrincipalMinor,
   });
 
   final int id;
@@ -20,6 +21,9 @@ class StatementAccount {
   /// Epoch day.
   final int? maturityDay;
   final DepositMaturityAction? maturityAction;
+
+  /// Loan principal when set.
+  final int? loanPrincipalMinor;
 }
 
 /// What a bank does when a deposit matures.
@@ -47,6 +51,9 @@ abstract interface class StatementAccountStore {
     int? day,
     DepositMaturityAction? action,
   );
+
+  /// Sets the loan principal (a disbursal message, FR-15-13).
+  Future<void> setLoanPrincipal(int id, int principalMinor);
 
   /// Hides the account (closed deposit).
   Future<void> hide(int id);

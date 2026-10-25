@@ -122,6 +122,168 @@ class HoldingRepositoryImpl implements HoldingRepository {
     return changed;
   }
 
+  static const _claimsKey = 'holding_claims';
+  static const _claimsCap = 500;
+
+  /// True when none of [keys] was claimed; then claims them all (FR-16-21).
+  /// Runs inside the caller's transaction.
+  Future<bool> _claim(List<String> keys) async {
+    final row = await (_db.select(_db.settings)
+          ..where((t) => t.key.equals(_claimsKey)))
+        .getSingleOrNull();
+    final set =
+        row == null || row.value.isEmpty ? <String>[] : row.value.split('\n');
+    if (keys.any(set.contains)) return false;
+    set.addAll(keys);
+    final kept =
+        set.length > _claimsCap ? set.sublist(set.length - _claimsCap) : set;
+    await _db.into(_db.settings).insertOnConflictUpdate(
+          SettingsCompanion.insert(key: _claimsKey, value: kept.join('\n')),
+        );
+    return true;
+  }
+
+  @override
+  Future<bool> recordMfOrder(
+    MfOrderEntry o, {
+    required String claimKey,
+  }) =>
+      _db.transaction(() async {
+        final day = o.at ~/ 86400000;
+        final ok = await _claim([
+          'mfmsg|$claimKey',
+          'mf|${o.identifier}|$day|${o.amountMinor}|${o.units}',
+        ]);
+        if (!ok) return false;
+        final all = await _all();
+        final key =
+            HoldingKey(HoldingKind.mutualFund, o.identifier, o.schemeName);
+        final existing = all
+                .where((h) => h.identifier == o.identifier)
+                .firstOrNull ??
+            all
+                .where((h) => !h.isManual && HoldingMatch.same(_key(h), key))
+                .firstOrNull;
+        final amount = o.amountMinor ?? 0;
+        final note = [
+          if (o.platform != null) o.platform!,
+          if (o.folio != null) 'folio ${o.folio}',
+        ].join(' · ');
+        if (existing == null) {
+          final value = o.units != null && o.nav != null
+              ? (o.units! * o.nav! * 100).round()
+              : o.amountMinor;
+          await _db.into(_db.holdings).insert(
+                HoldingsCompanion.insert(
+                  kind: enumToDb(HoldingKind.mutualFund),
+                  name: o.schemeName,
+                  identifier: o.identifier,
+                  units: Value(o.units),
+                  valueMinor: Value(value),
+                  investedMinor: Value(o.amountMinor),
+                  asOf: Value(o.at),
+                  source: enumToDb(HoldingSource.email),
+                  note: Value(note.isEmpty ? null : note),
+                  updatedAt: _now(),
+                ),
+              );
+          return true;
+        }
+        if (existing.source == HoldingSource.statement &&
+            (existing.asOf ?? 0) >= o.at) {
+          return false;
+        }
+        final units =
+            o.units != null ? (existing.units ?? 0) + o.units! : existing.units;
+        final int value;
+        if (units != null &&
+            o.nav != null &&
+            (existing.units != null || existing.valueMinor == null)) {
+          value = (units * o.nav! * 100).round();
+        } else {
+          value = (existing.valueMinor ?? 0) + amount;
+        }
+        // A statement that gave value but not cost: one purchase is not the
+        // total invested, so it stays unknown.
+        final invested = existing.investedMinor != null
+            ? existing.investedMinor! + amount
+            : (existing.valueMinor == null ||
+                    existing.source == HoldingSource.email)
+                ? o.amountMinor
+                : null;
+        await (_db.update(_db.holdings)..where((t) => t.id.equals(existing.id)))
+            .write(
+          HoldingsCompanion(
+            units: Value(units),
+            valueMinor: Value(value),
+            investedMinor: Value(invested),
+            asOf: Value(max(existing.asOf ?? 0, o.at)),
+            source: Value(
+              enumToDb(
+                existing.isManual ? existing.source : HoldingSource.email,
+              ),
+            ),
+            updatedAt: Value(_now()),
+            previousValueMinor: Value(existing.valueMinor),
+            previousAsOf: Value(existing.asOf),
+          ),
+        );
+        return true;
+      });
+
+  @override
+  Future<bool> recordNpsContribution(NpsContributionEntry c) =>
+      _db.transaction(() async {
+        if (!await _claim([c.key])) return false;
+        final existing = (await _all())
+            .where((h) => h.identifier == c.identifier)
+            .firstOrNull;
+        if (existing == null) {
+          await _db.into(_db.holdings).insert(
+                HoldingsCompanion.insert(
+                  kind: enumToDb(HoldingKind.nps),
+                  name: c.name,
+                  identifier: c.identifier,
+                  valueMinor: Value(c.amountMinor),
+                  investedMinor: Value(c.amountMinor),
+                  asOf: Value(c.at),
+                  source: enumToDb(HoldingSource.sms),
+                  updatedAt: _now(),
+                ),
+              );
+          return true;
+        }
+        if (existing.source == HoldingSource.statement &&
+            (existing.asOf ?? 0) >= c.at) {
+          return false;
+        }
+        final newer = c.at > (existing.asOf ?? 0);
+        await (_db.update(_db.holdings)..where((t) => t.id.equals(existing.id)))
+            .write(
+          HoldingsCompanion(
+            investedMinor: Value(
+              existing.investedMinor != null
+                  ? existing.investedMinor! + c.amountMinor
+                  : existing.valueMinor == null
+                      ? c.amountMinor
+                      : null,
+            ),
+            valueMinor: newer
+                ? Value((existing.valueMinor ?? 0) + c.amountMinor)
+                : const Value.absent(),
+            asOf: newer ? Value(c.at) : const Value.absent(),
+            source: newer && !existing.isManual
+                ? Value(enumToDb(HoldingSource.sms))
+                : const Value.absent(),
+            previousValueMinor:
+                newer ? Value(existing.valueMinor) : const Value.absent(),
+            previousAsOf: newer ? Value(existing.asOf) : const Value.absent(),
+            updatedAt: Value(_now()),
+          ),
+        );
+        return true;
+      });
+
   @override
   Future<int> dedupe() => _db.transaction(() async {
         var removed = 0;
