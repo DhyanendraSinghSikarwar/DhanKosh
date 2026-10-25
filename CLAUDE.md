@@ -1,4 +1,4 @@
-# Hisaab (DhanKosh) Flutter Rebuild: Project Rules
+# DhanKosh (formerly Hisaab) Flutter Rebuild: Project Rules
 
 Offline-first personal finance app for India. It builds one ledger from bank SMS, email, payment-app notifications and statements, recording each payment once.
 Flutter rebuild (Android first) of the Kotlin app `hisaab_apk` v2.9.8; parity with it is the baseline, not a redesign.

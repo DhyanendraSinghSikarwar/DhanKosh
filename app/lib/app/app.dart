@@ -17,7 +17,7 @@ class HisaabApp extends ConsumerWidget {
     final a = ref.watch(appearanceProvider);
     final lang = ref.watch(languageProvider.select((s) => s.active));
     return MaterialApp.router(
-      title: 'Hisaab',
+      title: 'DhanKosh',
       theme: AppTheme.build(a.palette, Brightness.light),
       darkTheme: AppTheme.build(
         a.palette,

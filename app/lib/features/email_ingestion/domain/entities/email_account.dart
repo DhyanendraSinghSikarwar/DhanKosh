@@ -7,7 +7,7 @@ enum EmailProvider {
     'https://myaccount.google.com/apppasswords',
     [
       'Turn on 2-Step Verification.',
-      'Open App passwords, name it Hisaab, tap Create.',
+      'Open App passwords, name it DhanKosh, tap Create.',
       'Paste the 16-letter password here.',
     ],
   ),
@@ -31,7 +31,7 @@ enum EmailProvider {
     'https://login.yahoo.com/account/security',
     [
       'Open Account security.',
-      'Generate app password, name it Hisaab.',
+      'Generate app password, name it DhanKosh.',
       'Paste it here.',
     ],
   ),
@@ -43,7 +43,7 @@ enum EmailProvider {
     'https://appleid.apple.com',
     [
       'Open Sign-In and Security.',
-      'App-Specific Passwords, tap +, name it Hisaab.',
+      'App-Specific Passwords, tap +, name it DhanKosh.',
       'Paste it here.',
     ],
   ),

@@ -74,7 +74,7 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
                     Text('Notifications are off', style: text.titleSmall),
                     const SizedBox(height: 4),
                     const Text(
-                      'Settings > Apps > Hisaab > Notifications',
+                      'Settings > Apps > DhanKosh > Notifications',
                       key: Key('alerts-howto'),
                     ),
                     const SizedBox(height: 8),

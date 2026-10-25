@@ -21,6 +21,11 @@ class UpdatesScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Image.asset(
+            'assets/branding/dhankosh_mark.png',
+            height: 72,
+            semanticLabel: 'DhanKosh',
+          ),
           Text('DhanKosh', style: Theme.of(context).textTheme.headlineSmall),
           Text('Version $version', key: const Key('about-version')),
           const SizedBox(height: 16),

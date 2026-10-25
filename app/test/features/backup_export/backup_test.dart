@@ -42,7 +42,7 @@ class _FakeSvc extends BackupService {
     BackupFileGateway gateway, {
     required DateTime now,
   }) async {
-    final f = await gateway.save('hisaab-2026-10-21.csv', [1]);
+    final f = await gateway.save('dhankosh-2026-10-21.csv', [1]);
     return (count: 1, file: f!);
   }
 
@@ -188,7 +188,7 @@ void main() {
 
     await tester.tap(find.text('Export'));
     await tester.pumpAndSettle();
-    expect(gw.savedName, matches(r'^hisaab-\d{4}-\d{2}-\d{2}\.csv$'));
+    expect(gw.savedName, matches(r'^dhankosh-\d{4}-\d{2}-\d{2}\.csv$'));
     expect(find.textContaining('Exported 1 transactions'), findsOneWidget);
 
     await tester.tap(find.text('Import'));

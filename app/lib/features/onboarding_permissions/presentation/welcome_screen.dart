@@ -78,7 +78,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
           children: [
-            Icon(Icons.shield_outlined, size: 72, color: scheme.primary),
+            Image.asset(
+              'assets/branding/dhankosh_mark.png',
+              height: 104,
+              semanticLabel: 'DhanKosh',
+            ),
             const SizedBox(height: 12),
             Text(
               'DhanKosh',

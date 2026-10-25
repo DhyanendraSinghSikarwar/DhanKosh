@@ -49,7 +49,7 @@ class BackupService {
     required DateTime now,
   }) async {
     final built = await buildCsv();
-    final name = 'hisaab-${now.year.toString().padLeft(4, '0')}-'
+    final name = 'dhankosh-${now.year.toString().padLeft(4, '0')}-'
         '${now.month.toString().padLeft(2, '0')}-'
         '${now.day.toString().padLeft(2, '0')}.csv';
     final saved = await gateway.save(name, utf8.encode(built.csv));

@@ -47,6 +47,8 @@ dev_dependencies:
   very_good_analysis: ^11.0.0
 flutter:
   uses-material-design: true
+  assets:
+    - assets/branding/
 
 # SQLCipher via package:sqlite3 build hook (sqlcipher_flutter_libs is obsolete). ADR-0003.
 hooks:

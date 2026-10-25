@@ -1,4 +1,4 @@
-# Hisaab (DhanKosh)
+# DhanKosh
 
 Offline-first personal finance app for India. It builds one ledger from bank SMS, email, payment-app notifications and statements, and records each payment once. Everything is parsed and stored on the phone.
 

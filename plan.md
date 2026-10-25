@@ -8,7 +8,7 @@
 - **Baseline:** parity with the Android app `hisaab_apk` v2.9.8 (31 features, listed in section 12). The Kotlin app is the behavioural reference; the Flutter app is a rebuild, not a redesign.
 - **Platform:** Android first. iOS cannot read SMS or notifications (Apple policy), so an iOS build could only offer email, statements and manual entry. Flutter is chosen so that iOS stays possible later; it is not in the first release.
 - **Users:** individuals in India tracking spending, cards, loans and investments, who want data to stay on the phone.
-- **Naming:** the Android app is branded DhanKosh (formerly Hisaab); package `com.hisaab`. This project uses "Hisaab" as the working name. Final brand: see Open Questions.
+- **Naming:** the Android app is branded DhanKosh (formerly Hisaab); package `com.hisaab`. The Flutter app ships as **DhanKosh** with the same shield-and-rupee logo (decided 2026-10-25). "Hisaab" survives only in the package id `com.hisaab`, the `hisaab://` deep-link scheme and internal names.
 
 ## 2. Tech Stack
 
@@ -233,7 +233,7 @@ Backlog (not in the existing app; from `v2_design/Hisaab_Product_Spec.md`): iOS,
 
 ## 15. Open Questions
 
-1. Brand name for the Flutter app: Hisaab or DhanKosh?
+1. Resolved 2026-10-25: the brand is DhanKosh (same logo as the Kotlin app v2.9.8). Open: whether to keep package id `com.hisaab.hisaab` or adopt `com.hisaab` for in-place upgrade (feature 33).
 2. Is iOS in scope for v1, or only kept possible?
 3. Play Store distribution or APK only (decides the SMS-permission strategy)?
 4. Reuse the existing `lang/` packs and logo assets as-is (licence check for Simple Icons logos is already CC0 per the Android README)?
