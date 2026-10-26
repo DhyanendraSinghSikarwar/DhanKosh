@@ -6,7 +6,7 @@
 | Status | In progress (Phase 3: MF order and NPS contribution recording wired (FR-16-19..21); data/domain layer and Portfolio tab UI done: net worth hero, history chart, allocation, holdings CRUD, maturities, exclusions; shortcut row, SIP list, investment transactions, as-of dates and optional AMFI NAV refresh done; history estimate, loans card, sparklines and statement link pending) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -500,3 +500,4 @@ Capture gaps (2026-10-25): `IngestMessage._recordSide` now also records, besides
 | 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |
 | 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |
 | 2026-10-26 | Portfolio: shortcut row, SIP list, investment transactions, as-of dates, optional AMFI NAV refresh, `mf_orders` kept; XIRR deferred | Fold adoption |
+| 2026-10-27 | Audit: net worth line with 1M..All ranges, holdings, maturities and exclusions confirmed done; history estimate, split-by-account bar, allocation donut, holding sparklines and Loans section confirmed not built | Kotlin parity audit |

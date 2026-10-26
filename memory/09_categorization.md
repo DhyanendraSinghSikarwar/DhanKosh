@@ -6,7 +6,7 @@
 | Status | In progress (data layer, category picker, Rules screen and editor done; Category detail, logos, taxonomy catalogue pending) |
 | Priority | P0 |
 | Phase | 1 (core ledger + SMS; rule editor and category detail finish in Phase 4) |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -674,3 +674,4 @@ Deferred: FR-09-12 Rules screen, FR-09-14 Category detail, FR-09-15/18/19 logos,
 | 2026-10-21 | Phase 1 data layer landed (tables merchant_rules, custom_categories, custom_subcategories; `CategoryRepository`, `RuleSet`, learning in `setCategory`) | Phase 1 |
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
+| 2026-10-27 | Audit: Rules screen and learned rules confirmed done; Category detail, sub-category icons, icon picker and about 140 brand logos confirmed not built | Kotlin parity audit |

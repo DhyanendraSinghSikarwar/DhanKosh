@@ -6,7 +6,7 @@
 | Status | In progress (data layer, core UI, transfer/EMI pairing, Calendar, By merchant, multi-select done; OCR, gaps, own-transfer form, split pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -477,3 +477,4 @@ Still deferred: own-transfer form in the Add screen, `reclassifyCardBills` sweep
 | 2026-10-21 | Phase 1 data layer landed (tables transactions, transaction_sources, deleted_messages; `TransactionRepository` ingest/edit/delete/read streams) | Phase 1 |
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
+| 2026-10-27 | Audit: List, Calendar, By merchant, multi-select merge, filters confirmed done; screenshot OCR, split, account change with Remember, brand logos, own-transfer form and gap card confirmed not built | Kotlin parity audit |

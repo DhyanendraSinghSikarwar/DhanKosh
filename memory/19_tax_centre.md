@@ -6,7 +6,7 @@
 | Status | In progress (domain plus Tax Centre screen at /tax; 2026-10-26: PDF export of income, detected deductions and regime comparison with the disclaimer, gated on income and a hidden-amounts confirm; PNG, share sheet, EPF input and FR-19-16 cache file not done) |
 | Priority | P2 |
 | Phase | 4 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -525,3 +525,4 @@ Tests: `test/features/tax_centre/tax_centre_screen_test.dart` (examples B and C 
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
 | 2026-10-26 | Tax-year PDF export (FR-19-09, FR-19-11, FR-19-10 PDF only) | Fold adoption |
+| 2026-10-27 | Audit: regimes, what-if and PDF share confirmed done; HD image share and share sheet confirmed not built | Kotlin parity audit |

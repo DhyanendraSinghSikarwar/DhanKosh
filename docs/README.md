@@ -2,6 +2,7 @@
 
 | Folder / file | Purpose | Rule |
 |---|---|---|
+| [FEATURES.md](FEATURES.md) | Feature catalogue with status against the Kotlin app v2.9.8 | Re-audit after each phase; gaps in [research/kotlin-parity-gap.md](research/kotlin-parity-gap.md) |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Setup, run on a phone, checks, CI | Update when tooling changes |
 | [adr/](adr/) | Architecture Decision Records | Immutable once accepted; supersede instead |
 | [research/](research/) | Evidence behind decisions, reference-app comparisons | Dated, cite sources |

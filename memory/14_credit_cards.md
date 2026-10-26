@@ -6,7 +6,7 @@
 | Status | In progress (data/domain, message parser, SMS/email notice ingest, `/cards` screen, Edit amounts sheet, Home strip, cycle spend, statement history, paid verification and late flag done; reminders worker and notification actions, forex markup UI, detail screen pending) |
 | Priority | P0 |
 | Phase | 3 (statements + portfolio); card due SMS/email recording can start in Phase 2; reminders in Phase 2 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -507,3 +507,4 @@ Hardening 2026-10-22: statement import now writes a card's available limit to th
 | 2026-10-21 | Phase 3 card-due ingest + Cards UI landed | Phase 3 |
 | 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |
 | 2026-10-26 | Cards: cycle spend, statement history, paid auto-verification from bank debits, late-payment risk flag | Fold adoption |
+| 2026-10-27 | Audit: cards screen, Edit amounts, Mark paid confirmed done; reminders, Remind tomorrow and forex markup UI confirmed not built | Kotlin parity audit |

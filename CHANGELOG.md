@@ -4,6 +4,9 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
+### Added
+- Feature catalogue (`docs/FEATURES.md`) covering every feature of the original DhanKosh v2.9.8 with build status, a charts catalogue and a prioritised parity backlog.
+
 ## [0.0.2] - 2026-10-26
 
 ### Added

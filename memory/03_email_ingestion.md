@@ -6,7 +6,7 @@
 | Status | In progress (Phase 2: IMAP app-password sync, sender whitelist, screen and tests done; Gmail OAuth/API, verification code, multi-account (statement attachments are implemented, FR-03-16) and scheduling NOT built) |
 | Priority | P1 |
 | Phase | 2 |
-| Last Updated | 2026-10-25 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -641,3 +641,4 @@ Hardening 2026-10-22: FR-03-16 done for IMAP: `EnoughMailImapClient.attachmentsO
 | 2026-10-21 | Nightly job (02:30, shared with the SMS catch-up in `smsNightlyTask`) now runs `EmailSyncRunner`; retry only when `retryable`. Runs only while the nightly job is registered (SMS reading on) | FR-03-17 scheduling |
 | 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |
 | 2026-10-25 | Corrected status: attachments implemented | Doc fix |
+| 2026-10-27 | Audit: Gmail sign-in is Not possible until the owner registers a Google OAuth client; 6-digit code, multiple mailboxes, nightly email scheduler and history-window UI confirmed not built; IMAP app-password sync confirmed done | Kotlin parity audit |

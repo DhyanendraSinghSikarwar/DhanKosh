@@ -6,7 +6,7 @@
 | Status | In progress (Fold adoption 2026-10-26: Income by source, Subscriptions and Credit utilisation cards; domain plus Analysis tab UI: period, four views, donut, trend, heatmap, merchants, budgets, income flow bars, savings rate, forecast, cash projection, compare, insights; Sankey, category-tap filter, layout store, month sheet, recurring plan wiring deferred) |
 | Priority | P1 |
 | Phase | 4 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -518,3 +518,4 @@ Fold adoption 2026-10-26: `domain/insight_extras.dart` (pure), `presentation/ana
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
 | 2026-10-26 | Income by source, Subscriptions and Credit utilisation cards (FR-18-24 to FR-18-26; TC-18-18 to TC-18-20) | Fold adoption |
+| 2026-10-27 | Audit: donut, 12-month bars (single series), heat grid, merchants, budgets, 30-day cash line confirmed done or partial; cross-filter, stacked bars, Sankey, fan chart, diverging bars and tappable heat cells confirmed not built; chart status tracked in 37_charts_catalogue.md | Kotlin parity audit |

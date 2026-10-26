@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1: search and filters done; Fold adoption 2026-10-26: Source filter and amount range on the Transactions tab; Calendar and By-merchant honour the filters; global Book/Period store pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -458,3 +458,4 @@ Deferred: FR-20-01/02 (global Book store, persistence), FR-20-03 This week / FY 
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
 | 2026-10-26 | Source filter and amount range on the Transactions filter bar (FR-20-15 in Flutter, FR-20-21; TC-20-15 to TC-20-17) | Fold adoption |
+| 2026-10-27 | Audit: search and type, bank, source, category filters confirmed done; app-wide Book store, Book chip, shared Period store and custom range confirmed not built | Kotlin parity audit |

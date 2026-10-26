@@ -6,7 +6,7 @@
 | Status | In progress (Phase 3: data layer and Profile screen done: name, mobile, email, DOB, PAN, per-bank unlock details, password count; photo, crop, header tint and Support icon pending) |
 | Priority | P1 |
 | Phase | 1 (first-run identity and Profile screen); statement-password use lands in Phase 3 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -439,3 +439,4 @@ Deferred UI: photo pick/crop/tint (FR-27-09..12), avatar on Home/More (FR-27-20)
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |
 | 2026-10-21 | Phase 3 Portfolio + Profile UI landed | Phase 3 |
+| 2026-10-27 | Audit: fields and bank unlock details confirmed done; occupation and photo with crop confirmed not built | Kotlin parity audit |

@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1 data layer and basic UI; FD/RD/PPF and loan status SMS/mail create and update accounts via the ingest pipeline; tabs, edit fields, suggestions, gaps pending; own-transfer legs in ledger done) |
 | Priority | P0 |
 | Phase | 1 (account creation from messages, balances, lists); 2 for debit-card link, merge and gap detection; 3 for statement unlock details |
-| Last Updated | 2026-10-25 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -525,3 +525,4 @@ Deposit messages (2026-10-25): an FD/RD/PPF booking, renewal, maturity or balanc
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
 | 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |
+| 2026-10-27 | Audit: nickname, hide, delete, unlock details, balances confirmed done; Business marking UI, colour picker, network logo, debit link UI, merge and Unmerge UI, Restore missing, account detail charts and untracked-payment gaps confirmed not built | Kotlin parity audit |

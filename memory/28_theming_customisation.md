@@ -6,7 +6,7 @@
 | Status | In progress (Phase 5: 22 palettes ported verbatim, mode/pure-black/text size, Customise Appearance section and More tile done; Net worth, Tab sections, backdrop, reduce-motion pending) |
 | Priority | P1 |
 | Phase | 0 (theme engine, tokens, text scale) and 5 (Customise screen polish, presets) |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -499,3 +499,4 @@ Landed 2026-10-21: FR-28-01..07, 09, 12, 13, 21, 22 (TC-28-01..04, 11 via semant
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Stated code palette is authoritative over SPEC_NOTES design tokens and listed discrepancies (FR-28-22, TC-28-19); persisted-keys table named `settings` per 26 | Audit Gate gap, scan_6 |
 | 2026-10-21 | Phase 5 theming + localization landed | Phase 5 |
+| 2026-10-27 | Audit: 22 palettes (incl. Fold), modes and text size confirmed done; Customise tab sections, presets, backdrop and reduce-motion confirmed not built | Kotlin parity audit |

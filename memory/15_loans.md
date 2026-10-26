@@ -6,7 +6,7 @@
 | Status | In progress (domain, link store and core UI done: Loans list, detail with schedule and payoff, add/edit loan, link/unlink, Not a loan; terms editor, link prompt, merge/duplicates UI, lender status wired (FR-15-13) through `ApplyStatementAccounts`; Phase 4 UI items above still pending) |
 | Priority | P2 |
 | Phase | 4 |
-| Last Updated | 2026-10-25 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -390,3 +390,4 @@ FR-15-13 done (2026-10-25): lender status messages (disbursal, outstanding) reac
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
 | 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |
+| 2026-10-27 | Audit: detection, detail, schedule, link and Not a loan confirmed done; merge and Unmerge and the EMI stacked-bar chart confirmed not built | Kotlin parity audit |

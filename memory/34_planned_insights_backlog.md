@@ -200,7 +200,7 @@ N/A - no tests until an item is promoted. Placeholder cases to carry into the fu
 
 ## 18. Implementation Notes
 
-N/A - not built yet.
+N/A - not built yet. The Kotlin parity backlog is in [../docs/research/kotlin-parity-gap.md](../docs/research/kotlin-parity-gap.md); chart items are specified in [37_charts_catalogue.md](37_charts_catalogue.md).
 
 ## 19. Change Log (date | change | reason)
 

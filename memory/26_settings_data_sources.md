@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1: settings store and a first Data sources screen with SMS card, paste import, masking switch and developer tools; email, notification rows, history choices, More hub and About pending) |
 | Priority | P0 |
 | Phase | 1 (Data sources screen and settings store); 2 extends it with email and notification rows |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -545,3 +545,4 @@ Deviations: values are encoded text in one `settings(key, value)` table (bool, i
 | 2026-10-19 | Added `nps-contributions`, `mf-orders`, full `gmail_settings` keys to inventory; More hub subtitles and footer (3.8); shared InfoButton placements with three inline dialogs (3.6; corrects "only four wired"); manifest and SDK platform facts; FR-26-21..25, TC-26-17..19; settings table named `settings` | Audit Gate gap, scan_4, scan_5, scan_6, scan_3 |
 | 2026-10-21 | Phase 1 data layer landed (tables settings (key-value); typed `SettingKey`s and `SettingsRepository`) | Phase 1 |
 | 2026-10-21 | Phase 1 pipeline wiring + UI landed | Phase 1 |
+| 2026-10-27 | Audit: history-window UI (key only), SMS sender-list editor and sync pill confirmed not built | Kotlin parity audit |

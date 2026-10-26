@@ -26,6 +26,7 @@ Short version: push, open GitHub Actions, download the `hisaab-debug-apk` artifa
 | Rules for contributors and agents | [CLAUDE.md](CLAUDE.md), [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Master plan (stack, architecture, schema, roadmap) | [plan.md](plan.md) |
 | Feature specs, one file each | [memory/_index.md](memory/_index.md) |
+| Feature catalogue and parity status vs the Kotlin app | [docs/FEATURES.md](docs/FEATURES.md) |
 | Decisions | [docs/adr/](docs/adr/) |
 | Research | [docs/research/](docs/research/) |
 | Flutter project | [app/](app/) |

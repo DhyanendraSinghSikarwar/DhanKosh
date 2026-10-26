@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1: matcher and data layer done; Review screen basic; manual merge via ledger multi-select; Compare and split pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -410,3 +410,4 @@ Reconciliation note (2026-10-21, Phase 1 hardening): done. The ledger has ONE ma
 | 2026-10-21 | Phase 1 pipeline wiring + UI landed (matcher reconciliation deferred, note only) | Phase 1 |
 | 2026-10-21 | Phase 1 hardening: background SMS, nightly scan, off-isolate parse, dedup reconcile | Phase 1 |
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
+| 2026-10-27 | Audit: matcher and 30-minute rule confirmed done; split and Compare confirmed not built | Kotlin parity audit |

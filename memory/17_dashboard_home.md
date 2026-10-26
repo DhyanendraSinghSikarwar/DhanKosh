@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1 core Home plus Fold adoption: net worth card, Needs attention, Inbox bell with unread badge, privacy badge, spent opens Analysis, empty-state import action; widgets, sync, permissions cards pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -557,3 +557,4 @@ Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insight
 | 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |
 | 2026-10-26 | Net worth card, Needs attention block (replaces the review notice), Inbox bell with unread badge, privacy badge, spent opens Analysis, empty-state import action (FR-17-25 to FR-17-29; TC-17-15 to TC-17-19) | Fold adoption |
 | 2026-10-26 | Goals card on Home | Fold adoption |
+| 2026-10-27 | Audit: Home layout store, presets, greeting header, sync pill, Upcoming, Insights, category donut, running line and previous-period change confirmed not built | Kotlin parity audit |

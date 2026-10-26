@@ -6,7 +6,7 @@
 | Status | In progress (Phase 5: `t()`, packs, download from the documented URL, Language screen and More tile done; string conversion of existing screens and build-time key check pending) |
 | Priority | P2 |
 | Phase | 5 (the `t()` lookup API is introduced in Phase 0 so all UI strings are wrapped from the start) |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -388,3 +388,4 @@ Landed 2026-10-21: FR-29-01, 03..12, 14, 16..18 (TC via `test/features/localizat
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Verified `lang/keys.json` has 1,455 unique keys (each pack 1,455); all counts in this file confirmed as 1,455 | Audit Gate gap, scan_N |
 | 2026-10-21 | Phase 5 theming + localization landed | Phase 5 |
+| 2026-10-27 | Audit: packs and download confirmed done; string conversion to t() and pack removal still to verify | Kotlin parity audit |
