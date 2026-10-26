@@ -4,6 +4,8 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
+## [0.0.1] - 2026-10-26
+
 ### Changed
 - App name is DhanKosh with the original shield-and-rupee logo (launcher icon, welcome and about screens).
 
