@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/security_providers.dart';
+import 'package:hisaab/shared/log/app_logger.dart';
+import 'package:hisaab/shared/log/log_models.dart';
 
 /// Session lock status (FR-25-03).
 enum LockStatus {
@@ -89,6 +91,7 @@ class LockController extends Notifier<LockState> {
     _skipUntil = null;
     if (state.status == LockStatus.unlocked) {
       state = state.copyWith(status: LockStatus.locked);
+      AppLog.instance.info(LogCategory.ui, 'lock.locked');
     }
   }
 
@@ -105,6 +108,10 @@ class LockController extends Notifier<LockState> {
     state = ok
         ? const LockState(status: LockStatus.unlocked)
         : state.copyWith(prompting: false, failed: true);
+    AppLog.instance.info(
+      LogCategory.ui,
+      ok ? 'lock.unlocked' : 'lock.auth_failed',
+    );
   }
 }
 

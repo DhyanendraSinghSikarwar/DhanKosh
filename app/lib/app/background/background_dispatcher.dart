@@ -4,6 +4,9 @@ import 'package:flutter/widgets.dart';
 import 'package:hisaab/app/background/sms_background_tasks.dart';
 import 'package:hisaab/core/platform_channels/background_channel.dart';
 import 'package:hisaab/core/platform_channels/background_tasks.dart';
+import 'package:hisaab/features/diagnostic_log/data/log_location.dart';
+import 'package:hisaab/shared/log/app_logger.dart';
+import 'package:hisaab/shared/log/log_models.dart';
 
 /// Runs one background task; true when finished (including "nothing to do"),
 /// false to ask native for a retry.
@@ -35,11 +38,32 @@ class BackgroundRegistry {
     String task, {
     Duration timeout = const Duration(minutes: 8),
   }) async {
+    final log = AppLog.instance;
     final handler = _handlers[task];
-    if (handler == null) return false;
+    if (handler == null) {
+      log.warn(LogCategory.background, 'task.unknown', fields: {'task': task});
+      return false;
+    }
+    final sw = Stopwatch()..start();
+    log.info(LogCategory.background, 'task.start', fields: {'task': task});
     try {
-      return await handler().timeout(timeout);
-    } on Object {
+      final ok = await handler().timeout(timeout);
+      log.info(
+        LogCategory.background,
+        'task.done',
+        fields: {'task': task, 'ok': ok, 'ms': sw.elapsedMilliseconds},
+      );
+      return ok;
+    } on Object catch (e, st) {
+      log.error(
+        LogCategory.background,
+        'task.failed',
+        fields: {
+          'task': task,
+          'ms': sw.elapsedMilliseconds,
+          ...errorFields(e, st),
+        },
+      );
       return false;
     }
   }
@@ -57,8 +81,13 @@ Future<void> runBackgroundTask({
     if (task != null) {
       ok = await (registry ?? BackgroundRegistry.standard()).run(task);
     }
-  } on Object {
+  } on Object catch (e) {
     ok = false;
+    AppLog.instance.error(
+      LogCategory.background,
+      'task.failed',
+      fields: errorFields(e),
+    );
   }
   try {
     await channel.done(ok: ok);
@@ -73,5 +102,9 @@ Future<void> runBackgroundTask({
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   WidgetsFlutterBinding.ensureInitialized();
-  unawaited(runBackgroundTask());
+  // The headless isolate has its own logger instance (FR-35-10).
+  unawaited(() async {
+    await installDiagnosticLogger();
+    await runBackgroundTask();
+  }());
 }

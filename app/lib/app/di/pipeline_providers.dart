@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:hisaab/app/di/alerts_providers.dart';
 import 'package:hisaab/app/di/lock_skipper_provider.dart';
+import 'package:hisaab/app/di/log_providers.dart';
 import 'package:hisaab/app/di/notification_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -138,6 +139,7 @@ ScanSms Function(void Function(SmsScanProgress)? onProgress) scanSmsFactory(
           for (final d in await ingest.ingestBatch(batch)) d.outcome,
         ],
         onProgress: onProgress,
+        log: ref.watch(appLoggerProvider),
       );
 }
 

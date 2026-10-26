@@ -7,6 +7,8 @@ import 'package:hisaab/features/notification_ingestion/domain/entities/payment_a
 import 'package:hisaab/features/notification_ingestion/domain/notification_ports.dart';
 import 'package:hisaab/features/notification_ingestion/domain/usecases/handle_app_notification.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
+import 'package:hisaab/shared/log/app_logger.dart';
+import 'package:hisaab/shared/log/log_models.dart';
 
 /// On, Needs access or Off (FR-04-16).
 enum NotificationState {
@@ -86,8 +88,13 @@ class NotificationEngine {
         onError: (Object _) {},
       );
       await drain();
-    } on Object {
+    } on Object catch (e) {
       // Native side missing (tests, non-Android).
+      AppLog.instance.warn(
+        LogCategory.notifications,
+        'engine.start_failed',
+        fields: errorFields(e),
+      );
     }
   }
 
@@ -153,9 +160,19 @@ class NotificationEngine {
       final started = DateTime.now();
       final r = await _handle(n);
       _onResult?.call(r);
+      AppLog.instance.info(
+        LogCategory.notifications,
+        'notif.handled',
+        fields: {'outcome': r.outcome?.name, 'skip': r.skip?.name},
+      );
       await _record(r, started);
-    } on Object {
+    } on Object catch (e) {
       // One bad notification never stops the engine.
+      AppLog.instance.error(
+        LogCategory.notifications,
+        'notif.failed',
+        fields: errorFields(e),
+      );
     }
   }
 

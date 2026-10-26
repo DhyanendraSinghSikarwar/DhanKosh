@@ -25,6 +25,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
     this.newsTile,
     this.supportTile,
     this.updatesTile,
+    this.diagnosticLogTile,
     super.key,
   });
 
@@ -75,6 +76,9 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
 
   /// About and updates entry (F-31), composed in `app/router.dart`.
   final Widget? updatesTile;
+
+  /// Diagnostic log entry (F-35), composed in `app/router.dart`.
+  final Widget? diagnosticLogTile;
 
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
@@ -149,6 +153,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
           if (newsTile != null) newsTile!,
           if (supportTile != null) supportTile!,
           if (updatesTile != null) updatesTile!,
+          if (diagnosticLogTile != null) diagnosticLogTile!,
           if (notificationCard != null) ...[
             const SizedBox(height: 12),
             notificationCard!,

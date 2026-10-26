@@ -36,3 +36,4 @@ One line per feature file. Each file is the single source of truth for its featu
 - [32_release_pipeline.md](32_release_pipeline.md) - **Release Pipeline**: CI, signed release, asset naming and notes contract consumed by the updater (Existing)
 - [33_upgrade_migration_from_kotlin.md](33_upgrade_migration_from_kotlin.md) - **Upgrade Migration from the Kotlin App**: applicationId, signing, Room-to-Drift carry-over, sealed secrets (Proposed)
 - [34_planned_insights_backlog.md](34_planned_insights_backlog.md) - **Planned Insights & Backlog**: features the existing app only plans or hints at, plus do-not-port list (Proposed)
+- [35_diagnostic_log.md](35_diagnostic_log.md) - **Diagnostic Log**: on-device sanitised log file, viewer and manual export for debugging (In Progress)

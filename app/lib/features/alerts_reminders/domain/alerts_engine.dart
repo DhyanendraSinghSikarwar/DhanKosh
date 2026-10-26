@@ -9,6 +9,8 @@ import 'package:hisaab/features/alerts_reminders/domain/alerted_key_store.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_repository.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_repository.dart';
+import 'package:hisaab/shared/log/app_logger.dart';
+import 'package:hisaab/shared/log/log_models.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// Gathers inputs, runs [AlertRules] and posts the decisions (FR-21-05,
@@ -73,13 +75,28 @@ class AlertsEngine {
           for (final d in await check()) {
             if (await _deliver(d)) posted++;
           }
-        } on Object {
+        } on Object catch (e) {
           // One failing check must not stop the others.
+          AppLog.instance.error(
+            LogCategory.background,
+            'alerts.check_failed',
+            fields: errorFields(e),
+          );
         }
       }
-    } on Object {
+    } on Object catch (e) {
       // Never throw into callers.
+      AppLog.instance.error(
+        LogCategory.background,
+        'alerts.run_failed',
+        fields: errorFields(e),
+      );
     }
+    AppLog.instance.info(
+      LogCategory.background,
+      'alerts.done',
+      fields: {'posted': posted},
+    );
     return posted;
   }
 
@@ -89,6 +106,13 @@ class AlertsEngine {
       return false;
     }
     final ok = await _poster.post(d);
+    if (!ok) {
+      AppLog.instance.warn(
+        LogCategory.background,
+        'alerts.post_failed',
+        fields: {'kind': d.kind.name},
+      );
+    }
     // Key stored only after a successful post (memory 21 Open Question 1).
     if (ok && d.key.isNotEmpty) await _alerted.add(d.key, _nowMs());
     return ok;

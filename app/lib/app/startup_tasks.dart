@@ -1,10 +1,14 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show kProfileMode, kReleaseMode;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
+import 'package:hisaab/core/platform_channels/notifications_channel.dart';
+import 'package:hisaab/shared/log/app_logger.dart';
+import 'package:hisaab/shared/log/log_models.dart';
 
 /// On start and every resume: refreshes the home-screen widget (FR-30-08,
 /// FR-30-09) and runs the daily update check (FR-31-18). Never throws.
@@ -25,7 +29,32 @@ class _StartupTasksState extends ConsumerState<StartupTasks>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _run());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_logStart('app.start'));
+      _run();
+    });
+  }
+
+  /// FR-35-23: version, build mode and OS only.
+  Future<void> _logStart(String code) async {
+    var sdk = 0;
+    if (Platform.isAndroid) {
+      try {
+        sdk = await const NotificationsChannel().sdkInt();
+      } on Object {
+        sdk = 0;
+      }
+    }
+    AppLog.instance.info(
+      LogCategory.app,
+      code,
+      fields: {
+        'version': appVersion,
+        'mode': kReleaseMode ? 'release' : (kProfileMode ? 'profile' : 'debug'),
+        'os': Platform.operatingSystem,
+        'sdk': sdk,
+      },
+    );
   }
 
   @override
@@ -36,7 +65,10 @@ class _StartupTasksState extends ConsumerState<StartupTasks>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _run();
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_logStart('app.resume'));
+      _run();
+    }
   }
 
   void _run() {

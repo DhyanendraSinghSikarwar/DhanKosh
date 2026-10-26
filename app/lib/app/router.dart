@@ -18,6 +18,8 @@ import 'package:hisaab/features/credit_cards/presentation/cards_home_strip.dart'
 import 'package:hisaab/features/credit_cards/presentation/credit_cards_screen.dart';
 import 'package:hisaab/features/dashboard_home/presentation/dashboard_home_screen.dart';
 import 'package:hisaab/features/dedup_review/presentation/dedup_review_screen.dart';
+import 'package:hisaab/features/diagnostic_log/presentation/diagnostic_log_screen.dart';
+import 'package:hisaab/features/diagnostic_log/presentation/diagnostic_log_tile.dart';
 import 'package:hisaab/features/email_ingestion/presentation/email_settings_screen.dart';
 import 'package:hisaab/features/expense_tracking/presentation/expense_tracking_screen.dart';
 import 'package:hisaab/features/forex_rates/presentation/forex_rates_screen.dart';
@@ -134,6 +136,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/backup',
         builder: (_, __) => const BackupExportScreen(),
       ),
+      GoRoute(
+        path: '/settings/logs',
+        builder: (_, __) => const DiagnosticLogScreen(),
+      ),
       GoRoute(path: '/news', builder: (_, __) => const NewsScreen()),
       GoRoute(
         path: '/settings/support',
@@ -232,6 +238,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   newsTile: NewsTile(),
                   supportTile: SupportTile(),
                   updatesTile: UpdatesTile(),
+                  diagnosticLogTile: DiagnosticLogTile(),
                   customiseTile: CustomiseTile(),
                   languageTile: LanguageTile(),
                 ),

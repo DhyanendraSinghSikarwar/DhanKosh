@@ -4,6 +4,8 @@ import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart
 import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
 import 'package:hisaab/features/sms_ingestion/domain/sms_ports.dart';
+import 'package:hisaab/shared/log/app_logger.dart';
+import 'package:hisaab/shared/log/log_models.dart';
 
 /// Parses and stores one message; the caller wires parser + ledger.
 typedef SmsIngest = Future<IngestOutcome> Function(InboxSms sms);
@@ -28,7 +30,9 @@ class ScanSms {
     ActivityLogger? activity,
     void Function(SmsScanProgress progress)? onProgress,
     this.batchSize = 500,
-  })  : _inbox = inbox,
+    AppLogger? log,
+  })  : _log = log,
+        _inbox = inbox,
         _settings = settings,
         _accept = accept,
         _ingest = ingest,
@@ -47,6 +51,9 @@ class ScanSms {
   final Future<void> Function(String)? _recordActivity;
   final ActivityLogger? _activity;
   final void Function(SmsScanProgress)? _onProgress;
+  final AppLogger? _log;
+
+  AppLogger get _logger => _log ?? AppLog.instance;
 
   /// Accepted messages per batch.
   final int batchSize;
@@ -79,6 +86,16 @@ class ScanSms {
       cursor: settings.cursor,
       nowMs: nowMs,
       lookbackDays: settings.lookbackDays,
+    );
+    // FR-35-20: counts and codes only, never message text.
+    _logger.info(
+      LogCategory.sms,
+      'scan.start',
+      fields: {
+        'full': request.full,
+        'recent_days': request.recentDays,
+        'cursor_set': settings.cursor > 0,
+      },
     );
     var bank = 0;
     var inserted = 0;
@@ -142,6 +159,24 @@ class ScanSms {
         error: error,
       ),
     );
+    final fields = <String, Object?>{
+      'read': checked,
+      'bank': bank,
+      'added': inserted,
+      'merged': merged,
+      'review': flagged,
+      'skipped': skipped,
+      'ms': millis,
+    };
+    if (error != null) {
+      _logger.warn(
+        LogCategory.sms,
+        'scan.failed',
+        fields: {...fields, 'error': error},
+      );
+    } else {
+      _logger.info(LogCategory.sms, 'scan.done', fields: fields);
+    }
     if (error == 'permission') {
       await _recordActivity?.call('SMS scan failed: permission');
       return SmsScanResult.failed('permission', settings.cursor);

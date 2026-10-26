@@ -19,6 +19,8 @@ import 'package:hisaab/features/statement_import/domain/statement_repository.dar
 import 'package:hisaab/features/statement_import/domain/usecases/apply_statement_accounts.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
 import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
+import 'package:hisaab/shared/log/app_logger.dart';
+import 'package:hisaab/shared/log/log_models.dart';
 import 'package:parser_core/parser_core.dart' as pc;
 
 StatementKind _kind(pc.StatementKind k) => switch (k) {
@@ -95,6 +97,31 @@ class ImportStatement {
       _import(file, origin);
 
   Future<ImportResult> _import(PickedFile file, EmailOrigin? origin) async {
+    final r = await _importInner(file, origin);
+    // FR-35-22: outcome kind and counts only, never statement text.
+    final f = <String, Object?>{
+      'result': r.runtimeType.toString(),
+      'email': origin != null,
+    };
+    if (r is ImportDone) {
+      f.addAll({
+        'added': r.added,
+        'merged': r.merged,
+        'review': r.review,
+        'holdings': r.holdings,
+        'empty': r.empty,
+      });
+    } else if (r is ImportUnsupported) {
+      f['reason'] = r.reason.name;
+    }
+    AppLog.instance.info(LogCategory.statement, 'import.result', fields: f);
+    return r;
+  }
+
+  Future<ImportResult> _importInner(
+    PickedFile file,
+    EmailOrigin? origin,
+  ) async {
     if (file.bytes.length > maxStatementBytes) {
       return const ImportUnsupported(UnsupportedReason.tooLarge);
     }

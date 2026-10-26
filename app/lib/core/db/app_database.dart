@@ -20,6 +20,8 @@ import 'package:hisaab/core/db/tables/settings.dart';
 import 'package:hisaab/core/db/tables/statements.dart';
 import 'package:hisaab/core/db/tables/transaction_sources.dart';
 import 'package:hisaab/core/db/tables/transactions.dart';
+import 'package:hisaab/shared/log/app_logger.dart';
+import 'package:hisaab/shared/log/log_models.dart';
 
 part 'app_database.g.dart';
 
@@ -62,6 +64,11 @@ class AppDatabase extends _$AppDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
+          AppLog.instance.info(
+            LogCategory.db,
+            'db.create',
+            fields: {'version': schemaVersion},
+          );
           await m.createAll();
           await customStatement(
             'CREATE INDEX IF NOT EXISTS activity_entries_at '
@@ -70,6 +77,11 @@ class AppDatabase extends _$AppDatabase {
           await _installTriggers();
         },
         onUpgrade: (m, from, to) async {
+          AppLog.instance.info(
+            LogCategory.db,
+            'db.migrate',
+            fields: {'from': from, 'to': to},
+          );
           // v1 -> v2: email ingestion (F-03). Additive, existing rows stay.
           if (from < 2) await m.createTable(processedEmails);
           // v2 -> v3: statements, holdings, net worth, card dues (Phase 3).
@@ -109,6 +121,14 @@ class AppDatabase extends _$AppDatabase {
           }
         },
         beforeOpen: (details) async {
+          AppLog.instance.info(
+            LogCategory.db,
+            'db.open',
+            fields: {
+              'version': details.versionNow,
+              'was': details.versionBefore,
+            },
+          );
           await customStatement('PRAGMA foreign_keys = ON');
           await _installTriggers();
         },
