@@ -1,4 +1,5 @@
 import 'package:hisaab/features/news_support_updates/domain/release.dart';
+import 'package:hisaab/features/news_support_updates/domain/update_keys.dart';
 import 'package:hisaab/features/news_support_updates/domain/update_state.dart';
 import 'package:hisaab/features/news_support_updates/domain/version_compare.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
@@ -58,8 +59,10 @@ class UpdateChecker {
       final release = await _source.latest();
       await _settings.write(lastUpdateCheckKey, now);
       if (release != null && isNewer(release.version, _current)) {
+        await _settings.write(knownUpdateKey, release.version);
         return UpdateAvailable(release);
       }
+      await _settings.write(knownUpdateKey, '');
       return const UpdateUpToDate();
     } on Object catch (e) {
       final why = e is Exception

@@ -35,6 +35,9 @@ abstract interface class AlertSettingsRepository {
 
   /// Turns the weekly summary on or off (FR-21-21).
   Future<void> setWeeklySummary({required bool value});
+
+  /// Turns the update-available notification on or off (FR-31-34).
+  Future<void> setUpdateAvailable({required bool value});
 }
 
 /// Maps a `hisaab://` link to an in-app route (FR-21-15).
@@ -52,6 +55,8 @@ String alertRouteFor(String link) {
       return '/budgets';
     case 'bills':
       return '/bills';
+    case 'updates':
+      return '/settings/updates';
     case 'statements':
       final unlock = int.tryParse(uri.queryParameters['unlock'] ?? '');
       return unlock == null ? '/statements' : '/statements?unlock=$unlock';

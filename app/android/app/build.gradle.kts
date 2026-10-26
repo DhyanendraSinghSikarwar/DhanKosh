@@ -74,6 +74,8 @@ dependencies {
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
     // On-device PDF text (F-05, channel `pdf`).
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    // FileProvider for the in-app update hand-off (F-31, channel `update`).
+    implementation("androidx.core:core:1.13.1")
 }
 
 flutter {

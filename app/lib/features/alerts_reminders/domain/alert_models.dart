@@ -25,6 +25,7 @@ enum AlertKind {
   cardBill,
   statementLocked,
   weeklySummary,
+  updateAvailable,
 }
 
 /// A notification button (FR-21-03, FR-21-10).
@@ -99,7 +100,11 @@ class AlertSettings {
     this.budgetAlertPercent = 90,
     this.cardDueReminders = true,
     this.weeklySummary = false,
+    this.updateAvailable = true,
   });
+
+  /// Notify once per new app version, on by default (FR-31-34).
+  final bool updateAvailable;
 
   /// Weekly summary notification, off by default (FR-21-21).
   final bool weeklySummary;
@@ -224,6 +229,9 @@ class BalanceGapInput {
 
 /// Setting key of the weekly summary toggle (FR-21-21).
 const weeklySummaryKey = SettingKey<bool>('weekly_summary_alert', false);
+
+/// Setting key of the update-available toggle (FR-31-34).
+const updateAlertKey = SettingKey<bool>('update_alert', true);
 
 /// Spend of one Monday-to-Sunday week and its biggest category (FR-21-21).
 class WeekSpend {

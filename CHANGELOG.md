@@ -13,6 +13,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - SIP tracker, optional MF NAV refresh (AMFI file, off by default), investment transactions list, card cycle spend and statement history.
 - Savings goals, virtual round-ups and salary split plan.
 - Weekly summary notification (off by default).
+- In-app update: Check for updates, release history, verified download and install, Home notice, update notification and What's new sheet.
 
 ## [0.0.1] - 2026-10-26
 

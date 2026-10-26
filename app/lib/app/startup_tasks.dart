@@ -6,7 +6,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
+import 'package:hisaab/app/router.dart';
 import 'package:hisaab/core/platform_channels/notifications_channel.dart';
+import 'package:hisaab/features/news_support_updates/presentation/whats_new_sheet.dart';
 import 'package:hisaab/shared/log/app_logger.dart';
 import 'package:hisaab/shared/log/log_models.dart';
 
@@ -32,6 +34,7 @@ class _StartupTasksState extends ConsumerState<StartupTasks>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_logStart('app.start'));
       _run();
+      unawaited(_startUpdateChores());
     });
   }
 
@@ -78,6 +81,25 @@ class _StartupTasksState extends ConsumerState<StartupTasks>
       unawaited(ref.read(updateControllerProvider.notifier).check());
     } on Object {
       // Background chores never break the app.
+    }
+  }
+
+  /// Once per start, Android only: removes stale downloads (FR-31-22) and
+  /// shows What's new after an update (FR-31-36). Never blocks or throws.
+  Future<void> _startUpdateChores() async {
+    if (!Platform.isAndroid || !mounted) return;
+    try {
+      await ref.read(updateInstallerProvider).cleanStale();
+      // What's new waits for onboarding: there is nothing to show before.
+      final gate = await ref.read(onboardingGateProvider.future);
+      if (gate || !mounted) return;
+      final w = await ref.read(whatsNewServiceProvider).prepare();
+      final ctx =
+          ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
+      if (w == null || ctx == null || !ctx.mounted) return;
+      await WhatsNewSheet.show(ctx, version: w.version, points: w.points);
+    } on Object {
+      // Update chores never break the app.
     }
   }
 

@@ -1,11 +1,13 @@
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/updates_providers.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_poster_impl.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_settings_store.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_models.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_poster.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alerts_engine.dart';
 import 'package:hisaab/features/forex_rates/domain/forex_rate.dart';
+import 'package:hisaab/features/news_support_updates/domain/update_keys.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'alerts_providers.g.dart';
@@ -36,6 +38,14 @@ AlertsEngine alertsEngine(Ref ref) => AlertsEngine(
       poster: ref.watch(alertPosterProvider),
       settings: ref.watch(alertSettingsRepositoryProvider),
       txs: ref.watch(transactionRepositoryProvider),
+      installedVersion: appVersion,
+      updateVersion: () async {
+        // Daily-throttled check, then the newest version it found (FR-31-34).
+        await ref.read(updateCheckerProvider).check();
+        final v =
+            await ref.read(settingsRepositoryProvider).read(knownUpdateKey);
+        return v.isEmpty ? null : v;
+      },
     );
 
 /// Foreign spend counts per currency, live (F-23).

@@ -30,6 +30,8 @@ class AlertsEngine {
     required AlertPoster poster,
     required AlertSettingsRepository settings,
     TransactionRepository? txs,
+    Future<String?> Function()? updateVersion,
+    String installedVersion = '0.0.0',
     int Function()? nowMs,
   })  : _budgets = budgets,
         _recurring = recurring,
@@ -38,6 +40,8 @@ class AlertsEngine {
         _poster = poster,
         _settings = settings,
         _txs = txs,
+        _updateVersion = updateVersion,
+        _installed = installedVersion,
         _nowMs = nowMs ?? (() => DateTime.now().millisecondsSinceEpoch);
 
   final BudgetRepository _budgets;
@@ -47,6 +51,11 @@ class AlertsEngine {
   final AlertPoster _poster;
   final AlertSettingsRepository _settings;
   final TransactionRepository? _txs;
+
+  /// Runs the throttled update check and returns the newest known version
+  /// (FR-31-34); null when none or no checker is wired.
+  final Future<String?> Function()? _updateVersion;
+  final String _installed;
   final int Function() _nowMs;
 
   static const _istOffsetMs = 19800000;
@@ -76,6 +85,7 @@ class AlertsEngine {
         () => _billDecisions(today),
         () => _renewalDecisions(today),
         () => _weeklyDecisions(settings, today),
+        () => _updateDecisions(settings),
       ]) {
         try {
           for (final d in await check()) {
@@ -143,6 +153,21 @@ class AlertsEngine {
       settings: settings,
       alerted: await _alerted.all(),
     );
+  }
+
+  /// "DhanKosh x.y.z is available", once per version (FR-31-34).
+  Future<List<AlertDecision>> _updateDecisions(AlertSettings settings) async {
+    final source = _updateVersion;
+    if (source == null || !settings.updateAvailable) return const [];
+    final version = await source();
+    if (version == null) return const [];
+    final d = AlertRules.updateAvailable(
+      version: version,
+      installed: _installed,
+      settings: settings,
+      alerted: await _alerted.all(),
+    );
+    return d == null ? const [] : [d];
   }
 
   /// Weekly summary (FR-21-21): last completed Monday-Sunday week against

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +19,7 @@ class HomeAttentionCard extends ConsumerWidget {
         AttentionKind.bill => Icons.event_outlined,
         AttentionKind.statement => Icons.lock_outline,
         AttentionKind.card => Icons.credit_card,
+        AttentionKind.update => Icons.system_update_outlined,
       };
 
   @override
@@ -41,7 +44,18 @@ class HomeAttentionCard extends ConsumerWidget {
                 leading: Icon(_icon(i.kind), color: warn),
                 title: Text(i.title),
                 subtitle: Text(i.detail),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: i.dismissVersion == null
+                    ? const Icon(Icons.chevron_right)
+                    : IconButton(
+                        key: const Key('attn_update_dismiss'),
+                        tooltip: 'Dismiss',
+                        icon: const Icon(Icons.close),
+                        onPressed: () => unawaited(
+                          ref.read(dismissUpdateNoticeProvider)(
+                            i.dismissVersion!,
+                          ),
+                        ),
+                      ),
                 onTap: () => context.push(i.route),
               ),
           ],

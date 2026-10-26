@@ -43,6 +43,8 @@ class _Settings implements AlertSettingsRepository {
   Future<void> setTransactionNotifications({required bool value}) async {}
   @override
   Future<void> setWeeklySummary({required bool value}) async {}
+  @override
+  Future<void> setUpdateAvailable({required bool value}) async {}
 }
 
 void main() {

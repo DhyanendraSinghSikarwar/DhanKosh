@@ -19,6 +19,7 @@ class AlertSettingsStore implements AlertSettingsRepository {
         budgetAlertPercent: await _s.read(SettingKeys.budgetAlertPercent),
         cardDueReminders: await _s.read(SettingKeys.cardDueReminders),
         weeklySummary: await _s.read(weeklySummaryKey),
+        updateAvailable: await _s.read(updateAlertKey),
       );
 
   @override
@@ -38,6 +39,7 @@ class AlertSettingsStore implements AlertSettingsRepository {
           _s.watch(SettingKeys.budgetAlertPercent),
           _s.watch(SettingKeys.cardDueReminders),
           _s.watch(weeklySummaryKey),
+          _s.watch(updateAlertKey),
         ]) {
           subs.add(s.skip(1).listen((_) => unawaited(emit())));
         }
@@ -66,4 +68,8 @@ class AlertSettingsStore implements AlertSettingsRepository {
   @override
   Future<void> setWeeklySummary({required bool value}) =>
       _s.write(weeklySummaryKey, value);
+
+  @override
+  Future<void> setUpdateAvailable({required bool value}) =>
+      _s.write(updateAlertKey, value);
 }

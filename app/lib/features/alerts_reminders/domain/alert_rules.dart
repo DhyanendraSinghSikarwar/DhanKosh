@@ -4,6 +4,7 @@ import 'package:hisaab/features/analytics/domain/civil_date.dart';
 import 'package:hisaab/features/credit_cards/domain/card_reminder_plan.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_math.dart';
+import 'package:hisaab/features/news_support_updates/domain/version_compare.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -513,6 +514,33 @@ abstract final class AlertRules {
       spentMinor: total,
       topCategory: top,
       topCategoryMinor: topMinor,
+    );
+  }
+
+  /// Dedupe key of the update notification for [version].
+  static String updateKey(String version) => 'update:$version';
+
+  /// One "DhanKosh x.y.z is available" notification per version (FR-31-34).
+  /// Null when the toggle is off, [version] is not newer than [installed],
+  /// or it was already announced.
+  static AlertDecision? updateAvailable({
+    required String version,
+    required String installed,
+    required AlertSettings settings,
+    required Set<String> alerted,
+  }) {
+    if (!settings.updateAvailable || version.isEmpty) return null;
+    if (!isNewer(version, installed)) return null;
+    final key = updateKey(version);
+    if (alerted.contains(key)) return null;
+    return AlertDecision(
+      kind: AlertKind.updateAvailable,
+      key: key,
+      channel: AlertChannel.budgetsBills,
+      notificationId: AlertText.stableId(key),
+      title: 'DhanKosh $version is available',
+      body: 'Open About and updates to install it.',
+      link: 'hisaab://updates',
     );
   }
 }

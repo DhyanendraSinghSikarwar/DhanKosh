@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
 import 'package:hisaab/core/platform_channels/widget_channel.dart';
-import 'package:hisaab/features/news_support_updates/domain/release.dart';
 import 'package:hisaab/features/news_support_updates/domain/update_state.dart';
 import 'package:hisaab/features/news_support_updates/presentation/support_screen.dart';
 import 'package:hisaab/features/news_support_updates/presentation/updates_screen.dart';
@@ -24,6 +23,11 @@ class _Channel extends WidgetChannel {
   }
 }
 
+class _NoHistory extends ReleaseHistoryController {
+  @override
+  Future<void> load() async {}
+}
+
 class _Fixed extends UpdateController {
   _Fixed(this.initial);
   final UpdateState initial;
@@ -35,6 +39,7 @@ class _Fixed extends UpdateController {
 Widget _app(Widget child, _Channel ch, {UpdateState? update}) => ProviderScope(
       overrides: [
         widgetChannelProvider.overrideWithValue(ch),
+        releaseHistoryProvider.overrideWith(_NoHistory.new),
         if (update != null)
           updateControllerProvider.overrideWith(() => _Fixed(update)),
       ],
@@ -86,26 +91,5 @@ void main() {
     expect(find.byKey(const Key('about-privacy')), findsOneWidget);
     expect(find.byKey(const Key('about-licence')), findsOneWidget);
     expect(find.text('Not checked yet.'), findsOneWidget);
-  });
-
-  testWidgets('FR-31-22 available update hands the APK URL over', (t) async {
-    final ch = _Channel();
-    const r = Release(
-      version: '0.2.0',
-      notes: '- Spend widget',
-      apkUrl: 'https://example.test/a.apk',
-    );
-    await t.pumpWidget(
-      _app(
-        const UpdatesScreen(),
-        ch,
-        update: const UpdateAvailable(r),
-      ),
-    );
-    expect(find.text('DhanKosh 0.2.0 is available'), findsOneWidget);
-    expect(find.text('• Spend widget'), findsOneWidget);
-    await t.tap(find.byKey(const Key('install-update')));
-    await t.pump();
-    expect(ch.opened.single, 'https://example.test/a.apk');
   });
 }

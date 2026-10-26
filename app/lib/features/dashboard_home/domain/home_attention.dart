@@ -1,5 +1,5 @@
 /// What a "Needs attention" row is about (FR-17-25).
-enum AttentionKind { duplicates, bill, statement, card }
+enum AttentionKind { duplicates, bill, statement, card, update }
 
 /// One tappable row of the Needs attention block.
 class AttentionItem {
@@ -9,6 +9,7 @@ class AttentionItem {
     required this.title,
     required this.detail,
     required this.route,
+    this.dismissVersion,
   });
 
   final AttentionKind kind;
@@ -17,6 +18,9 @@ class AttentionItem {
 
   /// Route opened on tap.
   final String route;
+
+  /// Set on an update row: the version a dismiss hides (FR-31-33).
+  final String? dismissVersion;
 }
 
 /// A named thing due in `days` days (0 = today).
@@ -41,6 +45,7 @@ List<AttentionItem> buildAttention({
   required int lockedStatements,
   required int unreadableStatements,
   required List<DueIn> cards,
+  String? updateVersion,
 }) {
   bool soon(DueIn d) => d.days <= attentionDays;
   final due = [...bills.where(soon)]..sort((a, b) => a.days.compareTo(b.days));
@@ -81,6 +86,14 @@ List<AttentionItem> buildAttention({
             : '${cardsDue.length} cards due',
         detail: _when(cardsDue.first.days),
         route: '/cards',
+      ),
+    if (updateVersion != null)
+      AttentionItem(
+        kind: AttentionKind.update,
+        title: 'Update $updateVersion available',
+        detail: 'Tap to see what changed',
+        route: '/settings/updates',
+        dismissVersion: updateVersion,
       ),
   ];
 }

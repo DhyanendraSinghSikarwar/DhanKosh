@@ -6,7 +6,7 @@
 | Status | In progress (manual Flutter release workflow, version/changelog script and gradle signing written; never run, CI/YAML unverified; key lineage and per-ABI details open) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -16,7 +16,7 @@ The release pipeline is the behind-the-scenes machine that turns a finished vers
 
 - Runs every automatic check on every change, and on the main branch also decides whether a new release is due.
 - Publishes a release only when the version number is new and every check passed.
-- Names the downloadable file `DhanKosh-<version>.apk`.
+- Names the downloadable file `DhanKosh.apk` (stable name, plus `DhanKosh.apk.sha256`), so `releases/latest/download/DhanKosh.apk` always works.
 - Signs the file with the developer's release key and a proof that links it to the older key, so phones that have an earlier version accept it as an update.
 - Writes the release notes from the developer's commit messages and adds a `sha256:` fingerprint line the app uses to verify the download.
 - Keeps the contract with the in-app updater (see [News, Support and Updates](31_news_support_updates.md)) so the Flutter rebuild can keep using the same update path.
@@ -42,7 +42,7 @@ The release pipeline is the behind-the-scenes machine that turns a finished vers
 ### 2.3 Outputs
 
 - A GitHub Release tagged `v<version>` titled `DhanKosh <version>`.
-- One attached file `DhanKosh-<version>.apk`, signed.
+- Attached files `DhanKosh.apk` (signed) and `DhanKosh.apk.sha256`; the in-app updater ([31](31_news_support_updates.md)) depends on both names.
 - Release notes: title line, a blank line, bullet lines, a blank line, then `sha256: <64 hex characters>`.
 - On a test failure, an uploaded test report artifact and no release.
 
@@ -279,6 +279,8 @@ Workflow order: signing secrets present, checks (memory, architecture, python te
 
 FR status: 01/02 covered by the checks step (no PR/push CI change; `ci.yml` unchanged); 03/12 replaced by manual dispatch plus the tag-new check; 04 not done (no R8 config added); 05 two-signer lineage NOT done (single release key, Open Question 1 open, so installs over the Kotlin app are unproven); 06 missing-secret failure and key deletion done; 07..10, 13, 14 done by design; 11 `concurrency` group without cancel; 15 pending the lineage decision. Notes come from the CHANGELOG, not commit bodies (Open Question 10).
 
+The in-app updater (memory 31, FR-31-29..32) depends on the stable release asset names `DhanKosh.apk` and `DhanKosh.apk.sha256` (hex digest only) and on the tag `v<version>`; renaming them breaks update installs.
+
 Unverified: YAML, Gradle Kotlin DSL and the apksigner step were never run (the workflow was intentionally not executed). Tests: `tools/test_prepare_release.py` (TC-32-01 version read, TC-32-03 notes format and 40 cap); TC-32-05 in `test/features/news_support_updates/updates_domain_test.dart`.
 
 ## 19. Change Log (date | change | reason)
@@ -287,3 +289,4 @@ Unverified: YAML, Gradle Kotlin DSL and the apksigner step were never run (the w
 |---|---|---|
 | 2026-10-19 | Created | Audit Gate gap |
 | 2026-10-21 | Phase 5 widget + updates + release pipeline landed | Phase 5 |
+| 2026-10-27 | Noted that the updater depends on assets `DhanKosh.apk` and `DhanKosh.apk.sha256` | Update feature |

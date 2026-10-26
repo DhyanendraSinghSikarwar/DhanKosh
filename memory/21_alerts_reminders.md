@@ -6,7 +6,7 @@
 | Status | In progress (rules done; posting engine, native `alerts` channel, Alerts settings screen and launch-route handling landed but native Kotlin unverified on device; card reminders, untracked-change alerts, new-transaction/balance/statement notifications, action buttons and AlertsWorker scheduling pending; 2026-10-26: weekly summary (rule, engine check, toggle) added) |
 | Priority | P1 |
 | Phase | 4 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -500,3 +500,4 @@ FR status additions: done FR-21-05, 06, 07 (posted), 14, 16, 17 (no resume re-ch
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
 | 2026-10-21 | Phase 4 alerts posting + forex UI landed | Phase 4 |
 | 2026-10-26 | Weekly summary notification (FR-21-21, TC-21-15) | Fold adoption |
+| 2026-10-27 | 'Update available' notification and switch (default on), once per version, deep link to the updates screen; spec in [31](31_news_support_updates.md) FR-31-28..38 | Update feature |

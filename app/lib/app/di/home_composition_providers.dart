@@ -5,10 +5,13 @@ import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
+import 'package:hisaab/app/di/updates_providers.dart';
 import 'package:hisaab/core/utils/ist.dart';
 import 'package:hisaab/features/activity_log/domain/inbox_logic.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_attention.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_providers.dart';
+import 'package:hisaab/features/news_support_updates/domain/update_keys.dart';
+import 'package:hisaab/features/news_support_updates/domain/version_compare.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 
@@ -52,6 +55,35 @@ final homeNetWorthProvider = Provider<
   );
 });
 
+/// Newest version the last update check found, `''` when none (FR-31-33).
+final knownUpdateProvider = StreamProvider<String>(
+  (ref) => ref.watch(settingsRepositoryProvider).watch(knownUpdateKey),
+);
+
+/// Version whose Home notice was dismissed (FR-31-33).
+final dismissedUpdateProvider = StreamProvider<String>(
+  (ref) =>
+      ref.watch(settingsRepositoryProvider).watch(updateNoticeDismissedKey),
+);
+
+/// Version of a newer release the last check found, hidden once dismissed
+/// (FR-31-33); null when none.
+final homeUpdateVersionProvider = Provider<String?>((ref) {
+  final known = ref.watch(knownUpdateProvider).value ?? '';
+  final dismissed = ref.watch(dismissedUpdateProvider).value ?? '';
+  if (known.isEmpty || known == dismissed || !isNewer(known, appVersion)) {
+    return null;
+  }
+  return known;
+});
+
+/// Dismisses the Home update notice for one version (FR-31-33).
+final dismissUpdateNoticeProvider = Provider<Future<void> Function(String)>(
+  (ref) => (version) => ref
+      .read(settingsRepositoryProvider)
+      .write(updateNoticeDismissedKey, version),
+);
+
 /// Rows of the Needs attention block (FR-17-25).
 final homeAttentionProvider = Provider<List<AttentionItem>>((ref) {
   final nowMs = DateTime.now().millisecondsSinceEpoch;
@@ -75,5 +107,6 @@ final homeAttentionProvider = Provider<List<AttentionItem>>((ref) {
         if (!c.paid && c.owedMinor > 0 && c.dueDay != null)
           (name: c.name, days: c.dueDay! - todayDay),
     ],
+    updateVersion: ref.watch(homeUpdateVersionProvider),
   );
 });

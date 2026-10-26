@@ -57,6 +57,9 @@ class FakeSettings implements AlertSettingsRepository {
   @override
   Future<void> setWeeklySummary({required bool value}) async =>
       this.value = AlertSettings(weeklySummary: value);
+
+  @override
+  Future<void> setUpdateAvailable({required bool value}) async {}
 }
 
 void main() {
@@ -168,5 +171,31 @@ void main() {
     expect(AlertPosterImpl.channelIdFor(AlertKind.budget), 'budget');
     expect(AlertPosterImpl.channelIdFor(AlertKind.cardBill), 'cards');
     expect(AlertPosterImpl.channelIdFor(AlertKind.newTransaction), 'info');
+  });
+
+  test('FR-31-34 update notification once per version, toggle respected',
+      () async {
+    var known = '0.3.0';
+    AlertsEngine make() => AlertsEngine(
+          budgets: budgets,
+          recurring: recurring,
+          accounts: env.accounts,
+          alerted: keys,
+          poster: poster,
+          settings: settings,
+          updateVersion: () async => known,
+          installedVersion: '0.2.0',
+          nowMs: () => t0,
+        );
+    final e = make();
+    expect(await e.run(), 1);
+    expect(poster.posted.single.title, 'DhanKosh 0.3.0 is available');
+    expect(await e.run(), 0);
+    known = '0.4.0';
+    expect(await e.run(), 1);
+    known = '0.5.0';
+    settings.value = const AlertSettings(updateAvailable: false);
+    expect(await e.run(), 0);
+    expect(poster.posted, hasLength(2));
   });
 }

@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-31 |
-| Status | In progress (news, Support, About and update check done in Dart; Kotlin `openUrl` hand-off unverified on device; in-app download with checksum, What's new bundled changelog, Home notice and Profile cup entry pending) |
+| Status | In progress (news, Support, About, update check, release history, in-app download with SHA-256 check, installer hand-off, Home notice, update alert and What's new done in Dart with tests; Kotlin installer hand-off, FileProvider and manifest unverified on a device and not compiled; Profile cup entry, bundled changelog and `t()` pending) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -175,6 +175,18 @@ App name, version with the WhatsNew button, Updates card (Check for updates; Che
 - FR-31-26: Network failures in all three sub-features are non-fatal and show the stated messages.
 - FR-31-27: The release feed (GitHub release, signed APK asset, SHA-256 and release notes) consumed by the updater is produced by the pipeline in [Release pipeline](32_release_pipeline.md); this feature owns only consumer behaviour (FR-31-18 to FR-31-26).
 
+- FR-31-28: The About screen has a Check for updates button; a manual check always bypasses the daily throttle and shows `Checking...`, then `You are on the latest (x.y.z)`, `Update x.y.z available`, or the offline/error message.
+- FR-31-29: Release history lists all releases (`GET https://api.github.com/repos/DhyanendraSinghSikarwar/DhanKosh/releases?per_page=30`, anonymous, 10 s timeouts, Accept and User-Agent `DhanKosh` only), newest first, with version, date and cleaned notes; the installed version is marked Installed and newer ones New; drafts are skipped; releases without an APK stay listed but cannot be installed.
+- FR-31-30: The last successful history is cached in setting `release_history_cache` and shown offline with the note `Offline. Showing the last saved list.`.
+- FR-31-31: Download and install fetches asset `DhanKosh.apk` into the cache `updates/` folder with a progress bar and Cancel; only `https` URLs on `github.com`, `objects.githubusercontent.com` or `*.githubusercontent.com` are fetched, redirects are followed by hand (limit 5) and every hop is re-checked.
+- FR-31-32: Before the APK, asset `DhanKosh.apk.sha256` (hex only) is fetched; the APK's SHA-256 must match or the file is deleted and the checksum message is shown; a release with no checksum is refused. Equal or older versions are refused. Stale files in `updates/` are removed on start and before each download.
+- FR-31-33: Home shows a dismissible `Update x.y.z available` row in Needs attention when the last check found a newer version (setting `known_update_version`); the row opens `/settings/updates`; dismissing hides that version only (`update_notice_dismissed`).
+- FR-31-34: The nightly `alerts.check` task (and the app-start alert run) runs the throttled update check and posts one notification `DhanKosh x.y.z is available` per version (alerted key `update:<version>`), toggle `Update available` in Alerts settings (setting `update_alert`, default on), deep link `hisaab://updates` to `/settings/updates`.
+- FR-31-35: The Kotlin hand-off (widget channel methods `canInstall`, `openInstallSettings`, `installApk{path}`) checks `canRequestPackageInstalls()`; when false it opens `ACTION_MANAGE_UNKNOWN_APP_SOURCES` for this package and returns `permission_needed`, and the screen shows a one-line instruction with Retry; otherwise it opens `ACTION_VIEW` with a FileProvider URI. The app-lock skip is armed before the hand-off. Every failure state offers Open release page.
+- FR-31-36: After the installed version changes, a one-time `What's new in x.y.z` sheet shows that release's cleaned notes (cache, else one fetch, else `DhanKosh updated to x.y.z.`); a fresh install only records the version; it never blocks start (setting `last_seen_version`).
+- FR-31-37: The update flow sends no user data or identifiers: anonymous GETs to GitHub only, User-Agent `DhanKosh`, no analytics.
+- FR-31-38: The log records counts and codes only for the update flow (no URLs, paths or versions beyond the app start line).
+
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
 - News first paint from cache under 100 ms; network load typically under 3 s; parsing off the UI isolate.
@@ -319,6 +331,11 @@ No Drift tables. Persisted values (see [Data sources and settings](26_settings_d
 |---|---|---|---|
 | `check_updates` | bool | true | daily check gate |
 | `last_update_check` | int? (epoch ms) | none | 24 h gate |
+| `known_update_version` | string | empty | newest newer version from the last check (Home notice, alert) |
+| `update_notice_dismissed` | string | empty | version whose Home notice was dismissed |
+| `release_history_cache` | string (JSON) | empty | last successful release history |
+| `last_seen_version` | string | empty | version What's new was last handled for |
+| `update_alert` | bool | true | Update available notification toggle |
 
 News cache is in memory only (10 minutes per tab). Downloaded APK lives in the cache directory `updates/` (cleared before each download). Bundled changelog is a Dart constant list (or an asset `assets/changelog.json`).
 
@@ -339,6 +356,7 @@ News cache is in memory only (10 minutes per tab). Downloaded APK lives in the c
 - UPI: `url_launcher` with `LaunchMode.externalApplication` for `upi://pay` (Android 11+ needs a `<queries><intent><action android:name="android.intent.action.VIEW"/><data android:scheme="upi"/></intent></queries>` entry); a chooser via `android_intent_plus` (`ACTION_VIEW` with `Intent.createChooser`) reproduces the "Pay with" chooser.
 - Browser: `url_launcher` external application mode for headlines (no in-app webview).
 - Background: none (update check runs on app start, daily gate).
+- Implemented contract (widget channel `com.hisaab/widget`, `WidgetBridge.kt`): `canInstall` -> bool; `openInstallSettings` -> bool; `installApk{path}` -> `started` or `permission_needed`, errors `bad_args`, `bad_path` (file not an `.apk` inside `<cache>/updates`), `no_installer`. Manifest: `REQUEST_INSTALL_PACKAGES`, `androidx.core.content.FileProvider` authority `${applicationId}.updates` with `res/xml/update_file_paths.xml` (`cache-path` `updates/`); Gradle `androidx.core:core:1.13.1`.
 - Set the app-lock skip flag before installer, browser and UPI hand-offs (see [Security and privacy](25_security_privacy.md)).
 
 ## 12. Dependencies (other features → link to their memory file; packages)
@@ -434,6 +452,18 @@ Widget:
 - TC-31-15 (FR-31-19, FR-31-23): About updates card renders each `UpdateState`; What's new sheet shows cleaned notes, then bundled fallback, then the unavailable message.
 - TC-31-16 (FR-31-08): tapping a headline calls the launcher with its link in external mode.
 
+Added with the in-app update (all in `test/features/news_support_updates/` unless noted):
+
+- TC-31-20 (FR-31-31, FR-31-32): `ApkDownloader` with a fake `UpdateHttp`: redirect github.com to objects.githubusercontent.com, progress reaches 1.0, hash verified; mismatch deletes the file; no checksum refused; redirect limit 5; foreign host or `http` refused; cancel (before and mid stream) leaves no file; stale cleanup.
+- TC-31-21 (FR-31-31): host allow-list accepts `github.com` and `objects.githubusercontent.com`, rejects look-alikes, `http`, credentials.
+- TC-31-22 (FR-31-32): `UpdateInstaller`: downgrade and equal versions never download; hand-off started; permission needed; mismatch not installed; offline is a failure state.
+- TC-31-23 (FR-31-29, FR-31-30): release history JSON fixture parse (order, drafts, asset-less) and cache round trip.
+- TC-31-24 (FR-31-28): manual check bypasses the throttle and stores/clears `known_update_version`.
+- TC-31-25 (FR-31-34): `AlertRules.updateAvailable` and `AlertsEngine` (in `test/features/alerts_reminders/alerts_engine_test.dart`): once per version, toggle off, not newer.
+- TC-31-26 (FR-31-33): Home attention row and dismiss per version (`updates_screen_states_test.dart`).
+- TC-31-27 (FR-31-36): `WhatsNewService` fresh install, cached notes once only, fetch, offline generic line; sheet widget.
+- TC-31-28 (FR-31-28..35): updates screen widget states: checking, latest, available, downloading with cancel, verifying, hash mismatch with Try again and Open release page, permission needed with Retry, handed off, history Installed/New, offline history.
+
 Integration:
 
 - TC-31-17 (FR-31-20, FR-31-22): fake GitHub server with one redirect serves an APK; progress reaches 1.0; hash verified; installer intent fired with the correct MIME.
@@ -478,9 +508,13 @@ Entry points: More tab tiles (News, Support, About and updates) via optional slo
 
 Native (UNVERIFIED): `com.hisaab/widget` channel (`WidgetBridge.kt`, method `openUrl` with optional chooser), attached in `MainActivity`; manifest `<queries>` for `upi` and `https` schemes.
 
-Deferred (not built): in-app APK download, progress, SHA-256 verification and the FileProvider install (FR-31-20..22: Install currently opens the release APK URL in the browser/system via ACTION_VIEW, no checksum check, no `REQUEST_INSTALL_PACKAGES`), bundled changelog and What's new bottom sheet (notes show on the About screen), Home update notice, Portfolio and Profile entry icons, `t()` translations (FR-31-25).
+In-app update (2026-10-27, FR-31-20..22 and 28..38): domain `update_policy.dart` (host allow-list, downgrade check, `.sha256` parsing, What's new rule), `update_ports.dart` (`UpdateHttp`, `ApkInstaller`, `ReleaseHistorySource`, cancel flag), `update_keys.dart`, `release.dart` (history parse and cache codec); data `ApkDownloader` (manual redirects, streaming SHA-256), `IoUpdateHttp`, `UpdateInstaller` (download, verify, hand-off, never throws), `ChannelApkInstaller` (arms `LockSkipper`), `WhatsNewService`; `GithubReleaseSource.list()`; `UpdatesScreen` (all states, history); `WhatsNewSheet`; Home row via `homeAttentionProvider` composition; `AlertRules.updateAvailable` plus `AlertsEngine` hook and `Update available` switch. Installer hand-off reuses the `widget` channel (no new channel name). The downloaded APK is kept after the hand-off because the installer reads it afterwards; stale files are deleted on the next start and before each download. Android checks the signature; if it refuses, the screen keeps Retry and Open release page. A release without a `DhanKosh.apk.sha256` asset is refused (closes Open Question 4). The updater depends on the asset names in [Release pipeline](32_release_pipeline.md).
 
-Tests: `test/features/news_support_updates/` (`updates_domain_test.dart`: TC isNewer, release JSON fixtures, notes cleaning, throttle, checker incl. failure; TC-32-05 notes round trip; `news_domain_test.dart`: parse, merge, age, tabs; `news_support_screens_test.dart`: Support link, custom amount, no UPI app, About, install hand-off; `support_tile_test.dart`).
+UNVERIFIED: the Kotlin methods in `WidgetBridge.kt`, the FileProvider and manifest entries and the Gradle dependency were never compiled or run (CI compiles them); the installer, "Install unknown apps" flow, background notification and What's new sheet were never run on a device; the real network download was only tested with a fake HTTP client.
+
+Deferred (not built): bundled changelog (What's new uses the fetched or cached notes, else a generic line), Portfolio and Profile entry icons, `t()` translations (FR-31-25), the `update_alert` key is not in the backup settings list, pre-release version tags.
+
+Tests: `test/features/news_support_updates/` (`update_install_test.dart`, `updates_screen_states_test.dart`: TC-31-20..28; `updates_domain_test.dart`: TC isNewer, release JSON fixtures, notes cleaning, throttle, checker incl. failure; TC-32-05 notes round trip; `news_domain_test.dart`: parse, merge, age, tabs; `news_support_screens_test.dart`: Support link, custom amount, no UPI app, About; `support_tile_test.dart`).
 
 ## 19. Change Log (date | change | reason)
 
@@ -490,3 +524,4 @@ Tests: `test/features/news_support_updates/` (`updates_domain_test.dart`: TC isN
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Added FR-31-27 and dependency link to 32_release_pipeline.md as producer of the updater feed | Audit Gate gap, scan_N |
 | 2026-10-21 | Phase 5 widget + updates + release pipeline landed | Phase 5 |
+| 2026-10-27 | In-app update: check, release history, download+SHA-256 verify, install handoff, Home notice, alert, what's new | Update feature |
