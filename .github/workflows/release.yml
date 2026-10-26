@@ -10,7 +10,8 @@
 #
 # Signing (repository secrets; names only; Settings -> Secrets and variables -> Actions):
 #   HISAAB_RELEASE_KEYSTORE   base64 of the release keystore (.jks)   -> stable signature
-#   HISAAB_KEYSTORE_PASSWORD  its password (same for store and key)
+#   HISAAB_KEYSTORE_PASSWORD  the keystore (store) password
+#   HISAAB_KEY_PASSWORD       optional, the key password when it differs from the store password
 #   HISAAB_KEY_ALIAS          optional, key alias (default: hisaab)
 #   SUPPORT_UPI_ID            optional, donation UPI id; empty hides Support in the app
 # Without the keystore secrets the APK is signed with the runner's throw-away
@@ -101,6 +102,7 @@ jobs:
         env:
           KEYSTORE: ${{ secrets.HISAAB_RELEASE_KEYSTORE }}
           PASSWORD: ${{ secrets.HISAAB_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.HISAAB_KEY_PASSWORD }}
           ALIAS: ${{ secrets.HISAAB_KEY_ALIAS }}
           SUPPORT_UPI_ID: ${{ secrets.SUPPORT_UPI_ID }}
         run: |
@@ -113,7 +115,7 @@ jobs:
               echo "storeFile=$keys/release.jks"
               echo "storePassword=$PASSWORD"
               echo "keyAlias=${ALIAS:-hisaab}"
-              echo "keyPassword=$PASSWORD"
+              echo "keyPassword=${KEY_PASSWORD:-$PASSWORD}"
             } > app/android/key.properties
             echo "signed=true" >> "$GITHUB_OUTPUT"
           else
