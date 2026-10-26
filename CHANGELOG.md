@@ -4,6 +4,8 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-10-26
+
 ### Added
 - Encrypted full backup and restore (passphrase, AES-256-GCM), monthly/yearly and portfolio PDF reports, tax-year summary export.
 - Security: auto-lock timeout, lock now, block screenshots, failed-attempt delay, erase all data.
