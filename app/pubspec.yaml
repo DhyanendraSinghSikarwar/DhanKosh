@@ -1,7 +1,7 @@
 name: hisaab
 description: Hisaab - on-device personal finance tracker.
 publish_to: none
-version: 3.0.0+33
+version: 0.0.1+33
 
 environment:
   sdk: ^3.5.0

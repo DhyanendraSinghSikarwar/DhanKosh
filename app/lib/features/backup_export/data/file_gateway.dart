@@ -20,8 +20,6 @@ class FilePickerBackupGateway implements BackupFileGateway {
       fileName: fileName,
       bytes: Uint8List.fromList(bytes),
       mimeType: 'text/csv',
-      type: FileType.custom,
-      allowedExtensions: const ['csv'],
     );
     if (uri == null) return null;
     final seg = uri.pathSegments.isEmpty ? '' : uri.pathSegments.last;
