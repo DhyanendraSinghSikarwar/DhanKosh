@@ -15,6 +15,12 @@ abstract interface class HoldingRepository {
   /// on or after the order already counts it.
   Future<bool> recordMfOrder(MfOrderEntry order, {required String claimKey});
 
+  /// Restores recorded fund purchases from a backup without touching
+  /// holdings (they are restored separately). Skips orders already stored and
+  /// claims their dedup keys so later mail or SMS does not count them again.
+  /// Returns the number inserted.
+  Future<int> restoreMfOrders(List<MfOrderEntry> orders);
+
   /// Adds an NPS contribution to its tier's holding (FR-16-20, FR-16-21).
   /// Returns false when the contribution was applied before or a statement
   /// dated on or after it already counts it.

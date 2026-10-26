@@ -144,6 +144,37 @@ class HoldingRepositoryImpl implements HoldingRepository {
   }
 
   @override
+  Future<int> restoreMfOrders(List<MfOrderEntry> orders) =>
+      _db.transaction(() async {
+        final have = {
+          for (final r in await _db.select(_db.mfOrders).get())
+            '${r.identifier}|${r.at}|${r.amountMinor}|${r.units}',
+        };
+        var n = 0;
+        for (final o in orders) {
+          if (!have
+              .add('${o.identifier}|${o.at}|${o.amountMinor}|${o.units}')) {
+            continue;
+          }
+          final day = o.at ~/ 86400000;
+          await _claim(['mf|${o.identifier}|$day|${o.amountMinor}|${o.units}']);
+          await _db.into(_db.mfOrders).insert(
+                MfOrdersCompanion.insert(
+                  identifier: o.identifier,
+                  schemeName: o.schemeName,
+                  at: o.at,
+                  amountMinor: Value(o.amountMinor),
+                  units: Value(o.units),
+                  nav: Value(o.nav),
+                  platform: Value(o.platform),
+                ),
+              );
+          n++;
+        }
+        return n;
+      });
+
+  @override
   Future<bool> recordMfOrder(
     MfOrderEntry o, {
     required String claimKey,

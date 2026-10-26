@@ -18,6 +18,8 @@ import 'package:hisaab/features/portfolio/domain/holding.dart';
 import 'package:hisaab/features/portfolio/domain/holding_repository.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_repository.dart';
+import 'package:hisaab/features/recurring_transactions/domain/sip.dart';
+import 'package:hisaab/features/savings_goals/domain/goal.dart';
 import 'package:hisaab/features/security_privacy/domain/security_settings.dart';
 import 'package:hisaab/features/settings_data_sources/domain/data_reset_repository.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
@@ -49,6 +51,8 @@ class BackupDeps {
     required this.cardPaid,
     required this.loanLinks,
     required this.forex,
+    required this.sips,
+    required this.goals,
     required this.settings,
     required this.reset,
   });
@@ -64,6 +68,8 @@ class BackupDeps {
   final CardPaidStore cardPaid;
   final LoanLinkRepository loanLinks;
   final ForexRepository forex;
+  final SipRepository sips;
+  final GoalRepository goals;
   final SettingsRepository settings;
   final DataResetRepository reset;
 }
@@ -81,6 +87,15 @@ final backupSettings = <SettingKey<Object>>[
   SecuritySettings.blockScreenshots,
   weeklySummaryKey,
 ];
+
+String _sipKey(SipItem x) => [
+      x.name,
+      x.amountMinor,
+      x.frequency.name,
+      x.dayOfMonth,
+      x.weekday,
+      x.startDay,
+    ].join('|');
 
 String _acct(String bank, String last4) => '$bank|$last4';
 
@@ -185,6 +200,8 @@ class BackupData {
     final links = await _d.loanLinks.read();
     final paid = await _d.cardPaid.watchPaid().first;
     final overrides = await _d.cards.watchOverrides().first;
+    final goals = await _d.goals.watchGoals().first;
+    final contribs = await _d.goals.watchContributions().first;
     final settings = <String, Object?>{};
     for (final k in backupSettings) {
       final v = await _d.settings.read(k);
@@ -315,6 +332,43 @@ class BackupData {
         for (final r in await _d.forex.rates())
           {'currency': r.currency, 'day': r.day, 'rate': r.inrPerUnit},
       ],
+      'sips': [
+        for (final x in await _d.sips.watchAll().first)
+          {
+            'name': x.name,
+            'amount': x.amountMinor,
+            'freq': enumToDb(x.frequency),
+            'day': x.dayOfMonth,
+            'weekday': x.weekday,
+            'start': x.startDay,
+          },
+      ],
+      'goals': [
+        for (final g in goals)
+          {
+            'name': g.name,
+            'target': g.targetMinor,
+            'targetDay': g.targetDay,
+            'createdAt': g.createdAt,
+            'contributions': [
+              for (final c in contribs)
+                if (c.goalId == g.id)
+                  {'amount': c.amountMinor, 'day': c.day, 'note': c.note},
+            ],
+          },
+      ],
+      'mfOrders': [
+        for (final o in await _d.holdings.watchMfOrders().first)
+          {
+            'identifier': o.identifier,
+            'scheme': o.schemeName,
+            'at': o.at,
+            'amount': o.amountMinor,
+            'units': o.units,
+            'nav': o.nav,
+            'platform': o.platform,
+          },
+      ],
       'settings': settings,
     };
   }
@@ -333,6 +387,9 @@ class BackupData {
       'card entries': n('cardOverrides') + n('cardPaid'),
       'loans': n('loans'),
       'forex rates': n('forex'),
+      'SIPs': n('sips'),
+      'goals': n('goals'),
+      'MF orders': n('mfOrders'),
     });
   }
 
@@ -751,6 +808,90 @@ class BackupData {
       await _d.forex.recompute();
     }
 
+    // SIPs, goals and MF orders (optional sections; absent in older files).
+    final haveSips = {
+      for (final x in await _d.sips.watchAll().first) _sipKey(x),
+    };
+    for (final x in list('sips')) {
+      final draft = SipDraft(
+        name: x['name']! as String,
+        amountMinor: x['amount']! as int,
+        frequency: enumFromDb(
+          SipFrequency.values,
+          x['freq'] as String?,
+          SipFrequency.monthly,
+        ),
+        startDay: (x['start'] as int?) ?? 0,
+        dayOfMonth: x['day'] as int?,
+        weekday: x['weekday'] as int?,
+      );
+      if (draft.validate() != null) continue;
+      final key = [
+        draft.name,
+        draft.amountMinor,
+        draft.frequency.name,
+        draft.dayOfMonth,
+        draft.weekday,
+        draft.startDay,
+      ].join('|');
+      if (!haveSips.add(key)) continue;
+      await _d.sips.add(draft);
+      bump('SIPs');
+    }
+
+    final goalRows = await _d.goals.watchGoals().first;
+    final goalContribs = await _d.goals.watchContributions().first;
+    final goalByKey = {
+      for (final g in goalRows)
+        '${g.name}|${g.targetMinor}|${g.targetDay}': g.id,
+    };
+    final haveContribs = {
+      for (final c in goalContribs)
+        '${c.goalId}|${c.amountMinor}|${c.day}|${c.note ?? ''}',
+    };
+    for (final g in list('goals')) {
+      final draft = GoalDraft(
+        name: g['name']! as String,
+        targetMinor: g['target']! as int,
+        targetDay: g['targetDay'] as int?,
+      );
+      if (draft.validate() != null) continue;
+      final gk = '${draft.name}|${draft.targetMinor}|${draft.targetDay}';
+      var id = goalByKey[gk];
+      if (id == null) {
+        id = await _d.goals.addGoal(draft);
+        goalByKey[gk] = id;
+        bump('goals');
+      }
+      for (final c in (g['contributions'] as List?) ?? const <Object?>[]) {
+        final m = (c! as Map).cast<String, Object?>();
+        final amount = m['amount']! as int;
+        final day = m['day']! as int;
+        final note = m['note'] as String?;
+        if (amount <= 0 ||
+            !haveContribs.add('$id|$amount|$day|${note ?? ''}')) {
+          continue;
+        }
+        await _d.goals.addContribution(id, amount, day, note: note);
+      }
+    }
+
+    bump(
+      'MF orders',
+      await _d.holdings.restoreMfOrders([
+        for (final o in list('mfOrders'))
+          MfOrderEntry(
+            schemeName: o['scheme']! as String,
+            identifier: o['identifier']! as String,
+            at: o['at']! as int,
+            amountMinor: o['amount'] as int?,
+            units: (o['units'] as num?)?.toDouble(),
+            nav: (o['nav'] as num?)?.toDouble(),
+            platform: o['platform'] as String?,
+          ),
+      ]),
+    );
+
     // Settings: only whitelisted preferences, merged over the current ones.
     final stored = (doc['settings'] as Map?)?.cast<String, Object?>() ?? {};
     for (final k in backupSettings) {
@@ -769,6 +910,9 @@ class BackupData {
       'card entries': added['card entries'] ?? 0,
       'loans': added['loans'] ?? 0,
       'forex rates': added['forex rates'] ?? 0,
+      'SIPs': added['SIPs'] ?? 0,
+      'goals': added['goals'] ?? 0,
+      'MF orders': added['MF orders'] ?? 0,
     });
   }
 

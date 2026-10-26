@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/features/dashboard_home/presentation/dashboard_home_screen.dart';
+import 'package:hisaab/features/savings_goals/data/goal_repository_impl.dart';
+import 'package:hisaab/features/savings_goals/domain/goal.dart';
+import 'package:hisaab/features/savings_goals/presentation/goals_summary_card.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -11,8 +14,14 @@ import '../../support/parsed.dart';
 import '../../support/test_env.dart';
 import '../../support/ui_harness.dart';
 
-List<RouteBase> _routes(List<String> visited) => [
-      GoRoute(path: '/', builder: (_, __) => const DashboardHomeScreen()),
+List<RouteBase> _routes(List<String> visited, {bool goals = false}) => [
+      GoRoute(
+        path: '/',
+        builder: (_, __) => DashboardHomeScreen(
+          goalsSection: goals ? const GoalsSummaryCard() : null,
+        ),
+      ),
+      GoRoute(path: '/goals', builder: (_, __) => const SizedBox()),
       for (final p in [
         '/accounts',
         '/analysis',
@@ -101,6 +110,31 @@ void main() {
       await t.tap(find.text('Swiggy'));
       await settle(t);
       expect(visited, ['/transaction/1']);
+      await teardownApp(t);
+    });
+  }
+
+  // FR-17-30
+  for (final withGoal in [true, false]) {
+    testWidgets('goals card on home only when goals exist ($withGoal)',
+        (t) async {
+      await seed(t);
+      if (withGoal) {
+        await t.runAsync(
+          () => GoalRepositoryImpl(env.db).addGoal(
+            const GoalDraft(name: 'Trip', targetMinor: 9000000),
+          ),
+        );
+      }
+      await pumpApp(t, env, _routes([], goals: true));
+      await t.scrollUntilVisible(
+        find.text('Swiggy'),
+        200,
+      );
+      expect(
+        find.byKey(const Key('goals-summary'), skipOffstage: false),
+        withGoal ? findsOneWidget : findsNothing,
+      );
       await teardownApp(t);
     });
   }

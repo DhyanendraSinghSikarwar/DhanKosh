@@ -19,8 +19,13 @@ import 'package:hisaab/features/loans/data/loan_link_repository_impl.dart';
 import 'package:hisaab/features/loans/domain/loan_account_repository.dart';
 import 'package:hisaab/features/portfolio/data/holding_repository_impl.dart';
 import 'package:hisaab/features/portfolio/domain/asset_class.dart';
+import 'package:hisaab/features/portfolio/domain/holding_repository.dart';
 import 'package:hisaab/features/recurring_transactions/data/recurring_repository_impl.dart';
+import 'package:hisaab/features/recurring_transactions/data/sip_repository_impl.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
+import 'package:hisaab/features/recurring_transactions/domain/sip.dart';
+import 'package:hisaab/features/savings_goals/data/goal_repository_impl.dart';
+import 'package:hisaab/features/savings_goals/domain/goal.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/features/transactions_ledger/data/data_reset_repository_impl.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
@@ -42,6 +47,8 @@ BackupData dataOf(TestEnv e) => BackupData(
         cardPaid: CardPaidStoreImpl(e.settings),
         loanLinks: LoanLinkRepositoryImpl(e.db),
         forex: ForexRepositoryImpl(e.db),
+        sips: SipRepositoryImpl(e.db),
+        goals: GoalRepositoryImpl(e.db),
         settings: e.settings,
         reset: DataResetRepositoryImpl(e.db),
       ),
@@ -244,6 +251,87 @@ void main() {
       final totalsA = await a.txs.watchTotals(fromMs: 0, toMs: t0 * 2).first;
       expect(totals.spentMinor, totalsA.spentMinor);
       expect(totals.incomeMinor, totalsA.incomeMinor);
+    });
+
+    test('SIPs, goals and MF orders round trip, idempotent (FR-24-32)',
+        () async {
+      final a = TestEnv();
+      final b = TestEnv();
+      addTearDown(a.close);
+      addTearDown(b.close);
+      await SipRepositoryImpl(a.db).add(
+        const SipDraft(
+          name: 'Axis Bluechip',
+          amountMinor: 500000,
+          frequency: SipFrequency.monthly,
+          startDay: 20000,
+          dayOfMonth: 5,
+        ),
+      );
+      final ga = GoalRepositoryImpl(a.db);
+      final gid = await ga.addGoal(
+        const GoalDraft(name: 'Trip', targetMinor: 9000000, targetDay: 21000),
+      );
+      await ga.addContribution(gid, 100000, 20100, note: 'first');
+      await ga.addContribution(gid, 250000, 20200);
+      await ga.addGoal(const GoalDraft(name: 'Bike', targetMinor: 5000000));
+      final ha = HoldingRepositoryImpl(a.db);
+      await ha.recordMfOrder(
+        const MfOrderEntry(
+          schemeName: 'Axis Bluechip',
+          identifier: 'MF:axis bluechip',
+          at: 1760000000000,
+          amountMinor: 500000,
+          units: 10.5,
+          nav: 476.19,
+          platform: 'Groww',
+        ),
+        claimKey: 'm1',
+      );
+      final file = await svcOf(a).build('round-trip-pass', now: DateTime(2026));
+      final svc = svcOf(b);
+      final added = await svc.restore(await svc.open(file, 'round-trip-pass'));
+      expect(added.counts['SIPs'], 1);
+      expect(added.counts['goals'], 2);
+      expect(added.counts['MF orders'], 1);
+      final sb = await SipRepositoryImpl(b.db).watchAll().first;
+      expect(sb.single.name, 'Axis Bluechip');
+      expect(sb.single.dayOfMonth, 5);
+      final gb = GoalRepositoryImpl(b.db);
+      final goals = await gb.watchGoals().first;
+      expect(goals.map((g) => g.name), ['Trip', 'Bike']);
+      expect(goals.first.targetDay, 21000);
+      final cs = await gb.watchContributions().first;
+      expect(cs.map((c) => c.amountMinor), [100000, 250000]);
+      expect(cs.first.note, 'first');
+      final hb = HoldingRepositoryImpl(b.db);
+      final orders = await hb.watchMfOrders().first;
+      expect(orders.single.units, 10.5);
+      expect(orders.single.platform, 'Groww');
+      // The claim blocks the same purchase arriving again by mail.
+      expect(
+        await hb.recordMfOrder(orders.single, claimKey: 'other'),
+        isFalse,
+      );
+      final again = await svc.restore(await svc.open(file, 'round-trip-pass'));
+      expect(again.total, 0);
+      expect((await gb.watchContributions().first).length, 2);
+    });
+
+    test('older backup without the new sections still restores', () async {
+      final a = TestEnv();
+      addTearDown(a.close);
+      final added = await dataOf(a).restore({
+        'format': backupFormat,
+        'schema': 1,
+        'budgets': [
+          {'category': 'FOOD', 'limit': 100000},
+        ],
+      });
+      expect(added.counts['budgets'], 1);
+      expect(added.counts['SIPs'], 0);
+      expect(added.counts['goals'], 0);
+      expect(added.counts['MF orders'], 0);
     });
 
     test('restoring onto existing data adds nothing twice', () async {

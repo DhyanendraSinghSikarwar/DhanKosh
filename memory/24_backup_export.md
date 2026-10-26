@@ -161,6 +161,7 @@ Accounts' nicknames, balances, types, merges and hidden flags, custom categories
 29. FR-24-29: "Monthly or yearly summary" writes an A4 PDF with income, spent, saved, spend by category with share, top 10 merchants, budgets (limit, spent, left; yearly limits times 12) and net worth today. Review rows and transfers are excluded; amounts use `Rs 1,23,456.50` formatting by integer math.
 30. FR-24-30: "Portfolio report" writes an A4 PDF with value, invested, gain, return, allocation by class and the holdings list.
 31. FR-24-31: Reports are built and rendered on the phone with the `pdf` package, carry the footer "Made on your phone by DhanKosh. This file was not sent anywhere.", and use Latin-1 text only (other characters print as `?`). The Tax Centre export is specified in [19_tax_centre.md](19_tax_centre.md).
+32. FR-24-32: The backup also carries user SIPs (`sips`), goals with their contributions (`goals`) and recorded MF orders (`mfOrders`). They are optional sections of JSON schema 1: older files without them restore unchanged, and the counts show "SIPs", "goals", "MF orders". Restore goes through `SipRepository.add`, `GoalRepository.addGoal`/`addContribution` and `HoldingRepository.restoreMfOrders`; items are merged by content (SIP name, amount, frequency, day, start; goal name, target, date; contribution amount, day, note; order identifier, time, amount, units), so a second restore adds nothing. Restored orders claim their dedup keys so the same purchase arriving later by mail or SMS is not counted again.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -329,7 +330,9 @@ offset  size  field
 
 JSON top level: `format`, `schema`, `createdAt`, then the sections of FR-24-18. Transaction entry: `hash` (base hash, any `#...` review suffix removed), `amount`, `currency`, `type`, `bank`, `last4`, `kind`, `merchant`, `upi`, `ref`, `channel`, `balance`, `limit`, `ts`, `explicitTime`, `category`, `sub`, `custom` (category name), `confidence`, `review`, `note`, `inr`, and `sources[]` (`source`, `id`, `sender`, `hash`, `raw`, `at`, `subject`). Enum values use the database form (`SNAKE_UPPER`).
 
-Restore order: custom categories and sub-categories, rules (existing keys kept), accounts (create missing, fill blank nickname/type/manual balance on existing), loans, transactions (`ingestBatch`; dedup may merge or flag a row that nearly matches existing data), then per-row category and sub-category fixes through `setCategory`/`setSubcategory`, recurring (matched by name, amount, day, direction), budgets (existing categories kept), holdings (by identifier, grouped by source), card overrides and paid marks, loan links, forex rates, settings. Row-level review state is rebuilt by dedup, not copied.
+Optional sections added after v1 (no schema bump): `sips` (`name`, `amount`, `freq`, `day`, `weekday`, `start`), `goals` (`name`, `target`, `targetDay`, `createdAt`, `contributions[]` of `amount`, `day`, `note`) and `mfOrders` (`identifier`, `scheme`, `at`, `amount`, `units`, `nav`, `platform`). Readers ignore sections they do not know; files lacking them restore as before.
+
+Restore order: custom categories and sub-categories, rules (existing keys kept), accounts (create missing, fill blank nickname/type/manual balance on existing), loans, transactions (`ingestBatch`; dedup may merge or flag a row that nearly matches existing data), then per-row category and sub-category fixes through `setCategory`/`setSubcategory`, recurring (matched by name, amount, day, direction), budgets (existing categories kept), holdings (by identifier, grouped by source), SIPs, goals and contributions, MF orders (FR-24-32), card overrides and paid marks, loan links, forex rates, settings. Row-level review state is rebuilt by dedup, not copied.
 
 ## 11. Platform / Native Requirements (permissions, channels, background work)
 
@@ -466,3 +469,4 @@ Built 2026-10-26 (Fold adoption): FR-24-17..31 done. Code: `data/backup_crypto.d
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 5 backup/export landed | Phase 5 |
 | 2026-10-26 | Encrypted full backup and restore (FR-24-17..28), PDF summary and portfolio reports (FR-24-29..31); format documented in 10.1 | Fold adoption |
+| 2026-10-26 | Backup includes SIPs, goals, MF orders | Fold adoption |

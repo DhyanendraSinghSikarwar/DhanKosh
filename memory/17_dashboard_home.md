@@ -167,6 +167,7 @@ Safe-to-spend maths remains in `HomeViewModel.build` though no widget shows it: 
 27. FR-17-27: Home shows a small "Data stays on this phone" badge under the header, and tapping the month spent figure opens Analysis (`/analysis`).
 28. FR-17-28: The empty Home keeps the header and privacy badge and offers one primary action "Scan SMS" (`/more`) plus "Import your first statement" (`/statements`).
 29. FR-17-29: The header bell opens the Inbox (`/activity`, [22_activity_log.md](22_activity_log.md)) and shows the unread count (hidden at 0, "99+" above 99); unread rules are FR-22-16.
+30. FR-17-30: Home shows the savings goals summary card ([36_goals_roundups_salary_plan.md](36_savings_goals.md) FR-36-09) below the cards and budgets blocks, embedded by the router like the cards strip; with no goals it renders nothing (no empty card).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -555,3 +556,4 @@ Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insight
 | 2026-10-21 | Home gained budget rings (`HomeBudgetsCard`) and cash-flow card (`HomeCashFlowCard`) after the spent card, always visible (not yet customisable); see [10](10_expense_tracking.md), [11](11_income_tracking.md) | Phase 4 |
 | 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |
 | 2026-10-26 | Net worth card, Needs attention block (replaces the review notice), Inbox bell with unread badge, privacy badge, spent opens Analysis, empty-state import action (FR-17-25 to FR-17-29; TC-17-15 to TC-17-19) | Fold adoption |
+| 2026-10-26 | Goals card on Home | Fold adoption |

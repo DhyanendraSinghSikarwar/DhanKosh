@@ -20,10 +20,14 @@ import 'package:hisaab/shared/widgets/empty_state.dart';
 /// Home: greeting, month spent/income, review notice, recent, accounts
 /// (F-17, Phase 1 subset of FR-17-01..03, 06, 12, 14, 19).
 class DashboardHomeScreen extends ConsumerWidget {
-  const DashboardHomeScreen({this.cardsSection, super.key});
+  const DashboardHomeScreen({this.cardsSection, this.goalsSection, super.key});
 
   /// Optional cards strip embedded by the app composition (F-14).
   final Widget? cardsSection;
+
+  /// Optional goals summary embedded by the app composition (FR-17-30). It
+  /// renders nothing when there are no goals.
+  final Widget? goalsSection;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -55,6 +59,10 @@ class DashboardHomeScreen extends ConsumerWidget {
                       const HomeBudgetsCard(),
                       if (cardsSection != null) ...[
                         cardsSection!,
+                        const SizedBox(height: 16),
+                      ],
+                      if (goalsSection != null) ...[
+                        goalsSection!,
                         const SizedBox(height: 16),
                       ],
                       HomeRecentList(txs: recent, masked: masked),

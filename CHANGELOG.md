@@ -4,6 +4,16 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
+### Added
+- Encrypted full backup and restore (passphrase, AES-256-GCM), monthly/yearly and portfolio PDF reports, tax-year summary export.
+- Security: auto-lock timeout, lock now, block screenshots, failed-attempt delay, erase all data.
+- Share a PDF, CSV or XLSX statement from another app into DhanKosh.
+- Home: net worth card, Needs attention block, Inbox bell with unread count, goals card, privacy badge.
+- Insights: income by source, subscriptions, credit utilisation. Filters: source and amount range.
+- SIP tracker, optional MF NAV refresh (AMFI file, off by default), investment transactions list, card cycle spend and statement history.
+- Savings goals, virtual round-ups and salary split plan.
+- Weekly summary notification (off by default).
+
 ## [0.0.1] - 2026-10-26
 
 ### Changed

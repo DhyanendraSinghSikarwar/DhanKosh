@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
+import 'package:hisaab/app/di/goals_providers.dart';
 import 'package:hisaab/app/di/lock_skipper_provider.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/sip_providers.dart';
 import 'package:hisaab/features/backup_export/data/backup_data.dart';
 import 'package:hisaab/features/backup_export/data/backup_service.dart';
 import 'package:hisaab/features/backup_export/data/file_gateway.dart';
@@ -52,6 +54,8 @@ final backupDataProvider = Provider<BackupData>(
       cardPaid: ref.watch(cardPaidStoreProvider),
       loanLinks: ref.watch(loanLinkRepositoryProvider),
       forex: ref.watch(forexRepositoryProvider),
+      sips: ref.watch(sipRepositoryProvider),
+      goals: ref.watch(goalRepositoryProvider),
       settings: ref.watch(settingsRepositoryProvider),
       reset: ref.watch(dataResetRepositoryProvider),
     ),
