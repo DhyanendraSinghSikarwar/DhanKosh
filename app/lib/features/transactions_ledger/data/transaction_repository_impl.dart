@@ -821,6 +821,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
             ),
         ),
       if (f.banks.isNotEmpty) t.bankName.isIn(f.banks),
+      if (f.minMinor != null) t.amountMinor.isBiggerOrEqualValue(f.minMinor!),
+      if (f.maxMinor != null) t.amountMinor.isSmallerOrEqualValue(f.maxMinor!),
     ];
     final q = f.query.trim();
     if (q.isNotEmpty) {

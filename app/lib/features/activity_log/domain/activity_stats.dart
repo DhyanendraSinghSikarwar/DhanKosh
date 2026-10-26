@@ -101,6 +101,9 @@ abstract final class ActivityStats {
 
   /// Row subtitle (FR-22-10).
   static String subtitle(ActivityEntry e) {
+    if (e.source == ActivitySource.problems) {
+      return '${e.read} unreadable${e.note == null ? '' : ' from ${e.note}'}';
+    }
     if (e.error != null) return 'Failed: ${e.error}';
     final parts = <String>[];
     if (e.read > 0) {

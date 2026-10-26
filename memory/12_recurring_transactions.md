@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-12 |
-| Status | In progress (Phase 4: items store, detection, next-due maths, Bills screen with calendar, add/edit/delete/confirm sheet and loan EMIs in bills done; Home Upcoming, policies, short flag, alerts, EMI pairing pending) |
+| Status | In progress (Phase 4: items store, detection, next-due maths, Bills screen with calendar, add/edit/delete/confirm sheet and loan EMIs in bills done; SIP tracker done (detection, stepped setup, list on Bills and Portfolio); Home Upcoming, policies, short flag, alerts, EMI pairing pending) |
 | Priority | P1 |
 | Phase | 4 (recurring + analytics); detection functions are pure and can be built in Phase 1 for the Home Upcoming widget |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -55,7 +55,7 @@ Recurring Transactions finds the payments that repeat, such as rent, EMIs, subsc
 - Does not send budget alerts; see [Expense Tracking](10_expense_tracking.md).
 - Does not draw the Analysis forecast charts (analytics feature).
 - Does not create transactions from the user's regular items.
-- Does not include newer ideas such as price-hike or unused-subscription detection, weekly or other periods, or bill prediction.
+- Does not include newer ideas such as price-hike or unused-subscription detection or bill prediction. Weekly, daily and quarterly periods exist only for SIPs (FR-12-17..20).
 
 ## 3. Behaviour in Existing App
 
@@ -176,6 +176,13 @@ Third insight (INFO): when recurring (non-income) is non-empty: "N regular payme
 - FR-12-15: EMI pairing shall keep the bank debit as the spend and turn the loan-account mirror into a TRANSFER (same amount within +-3 days).
 - FR-12-16: The plan snapshot shall be computed off the main thread and shared by Home, Bills and Analysis.
 
+SIP tracker (Fold adoption, [ADR-0010](../docs/adr/0010-fold-ideas-adoption-rules.md)). Tracking only: no money moves and no ledger row is written.
+
+- FR-12-17: The system shall detect SIPs (`SipDetector.detect`) in instalment events: group by fund name (lower-cased letters and digits, >= 3 chars), keep amounts within 20% of the upper median, take the median gap in days between distinct instalment days: 5..9 and >= 3 instalments = weekly, 26..35 = monthly, 80..100 = quarterly (>= 2 instalments); the last instalment must be within 14 / 45 / 135 days; next date = last + 7 days / 1 month / 3 months (median day of month, clamped); show amount (latest), frequency, next date, total invested (sum of all instalments of the fund) and instalment count.
+- FR-12-18: Instalment events shall come from INVESTMENT-type ledger rows (INR, not under review, not duplicates, merchant or UPI id as the name) and from recorded MF orders with an amount ([Portfolio](16_portfolio.md) FR-16-22); one fund, day and amount counts once.
+- FR-12-19: The user shall add, edit and delete SIPs (frequency daily / weekly / monthly, name, amount, day of month or weekday) through a stepped sheet: frequency, amount, review, confirm; an existing SIP opens at review and each line is editable in place. A user SIP replaces a detected one of the same fund name and keeps its recorded total; without records its total is amount x instalments due since the start day.
+- FR-12-20: The SIP list (name, amount, frequency, next date, total invested, "Detected" tag) shall show on the Bills screen and on Portfolio; tapping a row opens the setup sheet at review.
+
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
 - Offline, pure functions over local data; unit-testable without Flutter.
@@ -280,6 +287,8 @@ enum DueTone { card, emi, invest, income, other }
 @freezed class DayEvent { DateTime date; String name; int amountMinor; CalendarMark mark; bool short; Recurring? recurring; }
 ```
 
+SIP models (`recurring_transactions/domain/sip.dart`): `SipFrequency { daily, weekly, monthly, quarterly }` (extends the bills frequency model; users can set daily, weekly, monthly), `SipEvent(name, atMs, amountMinor)`, `Sip(name, amountMinor, frequency, nextDate, totalInvestedMinor, instalments, lastDate?, manualId?, dayOfMonth?, weekday?, startDay?)`, `SipItem`, `SipDraft.validate()`, interface `SipRepository` (`watchAll`, `add`, `update`, `delete`). Pure maths in `SipDetector` (`detect`, `eventsFromLedger`, `nextDateOf`, `instalmentsUntil`, `withManual`).
+
 ## 9. Database Tables / Changes
 
 ```dart
@@ -302,6 +311,8 @@ Settings store: `alerted_keys` (string set, capped 300) shared with budgets; key
 No table for detected items or policies: both are derived on the fly. Reads: `transactions` (type, merchant, upiId, amountMinor, timestamp, category, accountId, needsReview, currency, note), `accounts` (balances, linkedAccountId, mergedIntoId), loans snapshot ([Loans](15_loans.md)). Old Room migration: table `recurring` added in 7-8.
 
 `AccountDao.referenceCount` counts recurring items on an account; an account with recurring items or linked cards must not be hard-deleted without a warning ([Accounts Management](13_accounts_management.md)).
+
+Schema v6 (migration v5 -> v6, additive): table `sips` (`id`, `name`, `amount_minor`, `frequency` DAILY|WEEKLY|MONTHLY, `day_of_month?`, `weekday?` 1..7, `start_day` epoch day IST, `created_at`). Table `mf_orders` (written by `recordMfOrder`, see [Portfolio](16_portfolio.md)) feeds detection.
 
 ## 10. Business Rules & Logic (regex, parsing rules, algorithms, thresholds)
 
@@ -338,6 +349,8 @@ List<Recurring> detect(List<Txn> txs, DateTime today) {
 Worked example (masked): Netflix 649.00 on 5 Aug, 5 Sep, 5 Oct (today 12 Oct) => median 64,900, similar 3, months 3, day spread 0, last paid 7 days ago => Recurring(name "Netflix", amount 64,900, day 5, lastPaid 5 Oct, nextDue 5 Nov, occurrences 3). A gym fee on the 30th and then the 2nd fails the spread rule (28 > 6).
 
 Low-balance example: rent 25,000 due 14 Oct from HDFC ••1234 with balance 18,000 on 12 Oct => alert "Rent ₹25,000 due in 2 days" / "HDFC Bank ••1234 has ₹18,000. Add ₹7,000 so it doesn't bounce."
+
+SIP detection and schedules: see FR-12-17. Next date of a user SIP: daily = today (or the start day if later); weekly = next matching weekday on or after today; monthly = the day this month if not past, else next month, clamped to the month length. Instalments due = scheduled dates from the start day through today. Detection is generic gap-based; `RecurringDetector` still lists monthly investment rows in Bills as before.
 
 ## 11. Platform / Native Requirements (permissions, channels, background work)
 
@@ -419,6 +432,15 @@ Integration:
 
 Fixtures: three monthly transactions for Netflix/rent/SIP; an insurance yearly premium; a loan with EMI 12,345 on day 5.
 
+SIP (`test/features/recurring_transactions/`, `test/features/savings_goals/goals_repository_test.dart`):
+
+- TC-12-16 (FR-12-17): three monthly instalments => monthly SIP, next date, total and count; weekly needs 3 instalments, quarterly 2; stale, uneven (amount band) and one-off series are not SIPs.
+- TC-12-17 (FR-12-18): a ledger row and an MF order of the same fund, day and amount count once; only INVESTMENT rows (not under review) become events.
+- TC-12-18 (FR-12-19): next date for weekly, monthly clamped to Feb 28, daily; instalments due; user SIP replaces the detected one and keeps its total; draft validation.
+- TC-12-19 (FR-12-19): `SipRepository` add / update (weekly keeps weekday only, monthly keeps day only) / delete and invalid draft throws.
+- TC-12-20 (FR-12-19, FR-12-20): widget: frequency -> amount -> review -> confirm saves a weekly SIP and writes no transaction; tapping a listed SIP opens at review and the amount changes in place; the list is hidden when empty.
+- TC-12-21: migration v5 -> v6 keeps data and creates the new tables (`test/core/db/migration_v5_v6_test.dart`).
+
 ## 16. Acceptance Criteria
 
 - AC-12-01: Detection output equals the Kotlin `Planning.recurring` on the shared fixtures, including rejection cases (FR-12-01, FR-12-02; TC-12-01..03).
@@ -429,6 +451,8 @@ Fixtures: three monthly transactions for Netflix/rent/SIP; an insurance yearly p
 - AC-12-06: Home shows the 7-day list with tones and short-of-funds (FR-12-08, FR-12-11; TC-12-08, TC-12-14).
 - AC-12-07: Low-balance and renewal alerts fire once at the right time and never repeat (FR-12-12, FR-12-13, FR-12-14; TC-12-09, TC-12-10, TC-12-15).
 - AC-12-08: EMI is not counted twice (FR-12-15; TC-12-11).
+
+- AC-12-09: SIPs are found from INVESTMENT rows and MF orders, can be added and edited in steps, show next date and total invested on Bills and Portfolio, and never move money (FR-12-17..20; TC-12-16..21).
 
 ## 17. Open Questions
 
@@ -474,3 +498,4 @@ abstract interface class RecurringRepository {
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
+| 2026-10-26 | SIP tracker: detection (weekly, monthly, quarterly), stepped add/edit, list on Bills and Portfolio, schema v6 `sips` | Fold adoption |

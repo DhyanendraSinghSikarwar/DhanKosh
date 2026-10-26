@@ -37,4 +37,27 @@ class DataResetRepositoryImpl implements DataResetRepository {
           updateKind: UpdateKind.delete,
         );
       });
+
+  @override
+  Future<void> eraseAll({bool keepSettings = false}) =>
+      _db.transaction(() async {
+        const first = ['transaction_sources', 'transactions', 'accounts'];
+        int rank(String n) {
+          final i = first.indexOf(n);
+          return i < 0 ? first.length : i;
+        }
+
+        final tables = [..._db.allTables]..sort(
+            (a, b) =>
+                rank(a.actualTableName).compareTo(rank(b.actualTableName)),
+          );
+        for (final t in tables) {
+          if (keepSettings && t.actualTableName == 'settings') continue;
+          await _db.customUpdate(
+            'DELETE FROM ${t.actualTableName}',
+            updates: {t},
+            updateKind: UpdateKind.delete,
+          );
+        }
+      });
 }

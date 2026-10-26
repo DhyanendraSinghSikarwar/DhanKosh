@@ -22,6 +22,14 @@ Future<void> dropV4(AppDatabase db) async {
 
 /// Drops everything added in schema v5 so a test can fake a v4 file.
 Future<void> dropV5(AppDatabase db) async {
+  await dropV6(db);
   await db.customStatement('DROP INDEX IF EXISTS activity_entries_at');
   await db.customStatement('DROP TABLE activity_entries');
+}
+
+/// Drops everything added in schema v6 so a test can fake a v5 file.
+Future<void> dropV6(AppDatabase db) async {
+  for (final t in ['sips', 'mf_orders', 'goals', 'goal_contributions']) {
+    await db.customStatement('DROP TABLE $t');
+  }
 }

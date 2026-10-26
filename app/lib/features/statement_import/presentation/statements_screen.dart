@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/share_in_providers.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/features/statement_import/domain/import_result.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
+import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
 import 'package:hisaab/features/statement_import/presentation/import_result_text.dart';
 import 'package:hisaab/features/statement_import/presentation/unlock_statement_sheet.dart';
 
@@ -32,6 +34,16 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
 
   Future<void> _import() async {
     final file = await ref.read(statementFileSourceProvider).pick();
+    await _importFile(file);
+  }
+
+  /// A file shared from another app, imported like a picked one (FR-05-26).
+  void _takeShared() {
+    final f = ref.read(sharedInboxProvider.notifier).take();
+    if (f != null) unawaited(_importFile(f));
+  }
+
+  Future<void> _importFile(PickedFile? file) async {
     if (file == null || !mounted) return;
     setState(() => _busy = true);
     ImportResult r;
@@ -88,6 +100,21 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
             if (s.holdingCount > 0) '${s.holdingCount} holdings',
           ].join(' · '),
       };
+
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual<PickedFile?>(
+      sharedInboxProvider,
+      (_, next) {
+        if (next == null) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _takeShared();
+        });
+      },
+      fireImmediately: true,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

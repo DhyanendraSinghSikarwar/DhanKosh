@@ -1,4 +1,5 @@
 import 'package:hisaab/features/analytics/domain/analytics_models.dart';
+import 'package:hisaab/features/analytics/domain/insight_extras.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 
@@ -14,6 +15,9 @@ class AnalyticsView {
     required this.insights,
     required this.heat,
     required this.merchants,
+    this.incomeSources = const [],
+    this.subscriptions = const [],
+    this.cards = const [],
   });
 
   /// Empty, still loading.
@@ -30,4 +34,13 @@ class AnalyticsView {
   final List<Insight> insights;
   final HeatGrid heat;
   final List<MerchantSpend> merchants;
+
+  /// Credits by source (FR-18-24).
+  final List<IncomeSource> incomeSources;
+
+  /// Detected subscriptions (FR-18-25).
+  final List<SubscriptionLine> subscriptions;
+
+  /// Credit utilisation per card (FR-18-26).
+  final List<CardUtil> cards;
 }

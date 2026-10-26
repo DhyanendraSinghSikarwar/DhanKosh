@@ -88,7 +88,13 @@ void main() {
       'shows billed, min due, due label and Mark paid / Undo '
       '(FR-14-09, FR-14-13)', (t) async {
     await pump(t, const CreditCardsScreen());
-    expect(find.text('₹12,345.00'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(Key('card_tile_$cardId')),
+        matching: find.text('₹12,345.00'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('₹620.00'), findsOneWidget);
     expect(find.text('Due in 10 days'), findsOneWidget);
     await t.tap(find.byKey(Key('card_mark_paid_$cardId')));
@@ -131,7 +137,13 @@ void main() {
     await t.pump();
     await t.pump(const Duration(seconds: 1));
     await settle(t);
-    expect(find.text('₹12,345.00'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(Key('card_tile_$cardId')),
+        matching: find.text('₹12,345.00'),
+      ),
+      findsOneWidget,
+    );
     expect(find.byKey(Key('card_edited_$cardId')), findsNothing);
     await teardownApp(t);
   });

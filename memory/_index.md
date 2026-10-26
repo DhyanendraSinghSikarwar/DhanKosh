@@ -37,3 +37,4 @@ One line per feature file. Each file is the single source of truth for its featu
 - [33_upgrade_migration_from_kotlin.md](33_upgrade_migration_from_kotlin.md) - **Upgrade Migration from the Kotlin App**: applicationId, signing, Room-to-Drift carry-over, sealed secrets (Proposed)
 - [34_planned_insights_backlog.md](34_planned_insights_backlog.md) - **Planned Insights & Backlog**: features the existing app only plans or hints at, plus do-not-port list (Proposed)
 - [35_diagnostic_log.md](35_diagnostic_log.md) - **Diagnostic Log**: on-device sanitised log file, viewer and manual export for debugging (In Progress)
+- [36_goals_roundups_salary_plan.md](36_goals_roundups_salary_plan.md) - **Savings Goals, Round-ups & Salary Plan**: goals with projection, virtual round-up tracker, salary split plan (In Progress)

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/analytics_providers.dart';
 import 'package:hisaab/features/analytics/domain/analytics_view.dart';
 import 'package:hisaab/features/analytics/presentation/analytics_cards.dart';
+import 'package:hisaab/features/analytics/presentation/analytics_extra_cards.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
 
@@ -94,9 +95,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                   HeatmapCard(heat: v.heat),
                   TopMerchantsCard(merchants: v.merchants, money: money),
                   BudgetsCard(data: d, money: money),
+                  SubscriptionsCard(lines: v.subscriptions, money: money),
+                  CardUtilisationCard(cards: v.cards, money: money),
                 ],
               _View.cash => [
                   IncomeFlowCard(data: d, money: money),
+                  IncomeSourcesCard(sources: v.incomeSources, money: money),
                   SavingsRateCard(data: d),
                   CashProjectionCard(data: d, money: money),
                 ],

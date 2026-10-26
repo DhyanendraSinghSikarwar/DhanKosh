@@ -169,6 +169,9 @@ void main() {
 
   // FR-24-02, FR-24-05
   testWidgets('screen exports and imports with confirm', (tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final gw = _Gw(
       'date,amount,type\n2026-10-17T08:15:30Z,50.00,DEBIT\n',
     );
@@ -179,6 +182,7 @@ void main() {
           backupServiceProvider
               .overrideWithValue(_FakeSvc(_Txs(), _Settings())),
           lastExportProvider.overrideWith((ref) async => 0),
+          lastFullBackupProvider.overrideWith((ref) async => 0),
         ],
         child: const MaterialApp(home: BackupExportScreen()),
       ),
@@ -186,12 +190,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('No export yet'), findsOneWidget);
 
-    await tester.tap(find.text('Export'));
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('backup-export')),
+        matching: find.text('Export'),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(gw.savedName, matches(r'^dhankosh-\d{4}-\d{2}-\d{2}\.csv$'));
     expect(find.textContaining('Exported 1 transactions'), findsOneWidget);
 
-    await tester.tap(find.text('Import'));
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('backup-import')),
+        matching: find.text('Import'),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Import transactions?'), findsOneWidget);
     await tester.tap(find.byKey(const Key('backup-import-confirm')));
@@ -199,7 +213,12 @@ void main() {
     expect(find.textContaining('Imported 1, skipped 0'), findsOneWidget);
 
     gw.text = 'x,y\n1,2\n';
-    await tester.tap(find.text('Import'));
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('backup-import')),
+        matching: find.text('Import'),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(
       find.textContaining('Import failed: Not a DhanKosh'),

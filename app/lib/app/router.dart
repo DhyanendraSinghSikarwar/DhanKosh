@@ -42,6 +42,10 @@ import 'package:hisaab/features/portfolio/presentation/portfolio_screen.dart';
 import 'package:hisaab/features/profile/presentation/profile_screen.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/bills_tile.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/recurring_transactions_screen.dart';
+import 'package:hisaab/features/recurring_transactions/presentation/sip_section.dart';
+import 'package:hisaab/features/recurring_transactions/presentation/sip_setup_sheet.dart';
+import 'package:hisaab/features/savings_goals/presentation/goals_screen.dart';
+import 'package:hisaab/features/savings_goals/presentation/goals_tile.dart';
 import 'package:hisaab/features/security_privacy/presentation/security_privacy_screen.dart';
 import 'package:hisaab/features/security_privacy/presentation/security_tile.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_data_sources_screen.dart';
@@ -53,6 +57,8 @@ import 'package:hisaab/features/tax_centre/presentation/tax_tile.dart';
 import 'package:hisaab/features/theming_customisation/presentation/customise_tile.dart';
 import 'package:hisaab/features/theming_customisation/presentation/theming_customisation_screen.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/add_transaction_screen.dart';
+
+Widget _sipSheet(BuildContext _) => const SipSetupSheet();
 
 final routerProvider = Provider<GoRouter>((ref) {
   // F-01 gate: Welcome until onboarding is done; blank while unknown.
@@ -97,6 +103,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/tax', builder: (_, __) => const TaxCentreScreen()),
       GoRoute(path: '/rules', builder: (_, __) => const RulesScreen()),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+      GoRoute(path: '/goals', builder: (_, __) => const GoalsScreen()),
       GoRoute(path: '/cards', builder: (_, __) => const CreditCardsScreen()),
       GoRoute(
         path: '/statements',
@@ -207,7 +214,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/portfolio',
-                builder: (_, __) => const PortfolioScreen(),
+                builder: (_, __) => const PortfolioScreen(
+                  sipSection: SipSection(),
+                  sipSheet: _sipSheet,
+                ),
               ),
             ],
           ),
@@ -227,6 +237,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   notificationCard: NotificationAccessCard(),
                   statementsTile: StatementsTile(),
                   billsTile: BillsTile(),
+                  goalsTile: GoalsTile(),
                   loansTile: LoansTile(),
                   alertsTile: AlertsTile(),
                   forexTile: ForexTile(),

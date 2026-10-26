@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-19 |
-| Status | In progress (domain plus Tax Centre screen at /tax: period, income, regime comparison, slabs, detected deductions, what-if sheet; share, export, EPF and FR-19-09..11, 16, 17 deferred) |
+| Status | In progress (domain plus Tax Centre screen at /tax; 2026-10-26: PDF export of income, detected deductions and regime comparison with the disclaimer, gated on income and a hidden-amounts confirm; PNG, share sheet, EPF input and FR-19-16 cache file not done) |
 | Priority | P2 |
 | Phase | 4 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -464,6 +464,7 @@ Integration:
 Fixture messages (masked): `Salary credited Rs 1,00,000.00 to a/c XX1234 by ACME TECH PVT LTD`; `Int.Pd Rs 3,000.00 credited a/c XX1234`; `Rs 50,000.00 debited a/c XX1234 to ICICI Pru ELSS Tax Saver (UPI)`.
 - TC-19-10 (FR-19-16): two exports in a row leave exactly one `DhanKosh-tax-estimate*` file in `shared/`.
 - TC-19-11 (FR-19-17): importing a Kotlin data dir containing `tax_overrides.preferences_pb` creates no tax state.
+- TC-19-12b (FR-19-09, FR-19-10, FR-19-11): the export button is disabled without income; with amounts hidden "Export with amounts?" comes first; the exported document is named `DhanKosh-tax-estimate-2026-27` and carries the disclaimer; the PDF has income, deductions detected, regime comparison and "not tax advice" (`tax_centre_screen_test.dart`, `reports_test.dart`).
 
 ## 16. Acceptance Criteria
 
@@ -512,6 +513,8 @@ Tests: `test/features/tax_centre/tax_calculator_test.dart` (worked examples A to
 Phase 4 UI: `presentation/tax_centre_screen.dart`, `tax_what_if_sheet.dart`, `tax_tile.dart` (More entry, composed in `app/router.dart`); route `/tax`. Wiring in `lib/app/di/analytics_providers.dart` (`taxBaselineProvider`, `taxPeriodChoiceProvider`, `taxWhatIfStateProvider`, in-memory only); `TaxBaseline` added to `domain/tax_plan.dart`. UI done: FR-19-01, 02, 03, 04, 05, 06, 07, 08, 12. The screen notes that FY 2026-27 rules are unconfirmed (Open Question 1). Deferred: share and export (FR-19-09..11, 16, 17), EPF holdings input (detector called without EPF), what-if fields beyond salary, 80C, 80D, NPS.
 Tests: `test/features/tax_centre/tax_centre_screen_test.dart` (examples B and C totals Rs 97,500 / Rs 2,10,600, empty income, what-if example A gives Rs 0 then reset, period change, light/dark).
 
+- 2026-10-26: FR-19-09 done (needs income, confirm while amounts are hidden), FR-19-11 done (disclaimer footer, real figures). FR-19-10 partly: a one-click A4 PDF through the save-as picker (`BlobGateway`, `ReportService.save`) named `DhanKosh-tax-estimate-<yyyy>-<yy>.pdf` (`DhanKosh-tax-estimate-last-12-months.pdf` for the 12-month period); the PNG and the platform share sheet are not built. FR-19-16 (cache `shared/` file) is not needed because nothing is kept after saving. Code: `domain/tax_report_builder.dart` (`TaxReportBuilder.build(plan)` returns the shared `ReportDocument`: Income, Deductions detected with 80C/80D lines and NPS, Regime comparison with the cheaper regime note), export action in `presentation/tax_centre_screen.dart`, renderer in `lib/shared/report/` ([24_backup_export.md](24_backup_export.md)).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -521,3 +524,4 @@ Tests: `test/features/tax_centre/tax_centre_screen_test.dart` (examples B and C 
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
+| 2026-10-26 | Tax-year PDF export (FR-19-09, FR-19-11, FR-19-10 PDF only) | Fold adoption |

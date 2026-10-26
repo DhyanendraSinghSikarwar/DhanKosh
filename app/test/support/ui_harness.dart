@@ -22,6 +22,7 @@ Future<void> pumpApp(
   await t.pumpWidget(
     ProviderScope(
       overrides: [
+        appDatabaseProvider.overrideWithValue(env.db),
         accountRepositoryProvider.overrideWithValue(env.accounts),
         transactionRepositoryProvider.overrideWithValue(env.txs),
         settingsRepositoryProvider.overrideWithValue(env.settings),

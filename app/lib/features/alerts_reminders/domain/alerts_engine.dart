@@ -9,6 +9,8 @@ import 'package:hisaab/features/alerts_reminders/domain/alerted_key_store.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_repository.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_repository.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
+import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
 import 'package:hisaab/shared/log/app_logger.dart';
 import 'package:hisaab/shared/log/log_models.dart';
 import 'package:parser_core/parser_core.dart';
@@ -27,6 +29,7 @@ class AlertsEngine {
     required AlertedKeyStore alerted,
     required AlertPoster poster,
     required AlertSettingsRepository settings,
+    TransactionRepository? txs,
     int Function()? nowMs,
   })  : _budgets = budgets,
         _recurring = recurring,
@@ -34,6 +37,7 @@ class AlertsEngine {
         _alerted = alerted,
         _poster = poster,
         _settings = settings,
+        _txs = txs,
         _nowMs = nowMs ?? (() => DateTime.now().millisecondsSinceEpoch);
 
   final BudgetRepository _budgets;
@@ -42,6 +46,7 @@ class AlertsEngine {
   final AlertedKeyStore _alerted;
   final AlertPoster _poster;
   final AlertSettingsRepository _settings;
+  final TransactionRepository? _txs;
   final int Function() _nowMs;
 
   static const _istOffsetMs = 19800000;
@@ -70,6 +75,7 @@ class AlertsEngine {
         () => _budgetDecisions(settings, ist),
         () => _billDecisions(today),
         () => _renewalDecisions(today),
+        () => _weeklyDecisions(settings, today),
       ]) {
         try {
           for (final d in await check()) {
@@ -137,6 +143,33 @@ class AlertsEngine {
       settings: settings,
       alerted: await _alerted.all(),
     );
+  }
+
+  /// Weekly summary (FR-21-21): last completed Monday-Sunday week against
+  /// the week before, once per week through the alerted keys.
+  Future<List<AlertDecision>> _weeklyDecisions(
+    AlertSettings settings,
+    DateTime today,
+  ) async {
+    final txs = _txs;
+    if (!settings.weeklySummary || txs == null) return const [];
+    final monday = AlertRules.lastWeekStart(today);
+    final alerted = await _alerted.all();
+    if (alerted.contains(AlertRules.weeklyKey(monday))) return const [];
+    int ms(DateTime d) => d.millisecondsSinceEpoch - _istOffsetMs;
+    final prevMonday = monday.subtract(const Duration(days: 7));
+    final end = monday.add(const Duration(days: 7));
+    final rows = await txs
+        .watch(LedgerFilter(fromMs: ms(prevMonday), toMs: ms(end)))
+        .first;
+    final d = AlertRules.weeklySummary(
+      today: today,
+      week: AlertRules.weekSpend(rows, ms(monday), ms(end)),
+      previous: AlertRules.weekSpend(rows, ms(prevMonday), ms(monday)),
+      settings: settings,
+      alerted: alerted,
+    );
+    return d == null ? const [] : [d];
   }
 
   static DateTime _nextDue(RecurringItem r, DateTime today) {

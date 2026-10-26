@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
+import 'package:hisaab/app/di/sip_providers.dart';
 import 'package:hisaab/core/utils/ist.dart';
 import 'package:hisaab/features/recurring_transactions/domain/bills_view.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_detector.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/bills_calendar.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/recurring_sheet.dart';
+import 'package:hisaab/features/recurring_transactions/presentation/sip_section.dart';
+import 'package:hisaab/features/recurring_transactions/presentation/sip_setup_sheet.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
@@ -44,7 +47,21 @@ class _State extends ConsumerState<RecurringTransactionsScreen> {
     final bills = ref.watch(billsProvider);
     final masked = ref.watch(hideAmountsProvider).value ?? true;
     return Scaffold(
-      appBar: AppBar(title: const Text('Bills & insurance')),
+      appBar: AppBar(
+        title: const Text('Bills & insurance'),
+        actions: [
+          TextButton(
+            key: const Key('sip-add'),
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              showDragHandle: true,
+              builder: (_) => const SipSetupSheet(),
+            ),
+            child: const Text('Add SIP'),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         key: const Key('bills-add'),
         tooltip: 'Add regular payment',
@@ -55,7 +72,7 @@ class _State extends ConsumerState<RecurringTransactionsScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Could not load bills')),
         data: (items) {
-          if (items.isEmpty) {
+          if (items.isEmpty && (ref.watch(sipsProvider).value ?? []).isEmpty) {
             return const EmptyState(
               icon: Icons.event_repeat_outlined,
               title: 'Nothing found yet',
@@ -90,6 +107,10 @@ class _State extends ConsumerState<RecurringTransactionsScreen> {
                   child:
                       Text('Nothing on this day', key: Key('bills-day-empty')),
                 ),
+              if (_day == null) ...[
+                const SipSection(),
+                const SizedBox(height: 12),
+              ],
               for (final r in shown)
                 _Row(
                   r: r,

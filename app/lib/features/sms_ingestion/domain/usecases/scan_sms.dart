@@ -1,6 +1,7 @@
 import 'package:hisaab/core/errors/failure.dart';
 import 'package:hisaab/features/activity_log/domain/activity_logger.dart';
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
+import 'package:hisaab/features/activity_log/domain/inbox_logic.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
 import 'package:hisaab/features/sms_ingestion/domain/sms_ports.dart';
@@ -103,6 +104,7 @@ class ScanSms {
     var flagged = 0;
     var skipped = 0;
     var checked = 0;
+    final rejectedSenders = <String>[];
     var cursor = settings.cursor;
     String? error;
     try {
@@ -126,7 +128,7 @@ class ScanSms {
               case IngestOutcome.skipped:
                 skipped++;
               case IngestOutcome.rejected:
-                break;
+                rejectedSenders.add(batch[i].sender);
             }
             if (batch[i].receivedAt > cursor) cursor = batch[i].receivedAt;
           }
@@ -159,6 +161,17 @@ class ScanSms {
         error: error,
       ),
     );
+    if (rejectedSenders.isNotEmpty) {
+      // FR-22-15: count and sender code only, never body or amounts.
+      await _activity?.record(
+        ActivityEntry(
+          at: started,
+          source: ActivitySource.problems,
+          read: rejectedSenders.length,
+          note: InboxLogic.topSenderCode(rejectedSenders),
+        ),
+      );
+    }
     final fields = <String, Object?>{
       'read': checked,
       'bank': bank,

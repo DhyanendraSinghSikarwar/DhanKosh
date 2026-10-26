@@ -32,6 +32,9 @@ abstract interface class AlertSettingsRepository {
 
   /// Saves the card-reminders switch.
   Future<void> setCardDueReminders({required bool value});
+
+  /// Turns the weekly summary on or off (FR-21-21).
+  Future<void> setWeeklySummary({required bool value});
 }
 
 /// Maps a `hisaab://` link to an in-app route (FR-21-15).

@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-18 |
-| Status | In progress (domain plus Analysis tab UI: period, four views, donut, trend, heatmap, merchants, budgets, income flow bars, savings rate, forecast, cash projection, compare, insights; Sankey, category-tap filter, layout store, month sheet, recurring plan wiring deferred) |
+| Status | In progress (Fold adoption 2026-10-26: Income by source, Subscriptions and Credit utilisation cards; domain plus Analysis tab UI: period, four views, donut, trend, heatmap, merchants, budgets, income flow bars, savings rate, forecast, cash projection, compare, insights; Sankey, category-tap filter, layout store, month sheet, recurring plan wiring deferred) |
 | Priority | P1 |
 | Phase | 4 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -128,6 +128,9 @@ Inputs for rules: DEBIT, `!needsReview`, currency INR, amounts as raw `amountMin
 20. FR-18-20: Every chart point or bar that is tappable opens the matching drill-down (category screen, transaction, month sheet) with the month where applicable.
 21. FR-18-21: Scope/kind-filtered aggregates (`categoryTotalsFor`, `monthlyFor`, `dailyFor`, `topMerchantsFor`) and `monthlyForAccount` shall follow the exact semantics in section 9 (types, `inrMinor IS NOT NULL`, scope, kind, day and month bucketing, merchant fallback).
 22. FR-18-22: The personal/business rule shall treat a transaction with no account as personal; per-account monthly rollups shall include the account, its linked debit cards and accounts merged into it (and cards linked to merged accounts).
+24. FR-18-24: The Cash view shows "Income by source": the period's credits (not review, not duplicate) grouped by `IncomeClassifier.bucketOf` (Salary, Dividends, Deposit interest, Savings interest, Rent, Other income) with count and rupee-valued total, largest first; the excluded bucket (refunds, transfers, reimbursements) is left out; the card is hidden when empty.
+25. FR-18-25: The Spend view shows "Subscriptions": `RecurringDetector.detect` over the loaded 12-month ledger window, excluding income, investment and EMI & Loans categories, with the monthly total (yearly items divided by 12, integer) and a list largest first; hidden when empty.
+26. FR-18-26: The Spend view shows "Credit utilisation" per credit card with a stated limit: used = limit minus limit left (`CardDueService`, FR-14-14) else billed plus unbilled, floored at 0; percent = used x 100 ~/ limit; band good below 30%, watch below 70%, else high, drawn with the income, warning and expense colours; hidden when no card has a limit.
 23. FR-18-23: The shared chart components listed in section 10 (chart inventory) shall be implemented once under `shared`/`features/analytics/presentation/charts`, with `StackedArea` not ported.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
@@ -449,6 +452,12 @@ Integration:
 15. TC-18-15 (FR-18-09, FR-18-19): ingest salary + spends fixtures -> Cash flow Sankey values equal group sums and "Left over".
 16. TC-18-16 (FR-18-20): tapping a month bar -> sheet -> category row -> category screen for that month.
 
+Fold adoption:
+
+- TC-18-18 (FR-18-24): `InsightExtras.incomeBySource` groups salary, savings interest and two dividends, skips a refund, a review row and a debit; dividends sum to 60,000 paise with count 2.
+- TC-18-19 (FR-18-25): `InsightExtras.subscriptions` on three months of Netflix 14,900 and Spotify 19,900 paise plus a 5,00,000 SIP returns Spotify then Netflix, total 34,800, and drops the SIP.
+- TC-18-20 (FR-18-26): `CardUtil` percent and bands at 29%, 30%, 69%, 70%, 120% and a zero limit use integer math.
+
 Fixtures (masked): `Salary credited Rs 85,000.00 to a/c XX1234`; `Rs 1,20,000.00 debited a/c XX1234 to VPA landlord@okhdfc (Rent)`; `Rs 2,450.50 debited ... swiggy@icici`; interest `Int.Pd Rs 412.00 credited a/c XX1234`.
 - TC-18-17 (FR-18-21, FR-18-22): `categoryTotalsFor`/`monthlyFor`/`dailyFor`/`topMerchantsFor` with scope and kind fixtures; no-account row is personal; `monthlyForAccount` includes linked debit card and merged-account rows; `dailyFor` day bucket flips at local midnight.
 
@@ -497,6 +506,7 @@ Tests: `test/features/analytics/analytics_test.dart` (ledger math, IST bucketing
 Phase 4 UI: `presentation/analytics_screen.dart` (period segmented This/Last month, four views Spend/Cash/Forecast/Compare) and `analytics_cards.dart` (fl_chart donut, 12-month bars, cash and forecast lines; heatmap as a coloured grid; income flow as bars). Wiring in `lib/app/di/analytics_providers.dart` (`analyticsViewProvider`, `analyticsPeriodChoiceProvider`); `domain/analytics_view.dart` holds `AnalyticsView` and `AnalyticsPeriod`. UI done: FR-18-01 (partial: four views, opens on Spend), 03, 05, 06, 07, 08, 09 (bars), 11, 13, 14, 15, 16, 17.
 Deferred: Sankey drawing (bars instead), category-tap filter (FR-18-04), month sheet, custom period (FR-18-12), layout store (FR-18-19/20), recurring/upcoming plan input (forecast and cash use an empty `PlanSnapshot`), time-of-day beyond heat grid, FR-18-22/23.
 Tests: `test/features/analytics/analytics_screen_test.dart` (empty, populated light/dark, period change, views).
+Fold adoption 2026-10-26: `domain/insight_extras.dart` (pure), `presentation/analytics_extra_cards.dart`, `AnalyticsView.{incomeSources,subscriptions,cards}` filled in `app/di/analytics_providers.dart` (cards from `cardLimitsProvider`). Tests: `test/features/analytics/insight_extras_test.dart`. Deferred: widget test of the three cards on the screen.
 
 ## 19. Change Log (date | change | reason)
 
@@ -507,3 +517,4 @@ Tests: `test/features/analytics/analytics_screen_test.dart` (empty, populated li
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
+| 2026-10-26 | Income by source, Subscriptions and Credit utilisation cards (FR-18-24 to FR-18-26; TC-18-18 to TC-18-20) | Fold adoption |

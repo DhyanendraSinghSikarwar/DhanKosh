@@ -15,6 +15,7 @@ List<RouteBase> _routes(List<String> visited) => [
       GoRoute(path: '/', builder: (_, __) => const DashboardHomeScreen()),
       for (final p in [
         '/accounts',
+        '/analysis',
         '/more',
         '/review',
         '/transaction/:id',
@@ -88,16 +89,15 @@ void main() {
         t.widget<Text>(find.byKey(const Key('home_income'))).data,
         '₹85,000.00',
       );
+      await t.scrollUntilVisible(find.text('Swiggy'), 200);
       expect(find.text('Swiggy'), findsOneWidget);
-      await t.drag(find.byType(ListView), const Offset(0, -600));
-      await t.pump();
+      await t.scrollUntilVisible(find.text('HDFC Bank ••1234'), 200);
       expect(find.text('HDFC Bank ••1234'), findsOneWidget);
       expect(
         t.widget<Text>(find.byKey(const Key('home_balance'))).data,
         '₹1,32,549.50',
       );
-      await t.drag(find.byType(ListView), const Offset(0, 600));
-      await t.pump();
+      await t.scrollUntilVisible(find.text('Swiggy'), -200);
       await t.tap(find.text('Swiggy'));
       await settle(t);
       expect(visited, ['/transaction/1']);
@@ -161,11 +161,11 @@ void main() {
     await pumpApp(t, env, _routes(visited));
     final n = await t.runAsync(() => env.txs.watchReviewCount().first);
     if (n! > 0) {
-      await t.tap(find.byKey(const Key('home_review_notice')));
+      await t.tap(find.byKey(const Key('attn_duplicates')));
       await settle(t);
       expect(visited, ['/review']);
     } else {
-      expect(find.byKey(const Key('home_review_notice')), findsNothing);
+      expect(find.byKey(const Key('attn_duplicates')), findsNothing);
     }
     await teardownApp(t);
   });

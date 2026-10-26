@@ -57,6 +57,14 @@ abstract interface class HoldingRepository {
 
   /// Stream of [list].
   Stream<List<Holding>> watch();
+
+  /// Recorded fund purchases, newest first (FR-16-22).
+  Stream<List<MfOrderEntry>> watchMfOrders();
+
+  /// Sets holding [id]'s value from a NAV dated [asOf] (epoch ms), keeping
+  /// the old figures as previous (FR-16-24). False for manual rows and when
+  /// the holding's figures are as new or newer.
+  Future<bool> applyNav(int id, {required int valueMinor, required int asOf});
 }
 
 /// A mutual fund purchase (SIP instalment or lump sum) from a mail or SMS.

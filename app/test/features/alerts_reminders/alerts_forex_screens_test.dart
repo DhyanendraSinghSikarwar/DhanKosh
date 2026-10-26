@@ -34,7 +34,17 @@ void main() {
     await settle(t);
     await t.tap(find.text('95%'));
     await settle(t);
+    // FR-21-21: weekly summary is off until the user turns it on.
+    expect(
+      (await t.runAsync(() => AlertSettingsStore(env.settings).read()))!
+          .weeklySummary,
+      isFalse,
+    );
+    await t.ensureVisible(find.byKey(const Key('alerts-weekly')));
+    await t.tap(find.byKey(const Key('alerts-weekly')));
+    await settle(t);
     final s = await AlertSettingsStore(env.settings).read();
+    expect(s.weeklySummary, isTrue);
     expect(s.transactionNotifications, isFalse);
     expect(s.budgetAlertPercent, 95);
     poster.enabled = true;

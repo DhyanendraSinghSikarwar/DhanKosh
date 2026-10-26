@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-25 |
-| Status | In progress (Phase 5: app lock gate, Security & privacy screen and More tile done; native biometric prompt, theme and FragmentActivity change are not compiled or run on a device; Keystore sealing stays on flutter_secure_storage; hosted text size and backup rows, skip-hop callers, FLAG_SECURE, widget masking pending) |
+| Status | In progress (Phase 5: app lock gate, Security & privacy screen and More tile done; native biometric prompt, theme and FragmentActivity change are not compiled or run on a device; Keystore sealing stays on flutter_secure_storage; hosted text size and backup rows, skip-hop callers, FLAG_SECURE, widget masking pending; 2026-10-26: auto-lock timeout, Lock now, block screenshots (FLAG_SECURE, Kotlin not compiled here), failed-attempt delay and inbox entry, Erase all data with export offer and typed word done in Dart; Kotlin change unverified on a device) |
 | Priority | P0 |
 | Phase | 5 (secure-storage helper is built in Phase 0 and reused by Phase 2 email) |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -58,7 +58,7 @@ Security and Privacy keeps a person's financial data private on the phone where 
 - Email credential entry and statement password guessing.
 - Profile identity entry (see [Profile](27_profile.md)).
 - The share-with-amounts confirmation in the Tax Centre, which belongs to the tax feature ([Tax Centre](19_tax_centre.md)).
-- A PIN of the app's own, and blocking of screenshots or recent-app previews (not done in the existing app).
+- A PIN of the app's own or a recovery key (rejected, ADR-0010).
 
 ## 3. Behaviour in Existing App
 
@@ -168,6 +168,13 @@ Sections in order: App lock switch; Hide amounts switch; Text size Segmented (Sm
 - FR-25-18: Logs, the activity log and notifications never contain message bodies, senders, amounts, passwords or statement figures.
 - FR-25-19: Release builds are obfuscated and shrunk; signing keys come from local properties or environment variables, never committed.
 - FR-25-20: The privacy table in Section 2.8 is reproduced in the in-app privacy/about copy or docs and kept in sync with real network destinations.
+
+- FR-25-21: Setting `auto_lock_minutes` (int, default 0 = immediately; choices 0, 1, 5, 15) shown as "Lock after" while the lock is on. With 0 the app locks as it leaves (FR-25-03). With more than 0 it stays unlocked while away, and on return locks only when the time away reached the timeout. A skip flag (FR-25-06) still holds a deliberate hop.
+- FR-25-22: "Lock now" on the Security screen (visible while the lock is on) locks the session at once and fires the prompt.
+- FR-25-23: Setting `block_screenshots` (bool, default false) sets Android `FLAG_SECURE` on the app window, which blocks screenshots and the recents preview. It is applied at start (Kotlin reads a saved copy before the first frame), when settings load, and on toggle, through the `alerts` bridge method `setSecure{on}`.
+- FR-25-24: After 5 failed or cancelled prompts in a row the next prompt is refused for 30 s, doubling per further failure to 5 min; the lock screen shows "Too many attempts. Try again in N s" and disables Unlock. A success resets the count.
+- FR-25-25: A success after 3 or more failures records one Activity entry (source Problems, error `UnlockFailed`, note "N failed unlock attempts", counts only) so it appears in the Inbox; nothing about the attempts is stored otherwise.
+- FR-25-26: "Erase all data" replaces the plain clear: dialog with Export first (opens Backup & Export), Continue, then a dialog requiring the typed word ERASE. It deletes every table, saved statement passwords, bank identity details and the mailbox password; the session stays unlocked. The Settings developer tool keeps its own clear (developer flag).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -366,6 +373,11 @@ Integration:
 - TC-25-13 (FR-25-07): enabling the lock does not immediately show the overlay.
 - TC-25-14 (FR-25-14, FR-25-15): manifest assertion: `allowBackup=false`, extraction rules present, cleartext false.
 - TC-25-15 (FR-25-18): run an ingest fixture and assert logs and activity entries contain no message body.
+- TC-25-16 (FR-25-21): timeout 0 locks on pause; 5 min: 2 minutes away stays unlocked, 5 minutes away locks on resume; hidden then paused counts from the first event; a skip flag holds; lock disabled never locks (`lock_timeout_test.dart`).
+- TC-25-17 (FR-25-22, FR-25-21, FR-25-23): Security screen timeout dropdown and block-screenshots switch persist; Lock now locks; the dropdown and Lock now show only while the lock is on (`security_screen_test.dart`).
+- TC-25-18 (FR-25-24, FR-25-25): five failures give 30 s then 60 s delays capped at 5 min and attempts during the delay are not counted; success after 3 failures reports the count once, 1 or 2 failures report nothing.
+- TC-25-19 (FR-25-23): the screen guard is called with the stored value at start and on toggle (`share_in_test.dart`).
+- TC-25-20 (FR-25-26): Cancel keeps data; Export first opens the backup screen; the confirm button needs exactly ERASE; erase empties the database and removes saved passwords, identity details and the mailbox password.
 
 Fixtures: a masked sample secret `abcd efgh ijkl mnop` (app-password shape), an INR amount `1234567` paise, a USD amount `2500` cents.
 
@@ -379,6 +391,7 @@ Fixtures: a masked sample secret `abcd efgh ijkl mnop` (app-password shape), an 
 - AC-25-06: The built app declares no-backup, TLS-only and contains no analytics SDK (FR-25-14, FR-25-15, FR-25-17; TC-25-14).
 - AC-25-07: No log, notification or activity entry carries message content or credentials (FR-25-18; TC-25-15).
 - AC-25-08: The Security screen matches the specified layout and copy (FR-25-16; TC-25-10).
+- AC-25-09: The user can choose when the app re-locks, lock it now, block screenshots, is slowed after repeated failed unlocks and can erase everything with a typed confirmation. (FR-25-21 to FR-25-26; TC-25-16 to TC-25-20)
 
 ## 17. Open Questions
 
@@ -408,6 +421,8 @@ Phase 5 (2026-10-21). Code: `features/security_privacy/{domain,data,presentation
 
 - Hardening 2026-10-22: `skipNextLock` is now armed through the `LockSkipper` port before SMS and notification permission requests, App info, notification access settings, the statement file picker (`LockSkippingFileSource`) and the backup picker. The skip now spans the whole hop (cleared on resume, not on the first `hidden`), since Android sends `hidden` then `paused`. Tests: `test/features/security_privacy/lock_skip_flows_test.dart`. No UPI/URL hand-offs exist yet (no `url_launcher`).
 
+- 2026-10-26: FR-25-21..26 done in Dart. `LockController.onLifecycle(timeoutMinutes)`, `lockNow()`, `waitSeconds()`, failure delay and `onRecoveredAfterFailures` (Activity entry through `ActivityLogger`); `LockOverlay` shows the wait; `SecuritySettings` keys in `domain/security_settings.dart`; `ScreenGuard` port with `ChannelScreenGuard`; `app/device_hooks.dart` applies the block; `app/di/erase_all.dart` erases database and sealed secrets; `DataResetRepository.eraseAll`. Native: `AlertsBridge.kt` method `setSecure{on}` saves `block_screenshots` in SharedPreferences `hisaab_window` and calls a handler set by `MainActivity` (`window.addFlags/clearFlags(FLAG_SECURE)`); `MainActivity.onCreate` applies the saved value. No new channel name. Kotlin was not compiled or run here (CI compiles it). The failure count is in memory only (a restart resets it); the Activity entry carries counts only (FR-25-18).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -416,3 +431,4 @@ Phase 5 (2026-10-21). Code: `features/security_privacy/{domain,data,presentation
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 5 security + activity log landed | Phase 5 |
 | 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |
+| 2026-10-26 | Auto-lock timeout, Lock now, block screenshots, failed-attempt delay and entry, Erase all data (FR-25-21..26) | Fold adoption |

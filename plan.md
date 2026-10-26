@@ -205,6 +205,7 @@ GIF reference of every existing screen: [assets_reference/_screens_index.md](ass
 | 33 | Upgrade Migration from Kotlin App | [33_upgrade_migration_from_kotlin.md](memory/33_upgrade_migration_from_kotlin.md) | P1 | 5 | Proposed |
 | 34 | Planned Insights & Backlog | [34_planned_insights_backlog.md](memory/34_planned_insights_backlog.md) | P2 | 5 | Proposed |
 | 35 | Diagnostic Log | [35_diagnostic_log.md](memory/35_diagnostic_log.md) | P1 | 5 | In Progress |
+| 36 | Savings Goals, Round-ups & Salary Plan | [36_goals_roundups_salary_plan.md](memory/36_goals_roundups_salary_plan.md) | P2 | 5 | In Progress |
 
 ## 13. Roadmap / Milestones
 

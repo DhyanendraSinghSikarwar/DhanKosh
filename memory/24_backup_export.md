@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-24 |
-| Status | Implemented (Phase 5, CSV; device pickers untested) |
+| Status | In progress (CSV done; encrypted full backup and restore, PDF summary and portfolio reports done with tests; device pickers, Kotlin-free; large-file timing and real-device restore untested; per-account card network/colour/limit and merged-account links not restored) |
 | Priority | P1 |
 | Phase | 5 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -145,6 +145,22 @@ Accounts' nicknames, balances, types, merges and hidden flags, custom categories
 14. FR-24-14: Skip the app lock once when leaving to the picker so returning does not require re-authentication.
 15. FR-24-15: Export and import run off the UI thread; memory use stays bounded for 100,000 rows (stream rows to and from the file).
 16. FR-24-16: Round trip: exporting and importing into an empty database reproduces every transaction's date, amount, currency, type, bank, last four digits, kind, merchant, category (built-in), channel, reference, balance and UPI id.
+
+17. FR-24-17: Encrypted container, written and read by `BackupCrypto`: magic `DKBK`, version byte 1, PBKDF2 iteration count (u32 big-endian, at least 200,000 written, 1,000..5,000,000 accepted on read), 16-byte random salt, 12-byte random nonce, then AES-256-GCM ciphertext plus 16-byte tag over gzip(JSON). The 37 header bytes are the GCM authenticated data. The key is PBKDF2-HMAC-SHA256(passphrase, salt, iterations), 32 bytes. Encryption and decryption run in a background isolate.
+18. FR-24-18: The JSON document has `format = "dhankosh-backup"`, `schema = 1`, `createdAt` (epoch ms) and sections `accounts`, `loans`, `transactions` (each with its source messages), `rules`, `customCategories`, `customSubcategories`, `budgets`, `recurring`, `holdings`, `cardOverrides`, `cardPaid`, `loanLinks`, `forex`, `settings`. Money is integer paise; custom categories and accounts are referenced by name and by `bank|last4`, never by database id.
+19. FR-24-19: The `settings` section holds a whitelist of preferences only (hide amounts, history days, budget alert percent, transaction and card-due notifications, update check, auto-lock minutes, block screenshots, weekly summary). It never holds the app-lock flag, passwords, email credentials, tokens, identity details or database keys.
+20. FR-24-20: A wrong passphrase, or any changed byte in header or body, fails with "Wrong passphrase, or the backup file is damaged" (`BackupAuthException`); nothing is imported.
+21. FR-24-21: A file without the magic, with an unknown newer version, with an iteration count outside the accepted range or with unreadable content fails with a short `BackupFormatException` message; nothing is imported.
+22. FR-24-22: The Backup screen has "Export encrypted backup": passphrase and repeat, at least 8 characters, both must match, and the warning "We cannot recover this passphrase". The file is saved through the system picker as `dhankosh-backup-<yyyy-MM-dd>.dkbk` and the time is stored (`last_full_backup`).
+23. FR-24-23: "Restore from backup" picks a file, asks the passphrase, then shows what the backup holds (counts per section and its date) before anything is written; Cancel writes nothing.
+24. FR-24-24: A strength hint (Weak, Fair, Strong) shows under the passphrase; length under 8 blocks the export.
+25. FR-24-25: Restore writes only through repositories: transactions through `TransactionRepository.ingestBatch` (one batch, oldest first, original source ids so a second restore adds nothing and a later rescan skips them), accounts, loans, rules, categories, budgets, recurring items, holdings, card overrides and paid marks, loan links, forex rates and settings through their own repositories. Merge is the default: existing values are kept, only missing items are added.
+26. FR-24-26: After a restore the screen shows what was added ("Restored 12 transactions, 3 accounts") or "Nothing new to add".
+27. FR-24-27: "Replace everything" first shows the summary, then a second confirmation ("Erase and replace?"), then erases all data tables (settings kept) and restores the backup.
+28. FR-24-28: File saving and picking for backups and PDFs go through the `BlobGateway` port (`file_picker`), which arms the lock skip first (FR-25-06).
+29. FR-24-29: "Monthly or yearly summary" writes an A4 PDF with income, spent, saved, spend by category with share, top 10 merchants, budgets (limit, spent, left; yearly limits times 12) and net worth today. Review rows and transfers are excluded; amounts use `Rs 1,23,456.50` formatting by integer math.
+30. FR-24-30: "Portfolio report" writes an A4 PDF with value, invested, gain, return, allocation by class and the holdings list.
+31. FR-24-31: Reports are built and rendered on the phone with the `pdf` package, carry the footer "Made on your phone by DhanKosh. This file was not sent anywhere.", and use Latin-1 text only (other characters print as `?`). The Tax Centre export is specified in [19_tax_centre.md](19_tax_centre.md).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -299,6 +315,22 @@ Bad-line examples: `date` "17/10/2026" (not an instant) -> bad; amount "12.345" 
 
 Result message examples: 3 new, 2 present, 1 bad -> "Imported 3, skipped 2 already present, 1 unreadable lines"; second run of the same file -> "Imported 0, skipped 5 already present".
 
+### 10.1 Encrypted backup format (FR-24-17, FR-24-18)
+
+```text
+offset  size  field
+0       4     magic "DKBK" (44 4B 42 4B)
+4       1     container version (1)
+5       4     PBKDF2-HMAC-SHA256 iterations, big-endian (default 210000)
+9       16    salt (random)
+25      12    GCM nonce (random)
+37      n+16  AES-256-GCM(gzip(utf8(JSON))) plus 128-bit tag; AAD = bytes 0..36
+```
+
+JSON top level: `format`, `schema`, `createdAt`, then the sections of FR-24-18. Transaction entry: `hash` (base hash, any `#...` review suffix removed), `amount`, `currency`, `type`, `bank`, `last4`, `kind`, `merchant`, `upi`, `ref`, `channel`, `balance`, `limit`, `ts`, `explicitTime`, `category`, `sub`, `custom` (category name), `confidence`, `review`, `note`, `inr`, and `sources[]` (`source`, `id`, `sender`, `hash`, `raw`, `at`, `subject`). Enum values use the database form (`SNAKE_UPPER`).
+
+Restore order: custom categories and sub-categories, rules (existing keys kept), accounts (create missing, fill blank nickname/type/manual balance on existing), loans, transactions (`ingestBatch`; dedup may merge or flag a row that nearly matches existing data), then per-row category and sub-category fixes through `setCategory`/`setSubcategory`, recurring (matched by name, amount, day, direction), budgets (existing categories kept), holdings (by identifier, grouped by source), card overrides and paid marks, loan links, forex rates, settings. Row-level review state is rebuilt by dedup, not copied.
+
 ## 11. Platform / Native Requirements (permissions, channels, background work)
 
 - No storage permissions: use the system pickers only (Android SAF `ACTION_CREATE_DOCUMENT` / `ACTION_OPEN_DOCUMENT`; iOS Files). Flutter packages: `file_picker` (`FilePicker.platform.saveFile(fileName: ..., bytes: ...)` on Android writes through SAF; `pickFiles(type: FileType.custom, allowedExtensions: ['csv', 'txt'])`), or `file_saver`; `share_plus` as an alternative export route ("Share CSV"); streaming large files may need a small platform channel using `ContentResolver.openOutputStream(uri, "wt")` / `openInputStream`.
@@ -306,12 +338,13 @@ Result message examples: 3 new, 2 present, 1 bad -> "Imported 3, skipped 2 alrea
 - Display name of the created document: query `OpenableColumns.DISPLAY_NAME` through a channel, or use the name returned by the picker.
 - Manifest: none for this feature; the backup exclusion flags (`allowBackup=false`, `dataExtractionRules`) stay.
 - Run CSV encode/decode in a background isolate (`compute`/`Isolate.run`).
+- Encrypted backup and PDF files use `FilePicker.saveFile` and `pickFile` (`BlobGateway`); no Kotlin and no permission. KDF, cipher and JSON encoding run in `Isolate.run`.
 
 ## 12. Dependencies (other features → link to their memory file; packages)
 
 Features: [08_transactions_ledger.md](08_transactions_ledger.md) (transaction entity and table), [07_dedup_review.md](07_dedup_review.md) (hash definition and the `CSV` source), [06_transaction_parsing_engine.md](06_transaction_parsing_engine.md) (`ParsedTransaction`, `TransactionHasher`), [13_accounts_management.md](13_accounts_management.md) (account creation on import), [23_forex_rates.md](23_forex_rates.md) (`inrMinor` after import), [21_alerts_reminders.md](21_alerts_reminders.md) and [30_home_widget.md](30_home_widget.md) (refresh after import), [25_security_privacy.md](25_security_privacy.md) (lock skip, privacy note, hosting screen), [20_search_filters.md](20_search_filters.md) (Manual source chip).
 
-Packages: `csv` (parse/encode RFC-4180), `file_picker`, `share_plus` (optional), `crypto` (SHA-256), `intl`, `drift`, `flutter_riverpod`, `freezed`.
+Packages: `pointycastle` (PBKDF2, AES-GCM), `pdf` (reports), `csv` (parse/encode RFC-4180), `file_picker`, `share_plus` (optional), `crypto` (SHA-256), `intl`, `drift`, `flutter_riverpod`, `freezed`.
 
 ## 13. Folder Location (lib/features/<name>/...)
 
@@ -373,6 +406,12 @@ Integration:
 
 12. TC-24-12 (FR-24-12, FR-24-15): import of a 100,000-row generated file completes within budget, inserts all, triggers one "changed" refresh and one budget check; export of the same data produces a byte-identical file on a second run.
 13. TC-24-13 (FR-24-10): after import, the transaction's Messages list shows a "CSV" source and the Source chip "Manual" includes it ([20_search_filters.md](20_search_filters.md)).
+- TC-24-14 (FR-24-17, FR-24-20, FR-24-21): container round trip, random salt and nonce, wrong passphrase, tampered body and header bytes, not-a-backup and newer-version files (`full_backup_test.dart`).
+- TC-24-15 (FR-24-25): backup of a seeded database restored into a fresh in-memory database gives identical transactions, rules, budgets, holdings, recurring items, forex, card overrides, loans and settings; totals equal.
+- TC-24-16 (FR-24-25): restoring onto the same data adds nothing and leaves everything identical; multi-source rows keep their source ids; replace erases first.
+- TC-24-17 (FR-24-19): the document has no `app_lock` and no secrets.
+- TC-24-18 (FR-24-22, FR-24-24, FR-24-23, FR-24-26, FR-24-27, FR-24-20): widget flows for passphrase dialog (warning, strength, match, minimum length), restore summary and merge, replace needing a second confirm, wrong passphrase message (`full_backup_ui_test.dart`).
+- TC-24-19 (FR-24-29, FR-24-30, FR-24-31): report documents have the right totals, shares, merchants, budgets and net worth; generated PDF bytes start with `%PDF-` and contain the expected words; non-Latin text becomes `?`; compressed output is still a PDF (`reports_test.dart`, `reports_section_test.dart`).
 
 Fixture files: the export row and the minimal file in section 10; a BOM-prefixed file `﻿date,amount,type\n2026-10-17T08:15:30Z,250.00,DEBIT`.
 
@@ -385,10 +424,12 @@ Fixture files: the export row and the minimal file in section 10; a BOM-prefixed
 5. AC-24-05: Imported rows are atomic, create a CSV source record, trigger exactly one refresh, and never post notifications. (FR-24-10, FR-24-11, FR-24-12; TC-24-09, TC-24-12, TC-24-13)
 6. AC-24-06: Pickers use the system UI without storage permissions and do not re-lock the app on return. (FR-24-14; TC-24-11)
 7. AC-24-07: Large files stream within the time and memory budget. (FR-24-15; TC-24-12)
+8. AC-24-08: A passphrase-encrypted backup restores accounts, transactions with sources, rules, categories, budgets, recurring items, holdings, card entries, loan terms and links, forex rates and preference settings into an empty app, without secrets, and a wrong passphrase or damaged file imports nothing. (FR-24-17 to FR-24-27; TC-24-14 to TC-24-18)
+9. AC-24-09: Monthly, yearly and portfolio PDFs are built on the phone, saved through the picker and show correct integer-math amounts. (FR-24-29 to FR-24-31; TC-24-19)
 
 ## 17. Open Questions
 
-1. "Restores losslessly" (code comment) is not true: notes, custom categories and sub-categories, account details, rules, budgets, recurring items, review state and source messages are not exported or imported. Should Flutter ship a fuller backup (JSON/zip, optionally encrypted; proposed in the v2 spec) in addition to the CSV?
+1. "Restores losslessly" (code comment) is not true: notes, custom categories and sub-categories, account details, rules, budgets, recurring items, review state and source messages are not exported or imported. Should Flutter ship a fuller backup (JSON/zip, optionally encrypted; proposed in the v2 spec) in addition to the CSV? Answered 2026-10-26: yes, the passphrase-encrypted `.dkbk` backup (FR-24-17..27) is the recovery path because the database key is bound to the phone (ADR-0010).
 2. `note` is exported but never imported (the importer builds no note). Should import restore it?
 3. Hash-less rows hash their date with the device zone (`ZoneId.systemDefault()`), while the parser hashes in IST; a device outside IST gets different hashes for the same instant (duplicates of SMS-sourced rows, or misses). Use IST consistently?
 4. UTF-8 BOM: OpenCSV would see the first header as `﻿date` and reject Excel-saved CSV UTF-8 files. Strip BOM in Flutter (assumed).
@@ -413,6 +454,10 @@ Built 2026-10-21 (FR-24-01..13, 16 done; FR-24-14 and FR-24-15 partial).
 - Added "Last export" time (setting `last_csv_export`); skipped-as-present count includes merged rows.
 - Deferred: full structured backup (accounts, rules, budgets, recurring, holdings, settings) and password encryption (out of scope in 2.4, no Kotlin parity); app-lock skip-next-lock (FR-24-14, waits for F-25); streaming 100k rows (Isolate for large files only); Excel BOM / formula-injection options; GIFs; real-device picker test.
 
+Built 2026-10-26 (Fold adoption): FR-24-17..31 done. Code: `data/backup_crypto.dart`, `data/backup_data.dart` (collect and restore through `BackupDeps`), `data/full_backup_service.dart`, `data/report_service.dart`, `domain/full_backup.dart` (`FullBackupPort`, `BackupCounts`, `OpenedBackup`), `domain/blob_gateway.dart`, `domain/backup_errors.dart`, `domain/passphrase_strength.dart`, `domain/report_builders.dart`, `shared/report/*` (document model and PDF renderer), `presentation/encrypted_backup_section.dart`, `presentation/reports_section.dart`; wiring in `app/di/backup_providers.dart`. `DataResetRepository.eraseAll({keepSettings})` supports replace. Packages added: `pdf`, `pointycastle`.
+- Deviations: pure-Dart PBKDF2 and AES-GCM are slow on large files (isolate used); account colour, card network, limits and merged-account links are not restored (no repository setters); rows removed by the user earlier (tombstones) are not in the backup; review flags are rebuilt by dedup; tax what-if values are in-memory and not backed up.
+- Not verified: file pickers and restore on a real phone, restore time for 100,000 rows.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -420,3 +465,4 @@ Built 2026-10-21 (FR-24-01..13, 16 done; FR-24-14 and FR-24-15 partial).
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 5 backup/export landed | Phase 5 |
+| 2026-10-26 | Encrypted full backup and restore (FR-24-17..28), PDF summary and portfolio reports (FR-24-29..31); format documented in 10.1 | Fold adoption |

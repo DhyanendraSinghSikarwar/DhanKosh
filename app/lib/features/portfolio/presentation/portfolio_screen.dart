@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
@@ -10,7 +11,9 @@ import 'package:hisaab/features/portfolio/domain/portfolio_summary.dart';
 import 'package:hisaab/features/portfolio/presentation/exclusions_sheet.dart';
 import 'package:hisaab/features/portfolio/presentation/holding_labels.dart';
 import 'package:hisaab/features/portfolio/presentation/holding_sheet.dart';
+import 'package:hisaab/features/portfolio/presentation/investment_tx_section.dart';
 import 'package:hisaab/features/portfolio/presentation/net_worth_chart.dart';
+import 'package:hisaab/features/portfolio/presentation/portfolio_settings_sheet.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
@@ -26,8 +29,15 @@ const _ranges = <(String, int?)>[
 /// Portfolio tab: net worth, history, allocation, holdings and maturities
 /// (F-16; FR-16-01, FR-16-03, FR-16-05, FR-16-06, FR-16-08, FR-16-12).
 class PortfolioScreen extends ConsumerStatefulWidget {
-  /// Creates the screen.
-  const PortfolioScreen({super.key});
+  /// Creates the screen. [sipSection] and [sipSheet] are composed in
+  /// `app/router.dart` (SIPs belong to Bills, F-12).
+  const PortfolioScreen({this.sipSection, this.sipSheet, super.key});
+
+  /// SIP list shown under the shortcuts (FR-16-26).
+  final Widget? sipSection;
+
+  /// Builds the Add SIP sheet (FR-16-26).
+  final WidgetBuilder? sipSheet;
 
   @override
   ConsumerState<PortfolioScreen> createState() => _PortfolioScreenState();
@@ -51,6 +61,11 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     final points = ref.watch(netWorthPointsProvider).value ?? const [];
     final maturities =
         ref.watch(maturitiesProvider).value ?? const <MaturityItem>[];
+    final invTxs = ref.watch(investmentTxsProvider).value ?? const [];
+    final asOfMs = holdings.fold<int>(
+      0,
+      (a, h) => (h.asOf ?? 0) > a ? h.asOf! : a,
+    );
     String money(int m) => formatAmount(m, masked: masked, paise: false);
 
     final days = _ranges[_range].$2;
@@ -70,6 +85,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
       appBar: AppBar(
         title: const Text('Portfolio'),
         actions: [
+          IconButton(
+            key: const Key('portfolio-settings'),
+            tooltip: 'Portfolio settings',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => _sheet(const PortfolioSettingsSheet()),
+          ),
           IconButton(
             key: const Key('nw-filter'),
             tooltip: 'Include in net worth',
@@ -98,6 +119,37 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
             money: money,
           ),
           const SizedBox(height: 12),
+          Row(
+            key: const Key('portfolio-shortcuts'),
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  key: const Key('shortcut-import'),
+                  onPressed: () => context.push('/statements'),
+                  child: const Text('Import statement'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton(
+                  key: const Key('shortcut-holding'),
+                  onPressed: () => _sheet(const HoldingSheet()),
+                  child: const Text('Add holding'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton(
+                  key: const Key('shortcut-sip'),
+                  onPressed: widget.sipSheet == null
+                      ? null
+                      : () => _sheet(widget.sipSheet!(context)),
+                  child: const Text('Add SIP'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           AppCard(
             child: Column(
               children: [
@@ -120,7 +172,15 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
           ),
           if (summary.byClass.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _Allocation(summary: summary, money: money),
+            _Allocation(summary: summary, money: money, asOfMs: asOfMs),
+          ],
+          if (widget.sipSection != null) ...[
+            const SizedBox(height: 12),
+            widget.sipSection!,
+          ],
+          if (holdings.isNotEmpty || invTxs.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            InvestmentTxSection(items: invTxs, money: money),
           ],
           if (maturities.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -198,6 +258,13 @@ class _Hero extends StatelessWidget {
             ),
           const SizedBox(height: 8),
           Text(
+            'as of ${asOfLabel(DateTime.now().millisecondsSinceEpoch)}',
+            key: const Key('nw-as-of'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          Text(
             'Assets ${money(assets)}  ·  Liabilities ${money(liabilities)}',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
@@ -218,10 +285,25 @@ Color _classColor(AssetClass c, ColorScheme s) => switch (c) {
       AssetClass.other => s.outline,
     };
 
+/// `d MMM yyyy` of [ms] in IST.
+String asOfLabel(int ms) {
+  const m = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  final d = DateTime.fromMillisecondsSinceEpoch(ms + 19800000, isUtc: true);
+  return '${d.day} ${m[d.month - 1]} ${d.year}';
+}
+
 class _Allocation extends StatelessWidget {
-  const _Allocation({required this.summary, required this.money});
+  const _Allocation({
+    required this.summary,
+    required this.money,
+    required this.asOfMs,
+  });
 
   final PortfolioSummary summary;
+  final int asOfMs;
   final String Function(int) money;
 
   @override
@@ -236,6 +318,12 @@ class _Allocation extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Allocation', style: theme.textTheme.titleSmall),
+          if (asOfMs > 0)
+            Text(
+              'as of ${asOfLabel(asOfMs)}',
+              key: const Key('allocation-as-of'),
+              style: theme.textTheme.bodySmall,
+            ),
           const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
@@ -359,9 +447,13 @@ class _Group extends StatelessWidget {
               key: Key('holding-${h.id}'),
               contentPadding: EdgeInsets.zero,
               title: Text(h.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: h.investedMinor == null
-                  ? null
-                  : Text('Invested ${money(h.investedMinor!)}'),
+              subtitle: Text(
+                [
+                  if (h.investedMinor != null)
+                    'Invested ${money(h.investedMinor!)}',
+                  if (h.asOf != null) 'as of ${asOfLabel(h.asOf!)}',
+                ].join(' · '),
+              ),
               trailing: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,

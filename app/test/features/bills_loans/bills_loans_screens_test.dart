@@ -4,15 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
+import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/sip_providers.dart';
 import 'package:hisaab/app/theme/app_theme.dart';
 import 'package:hisaab/features/loans/data/loan_account_repository_impl.dart';
 import 'package:hisaab/features/loans/data/loan_link_repository_impl.dart';
 import 'package:hisaab/features/loans/domain/loan_account_repository.dart';
 import 'package:hisaab/features/loans/presentation/loan_detail_screen.dart';
 import 'package:hisaab/features/loans/presentation/loans_screen.dart';
+import 'package:hisaab/features/portfolio/data/holding_repository_impl.dart';
 import 'package:hisaab/features/recurring_transactions/data/recurring_repository_impl.dart';
+import 'package:hisaab/features/recurring_transactions/data/sip_repository_impl.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/recurring_transactions_screen.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
@@ -67,6 +71,9 @@ void main() {
           settingsRepositoryProvider.overrideWithValue(env.settings),
           recurringRepositoryProvider
               .overrideWithValue(RecurringRepositoryImpl(env.db)),
+          sipRepositoryProvider.overrideWithValue(SipRepositoryImpl(env.db)),
+          holdingRepositoryProvider
+              .overrideWithValue(HoldingRepositoryImpl(env.db)),
           loanLinkRepositoryProvider
               .overrideWithValue(LoanLinkRepositoryImpl(env.db)),
           loanAccountRepositoryProvider

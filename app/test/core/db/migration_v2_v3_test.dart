@@ -68,6 +68,6 @@ void main() {
     expect(await db.select(db.cardDueNotices).get(), isEmpty);
     expect(await db.select(db.cardOverrides).get(), isEmpty);
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.read<int>('user_version'), 5);
+    expect(v.read<int>('user_version'), 6);
   });
 }

@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-14 |
-| Status | In progress (data/domain, message parser, SMS/email notice ingest, `/cards` screen, Edit amounts sheet and Home strip done; reminders worker and notification actions, forex markup UI, detail screen pending) |
+| Status | In progress (data/domain, message parser, SMS/email notice ingest, `/cards` screen, Edit amounts sheet, Home strip, cycle spend, statement history, paid verification and late flag done; reminders worker and notification actions, forex markup UI, detail screen pending) |
 | Priority | P0 |
 | Phase | 3 (statements + portfolio); card due SMS/email recording can start in Phase 2; reminders in Phase 2 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -176,6 +176,14 @@ Card dues count as a liability in net worth (`cardDue = sum(owedMinor)`, switcha
 - FR-14-16: Net worth shall list card limits and count card dues (`owedMinor`) as a liability unless excluded.
 - FR-14-17: The card timeline query (`cardFlowSince`) shall return only rows with `inrMinor` not null and `duplicateOfId` null, for the card and accounts merged into it, ordered by timestamp ascending.
 
+Card insights (Fold adoption, [ADR-0010](../docs/adr/0010-fold-ideas-adoption-rules.md)); all read only, shown under each card on the Cards screen.
+
+- FR-14-18: The Cards screen shall show per card "Spent this cycle": the sum of DEBIT rows (rupee value, no duplicates) from the day after the position's statement day through today (`CardInsightRules.cycleSpend`); not shown without a statement day.
+- FR-14-19: The Cards screen shall list the card's statements and bill notices, newest first (up to 12, one per statement day, the row with a total wins): statement day, due day (else statement + 19), total due, minimum due.
+- FR-14-20: Each statement shall show a payment state: Paid when evidence >= total - Rs 1, Min paid when >= minimum due, else Unpaid. Evidence is the larger of card-side TRANSFER rows and payment notices between the day after the statement and due + 10 days, a matching bank debit, or Mark paid.
+- FR-14-21: A bank debit or transfer on another account dated after the statement day through due + 3 days whose amount equals the total (or minimum) due within Rs 1 shall verify the statement as paid (tick); Mark paid counts as paid but is not verified.
+- FR-14-22: A statement is a late-payment risk when its due date has passed, its total is above 0, it is Unpaid and no matching bank debit exists; the newest statement's flag shows as "Late payment risk" on the card.
+
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
 - Offline, deterministic pure functions (`CardDues` has no I/O) so they can be golden-tested against Kotlin.
@@ -276,6 +284,8 @@ enum DueStage { days5(5), days2(2), dueDay(0), overdue(-1) }   // offsetDays
 @freezed class CardDueReminderState { Set<String> sent; Set<String> paid; Set<String> snoozed; }
 ```
 
+Insight models (`credit_cards/domain/card_insights.dart`): `BankDebit(timestampMs, inrMinor, accountId)`, port `CardBillDebitSource.debitsSince(fromMs, excludeAccountId)` (read only, implemented over `TransactionRepository`), `StatementPayment { paid, minPaid, unpaid }`, `StatementEntry`, `CardInsights { cycleSpendMinor?, cycleStartDay?, history, lateRisk }`; `CardInsightRules.cycleSpend / history / insights` are pure. `CardDueService.insights(cardId)` assembles them (optional `debits` source).
+
 ## 9. Database Tables / Changes
 
 The old app overloads the `statements` table. Recommendation for Flutter (Open Question 3): keep a compatible overloaded table for import but add dedicated tables.
@@ -315,6 +325,8 @@ Statement rows for PDFs/sheets (kind CREDIT_CARD, with totals and limit) live in
 
 Card movements query: `transactions` for accountId (with merged children) since timestamp, excluding `duplicateOfId` and `needsReview`: `(timestamp, type, inrMinor)` ascending. Preferences: DataStore `card_due_reminders` keys `sent`, `paid`, `snoozed`; `app_settings.card_due_reminders` bool.
 
+No table changes. Insights are computed on read from `card_due_notices`, statements, the card's ledger flow and bank debits of the last 200 days.
+
 ## 10. Business Rules & Logic (regex, parsing rules, algorithms, thresholds)
 
 Constants: `STALE_DAYS = 35`, `WINDOW_DAYS = 60`, `DUE_GAP_DAYS = 19`, gap clamp 10..30, estimated-bill window `prev - 3 days`, reminder offsets 5/2/0/-1, `OVERDUE_WINDOW = 7`, Home Mark paid visible when `days <= 7`, due-label amber at <= 5 days, limit-used red at >= 80%, store prune 120 days, notification ids `30000 + cardId*3` (+1 paid, +2 snooze), amounts valid in `0..1_000_000_000_000` paise, forex markup 0..20%.
@@ -338,6 +350,8 @@ Worked examples (masked):
 3. Override: user edits billed to 8,000; later payment of 8,000 arrives => `billed <= 0`, override dropped.
 4. Limit left with override: limit 100,000, billed edited 20,000, unbilled 5,000 => limit left = max(0, 100,000 - 25,000) = 75,000.
 5. Reminder: due 24 Oct, today 19 Oct => stage DAYS_5 (once); 22 Oct => DAYS_2 and DAYS_5 marked sent; 24 Oct => DUE_DAY; 25 Oct => OVERDUE; 1 Nov (8 days late) => none.
+
+Insights: tolerance Rs 1 (100 paise); bank debits count until due + 3 days; payments until due + 10 days; history limit 12. Cycle spend counts DEBIT rows only so refunds do not hide spend (the unbilled figure still nets them).
 
 ## 11. Platform / Native Requirements (permissions, channels, background work)
 
@@ -427,6 +441,14 @@ Integration:
 Fixtures: Axis statement SMS, HDFC payment ack, ICICI/HDFC card spend emails, SBI Corporate USD spend (all in [Dedup & Review](07_dedup_review.md) corpus), plus the worked examples above as JSON cases.
 - TC-14-13 (FR-14-17): card flow excludes a duplicate row and a row with null `inrMinor`; includes a row on an account merged into the card.
 
+Card insights (`test/features/credit_cards/card_insights_test.dart`, `card_insights_screen_test.dart`):
+
+- TC-14-18 (FR-14-18): cycle spend sums debits after the statement day, ignores refunds and transfers; null without a statement day.
+- TC-14-19 (FR-14-19): history is newest first with one entry per statement day.
+- TC-14-20 (FR-14-20, FR-14-21): bank debit equal to total = paid and verified; equal to minimum = min paid; wrong amount or date ignored; 3 days of grace; card-side transfer and payment notices count; partial transfer = min paid.
+- TC-14-21 (FR-14-22): overdue, unpaid, no matching debit = late risk; not before the due date; Mark paid clears it and is not verified.
+- TC-14-22 (FR-14-22): widget: the Cards screen shows the late flag and statement rows; Mark paid shows Paid.
+
 ## 16. Acceptance Criteria
 
 - AC-14-01: For all fixture cards the position equals the Kotlin results (billed, min due, due day, unbilled, outstanding, estimated, limit left) (FR-14-01..05, FR-14-14; TC-14-01..05, TC-14-07).
@@ -437,6 +459,8 @@ Fixtures: Axis statement SMS, HDFC payment ack, ICICI/HDFC card spend emails, SB
 - AC-14-06: Home widget and detail screen show the specified lines and colours (FR-14-12, FR-14-13; TC-14-13, TC-14-15).
 - AC-14-07: Forex markup converts foreign spends correctly (FR-14-15; TC-14-11).
 - AC-14-08: Net worth reflects card dues and limits as specified (FR-14-16; TC-14-12).
+
+- AC-14-09: Each card shows this-cycle spend, its statement history with payment state, bank-debit verification and a late-payment risk flag, without writing to the ledger (FR-14-18..22; TC-14-18..22).
 
 ## 17. Open Questions
 
@@ -482,3 +506,4 @@ Hardening 2026-10-22: statement import now writes a card's available limit to th
 | 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |
 | 2026-10-21 | Phase 3 card-due ingest + Cards UI landed | Phase 3 |
 | 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |
+| 2026-10-26 | Cards: cycle spend, statement history, paid auto-verification from bank debits, late-payment risk flag | Fold adoption |

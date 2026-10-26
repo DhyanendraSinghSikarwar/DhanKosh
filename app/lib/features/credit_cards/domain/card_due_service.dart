@@ -3,6 +3,7 @@ import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/accounts_management/domain/account_repository.dart';
 import 'package:hisaab/features/credit_cards/domain/card_day.dart';
 import 'package:hisaab/features/credit_cards/domain/card_due_repository.dart';
+import 'package:hisaab/features/credit_cards/domain/card_insights.dart';
 import 'package:hisaab/features/credit_cards/domain/card_matcher.dart';
 import 'package:hisaab/features/credit_cards/domain/card_models.dart';
 import 'package:hisaab/features/credit_cards/domain/card_position.dart';
@@ -30,8 +31,10 @@ class CardDueService {
     required StatementRepository statements,
     required CardFlowSource flow,
     required CardPaidStore paid,
+    CardBillDebitSource? debits,
     int Function()? now,
   })  : _accounts = accounts,
+        _debits = debits,
         _dues = dues,
         _statements = statements,
         _flow = flow,
@@ -43,6 +46,7 @@ class CardDueService {
   final StatementRepository _statements;
   final CardFlowSource _flow;
   final CardPaidStore _paid;
+  final CardBillDebitSource? _debits;
   final int Function() _now;
 
   static CardRow _fromStatement(Statement s) => CardRow(
@@ -90,6 +94,67 @@ class CardDueService {
   /// The card with account id [id], or null.
   Future<CardLimit?> card(int id) async =>
       (await cards()).where((c) => c.id == id).firstOrNull;
+
+  /// Cycle spend, statement history and the late flag of card [cardId]
+  /// (FR-14-18..22). Reads only.
+  Future<CardInsights> insights(int cardId) async {
+    final accounts = await _accounts
+        .watchWithActivity(monthStartMs: 0, monthEndMs: _now())
+        .first;
+    final cardAccts = [
+      for (final a in accounts)
+        if (isCreditCardAccount(a.account)) a,
+    ];
+    final refs = [
+      for (final a in cardAccts)
+        CardRef(
+          id: a.account.id,
+          bankName: a.account.bankName,
+          last4: a.account.last4,
+        ),
+    ];
+    final i = refs.indexWhere((r) => r.id == cardId);
+    if (i < 0) return CardInsights.empty;
+    final stmts = await _statements.watchAll().first;
+    final all = [
+      ...await _dues.notices(),
+      for (final s in stmts)
+        if (s.kind == StatementKind.creditCard &&
+            s.status == StatementStatus.parsed)
+          _fromStatement(s),
+    ];
+    final rows = CardMatcher.rowsFor(refs[i], refs, all);
+    final now = _now();
+    final today = CardDay.ofMs(now);
+    final from = now - 200 * 86400000;
+    final flow = await _flow.flowSince(cardId, from);
+    final debits = await _debits?.debitsSince(from, excludeAccountId: cardId) ??
+        const <BankDebit>[];
+    final overrides = await _dues.watchOverrides().first;
+    final position = cardPosition(
+      rows: rows,
+      override: overrides[CardMatcher.cardKey(refs[i].bankName, refs[i].last4)],
+      available: cardAccts[i].currentBalanceMinor,
+      flow: flow,
+      today: today,
+    );
+    final marked = <int>{};
+    for (final k in await _paid.watchPaid().first) {
+      final p = k.split('|');
+      if (p.length == 2 && p[0] == '$cardId') {
+        final d = int.tryParse(p[1]);
+        if (d != null) marked.add(d);
+      }
+    }
+    return CardInsightRules.insights(
+      position: position,
+      rows: rows,
+      flow: flow,
+      debits: debits,
+      markedPaid: marked,
+      today: today,
+    );
+  }
 
   Future<List<CardLimit>> _build(
     List<AccountWithActivity> accounts,

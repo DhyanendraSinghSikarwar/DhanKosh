@@ -53,6 +53,10 @@ class FakeSettings implements AlertSettingsRepository {
 
   @override
   Future<void> setTransactionNotifications({required bool value}) async {}
+
+  @override
+  Future<void> setWeeklySummary({required bool value}) async =>
+      this.value = AlertSettings(weeklySummary: value);
 }
 
 void main() {

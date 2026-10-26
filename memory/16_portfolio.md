@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-16 |
-| Status | In progress (Phase 3: MF order and NPS contribution recording wired (FR-16-19..21); data/domain layer and Portfolio tab UI done: net worth hero, history chart, allocation, holdings CRUD, maturities, exclusions; history estimate, loans card, sparklines and statement link pending) |
+| Status | In progress (Phase 3: MF order and NPS contribution recording wired (FR-16-19..21); data/domain layer and Portfolio tab UI done: net worth hero, history chart, allocation, holdings CRUD, maturities, exclusions; shortcut row, SIP list, investment transactions, as-of dates and optional AMFI NAV refresh done; history estimate, loans card, sparklines and statement link pending) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-10-25 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -208,6 +208,14 @@ A CAS (ISIN), a broker table (`MF:<scheme>`, `STOCK:<name>`) and MF order emails
 - FR-16-20: `recordNpsContribution` shall add the contribution to invested and (when newer) to value, per 3.12, and skip when a statement is dated on or after it.
 - FR-16-21: NPS contributions shall be claimed once via the `nps-contributions` / `applied` key set (cap 500) and shall create an INVESTMENT transaction (merchant "NPS Tier I/II", confidence 0.8) unless a DEBIT/INVESTMENT of the same amount exists in [date - 4 d, date + 2 d].
 
+Fold adoption ([ADR-0010](../docs/adr/0010-fold-ideas-adoption-rules.md)). XIRR is not implemented: it needs dated cash flows per holding, which are not stored (see [34](34_planned_insights_backlog.md)).
+
+- FR-16-22: `recordMfOrder` shall also keep each accepted order (identifier, scheme, time, amount, units, NAV, platform) in `mf_orders`, once per claim; `watchMfOrders` lists them newest first and feeds SIP detection ([Recurring](12_recurring_transactions.md) FR-12-18).
+- FR-16-23: The user may turn on "Refresh fund NAV" in Portfolio settings (default OFF). When on, at most once a day (IST day of the last attempt, success or not) the app downloads the public AMFI file `https://www.amfiindia.com/spages/NAVAll.txt` with `dart:io` `HttpClient` (plain GET, no user data, 15 s connect and 20/30/60 s timeouts), parses it in an isolate (`NavFileParser`: `;` lines of code, two ISIN columns, name, NAV, `dd-MMM-yyyy`; bad lines skipped) and stores a short result line. Any failure leaves holdings unchanged and never throws. "Refresh now" bypasses the throttle but not the toggle.
+- FR-16-24: A refresh shall update only non-manual MUTUAL_FUND holdings whose identifier is an ISIN and that have units: value = units x NAV (paise, rounded), `asOf` = NAV date (noon IST), previous value and date kept; skipped when the holding's figures are as new or newer.
+- FR-16-25: Portfolio shall show "as of <date>" on net worth (today), allocation (newest holding date) and every holding (its `asOf`), and an "Investment transactions" section of buys, redemptions and dividends: INVESTMENT rows and CREDIT rows in the investment category (not under review, not duplicates); INVESTMENT rows are Buy unless the text says redeem/sell, credits are Dividend when the text says dividend/IDCW/interest else Redemption; newest 10 shown.
+- FR-16-26: Portfolio shall show a shortcut row: Import statement (opens `/statements`), Add holding (existing sheet), Add SIP (the Bills SIP sheet, composed in the router) and the SIP list ([Recurring](12_recurring_transactions.md) FR-12-20).
+
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
 - Offline; no live prices (values are as-of the statement/SMS date shown in the UI).
@@ -289,6 +297,8 @@ enum LiabilityKind { loans, cardDues }
 @freezed class PortfolioSummary { int valueMinor; int investedMinor; int gainMinor; double? returnPct; Map<AssetClass, int> byClass; }
 ```
 
+NAV models (`portfolio/domain/nav_file.dart`, `nav_refresh.dart`): `NavQuote(isin, name, nav, dateMs)`, `NavFileParser.parse`, port `NavSource.fetch`, `NavParser`, `NavSettings` (`nav_refresh_enabled`, `nav_last_attempt_day`, `nav_last_result`), `NavRefreshService.refresh({force})` returning `NavOutcome`. `HoldingRepository` gains `watchMfOrders()` and `applyNav(id, valueMinor, asOf)`. `investment_tx.dart`: `InvestmentTxKind`, `isInvestmentTx`, `investmentKind`.
+
 ## 9. Database Tables / Changes
 
 ```dart
@@ -318,6 +328,8 @@ class NetWorthPoints extends Table {                    // replaces the DataStor
 
 Key-value (shared_preferences, mirrors old DataStores): `net_worth_prefs.excluded_classes`, `.excluded_liabilities` (`LOANS`, `CARD_DUES`), `.excluded_accounts`; `tab_layout.order_portfolio`, `tab_layout.hidden` ("portfolio:<key>"). Old `local_lists.worth` = JSON array of `{day, a, l}` (import path). Accounts columns used: `accountType`, `latestBalanceMinor`, `manualBalanceMinor`, `maturityDay`, `maturityAction`, `usage`, `hidden`, `mergedIntoId` ([Accounts Management](13_accounts_management.md)). `statements` rows and the sidecar `<sha>.holdings` TSV belong to [Statement Import](05_statement_import.md). Index: UNIQUE `identifier`.
 
+Schema v6: table `mf_orders` (`id`, `identifier`, `scheme_name`, `at` epoch ms, `amount_minor?`, `units?`, `nav?`, `platform?`), inserted inside the `recordMfOrder` transaction. Settings keys for the NAV refresh as in section 8.
+
 ## 10. Business Rules & Logic (regex, parsing rules, algorithms, thresholds)
 
 Constants: history range days 30 / 182 / 365 / 1095 / all; `WorthHistory.MONTHS = 36` month-ends + 26 weekly points; recorded history cap 1,100 entries; maturity window 365 days, "soon" at <= 30 days; USD rate accepted `40.0..200.0`; holdings mismatch tolerance 100 paise; `asOf` window `[received - 6 months, received + 1 day]`; EPF/NPS date window `[received - 45d, received + 1d]`; `MAX_ORDER_KEYS = 500`; `ISIN = ^[A-Z]{2}[A-Z0-9]{9}\d$`.
@@ -345,6 +357,8 @@ Worked examples (masked):
 3. History estimate: anchor today; earlier month-end = anchor assets minus later credits plus later debits on liquid accounts; investment and transfer rows do not change it.
 4. EPF merge: SMS gives `EPF:MH/BAN/0012345/000/0001234` normalised to alnum uppercase id; the passbook PDF gives the same id => one holding updated by the later `asOf`.
 5. Maturity: FD maturing in 20 days => amber row; in 8 months => normal.
+
+NAV refresh: see FR-16-23 and FR-16-24. The only network call is the public file download, started by the user's toggle; `portfolioSync` calls the service at launch and resume (a no-op when off or already tried today).
 
 ## 11. Platform / Native Requirements (permissions, channels, background work)
 
@@ -420,6 +434,14 @@ Integration:
 
 Fixtures: Part B 8 sample 21 (EPF, NPS, MF order), CAS excerpt (masked ISIN `INF000X00000`), Groww stocks sheet header row, EPF passbook closing balance row, net worth worked examples as JSON.
 
+Fold adoption (`test/features/portfolio/nav_refresh_test.dart`, `portfolio_fold_test.dart`, `test/features/savings_goals/goals_repository_test.dart`):
+
+- TC-16-22 (FR-16-22): orders are stored once per claim, newest first.
+- TC-16-23 (FR-16-23): the fixture file parses both ISIN columns; `N.A.`, bad dates, headers and junk lines are skipped.
+- TC-16-24 (FR-16-23, FR-16-24): off by default (no download); on: updates the ISIN holding's value and `asOf` once a day, force bypasses the throttle, MF rows without an ISIN stay; failure and unreadable file change nothing; newer and manual rows are not overwritten.
+- TC-16-25 (FR-16-25): widget: every value shows "as of"; buys and dividends listed; kind rules.
+- TC-16-26 (FR-16-26): widget: the three shortcuts work and the SIP list slot shows; the settings sheet toggle and Refresh now.
+
 ## 16. Acceptance Criteria
 
 - AC-16-01: Value, invested, gain, return and allocation match the examples (FR-16-02, FR-16-03; TC-16-01).
@@ -427,6 +449,8 @@ Fixtures: Part B 8 sample 21 (EPF, NPS, MF order), CAS excerpt (masked ISIN `INF
 - AC-16-03: Holdings are recorded and merged correctly from statements, SMS, MF order and NPS emails and manual entry (FR-16-08..11, FR-16-17..21; TC-16-04..06, TC-16-11, TC-16-12, TC-16-14..17).
 - AC-16-04: Maturity calendar and loans card behave as specified (FR-16-12, FR-16-13; TC-16-07, TC-16-13).
 - AC-16-05: Tab sections, empty state and statement links work (FR-16-01, FR-16-07, FR-16-15; TC-16-09, TC-16-11).
+
+- AC-16-08: Portfolio has the shortcut row, an investment transactions list, "as of" on every value and an optional, off-by-default NAV refresh that sends nothing about the user (FR-16-22..26; TC-16-22..26).
 
 ## 17. Open Questions
 
@@ -475,3 +499,4 @@ Capture gaps (2026-10-25): `IngestMessage._recordSide` now also records, besides
 | 2026-10-21 | Phase 3 Portfolio + Profile UI landed | Phase 3 |
 | 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |
 | 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |
+| 2026-10-26 | Portfolio: shortcut row, SIP list, investment transactions, as-of dates, optional AMFI NAV refresh, `mf_orders` kept; XIRR deferred | Fold adoption |

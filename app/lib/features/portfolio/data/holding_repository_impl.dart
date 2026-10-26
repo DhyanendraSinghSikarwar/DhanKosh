@@ -155,6 +155,18 @@ class HoldingRepositoryImpl implements HoldingRepository {
           'mf|${o.identifier}|$day|${o.amountMinor}|${o.units}',
         ]);
         if (!ok) return false;
+        // FR-16-22: keep the order itself for the SIP and order lists.
+        await _db.into(_db.mfOrders).insert(
+              MfOrdersCompanion.insert(
+                identifier: o.identifier,
+                schemeName: o.schemeName,
+                at: o.at,
+                amountMinor: Value(o.amountMinor),
+                units: Value(o.units),
+                nav: Value(o.nav),
+                platform: Value(o.platform),
+              ),
+            );
         final all = await _all();
         final key =
             HoldingKey(HoldingKind.mutualFund, o.identifier, o.schemeName);
@@ -403,4 +415,40 @@ class HoldingRepositoryImpl implements HoldingRepository {
       .select(_db.holdings)
       .watch()
       .map((rows) => rows.map(_map).toList()..sort(_byValue));
+
+  @override
+  Stream<List<MfOrderEntry>> watchMfOrders() =>
+      (_db.select(_db.mfOrders)..orderBy([(t) => OrderingTerm.desc(t.at)]))
+          .watch()
+          .map(
+            (rows) => [
+              for (final r in rows)
+                MfOrderEntry(
+                  schemeName: r.schemeName,
+                  identifier: r.identifier,
+                  at: r.at,
+                  platform: r.platform,
+                  amountMinor: r.amountMinor,
+                  units: r.units,
+                  nav: r.nav,
+                ),
+            ],
+          );
+
+  @override
+  Future<bool> applyNav(int id, {required int valueMinor, required int asOf}) =>
+      _db.transaction(() async {
+        final h = await byId(id);
+        if (h == null || h.isManual || (h.asOf ?? 0) >= asOf) return false;
+        await (_db.update(_db.holdings)..where((t) => t.id.equals(id))).write(
+          HoldingsCompanion(
+            valueMinor: Value(valueMinor),
+            asOf: Value(asOf),
+            updatedAt: Value(_now()),
+            previousValueMinor: Value(h.valueMinor),
+            previousAsOf: Value(h.asOf),
+          ),
+        );
+        return true;
+      });
 }

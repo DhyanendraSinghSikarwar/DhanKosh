@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-17 |
-| Status | In progress (Phase 1 core Home; widgets, sync, bell, permissions cards pending) |
+| Status | In progress (Phase 1 core Home plus Fold adoption: net worth card, Needs attention, Inbox bell with unread badge, privacy badge, spent opens Analysis, empty-state import action; widgets, sync, permissions cards pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -27,6 +27,9 @@ Home is the first screen of the app. It answers "how is my money doing this peri
 - Asks once for notification permission on first launch.
 - Reads new SMS and email on demand with the sync button, shows live progress and then the number of messages read.
 - Masks every amount when hide-amounts is on.
+- Shows a Net worth card at the top (value, change since the last recorded point) that opens Portfolio.
+- Shows a Needs attention block (duplicates, bills due within 7 days, locked or unreadable statements, cards due within 7 days); each row opens its screen and the block is hidden when empty.
+- Shows the Inbox bell with an unread count and a small "Data stays on this phone" badge; the spent figure opens Analysis.
 
 ### 2.1 Inputs
 
@@ -61,7 +64,7 @@ Home is the first screen of the app. It answers "how is my money doing this peri
 - Does not own the Book and Period chips or their stored value ([20_search_filters.md](20_search_filters.md)).
 - Does not own insight rules or forecast maths ([18_analytics.md](18_analytics.md)).
 - Does not own card bill figures ([14_credit_cards.md](14_credit_cards.md)), recurring detection and the Upcoming list ([12_recurring_transactions.md](12_recurring_transactions.md)) or budgets ([10_expense_tracking.md](10_expense_tracking.md)).
-- Does not show net worth (moved to Portfolio: [16_portfolio.md](16_portfolio.md)).
+- Shows only a one-line net worth summary (value and change); the breakdown, history and exclusions stay in Portfolio ([16_portfolio.md](16_portfolio.md)).
 - Does not provide the Android home-screen widget ([30_home_widget.md](30_home_widget.md)).
 - Does not carry over the unused recurring-payment sheet trigger, the dead net-worth and safe-to-spend widgets, or the up/down reorder controls on Home.
 
@@ -159,6 +162,11 @@ Safe-to-spend maths remains in `HomeViewModel.build` though no widget shows it: 
 22. FR-17-22: The first-run Home migration hides `budgets`, places `spent` first and removes `networth` from the saved home order (once).
 23. FR-17-23: Home never shows a "Safe to spend" block; no `safe` section key exists in the rebuilt Home (see section 10; backlog: [34_planned_insights_backlog.md](34_planned_insights_backlog.md)).
 24. FR-17-24: The More hub per-entry subtitles and footer ("You're all caught up", "DhanKosh v{version}") are owned by [26_settings_data_sources.md](26_settings_data_sources.md) FR-26-23, not by Home.
+25. FR-17-25: A Needs attention card lists, in order and only when non-empty: duplicates to review (`/review`), bills due within 7 days (`/bills`, single bill by name, else "{n} bills due"), locked or unreadable statements (`/statements`), credit cards unpaid with a due date within 7 days (`/cards`). Rows show names and counts, never amounts; each row is tappable; the card is hidden when no row exists. Replaces the single "to review" notice.
+26. FR-17-26: A Net worth card sits above the other blocks. It shows `NetWorthService` net (assets minus liabilities, all books), the change against the newest recorded point before today (falling back to the only point; percent in tenths by integer math, omitted when the previous value is not positive), and opens `/portfolio`. Amounts are masked with hide-amounts. The value counts up once (600 ms) and is static when masked, when reduce-motion is on and under `flutter test`. With no accounts or holdings it shows "Add accounts to see net worth" with one action to `/accounts`.
+27. FR-17-27: Home shows a small "Data stays on this phone" badge under the header, and tapping the month spent figure opens Analysis (`/analysis`).
+28. FR-17-28: The empty Home keeps the header and privacy badge and offers one primary action "Scan SMS" (`/more`) plus "Import your first statement" (`/statements`).
+29. FR-17-29: The header bell opens the Inbox (`/activity`, [22_activity_log.md](22_activity_log.md)) and shows the unread count (hidden at 0, "99+" above 99); unread rules are FR-22-16.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -487,6 +495,14 @@ Widget:
 11. TC-17-11 (FR-17-15, FR-17-16): SMS card visible when permission missing and not dismissed; "Not now" hides it and persists; notification permission requested once only across two launches.
 12. TC-17-12 (FR-17-02, FR-17-04, FR-17-19): eye toggle masks all amounts ("₹••••"); collapsed header appears after scrolling past the header and hides on return.
 
+Fold adoption (2026-10-26):
+
+15. TC-17-15 (FR-17-25): `buildAttention` returns nothing when all inputs are empty; fixed order duplicates, bills, statements, cards; bills beyond 7 days are dropped; one bill is named; titles never contain a rupee amount.
+16. TC-17-16 (FR-17-26): `NetWorthChange.of` uses the newest point before today, falls back to the only point, returns null without points and no percent when the previous value is not positive.
+17. TC-17-17 (FR-17-26, FR-17-19, FR-17-27): widget: net worth card shows a rupee value and opens `/portfolio`; masked as "₹••••"; privacy badge visible; tapping the spent figure opens `/analysis`.
+18. TC-17-18 (FR-17-25): widget: block hidden with nothing to show; a locked statement adds "1 statement needs attention" and the row opens `/statements`.
+19. TC-17-19 (FR-17-28, FR-17-29): widget: empty Home offers "Import your first statement" to `/statements`; the bell badge shows the unread count and opening the Inbox shows the entries.
+
 Integration:
 
 13. TC-17-13 (FR-17-17): tap sync with a fake SMS repo and connected email: scan and email start, pill appears, FAB ignores a second tap, alert checks run once, done text appears for 3 s.
@@ -505,6 +521,7 @@ Fixture messages (masked): `HDFC Bank: Rs 2450.50 debited from a/c XX1234 on 17-
 7. AC-17-07: Notification permission is asked exactly once; "Not now" persists. (FR-17-15, FR-17-16; TC-17-11)
 8. AC-17-08: Hide amounts masks every figure on Home including chart axis labels and notices. (FR-17-19; TC-17-12)
 9. AC-17-09: Insight dismissal is session-only. (FR-17-21; TC-17-08)
+10. AC-17-10: Home opens with the Net worth card and, when something is due or broken, a Needs attention block whose rows open the matching screens; nothing in either shows an amount when hide-amounts is on. (FR-17-25 to FR-17-29; TC-17-15 to TC-17-19)
 
 ## 17. Open Questions
 
@@ -524,6 +541,7 @@ Phase 1 core Home. Code: `features/dashboard_home/domain/home_logic.dart` (`gree
 
 Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insights, categories, budgets widgets, bell sheet, SMS and notification permission cards, sync FAB and pill, tab layout store (FR-17-04, 05, 07-11, 13, 15-18, 20-22).
 
+- Fold adoption 2026-10-26: `domain/home_attention.dart` (`buildAttention`, `NetWorthChange`, pure), `presentation/{home_net_worth_card,home_attention_card}.dart` (`CountUpAmount` counts up unless masked, reduce-motion or `FLUTTER_TEST`), header `_InboxBell` and `_PrivacyBadge` in `dashboard_home_screen.dart`. Cross-feature reads are composed in `lib/app/di/home_composition_providers.dart` (net worth, bills, cards, statements, unread count) so Home presentation imports no other feature. `_ReviewNotice` (`home_review_notice`) was replaced by the `attn_duplicates` row. Tests: `home_attention_test.dart`, `home_blocks_test.dart`; `test/support/ui_harness.dart` now also overrides `appDatabaseProvider`. Deferred: widget tests for bill and card rows (covered by the pure test only).
 - Hardening 2026-10-22: Home shows `HomeSmsCard` (FR-01-13) above the review notice and in the empty state while SMS access is missing and not dismissed.
 
 ## 19. Change Log (date | change | reason)
@@ -536,3 +554,4 @@ Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insight
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
 | 2026-10-21 | Home gained budget rings (`HomeBudgetsCard`) and cash-flow card (`HomeCashFlowCard`) after the spent card, always visible (not yet customisable); see [10](10_expense_tracking.md), [11](11_income_tracking.md) | Phase 4 |
 | 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |
+| 2026-10-26 | Net worth card, Needs attention block (replaces the review notice), Inbox bell with unread badge, privacy badge, spent opens Analysis, empty-state import action (FR-17-25 to FR-17-29; TC-17-15 to TC-17-19) | Fold adoption |

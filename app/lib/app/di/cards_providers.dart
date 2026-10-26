@@ -1,4 +1,5 @@
 import 'package:hisaab/app/di/phase3_providers.dart';
+import 'package:hisaab/features/credit_cards/domain/card_insights.dart';
 import 'package:hisaab/features/credit_cards/domain/card_models.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -19,4 +20,13 @@ Stream<List<CardLimit>> activeCards(Ref ref) async* {
           c,
     ];
   }
+}
+
+/// Cycle spend, statement history and late flag of one card (FR-14-18..22).
+@riverpod
+Future<CardInsights> cardInsights(Ref ref, int cardId) async {
+  // Rebuild whenever any card figure changes.
+  await ref.watch(activeCardsProvider.future);
+  final r = await ref.watch(cardDueServiceProvider).insights(cardId);
+  return r;
 }

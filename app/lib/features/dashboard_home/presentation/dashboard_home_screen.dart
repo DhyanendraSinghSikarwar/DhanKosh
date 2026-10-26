@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/home_composition_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_accounts_strip.dart';
+import 'package:hisaab/features/dashboard_home/presentation/home_attention_card.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_budget_widgets.dart';
+import 'package:hisaab/features/dashboard_home/presentation/home_net_worth_card.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_providers.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_recent_list.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_sms_card.dart';
@@ -41,9 +44,11 @@ class DashboardHomeScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     children: [
                       _Header(masked: masked),
+                      const _PrivacyBadge(),
                       const SizedBox(height: 16),
+                      HomeNetWorthCard(masked: masked),
                       const HomeSmsCard(),
-                      const _ReviewNotice(),
+                      const HomeAttentionCard(),
                       const _SpentCard(),
                       const SizedBox(height: 16),
                       const HomeCashFlowCard(),
@@ -95,6 +100,7 @@ class _Header extends ConsumerWidget {
               .read(settingsRepositoryProvider)
               .write(SettingKeys.hideAmounts, !masked),
         ),
+        const _InboxBell(),
         IconButton(
           key: const Key('home_accounts_button'),
           tooltip: 'Accounts',
@@ -106,28 +112,43 @@ class _Header extends ConsumerWidget {
   }
 }
 
-class _ReviewNotice extends ConsumerWidget {
-  const _ReviewNotice();
+class _InboxBell extends ConsumerWidget {
+  const _InboxBell();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final n = ref.watch(homeReviewCountProvider).value ?? 0;
-    if (n == 0) return const SizedBox.shrink();
-    final warn = Theme.of(context).extension<SemanticColors>()?.warning;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: AppCard(
-        key: const Key('home_review_notice'),
-        onTap: () => context.push('/review'),
-        child: Row(
-          children: [
-            Icon(Icons.flag_outlined, color: warn),
-            const SizedBox(width: 12),
-            Expanded(child: Text('$n to review')),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
+    final n = ref.watch(inboxUnreadProvider);
+    return IconButton(
+      key: const Key('home_bell'),
+      tooltip: 'Inbox',
+      icon: Badge(
+        key: const Key('home_bell_badge'),
+        isLabelVisible: n > 0,
+        label: Text(n > 99 ? '99+' : '$n'),
+        child: const Icon(Icons.notifications_outlined),
       ),
+      onPressed: () => context.push('/activity'),
+    );
+  }
+}
+
+class _PrivacyBadge extends StatelessWidget {
+  const _PrivacyBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      key: const Key('home_privacy_badge'),
+      children: [
+        Icon(Icons.lock_outline, size: 14, color: theme.colorScheme.outline),
+        const SizedBox(width: 4),
+        Text(
+          'Data stays on this phone',
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: theme.colorScheme.outline),
+        ),
+      ],
     );
   }
 }
@@ -171,13 +192,17 @@ class _SpentCard extends ConsumerWidget {
             ],
           ),
           Text(isCurrent ? 'Spent this month' : 'Spent'),
-          Text(
-            formatAmount(
-              totals?.netSpentMinor ?? 0,
-              masked: masked,
+          InkWell(
+            key: const Key('home_spent_tap'),
+            onTap: () => context.go('/analysis'),
+            child: Text(
+              formatAmount(
+                totals?.netSpentMinor ?? 0,
+                masked: masked,
+              ),
+              key: const Key('home_spent'),
+              style: theme.textTheme.headlineMedium,
             ),
-            key: const Key('home_spent'),
-            style: theme.textTheme.headlineMedium,
           ),
           const SizedBox(height: 12),
           Row(
@@ -249,21 +274,41 @@ class _EmptyHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: HomeSmsCard(),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _Header(masked: masked),
+              const _PrivacyBadge(),
+            ],
+          ),
         ),
-        const EmptyState(
-          icon: Icons.account_balance_wallet_outlined,
-          title: 'No transactions yet',
-          hint: 'Read your bank SMS to get started.',
-        ),
-        FilledButton(
-          key: const Key('home_scan_sms'),
-          onPressed: () => context.go('/more'),
-          child: const Text('Scan SMS'),
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: HomeSmsCard(),
+              ),
+              const EmptyState(
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'No transactions yet',
+                hint: 'Read your bank SMS to get started.',
+              ),
+              FilledButton(
+                key: const Key('home_scan_sms'),
+                onPressed: () => context.go('/more'),
+                child: const Text('Scan SMS'),
+              ),
+              TextButton(
+                key: const Key('home_import_statement'),
+                onPressed: () => context.push('/statements'),
+                child: const Text('Import your first statement'),
+              ),
+            ],
+          ),
         ),
       ],
     );

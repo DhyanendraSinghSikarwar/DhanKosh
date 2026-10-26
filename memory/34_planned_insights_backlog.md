@@ -69,6 +69,7 @@ Scope rule in force (`doc/SPEC_NOTES.md:3-5`): "build only what SMS, email, mail
 | 9 | Credit score | Dropped by scope rule | same | none |
 | 10 | Outlook (Microsoft) sign-in | Not built; guide asks for two-step verification first; OAuth needs an Azure app registration | `doc/PLAN.md:21` (item marked partial); `FEATURES.md:216` | [03 Email ingestion](03_email_ingestion.md) |
 | 11 | Home "Safe to spend today" block | Removed from the default Home in 2.9.0 but code and text keys remain | `ui/home/HomeWidgets.kt:256-287`; `ui/home/HomeScreen.kt:223` (key `safe`); `lang/keys.json:979-980`; scan 5 row 31 | [17 Dashboard home](17_dashboard_home.md) |
+| 12 | XIRR (annualised return per holding) | Not built. Needs dated cash-flow history (every buy, redemption and dividend per holding), which is not stored; not implemented ([ADR-0010](../docs/adr/0010-fold-ideas-adoption-rules.md)) | Fold adoption | [16 Portfolio](16_portfolio.md) |
 
 Details of items found in the code:
 

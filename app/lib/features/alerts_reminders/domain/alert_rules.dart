@@ -4,6 +4,7 @@ import 'package:hisaab/features/analytics/domain/civil_date.dart';
 import 'package:hisaab/features/credit_cards/domain/card_reminder_plan.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_math.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// Pure alert decisions (memory 21 sections 3 and 10). Each function takes
@@ -425,4 +426,93 @@ abstract final class AlertRules {
             'can read it.',
         link: 'hisaab://statements?unlock=$statementId',
       );
+
+  static String _mon(int m) => AlertText.monthNames[m - 1].substring(0, 3);
+
+  /// Monday (UTC-midnight IST day) of the last completed week at [today]
+  /// (FR-21-21). A Monday gives the week that ended yesterday.
+  static DateTime lastWeekStart(DateTime today) =>
+      DateTime.utc(today.year, today.month, today.day)
+          .subtract(Duration(days: today.weekday - 1 + 7));
+
+  /// Dedupe key of the summary for the week starting [monday].
+  static String weeklyKey(DateTime monday) =>
+      'weekly:${monday.year}-${monday.month.toString().padLeft(2, '0')}-'
+      '${monday.day.toString().padLeft(2, '0')}';
+
+  /// Weekly summary of the last completed week against the one before
+  /// (FR-21-21). Null when the toggle is off, nothing was spent in either
+  /// week, or this week's summary was already sent (once per week).
+  static AlertDecision? weeklySummary({
+    required DateTime today,
+    required WeekSpend week,
+    required WeekSpend previous,
+    required AlertSettings settings,
+    required Set<String> alerted,
+  }) {
+    if (!settings.weeklySummary) return null;
+    final monday = lastWeekStart(today);
+    final key = weeklyKey(monday);
+    if (alerted.contains(key)) return null;
+    if (week.spentMinor <= 0 && previous.spentMinor <= 0) return null;
+    final sunday = monday.add(const Duration(days: 6));
+    final range = monday.month == sunday.month
+        ? '${monday.day}-${sunday.day} ${_mon(sunday.month)}'
+        : '${monday.day} ${_mon(monday.month)}-'
+            '${sunday.day} ${_mon(sunday.month)}';
+    final diff = week.spentMinor - previous.spentMinor;
+    final String cmp;
+    if (previous.spentMinor <= 0) {
+      cmp = 'Nothing was spent the week before.';
+    } else if (diff == 0) {
+      cmp = 'Same as the week before.';
+    } else {
+      cmp = '${AlertText.money(diff.abs())} '
+          '${diff > 0 ? 'more' : 'less'} than the week before.';
+    }
+    final top = week.topCategory;
+    final topText = top == null || week.topCategoryMinor <= 0
+        ? ''
+        : ' Top: ${top.label} ${AlertText.money(week.topCategoryMinor)}.';
+    return AlertDecision(
+      kind: AlertKind.weeklySummary,
+      key: key,
+      channel: AlertChannel.budgetsBills,
+      notificationId: AlertText.stableId(key),
+      title: 'Week $range: ${AlertText.money(week.spentMinor)} spent',
+      body: '$cmp$topText',
+      link: 'hisaab://home',
+    );
+  }
+
+  /// Spend and top category of [txs] inside [fromMs, toMs): debits that are
+  /// not transfers or review rows, in INR (FR-21-21).
+  static WeekSpend weekSpend(Iterable<LedgerTx> txs, int fromMs, int toMs) {
+    var total = 0;
+    final by = <Category, int>{};
+    for (final t in txs) {
+      if (t.timestamp < fromMs ||
+          t.timestamp >= toMs ||
+          t.needsReview ||
+          t.type != TransactionType.debit) {
+        continue;
+      }
+      final inr = t.inrMinor ?? (t.currency == 'INR' ? t.amountMinor : 0);
+      total += inr;
+      by.update(t.category, (v) => v + inr, ifAbsent: () => inr);
+    }
+    Category? top;
+    var topMinor = 0;
+    for (final e in by.entries) {
+      if (e.value > topMinor) {
+        top = e.key;
+        topMinor = e.value;
+      }
+    }
+    return WeekSpend(
+      spentMinor: total,
+      topCategory: top,
+      topCategoryMinor: topMinor,
+    );
+  }
 }

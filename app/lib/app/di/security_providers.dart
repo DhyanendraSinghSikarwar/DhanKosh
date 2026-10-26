@@ -4,6 +4,7 @@ import 'package:hisaab/features/activity_log/domain/activity_logger.dart';
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/security_privacy/data/local_auth_app_lock_service.dart';
 import 'package:hisaab/features/security_privacy/domain/app_lock_service.dart';
+import 'package:hisaab/features/security_privacy/domain/security_settings.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/features/settings_data_sources/domain/settings_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -23,6 +24,18 @@ Future<AuthAvailability> authAvailability(Ref ref) =>
 @Riverpod(keepAlive: true)
 Stream<bool> appLockEnabled(Ref ref) =>
     ref.watch(settingsRepositoryProvider).watch(SettingKeys.appLock);
+
+/// Minutes away before the app locks again; 0 = immediately (FR-25-21).
+@Riverpod(keepAlive: true)
+Stream<int> autoLockMinutes(Ref ref) => ref
+    .watch(settingsRepositoryProvider)
+    .watch(SecuritySettings.autoLockMinutes);
+
+/// Whether screenshots and the recents preview are blocked (FR-25-23).
+@Riverpod(keepAlive: true)
+Stream<bool> blockScreenshots(Ref ref) => ref
+    .watch(settingsRepositoryProvider)
+    .watch(SecuritySettings.blockScreenshots);
 
 /// Stored activity log (F-22).
 @Riverpod(keepAlive: true)

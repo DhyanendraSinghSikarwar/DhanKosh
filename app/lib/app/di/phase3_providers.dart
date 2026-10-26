@@ -1,5 +1,6 @@
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/features/credit_cards/data/card_bill_debit_source_impl.dart';
 import 'package:hisaab/features/credit_cards/data/card_due_repository_impl.dart';
 import 'package:hisaab/features/credit_cards/data/card_flow_source_impl.dart';
 import 'package:hisaab/features/credit_cards/data/card_paid_store_impl.dart';
@@ -74,6 +75,7 @@ CardDueService cardDueService(Ref ref) => CardDueService(
       statements: ref.watch(statementRepositoryProvider),
       flow: CardFlowSourceImpl(ref.watch(transactionRepositoryProvider)),
       paid: ref.watch(cardPaidStoreProvider),
+      debits: CardBillDebitSourceImpl(ref.watch(transactionRepositoryProvider)),
     );
 
 /// Mark paid and override edits (F-14).

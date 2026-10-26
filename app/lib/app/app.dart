@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/alerts_lifecycle.dart';
+import 'package:hisaab/app/device_hooks.dart';
 import 'package:hisaab/app/di/appearance_providers.dart';
 import 'package:hisaab/app/lock_gate.dart';
 import 'package:hisaab/app/router.dart';
@@ -44,8 +45,10 @@ class HisaabApp extends ConsumerWidget {
             child: LockGate(
               child: AppLifecycleGate(
                 child: AlertsLifecycle(
-                  child: StartupTasks(
-                    child: child ?? const SizedBox.shrink(),
+                  child: DeviceHooks(
+                    child: StartupTasks(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),

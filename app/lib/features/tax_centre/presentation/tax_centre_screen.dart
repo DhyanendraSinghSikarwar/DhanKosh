@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/analytics_providers.dart';
+import 'package:hisaab/app/di/backup_providers.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_calculator.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_plan.dart';
+import 'package:hisaab/features/tax_centre/domain/tax_report_builder.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_rules.dart';
 import 'package:hisaab/features/tax_centre/presentation/tax_what_if_sheet.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
@@ -22,7 +24,19 @@ class TaxCentreScreen extends ConsumerWidget {
     String money(int m) => formatAmount(m, masked: masked, paise: false);
     final plan = base?.plan(whatIf);
     return Scaffold(
-      appBar: AppBar(title: const Text('Tax Centre')),
+      appBar: AppBar(
+        title: const Text('Tax Centre'),
+        actions: [
+          IconButton(
+            key: const Key('tax-export'),
+            tooltip: 'Export PDF',
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            onPressed: plan == null || !plan.hasIncome
+                ? null
+                : () => _export(context, ref, plan, masked: masked),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -46,6 +60,44 @@ class TaxCentreScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  // FR-19-09..11: needs income; asks first while amounts are hidden.
+  Future<void> _export(
+    BuildContext context,
+    WidgetRef ref,
+    TaxPlan plan, {
+    required bool masked,
+  }) async {
+    if (masked) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text('Export with amounts?'),
+          content: const Text('The PDF shows real figures.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              key: const Key('tax-export-confirm'),
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('Export'),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+    }
+    final saved = await ref.read(reportServiceProvider).save(
+          ref.read(blobGatewayProvider),
+          TaxReportBuilder.build(plan),
+        );
+    if (saved != null && context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Saved $saved')));
+    }
   }
 
   List<Widget> _body(

@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-21 |
-| Status | In progress (rules done; posting engine, native `alerts` channel, Alerts settings screen and launch-route handling landed but native Kotlin unverified on device; card reminders, untracked-change alerts, new-transaction/balance/statement notifications, action buttons and AlertsWorker scheduling pending) |
+| Status | In progress (rules done; posting engine, native `alerts` channel, Alerts settings screen and launch-route handling landed but native Kotlin unverified on device; card reminders, untracked-change alerts, new-transaction/balance/statement notifications, action buttons and AlertsWorker scheduling pending; 2026-10-26: weekly summary (rule, engine check, toggle) added) |
 | Priority | P1 |
 | Phase | 4 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -165,6 +165,7 @@ Scaffold "Notifications & alerts" with cards:
 18. FR-21-18: Settings defaults: `transaction_notifications = true`, `budget_alert_percent = 90`, `card_due_reminders = true`.
 19. FR-21-19: A global mutex serialises alert checks so concurrent triggers cannot double-send.
 20. FR-21-20: All amounts in alert text use Indian grouping; amounts without paise except in the new-transaction title (`Money.format` default).
+21. FR-21-21: Weekly summary (new; setting `weekly_summary_alert`, bool, default false, switch "Weekly summary" on the Alerts screen). On any alerts run the engine looks at the last completed Monday-to-Sunday IST week and the week before it (debits that are not transfers or review rows, INR). If the toggle is on, something was spent in either week and the key `weekly:<monday yyyy-MM-dd>` is not in the alerted keys, it posts once: title "Week 14-20 Sep: ₹4,200 spent", body "₹1,100 less than the week before. Top: Food & Dining ₹1,800." ("more", "Same as the week before." or "Nothing was spent the week before."). The key is stored after a successful post, so a week is announced once; opening the app later in the week still sends it. Link `hisaab://home`, id `AlertText.stableId(key)`.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -436,6 +437,7 @@ Integration:
 12. TC-21-12 (FR-21-13, FR-21-19): run the worker twice in a row with fixture data: each alert posts once; one check throwing does not stop the others.
 13. TC-21-13 (FR-21-10): simulate action "Mark paid": state stored, notification cancelled, next check sends nothing; "Remind tomorrow": nothing today, reminder tomorrow.
 14. TC-21-14 (FR-21-15): each alert's tap payload opens the correct route.
+15. TC-21-15 (FR-21-21): `AlertRules.weeklySummary`: week start for Monday, Friday and Sunday; text for less, more, same and no previous week; off by default; once per week; nothing when no spend; month-spanning label. Engine posts once with the totals and top category and not when the toggle is off (`weekly_summary_test.dart`); the Alerts screen switch persists (`alerts_forex_screens_test.dart`).
 
 Fixture messages (masked): `HDFC Bank: Rs 250.00 debited from a/c XX1234 on 17-10-26 to VPA swiggy@icici (UPI Ref 6xxxxxxxx1)` (new-tx alert); card bill SMS `Your HDFC Bank Credit Card XX4321 statement: Total Due Rs 12,450.00, Min Due Rs 620.00, Due Date 25-Oct-26` (card reminder).
 
@@ -450,6 +452,7 @@ Fixture messages (masked): `HDFC Bank: Rs 250.00 debited from a/c XX1234 on 17-1
 7. AC-21-07: The daily worker runs all checks, isolates failures, and does not double-send. (FR-21-13, FR-21-19; TC-21-12)
 8. AC-21-08: The Alerts screen reflects the OS notification state and persists the three settings. (FR-21-17, FR-21-18; TC-21-11)
 9. AC-21-09: Every alert deep-links to the right screen. (FR-21-15; TC-21-14)
+10. AC-21-10: The weekly summary is opt-in and arrives once per week with the total, the change on the week before and the top category. (FR-21-21; TC-21-15)
 
 ## 17. Open Questions
 
@@ -485,6 +488,8 @@ Phase 4 posting and settings (wave 2). `AlertsEngine` (`domain/alerts_engine.dar
 
 FR status additions: done FR-21-05, 06, 07 (posted), 14, 16, 17 (no resume re-check of the banner beyond lifecycle), 18, 19; FR-21-15 partly (links map to routes, `/budgets` and `/bills` exist only if those screens are routed). Pending: FR-21-01 channel ids/names (native uses budget/bills/cards/info instead of memory ids), 02, 03, 04, 08, 09, 10, 11, 12, 13 (daily scheduling of `alerts.check` not enqueued natively; piggybacks the nightly sms task), action buttons.
 
+- 2026-10-26: weekly summary built. `AlertRules.lastWeekStart/weeklyKey/weeklySummary/weekSpend` (pure), `WeekSpend` and `weeklySummaryKey` in `alert_models.dart`, `AlertSettings.weeklySummary`, `AlertSettingsRepository.setWeeklySummary`, `AlertsEngine._weeklyDecisions` (optional `txs` repository; the engine runs it in the same isolated check list), kind `weeklySummary` on the `budgets_bills` Dart channel and native id `info`. No new scheduler: it rides the existing resume and nightly runs. Included in the encrypted backup settings subset ([24_backup_export.md](24_backup_export.md)).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -494,3 +499,4 @@ FR status additions: done FR-21-05, 06, 07 (posted), 14, 16, 17 (no resume re-ch
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
 | 2026-10-21 | Phase 4 domain logic landed | Phase 4 |
 | 2026-10-21 | Phase 4 alerts posting + forex UI landed | Phase 4 |
+| 2026-10-26 | Weekly summary notification (FR-21-21, TC-21-15) | Fold adoption |

@@ -4,6 +4,7 @@ import 'package:hisaab/app/di/cards_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/features/credit_cards/domain/card_models.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_amounts_sheet.dart';
+import 'package:hisaab/features/credit_cards/presentation/card_insights_section.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_tile.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
@@ -61,13 +62,18 @@ class CreditCardsScreen extends ConsumerWidget {
                 itemBuilder: (_, i) {
                   final c = list[i];
                   final actions = ref.read(cardDueActionsProvider);
-                  return CardTile(
-                    card: c,
-                    masked: masked,
-                    nowMs: now,
-                    onMarkPaid: () => actions.markPaid(c),
-                    onUndo: () => actions.undoPaid(c),
-                    onEdit: () => _edit(context, ref, c),
+                  return Column(
+                    children: [
+                      CardTile(
+                        card: c,
+                        masked: masked,
+                        nowMs: now,
+                        onMarkPaid: () => actions.markPaid(c),
+                        onUndo: () => actions.undoPaid(c),
+                        onEdit: () => _edit(context, ref, c),
+                      ),
+                      CardInsightsSection(cardId: c.id, masked: masked),
+                    ],
                   );
                 },
               ),

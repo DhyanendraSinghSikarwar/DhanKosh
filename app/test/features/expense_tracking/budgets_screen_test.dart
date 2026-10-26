@@ -115,6 +115,7 @@ void main() {
   testWidgets('home rings and masked', (t) async {
     await seed(t);
     await pumpApp(t, env, _routes(), initial: '/home');
+    await t.scrollUntilVisible(find.byKey(const Key('home_budgets')), 200);
     expect(find.byKey(const Key('home_budgets')), findsOneWidget);
     expect(find.byKey(const Key('home_ring_food')), findsOneWidget);
     expect(find.text('Budgets'), findsOneWidget);
@@ -124,6 +125,7 @@ void main() {
   testWidgets('home rings empty prompts Set budgets', (t) async {
     await t.runAsync(() => env.ingest(parsed(time: now() - 1000, ref: 'X')));
     await pumpApp(t, env, _routes(), initial: '/home');
+    await t.scrollUntilVisible(find.text('Set budgets'), 200);
     expect(find.text('Set budgets'), findsOneWidget);
     await teardownApp(t);
   });
@@ -131,6 +133,10 @@ void main() {
   testWidgets('home rings masked', (t) async {
     await seed(t, hide: true);
     await pumpApp(t, env, _routes(), initial: '/home');
+    await t.scrollUntilVisible(
+      find.byKey(const Key('home_ring_spent_food')),
+      200,
+    );
     expect(find.byKey(const Key('home_ring_spent_food')), findsOneWidget);
     expect(
       (t.widget(find.byKey(const Key('home_ring_spent_food'))) as Text).data,

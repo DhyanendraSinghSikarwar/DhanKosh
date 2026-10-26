@@ -143,7 +143,7 @@ void main() {
     final sw =
         t.widget<SwitchListTile>(find.byKey(const Key('app-lock-switch')));
     expect(sw.onChanged, isNull);
-    expect(find.text('Clear all data'), findsOneWidget);
+    expect(find.text('Erase all data'), findsOneWidget);
     expect(
       find.text('Your data never leaves this phone. No servers, no tracking.'),
       findsOneWidget,

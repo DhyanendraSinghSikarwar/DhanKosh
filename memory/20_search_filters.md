@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-20 |
-| Status | In progress (Phase 1: search and filters done; Calendar and By-merchant honour the filters; global Book/Period store pending) |
+| Status | In progress (Phase 1: search and filters done; Fold adoption 2026-10-26: Source filter and amount range on the Transactions tab; Calendar and By-merchant honour the filters; global Book/Period store pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -158,6 +158,7 @@ There is no cross-tab global search; the v2 spec lists FTS5 search as proposed.
 17. FR-20-17: An account scope includes accounts merged into it.
 18. FR-20-18: KPI strip and counts describe the filtered (`shown`) list; transfers contribute 0; expenses include investments.
 19. FR-20-19: Empty states distinguish search miss, filter miss and empty period with the exact texts in section 2.5.
+21. FR-20-21: The Transactions filter bar has an amount range: Min and Max in rupees (digits, optional comma grouping and up to two decimals) converted to paise by integer math (`rupeesToMinor`; invalid or empty = open). `LedgerFilter.minMinor` and `maxMinor` are inclusive bounds on `amount_minor`. Together with the Source chips (FR-20-15) the range combines with every other filter by AND; "Clear" also resets Source and the range and empties the Min and Max fields.
 20. FR-20-20: A change of the global Book or Period while the Transactions tab is open updates the list without losing search text or chip selections.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
@@ -404,6 +405,12 @@ Integration:
 
 14. TC-20-14 (FR-20-01, FR-20-08): switching Book to Business changes Home total, Transactions list and Analysis donut consistently for the same fixture data.
 
+Fold adoption:
+
+- TC-20-15 (FR-20-15): through the real in-memory ledger, `LedgerFilter(sources: {sms})` returns only SMS-sourced rows, `{email, manual}` returns both groups, empty returns all.
+- TC-20-16 (FR-20-21): amount range is inclusive in paise (10,000 to 250,050 returns both bounds; min 250,051 and max 9,999 exclude them) and combines with sources.
+- TC-20-17 (FR-20-21): `rupeesToMinor` gives 125000 for "1250", 125050 for "1,250.5", 7 for "₹ 0.07" and null for "", "abc", "1.234", "-5"; `LedgerViewState` carries the filters into `toFilter` and `cleared()` resets them.
+
 Fixtures (masked): `HDFC Bank: Rs 2450.50 debited from a/c XX1234 on 17-10-26 to VPA swiggy@icici (UPI Ref 6xxxxxxxx1)`; business account usage BUSINESS "ICICI ••9876"; personal "HDFC ••1234".
 
 ## 16. Acceptance Criteria
@@ -438,6 +445,8 @@ Done: FR-20-03/04/05 partial (This month, Last month, Custom range via "Choose d
 
 Deferred: FR-20-01/02 (global Book store, persistence), FR-20-03 This week / FY / 12 months, FR-20-06..10 (previous period, ViewFilter slice, Book rule, account visibility by book), FR-20-14/15 (bank and source chips), FR-20-20, FR-20-08.
 
+2026-10-26: Source chips (SMS, Email, Notification = APP, Statement, Manual, all always shown) and Min/Max amount fields added to `LedgerFilterBar`; state in `LedgerViewState.{sources,minMinor,maxMinor}` and `LedgerViewNotifier.{toggleSource,setAmountRange}`; the repository already filtered by `LedgerFilter.sources`, and now also applies `minMinor`/`maxMinor` (no schema change). Tests: `test/features/search_filters/source_amount_filter_test.dart`. Deferred: bank chips (FR-20-14), source chip counts, widget test of the two new controls.
+
 2026-10-22: Calendar and By-merchant segments of the Transactions tab operate on the filtered rows and period (see [Transactions](08_transactions_ledger.md)).
 
 ## 19. Change Log (date | change | reason)
@@ -448,3 +457,4 @@ Deferred: FR-20-01/02 (global Book store, persistence), FR-20-03 This week / FY 
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
+| 2026-10-26 | Source filter and amount range on the Transactions filter bar (FR-20-15 in Flutter, FR-20-21; TC-20-15 to TC-20-17) | Fold adoption |

@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-22 |
-| Status | In progress (Phase 5: schema v5 table, repository with coalescing and 200 cap, ActivityLogger port wired into SMS scan, live SMS and email runs, Activity screen and More tile done; notification, statements and email statement counts not recorded; native-only live runs not logged) |
+| Status | In progress (Fold adoption 2026-10-26: Inbox with unread bell badge, groups and problem entries; Phase 5: schema v5 table, repository with coalescing and 200 cap, ActivityLogger port wired into SMS scan, live SMS and email runs, Activity screen and More tile done; notification, statements and email statement counts not recorded; native-only live runs not logged) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -147,6 +147,9 @@ Clear dialog: AlertDialog "Clear log?" - "Removes every entry. Transactions are 
 12. FR-22-12: "Clear log" (visible only when entries exist) asks for confirmation and removes every entry without affecting transactions.
 13. FR-22-13: Recording failures must never break a sync (wrapped, ignored).
 14. FR-22-14: The log is excluded from any backup/export and never transmitted.
+15. FR-22-15: A bank-like sender whose message the parser rejected records a `PROBLEMS` entry (SMS scan: one per run with `read` = number rejected and `note` = the most frequent sender code; live SMS: one per message). The sender is stored only as a code (`AX-HDFCBK`, upper-case letters and digits, no run of 4+ digits); phone numbers and anything else become `OTHER`. Never body, subject, amount or reference (F-35 rules, [35_diagnostic_log.md](35_diagnostic_log.md)).
+16. FR-22-16: The Activity log is the Inbox. Unread = entries with `at` strictly newer than the setting `activity_last_seen` (epoch ms, default 0). Home's bell shows the unread count (hidden at 0) and opens `/activity`; opening the screen reads the old value for the unread dots, then writes now. Nothing is shown until both the log and the setting have loaded.
+17. FR-22-17: Entries group by type with chips above the source pills: Imports (email, statements, a scan with statements), Scans (SMS scan and live SMS), Alerts (payment-app notifications), Problems (`PROBLEMS` entries and any entry with an error). A chip toggles; tapping the active chip clears it; it combines with the source pill.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -390,6 +393,13 @@ Integration:
 
 12. TC-22-12 (FR-22-01, FR-22-13): run a fake SMS scan, a live SMS batch and a notification skip -> entries appear live in the screen; a thrown error inside recording does not fail the scan.
 
+Fold adoption:
+
+13. TC-22-13 (FR-22-16): `InboxLogic.unread` counts entries strictly newer than last seen (0, equal, newer); `isUnread` boundary.
+14. TC-22-14 (FR-22-17): `groupOf` maps SMS scan and live to Scans, Gmail, IMAP and statements to Imports, notifications to Alerts, `PROBLEMS` and errored runs to Problems.
+15. TC-22-15 (FR-22-15): `senderCode` keeps `AX-HDFCBK`, upper-cases `hdfcbk`, maps phone numbers, free text and `a@upi` to `OTHER`; `topSenderCode` picks the most frequent; a scan with two unparseable bank messages records one `PROBLEMS` entry (`read` 2, note the sender code) and its subtitle contains no body text.
+16. TC-22-16 (FR-22-16, FR-22-17): widget (in `home_blocks_test.dart`): bell badge shows 2 for two unseen entries; opening Inbox shows two unread dots, writes `activity_last_seen`; the Problems chip leaves only the problem row.
+
 Fixture rows (masked): scan summary `412 SMS checked, 63 from banks, 9 new, 2 merged, 1 to review (3.2s)`; notification skip reason `failed or pending payment`.
 
 ## 16. Acceptance Criteria
@@ -424,6 +434,7 @@ Phase 5 (2026-10-21). Code: `features/activity_log/{domain,data,presentation}`; 
 - Not done: FR-22-05 `statements`/`locked` counts (email run records 0), FR-22-06 notification entries (no notification ingest path exists yet), STATEMENTS source, native receiver logging when the engine is dead. TC-22-07/08/09/12 not covered by an end-to-end test; the recorder takes no free text by construction.
 - Tests: `test/features/activity_log/activity_log_test.dart` (TC-22-01..06, 10, 11), `test/core/db/migration_v4_v5_test.dart`.
 
+- Fold adoption 2026-10-26: `domain/inbox_logic.dart` (`InboxLogic.unread`, `groupOf`, `senderCode`, `topSenderCode`), new `ActivitySource.problems` (stored in the existing text `source` column, no schema change), `ScanSms` and `HandleLiveSms` record problems, `ActivityLogScreen` titled "Inbox" with group chips and unread dots, setting `activity_last_seen` (`SettingKeys.activityLastSeen`), bell and unread provider in `app/di/home_composition_providers.dart` (see [17](17_dashboard_home.md)). The More tile keeps the label "Activity log". Tests: `inbox_logic_test.dart`, `problem_entries_test.dart`, `home_blocks_test.dart`.
 - Hardening 2026-10-22: payment-app notifications now log one `notifications` entry per watched-app notification (`NotificationEngine` with optional `ActivityLogger`; unwatched, summary, empty and switched-off ones are not logged). Statement import logging is PENDING: the statement owner must call `activityLoggerProvider` (`ActivitySource.statements`) from the import flow. Next scheduled sync is now written when the nightly job is (re)registered and after each run.
 
 ## 19. Change Log (date | change | reason)
@@ -434,3 +445,4 @@ Phase 5 (2026-10-21). Code: `features/activity_log/{domain,data,presentation}`; 
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 5 security + activity log landed | Phase 5 |
 | 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |
+| 2026-10-26 | Inbox: unread bell badge, groups, `PROBLEMS` entries with sender code only (FR-22-15 to FR-22-17; TC-22-13 to TC-22-16) | Fold adoption |

@@ -31,6 +31,7 @@ void main() {
       ProviderScope(
         overrides: [
           accountRepositoryProvider.overrideWithValue(env.accounts),
+          transactionRepositoryProvider.overrideWithValue(env.txs),
           settingsRepositoryProvider.overrideWithValue(env.settings),
           holdingRepositoryProvider.overrideWithValue(holdings),
           netWorthRepositoryProvider

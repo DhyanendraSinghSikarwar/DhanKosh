@@ -42,6 +42,6 @@ void main() {
         .get();
     expect(idx, hasLength(1));
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.read<int>('user_version'), 5);
+    expect(v.read<int>('user_version'), 6);
   });
 }

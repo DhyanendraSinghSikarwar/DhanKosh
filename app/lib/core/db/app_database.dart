@@ -10,13 +10,16 @@ import 'package:hisaab/core/db/tables/custom_categories.dart';
 import 'package:hisaab/core/db/tables/custom_subcategories.dart';
 import 'package:hisaab/core/db/tables/deleted_messages.dart';
 import 'package:hisaab/core/db/tables/forex_rates.dart';
+import 'package:hisaab/core/db/tables/goals.dart';
 import 'package:hisaab/core/db/tables/holdings.dart';
 import 'package:hisaab/core/db/tables/loan_links.dart';
 import 'package:hisaab/core/db/tables/merchant_rules.dart';
+import 'package:hisaab/core/db/tables/mf_orders.dart';
 import 'package:hisaab/core/db/tables/net_worth_points.dart';
 import 'package:hisaab/core/db/tables/processed_emails.dart';
 import 'package:hisaab/core/db/tables/recurring_items.dart';
 import 'package:hisaab/core/db/tables/settings.dart';
+import 'package:hisaab/core/db/tables/sips.dart';
 import 'package:hisaab/core/db/tables/statements.dart';
 import 'package:hisaab/core/db/tables/transaction_sources.dart';
 import 'package:hisaab/core/db/tables/transactions.dart';
@@ -52,6 +55,10 @@ part 'app_database.g.dart';
     CardDueReminderState,
     BalanceNoticeDays,
     ActivityEntries,
+    Sips,
+    MfOrders,
+    Goals,
+    GoalContributions,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -59,7 +66,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -118,6 +125,14 @@ class AppDatabase extends _$AppDatabase {
               'CREATE INDEX IF NOT EXISTS activity_entries_at '
               'ON activity_entries (at DESC)',
             );
+          }
+          // v5 -> v6: SIPs, MF orders, savings goals (Fold adoption).
+          // Additive.
+          if (from < 6) {
+            await m.createTable(sips);
+            await m.createTable(mfOrders);
+            await m.createTable(goals);
+            await m.createTable(goalContributions);
           }
         },
         beforeOpen: (details) async {

@@ -1,5 +1,6 @@
 import 'package:hisaab/features/activity_log/domain/activity_logger.dart';
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
+import 'package:hisaab/features/activity_log/domain/inbox_logic.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
 import 'package:hisaab/features/sms_ingestion/domain/sms_ports.dart';
@@ -70,6 +71,17 @@ class HandleLiveSms {
           skipped: outcome == IngestOutcome.skipped ? 1 : 0,
           millis: DateTime.now().difference(started).inMilliseconds,
           error: error,
+        ),
+      );
+    }
+    if (outcome == IngestOutcome.rejected) {
+      // FR-22-15: sender code only, never body or amounts.
+      await _activity?.record(
+        ActivityEntry(
+          at: started,
+          source: ActivitySource.problems,
+          read: 1,
+          note: InboxLogic.senderCode(sms.sender),
         ),
       );
     }

@@ -44,6 +44,10 @@ abstract final class SettingKeys {
   /// Shows the Developer section (sample data, clear data). ON in this early
   /// build (FR-26-27).
   static const developerTools = SettingKey<bool>('developer_tools', true);
+
+  /// Epoch ms the Inbox was last opened; newer entries count as unread
+  /// (FR-22-16).
+  static const activityLastSeen = SettingKey<int>('activity_last_seen', 0);
   static const budgetAlertPercent = SettingKey<int>('budget_alert_percent', 90);
 
   /// Capped to the most recent 300 entries (FR-26-13); newest last.

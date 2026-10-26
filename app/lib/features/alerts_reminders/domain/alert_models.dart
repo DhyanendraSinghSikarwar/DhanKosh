@@ -1,4 +1,6 @@
 import 'package:hisaab/features/credit_cards/domain/card_models.dart';
+import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
+import 'package:parser_core/parser_core.dart';
 
 /// Notification channels (FR-21-01): ids `new_transactions`,
 /// `budgets_bills`, `statements`.
@@ -22,6 +24,7 @@ enum AlertKind {
   untrackedChange,
   cardBill,
   statementLocked,
+  weeklySummary,
 }
 
 /// A notification button (FR-21-03, FR-21-10).
@@ -95,7 +98,11 @@ class AlertSettings {
     this.transactionNotifications = true,
     this.budgetAlertPercent = 90,
     this.cardDueReminders = true,
+    this.weeklySummary = false,
   });
+
+  /// Weekly summary notification, off by default (FR-21-21).
+  final bool weeklySummary;
 
   final bool transactionNotifications;
 
@@ -213,4 +220,26 @@ class BalanceGapInput {
   /// "{what}": the account label.
   final String label;
   final int unexplainedMinor;
+}
+
+/// Setting key of the weekly summary toggle (FR-21-21).
+const weeklySummaryKey = SettingKey<bool>('weekly_summary_alert', false);
+
+/// Spend of one Monday-to-Sunday week and its biggest category (FR-21-21).
+class WeekSpend {
+  /// Creates a week.
+  const WeekSpend({
+    required this.spentMinor,
+    this.topCategory,
+    this.topCategoryMinor = 0,
+  });
+
+  /// Total spent, paise.
+  final int spentMinor;
+
+  /// Category with the most spend, null when nothing was spent.
+  final Category? topCategory;
+
+  /// Spend in [topCategory], paise.
+  final int topCategoryMinor;
 }

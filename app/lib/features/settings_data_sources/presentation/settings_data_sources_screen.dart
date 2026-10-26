@@ -12,6 +12,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
     this.notificationCard,
     this.statementsTile,
     this.billsTile,
+    this.goalsTile,
     this.loansTile,
     this.alertsTile,
     this.forexTile,
@@ -37,6 +38,9 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
 
   /// Bills & insurance entry (F-12), composed in `app/router.dart`.
   final Widget? billsTile;
+
+  /// Goals & salary plan entry (F-36), composed in `app/router.dart`.
+  final Widget? goalsTile;
 
   /// Loans entry (F-15), composed in `app/router.dart`.
   final Widget? loansTile;
@@ -141,6 +145,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
           ),
           if (statementsTile != null) statementsTile!,
           if (billsTile != null) billsTile!,
+          if (goalsTile != null) goalsTile!,
           if (loansTile != null) loansTile!,
           if (customiseTile != null) customiseTile!,
           if (languageTile != null) languageTile!,

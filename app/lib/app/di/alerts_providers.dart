@@ -35,6 +35,7 @@ AlertsEngine alertsEngine(Ref ref) => AlertsEngine(
       alerted: ref.watch(alertedKeyStoreProvider),
       poster: ref.watch(alertPosterProvider),
       settings: ref.watch(alertSettingsRepositoryProvider),
+      txs: ref.watch(transactionRepositoryProvider),
     );
 
 /// Foreign spend counts per currency, live (F-23).

@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hisaab/app/di/share_in_providers.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/features/statement_import/domain/import_result.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
@@ -13,6 +15,7 @@ import 'package:hisaab/features/statement_import/presentation/statements_screen.
 class _FakeImport implements ImportStatement {
   final unlocked = <(int, String, bool)>[];
   final deleted = <int>[];
+  final imported = <String>[];
   ImportResult next = const ImportWrongPassword(1);
 
   @override
@@ -23,6 +26,12 @@ class _FakeImport implements ImportStatement {
     String? label,
   }) async {
     unlocked.add((id, password, remember));
+    return next;
+  }
+
+  @override
+  Future<ImportResult> call(PickedFile file) async {
+    imported.add(file.name);
     return next;
   }
 
@@ -77,6 +86,35 @@ void main() {
     );
     await t.pump();
   }
+
+  // FR-05-26: a shared file in the inbox is imported on arrival, once.
+  testWidgets('shared file is imported when the screen opens', (t) async {
+    fake.imported.clear();
+    final c = ProviderContainer(
+      overrides: [
+        statementsProvider.overrideWith((_) => Stream.value(rows)),
+        lockedStatementCountProvider.overrideWith((_) => Stream.value(0)),
+        importStatementProvider.overrideWithValue(fake),
+        statementFileSourceProvider.overrideWithValue(_Picker()),
+      ],
+    );
+    addTearDown(c.dispose);
+    c.read(sharedInboxProvider.notifier).put(
+          PickedFile(name: 'shared.pdf', bytes: Uint8List(3)),
+        );
+    await t.pumpWidget(
+      UncontrolledProviderScope(
+        container: c,
+        child: const MaterialApp(home: StatementsScreen()),
+      ),
+    );
+    await t.pump();
+    await t.pump();
+    expect(fake.imported, ['shared.pdf']);
+    expect(c.read(sharedInboxProvider), isNull);
+    await t.pumpAndSettle();
+    expect(fake.imported, hasLength(1));
+  });
 
   // FR-05-19: list with status, locked banner, delete.
   testWidgets('list shows status, locked banner and deletes', (t) async {

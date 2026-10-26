@@ -44,9 +44,11 @@ class _LockGateState extends ConsumerState<LockGate>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _resumed = state == AppLifecycleState.resumed;
-    ref
-        .read(lockControllerProvider.notifier)
-        .onLifecycle(state, enabled: _enabled);
+    ref.read(lockControllerProvider.notifier).onLifecycle(
+          state,
+          enabled: _enabled,
+          timeoutMinutes: ref.read(autoLockMinutesProvider).value ?? 0,
+        );
     if (_resumed) _promptIfLocked();
   }
 
@@ -104,6 +106,7 @@ class _LockGateState extends ConsumerState<LockGate>
             child: LockOverlay(
               failed: lock.failed,
               busy: lock.prompting,
+              retryAt: lock.retryAt,
               onUnlock: () =>
                   unawaited(ref.read(lockControllerProvider.notifier).unlock()),
             ),

@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-05 |
-| Status | In progress (Phase 3 + hardening: import pipeline, UI, account balance/limit, deposits, detail screen, mismatch warning, emailed attachments and locked notice done; Kotlin PdfBox bridge and APK not run on a device; MF-order/NPS email-body steps and XLSX entry caps pending) |
+| Status | In progress (Phase 3 + hardening: import pipeline, UI, account balance/limit, deposits, detail screen, mismatch warning, emailed attachments and locked notice done; Kotlin PdfBox bridge and APK not run on a device; MF-order/NPS email-body steps and XLSX entry caps pending; 2026-10-26: share-in of PDF, CSV and XLSX from other apps added in Dart and Kotlin, Kotlin not compiled or run) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-26 |
 
 ## 1. Description
 
@@ -320,6 +320,8 @@ PDF: any `RuntimeException` -> Unreadable; locked with no matching password -> s
 | FR-05-23 | Email-body pipeline shall run in the order and with the holdings side effects of 3.9.1 (INDmoney aggregates recorded; EPF mail recorded; NPS via `NpsContributions`; MF order updates the fund holding via `recordMfOrder` even when the transaction is suppressed). |
 | FR-05-24 | `MfOrderParser` shall apply the gates, scheme, units, NAV, amount, folio, date and platform rules of 3.9.2, including the amount fallback units x NAV and the date window [received - 45 d, received + 1 d]. |
 | FR-05-25 | `PortfolioSummary` shall apply the detection gate, class labels, as-of window (31 days) and labelled/positional figure logic of 3.9.3, producing `AGG:INDMONEY:<US\|MF\|STOCKS>` snapshots. |
+| FR-05-26 | A PDF, CSV, XLSX or XLS shared to DhanKosh (ACTION_SEND) or opened with it (ACTION_VIEW, content URIs only) is copied by `MainActivity` to the cache (`shared_in/`, 50 MB cap, one file, older copies removed) and its path is read once through the `alerts` channel method `takeSharedFile` on start and resume; Dart reads the bytes (25 MB statement cap), deletes the copy and opens the Statements screen, which imports the file like a picked one (password sheet when locked). |
+| FR-05-27 | Share-in respects the app lock: nothing is imported or shown until the user has unlocked. |
 | FR-05-17 | Update deposit accounts (PPF/RD/FD) from deposit statements without creating transactions. |
 | FR-05-18 | Compute the holdings-total mismatch (> 100 paise) and surface it (existing app only logs; see Open Questions). |
 | FR-05-19 | Statements list groups, status icons, counts, hides CARD_PAYMENT/CARD_OVERRIDE rows, supports delete, and handles the `hisaab://statements?unlock=<id>` deep link once. |
@@ -574,6 +576,7 @@ Transactions written via ingest: `transaction_sources(source = 'STATEMENT', sour
 - Background: statement processing triggered from email sync workers or the UI isolate; heavy parsing in `Isolate.run`.
 - Android manifest: `android:allowBackup="false"` and data-extraction rules excluding all domains so statements/DB never go to cloud backup.
 - Deep link: `hisaab://statements?unlock=<id>` via `go_router`/App Links.
+- Share-in (FR-05-26, FR-05-27): two intent filters on `MainActivity` (ACTION_SEND with `application/pdf`, `text/csv`, `text/comma-separated-values`, xlsx and xls MIME types; ACTION_VIEW with `content` scheme and the same types). `AlertsBridge.captureShared` copies the stream (name sanitised, extension from name or MIME, never logged) and `takeSharedFile` returns the cache path once. Dart: `SharedFileSource` port, `ChannelSharedFileSource`, `SharedInbox` provider, `app/device_hooks.dart` (delivers after unlock, then pushes `/statements`); `StatementsScreen` takes the file from the inbox and imports it.
 
 ## 12. Dependencies (other features → link to their memory file; packages)
 
@@ -671,6 +674,7 @@ lib/features/statements/
 | TC-05-21 | unit | FR-05-24 | MfOrderParser gates: reminder, failed, redemption, no DONE word each return null; labelled "Scheme Name: ... Folio" line wins over sentence patterns; amount fallback units x NAV; date outside window falls back to received date; `platformOf` sender then text then display name. |
 | TC-05-22 | unit | FR-05-25 | PortfolioSummary: non-INDmoney sender returns empty; labelled invested/current; positional with `currentFirst` header; figures on following lines; one amount gives value only; as-of older than 31 days falls back to received. |
 | TC-05-23 | integration | FR-05-23 | MF order email updates the fund holding even when a matching bank debit suppresses the transaction; EPF mail and INDmoney summary record holdings and return no transactions. |
+| TC-05-24 | unit, widget | FR-05-26, FR-05-27 | `ChannelSharedFileSource` reads the copied file once and deletes it, null for nothing waiting, missing file or native error; `DeviceHooks` puts the file in the inbox and opens Statements when unlocked, waits while locked and delivers on unlock; `StatementsScreen` imports an inbox file once (`share_in_test.dart`, `statements_screen_test.dart`). |
 
 Fixtures: use synthetic text PDFs generated in tests (card statement text block, bank statement table, CAS snippet, NPS/EPF snippets); never real statements. Example card row lines and summary lines are given in the analysis (Part C 2.4 to 2.8); anonymised names only (Asha Rao, Ravi Kumar, Acme Corp).
 
@@ -686,6 +690,7 @@ Fixtures: use synthetic text PDFs generated in tests (card statement text block,
 - AC-05-08: Statements, identity and passwords never leave the device and are excluded from backups (FR-05-10, FR-05-21; TC-05-19, TC-05-20).
 - AC-05-09: Holdings mismatch above Rs 1 is detected (FR-05-18; TC-05-16).
 - AC-05-10: Deposit advices update deposit accounts without transactions (FR-05-17; TC-05-15).
+- AC-05-11: A statement shared or opened from another app imports like a picked one, only after unlock. (FR-05-26, FR-05-27; TC-05-24)
 
 ## 17. Open Questions
 
@@ -750,3 +755,4 @@ Hardening 2026-10-22 (app layer, `statement_import`): FR-05-07 done: `ApplyState
 | 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |
 | 2026-10-21 | Phase 3 statement import pipeline + UI landed | Phase 3 |
 | 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |
+| 2026-10-26 | Share-in of PDF/CSV/XLSX from other apps (FR-05-26, FR-05-27, TC-05-24) | Fold adoption |

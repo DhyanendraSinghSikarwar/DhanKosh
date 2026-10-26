@@ -13,6 +13,8 @@ class LedgerFilter {
     this.category,
     this.sources = const {},
     this.banks = const {},
+    this.minMinor,
+    this.maxMinor,
   });
 
   final TxKind kind;
@@ -30,6 +32,10 @@ class LedgerFilter {
   final Category? category;
   final Set<Source> sources;
   final Set<String> banks;
+
+  /// Inclusive amount bounds in paise (FR-20-21); null is open.
+  final int? minMinor;
+  final int? maxMinor;
 }
 
 /// Totals for a period; review rows and rows without an INR value excluded.

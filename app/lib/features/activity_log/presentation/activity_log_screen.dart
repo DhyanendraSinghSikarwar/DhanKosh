@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/features/activity_log/domain/activity_stats.dart';
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
+import 'package:hisaab/features/activity_log/domain/inbox_logic.dart';
+import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:intl/intl.dart';
 
 /// Activity log (F-22): totals, sync times, source filter and entries by day.
@@ -19,8 +24,33 @@ class ActivityLogScreen extends ConsumerStatefulWidget {
 
 class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
   ActivitySource? _filter;
+  InboxGroup? _group;
+
+  /// Last-seen time when the screen opened; rows newer than it show a dot
+  /// (FR-22-16).
+  int _seen = 1 << 62;
 
   DateTime get _now => (widget.now ?? DateTime.now)();
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(Future<void>.microtask(_markSeen));
+  }
+
+  Future<void> _markSeen() async {
+    try {
+      final repo = ref.read(settingsRepositoryProvider);
+      final before = await repo.read(SettingKeys.activityLastSeen);
+      if (mounted) setState(() => _seen = before);
+      await repo.write(
+        SettingKeys.activityLastSeen,
+        DateTime.now().millisecondsSinceEpoch,
+      );
+    } on Object {
+      // Settings unavailable: no unread dots.
+    }
+  }
 
   Future<void> _confirmClear() async {
     final ok = await showDialog<bool>(
@@ -67,11 +97,13 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
     final now = _now;
     final shown = [
       for (final e in entries)
-        if (ActivityStats.matches(e, _filter)) e,
+        if (ActivityStats.matches(e, _filter) &&
+            (_group == null || InboxLogic.groupOf(e) == _group))
+          e,
     ];
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Activity log'),
+        title: const Text('Inbox'),
         actions: [
           if (entries.isNotEmpty)
             IconButton(
@@ -103,6 +135,25 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
                 : DateTime.fromMillisecondsSinceEpoch(due.first),
           ),
           const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final g in InboxGroup.values)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      key: Key('group-${g.name}'),
+                      label: Text(g.label),
+                      selected: _group == g,
+                      onSelected: (_) =>
+                          setState(() => _group = _group == g ? null : g),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -151,7 +202,7 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
       final c = current;
       if (c == null) return;
       out
-        ..add(_DayCard(title: c, entries: rows))
+        ..add(_DayCard(title: c, entries: rows, seen: _seen))
         ..add(const SizedBox(height: 12));
     }
 
@@ -249,10 +300,15 @@ class _SyncCard extends StatelessWidget {
 }
 
 class _DayCard extends StatelessWidget {
-  const _DayCard({required this.title, required this.entries});
+  const _DayCard({
+    required this.title,
+    required this.entries,
+    required this.seen,
+  });
 
   final String title;
   final List<ActivityEntry> entries;
+  final int seen;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -263,20 +319,22 @@ class _DayCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Text(title, style: Theme.of(context).textTheme.titleSmall),
             ),
-            for (final e in entries) _EntryRow(e),
+            for (final e in entries)
+              _EntryRow(e, unread: InboxLogic.isUnread(e, seen)),
           ],
         ),
       );
 }
 
 class _EntryRow extends StatelessWidget {
-  const _EntryRow(this.e);
+  const _EntryRow(this.e, {required this.unread});
 
   final ActivityEntry e;
+  final bool unread;
 
   @override
   Widget build(BuildContext context) {
-    final err = e.error != null;
+    final err = e.error != null || e.source == ActivitySource.problems;
     final scheme = Theme.of(context).colorScheme;
     return ListTile(
       leading: CircleAvatar(
@@ -288,11 +346,27 @@ class _EntryRow extends StatelessWidget {
             ActivitySource.gmail || ActivitySource.imap => Icons.mail,
             ActivitySource.statements => Icons.description,
             ActivitySource.notifications => Icons.notifications,
+            ActivitySource.problems => Icons.error_outline,
           },
           size: 18,
         ),
       ),
-      title: Text(ActivityStats.title(e)),
+      title: Row(
+        children: [
+          if (unread)
+            Container(
+              key: const Key('inbox-unread-dot'),
+              width: 8,
+              height: 8,
+              margin: const EdgeInsets.only(right: 6),
+              decoration: BoxDecoration(
+                color: scheme.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+          Flexible(child: Text(ActivityStats.title(e))),
+        ],
+      ),
       subtitle: Text(ActivityStats.subtitle(e)),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,

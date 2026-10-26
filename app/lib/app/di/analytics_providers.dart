@@ -1,9 +1,11 @@
+import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/analytics/domain/analytics_math.dart';
 import 'package:hisaab/features/analytics/domain/analytics_models.dart';
 import 'package:hisaab/features/analytics/domain/analytics_view.dart';
 import 'package:hisaab/features/analytics/domain/civil_date.dart';
+import 'package:hisaab/features/analytics/domain/insight_extras.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_deductions.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_income.dart';
@@ -30,6 +32,13 @@ class AnalyticsPeriodChoice extends _$AnalyticsPeriodChoice {
 
 DateTime _todayIst() => dayOf(DateTime.now().millisecondsSinceEpoch);
 
+/// Used limit: limit minus limit left when known, else billed plus unbilled
+/// (FR-18-26).
+int _used(int limit, int? left, int? total) {
+  final v = left != null ? limit - left : (total ?? 0);
+  return v < 0 ? 0 : v;
+}
+
 /// Analysis data for the chosen period (FR-18-01..17).
 @riverpod
 Stream<AnalyticsView> analyticsView(Ref ref) async* {
@@ -44,6 +53,17 @@ Stream<AnalyticsView> analyticsView(Ref ref) async* {
   final winEnd = epochMsOf(addMonths(month, 1));
   final winStart = epochMsOf(months.first);
   final repo = ref.watch(transactionRepositoryProvider);
+  final cardList = ref.watch(cardLimitsProvider).value ?? const [];
+  final cards = [
+    for (final c in cardList)
+      if ((c.limitMinor ?? 0) > 0)
+        CardUtil(
+          name: c.name,
+          limitMinor: c.limitMinor!,
+          usedMinor:
+              _used(c.limitMinor!, c.limitLeftMinor, c.position.totalMinor),
+        ),
+  ];
   await for (final all
       in repo.watch(LedgerFilter(fromMs: winStart, toMs: winEnd))) {
     List<LedgerTx> within(DateTime a, DateTime b) => all.where((t) {
@@ -78,6 +98,9 @@ Stream<AnalyticsView> analyticsView(Ref ref) async* {
       insights: AnalyticsMath.insights(txs, const [], today),
       heat: LedgerMath.heat(txs),
       merchants: LedgerMath.topMerchants(txs),
+      incomeSources: InsightExtras.incomeBySource(txs),
+      subscriptions: InsightExtras.subscriptions(all, today),
+      cards: cards,
     );
   }
 }

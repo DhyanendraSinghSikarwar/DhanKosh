@@ -3,12 +3,20 @@ import 'dart:async';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/core/utils/combine_latest.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/entities/identity.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/entities/user_profile.dart';
+import 'package:hisaab/features/portfolio/data/amfi_nav_source.dart';
 import 'package:hisaab/features/portfolio/domain/holding.dart';
+import 'package:hisaab/features/portfolio/domain/holding_repository.dart';
+import 'package:hisaab/features/portfolio/domain/investment_tx.dart';
 import 'package:hisaab/features/portfolio/domain/maturity_items.dart';
+import 'package:hisaab/features/portfolio/domain/nav_refresh.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart';
 import 'package:hisaab/features/profile/domain/bank_identity.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:parser_core/parser_core.dart' show Category;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'portfolio_providers.g.dart';
@@ -53,6 +61,41 @@ Stream<List<MaturityItem>> maturities(Ref ref) async* {
   }
 }
 
+/// Recorded fund purchases, newest first (FR-16-22).
+@riverpod
+Stream<List<MfOrderEntry>> mfOrders(Ref ref) =>
+    ref.watch(holdingRepositoryProvider).watchMfOrders();
+
+/// Latest investment rows: buys, redemptions, dividends (FR-16-25).
+@riverpod
+Stream<List<LedgerTx>> investmentTxs(Ref ref) {
+  final repo = ref.watch(transactionRepositoryProvider);
+  return combineLatest<List<LedgerTx>>(
+    [
+      repo.watch(const LedgerFilter(kind: TxKind.investments), limit: 60),
+      repo.watch(const LedgerFilter(category: Category.investment), limit: 60),
+    ],
+    (v) {
+      final byId = <int, LedgerTx>{
+        for (final l in v)
+          for (final t in l! as List<LedgerTx>)
+            if (isInvestmentTx(t)) t.id: t,
+      };
+      return byId.values.toList()
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    },
+  );
+}
+
+/// Optional AMFI NAV refresh (FR-16-23, FR-16-24). Off by default.
+@Riverpod(keepAlive: true)
+NavRefreshService navRefreshService(Ref ref) => NavRefreshService(
+      holdings: ref.watch(holdingRepositoryProvider),
+      settings: ref.watch(settingsRepositoryProvider),
+      source: const AmfiNavSource(),
+      parse: parseNavInIsolate,
+    );
+
 bool _deduped = false;
 
 /// Dedupes holdings once per run and records today's net worth point
@@ -64,6 +107,7 @@ Future<void> Function() portfolioSync(Ref ref) => () async {
           _deduped = true;
           await ref.read(holdingRepositoryProvider).dedupe();
         }
+        await ref.read(navRefreshServiceProvider).refresh();
         await ref.read(netWorthServiceProvider).recordToday(
               epochDayIst(DateTime.now().millisecondsSinceEpoch),
             );

@@ -42,6 +42,16 @@ PeriodRange periodRange(
   }
 }
 
+/// Whole rupees with up to two decimals (`1,250.5`) to paise by integer
+/// math (FR-20-21); null when empty or not a plain amount.
+int? rupeesToMinor(String text) {
+  final t = text.replaceAll(',', '').replaceAll('₹', '').trim();
+  final m = RegExp(r'^(\d{1,12})(?:\.(\d{1,2}))?$').firstMatch(t);
+  if (m == null) return null;
+  final frac = (m.group(2) ?? '').padRight(2, '0');
+  return int.parse(m.group(1)!) * 100 + int.parse(frac.isEmpty ? '0' : frac);
+}
+
 /// Everything the Transactions tab filters on (FR-20-11..16).
 class LedgerViewState {
   const LedgerViewState({
@@ -52,6 +62,9 @@ class LedgerViewState {
     this.query = '',
     this.accountId,
     this.category,
+    this.sources = const {},
+    this.minMinor,
+    this.maxMinor,
   });
 
   final TxKind kind;
@@ -62,9 +75,22 @@ class LedgerViewState {
   final int? accountId;
   final Category? category;
 
-  /// True when a chip filter (type, account, category) is set (FR-20-16).
+  /// Origins to include; empty means all (FR-20-15).
+  final Set<Source> sources;
+
+  /// Amount bounds in paise (FR-20-21).
+  final int? minMinor;
+  final int? maxMinor;
+
+  /// True when a chip filter (type, account, category, source, amount) is
+  /// set (FR-20-16).
   bool get hasChipFilters =>
-      kind != TxKind.all || accountId != null || category != null;
+      kind != TxKind.all ||
+      accountId != null ||
+      category != null ||
+      sources.isNotEmpty ||
+      minMinor != null ||
+      maxMinor != null;
 
   LedgerViewState copyWith({
     TxKind? kind,
@@ -74,6 +100,9 @@ class LedgerViewState {
     String? query,
     int? Function()? accountId,
     Category? Function()? category,
+    Set<Source>? sources,
+    int? Function()? minMinor,
+    int? Function()? maxMinor,
   }) =>
       LedgerViewState(
         kind: kind ?? this.kind,
@@ -83,6 +112,9 @@ class LedgerViewState {
         query: query ?? this.query,
         accountId: accountId != null ? accountId() : this.accountId,
         category: category != null ? category() : this.category,
+        sources: sources ?? this.sources,
+        minMinor: minMinor != null ? minMinor() : this.minMinor,
+        maxMinor: maxMinor != null ? maxMinor() : this.maxMinor,
       );
 
   /// Resets type, account and category; keeps search and period (FR-20-16).
@@ -108,6 +140,9 @@ class LedgerViewState {
       query: query.trim(),
       accountId: accountId,
       category: category,
+      sources: sources,
+      minMinor: minMinor,
+      maxMinor: maxMinor,
     );
   }
 }

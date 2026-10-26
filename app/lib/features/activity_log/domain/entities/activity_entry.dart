@@ -16,7 +16,10 @@ enum ActivitySource {
   statements('STATEMENTS', 'Statements'),
 
   /// Payment-app notifications.
-  notifications('NOTIFICATIONS', 'Notifications');
+  notifications('NOTIFICATIONS', 'Notifications'),
+
+  /// Messages from bank-like senders that could not be read (FR-22-15).
+  problems('PROBLEMS', 'Problems');
 
   const ActivitySource(this.code, this.label);
 

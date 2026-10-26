@@ -29,6 +29,14 @@ const Map<PeriodKind, String> _periods = {
   PeriodKind.all: 'All time',
 };
 
+const Map<Source, String> _sourceLabels = {
+  Source.sms: 'SMS',
+  Source.email: 'Email',
+  Source.app: 'Notification',
+  Source.statement: 'Statement',
+  Source.manual: 'Manual',
+};
+
 /// Search box, period chips, type chips and account/category filters
 /// (FR-20-03, FR-20-11..16, FR-08-05, FR-08-06).
 class LedgerFilterBar extends ConsumerStatefulWidget {
@@ -44,12 +52,16 @@ class LedgerFilterBar extends ConsumerStatefulWidget {
 
 class _LedgerFilterBarState extends ConsumerState<LedgerFilterBar> {
   final _controller = TextEditingController();
+  final _min = TextEditingController();
+  final _max = TextEditingController();
   Timer? _debounce;
 
   @override
   void dispose() {
     _debounce?.cancel();
     _controller.dispose();
+    _min.dispose();
+    _max.dispose();
     super.dispose();
   }
 
@@ -200,9 +212,52 @@ class _LedgerFilterBarState extends ConsumerState<LedgerFilterBar> {
             if (view.hasChipFilters)
               TextButton(
                 key: const Key('filters_clear'),
-                onPressed: notifier.clear,
+                onPressed: () {
+                  _min.clear();
+                  _max.clear();
+                  notifier.clear();
+                },
                 child: const Text('Clear'),
               ),
+          ],
+        ),
+        _ChipRow(
+          children: [
+            for (final e in _sourceLabels.entries)
+              FilterChip(
+                key: Key('source_${e.key.name}'),
+                label: Text(e.value),
+                selected: view.sources.contains(e.key),
+                onSelected: (_) => notifier.toggleSource(e.key),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Expanded(
+              child: _AmountField(
+                fieldKey: const Key('amount_min'),
+                controller: _min,
+                label: 'Min ₹',
+                onChanged: (v) => notifier.setAmountRange(
+                  rupeesToMinor(v),
+                  ref.read(ledgerViewProvider).maxMinor,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _AmountField(
+                fieldKey: const Key('amount_max'),
+                controller: _max,
+                label: 'Max ₹',
+                onChanged: (v) => notifier.setAmountRange(
+                  ref.read(ledgerViewProvider).minMinor,
+                  rupeesToMinor(v),
+                ),
+              ),
+            ),
           ],
         ),
       ],
@@ -237,6 +292,33 @@ class _ChipRow extends StatelessWidget {
             for (final c in children)
               Padding(padding: const EdgeInsets.only(right: 8), child: c),
           ],
+        ),
+      );
+}
+
+class _AmountField extends StatelessWidget {
+  const _AmountField({
+    required this.fieldKey,
+    required this.controller,
+    required this.label,
+    required this.onChanged,
+  });
+
+  final Key fieldKey;
+  final TextEditingController controller;
+  final String label;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) => TextField(
+        key: fieldKey,
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          isDense: true,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
 }
