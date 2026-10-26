@@ -52,3 +52,7 @@ Repository secrets (names only; never commit keys):
 - `HISAAB_KEY_ALIAS` (optional, default `hisaab`).
 - `SUPPORT_UPI_ID` (optional): donation UPI id passed as `--dart-define`; empty hides Support.
 
+## Releasing (Android)
+
+Actions -> Release -> Run workflow on `main`, with the new version (for example `3.0.0`; the Flutter app continues the Kotlin app's numbering, build number above 33). It checks, bumps, builds, commits the bump to `main`, tags and publishes `DhanKosh.apk` + sha256 to the release.
+Signing: run `tools/make_keystore.sh` once on your computer, add the three secrets it prints, keep the `.jks` safe. Without those secrets the APK is signed with a throw-away key: it installs, but the next release cannot update it in place (uninstall first).
