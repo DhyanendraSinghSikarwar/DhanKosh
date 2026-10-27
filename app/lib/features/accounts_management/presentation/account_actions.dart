@@ -208,8 +208,6 @@ Future<bool> deleteAccountWithOptions(
   required TransactionRepository transactions,
   BankIdentityRepository? identities,
 }) async {
-  final ids = await transactions.idsForAccount(account.id);
-  if (!context.mounted) return false;
   var withTx = false;
   final ok = await showDialog<bool>(
     context: context,
@@ -221,14 +219,13 @@ Future<bool> deleteAccountWithOptions(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Transactions stay, without an account.'),
-            if (ids.isNotEmpty)
-              CheckboxListTile(
-                key: const Key('delete_with_tx'),
-                contentPadding: EdgeInsets.zero,
-                value: withTx,
-                title: Text('Also delete its ${ids.length} transactions'),
-                onChanged: (v) => set(() => withTx = v ?? false),
-              ),
+            CheckboxListTile(
+              key: const Key('delete_with_tx'),
+              contentPadding: EdgeInsets.zero,
+              value: withTx,
+              title: const Text('Also delete its transactions'),
+              onChanged: (v) => set(() => withTx = v ?? false),
+            ),
           ],
         ),
         actions: [
@@ -246,8 +243,16 @@ Future<bool> deleteAccountWithOptions(
     ),
   );
   if (ok != true) return false;
-  if (withTx) await transactions.deleteTransactions(ids);
+  if (withTx) {
+    await transactions.deleteTransactions(
+      await transactions.idsForAccount(account.id),
+    );
+  }
   await accounts.delete(account.id);
-  await identities?.remove(account.id);
+  try {
+    await identities?.remove(account.id);
+  } on Object {
+    // Secure store unavailable: the account is gone either way.
+  }
   return true;
 }
