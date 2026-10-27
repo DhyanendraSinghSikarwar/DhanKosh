@@ -78,6 +78,9 @@ void main() {
   // TC-13-11, TC-13-17 (FR-13-15): Add transaction explains the gap.
   testWidgets('gap Add transaction records a payment and clears the gap',
       (t) async {
+    t.view.physicalSize = const Size(800, 1800);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
     final id = await seedGap(t);
     await pumpApp(t, env, _routes, initial: '/accounts/$id');
     await t.tap(find.byKey(const Key('gap_add')));
@@ -125,6 +128,9 @@ void main() {
   // TC-13-15 (FR-13-06): nickname, colour, network, markup.
   testWidgets('edit sheet saves personalisation and validates markup',
       (t) async {
+    t.view.physicalSize = const Size(800, 1800);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
     final card = await t.runAsync(
       () => env.accounts.create(
         const NewAccount(

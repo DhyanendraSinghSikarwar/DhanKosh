@@ -91,7 +91,7 @@ void main() {
     test('totals, categories, merchants, budgets, net worth', () {
       final summary = doc.sections.first.rows;
       expect(summary[0], ['Income', 'Rs 50,000.00']);
-      expect(summary[1], ['Spent', 'Rs 2,300.00']);
+      expect(summary[1], ['Spent (cash basis)', 'Rs 2,300.00']);
       final cats = doc.sections[1].rows;
       expect(cats.first.first, 'Groceries');
       expect(cats.first[2], '86%');

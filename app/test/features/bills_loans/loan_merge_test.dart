@@ -79,8 +79,8 @@ void main() {
     await settle(t);
     await t.pump(const Duration(milliseconds: 600));
     expect(find.text('Possible duplicates'), findsNothing);
-    final book = await loans.watch().first;
-    expect(book.merged, hasLength(1));
+    final book = await t.runAsync(() => loans.watch().first);
+    expect(book!.merged, hasLength(1));
     await teardownApp(t);
   });
 
