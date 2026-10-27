@@ -169,12 +169,16 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('Delete'));
     await t.pumpAndSettle();
+    await settle(t);
+    await t.pumpAndSettle();
     await t.tap(find.text('Cancel'));
     await t.pumpAndSettle();
     expect(await t.runAsync(() => env.accounts.byId(1)), isNotNull);
     await t.tap(find.byKey(const Key('account_menu')));
     await t.pumpAndSettle();
     await t.tap(find.text('Delete'));
+    await t.pumpAndSettle();
+    await settle(t);
     await t.pumpAndSettle();
     await t.tap(find.byKey(const Key('delete_confirm')));
     await settle(t);
