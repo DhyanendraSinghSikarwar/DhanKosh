@@ -161,11 +161,22 @@ void main() {
 
   testWidgets('home rings masked', (t) async {
     await seed(t, hide: true);
-    await pumpApp(t, env, _routes(), initial: '/home');
-    await t.scrollUntilVisible(
-      find.byKey(const Key('home_ring_spent_food')),
-      200,
+    t.view.physicalSize = const Size(800, 6000);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await t.runAsync(
+      () => env.settings.write(
+        SectionLayout.key(ScreenIds.home),
+        SectionLayout.encode(
+          SectionLayout.setVisible(
+            SectionLayout.defaults(ScreenIds.home),
+            'budgets',
+            visible: true,
+          ),
+        ),
+      ),
     );
+    await pumpApp(t, env, _routes(), initial: '/home');
     expect(find.byKey(const Key('home_ring_spent_food')), findsOneWidget);
     expect(
       (t.widget(find.byKey(const Key('home_ring_spent_food'))) as Text).data,
