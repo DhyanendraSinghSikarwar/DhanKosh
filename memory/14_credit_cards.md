@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-14 |
-| Status | In progress (data/domain, message parser, SMS/email notice ingest, `/cards` screen, Edit amounts sheet, Home strip, cycle spend, statement history, paid verification and late flag done; reminders worker and notification actions, forex markup UI, detail screen pending) |
+| Status | In progress (data/domain, message parser, SMS/email notice ingest, `/cards` screen, Edit amounts sheet, Home strip, cycle spend, statement history, paid verification and late flag done; reminders worker and notification actions, forex markup field done; detail screen pending) |
 | Priority | P0 |
 | Phase | 3 (statements + portfolio); card due SMS/email recording can start in Phase 2; reminders in Phase 2 |
 | Last Updated | 2026-10-27 |
@@ -495,6 +495,10 @@ Phase 3 ingest + UI (2026-10-21): `IngestMessage(cardDues:, holdings:)` (wired i
 
 Hardening 2026-10-22: statement import now writes a card's available limit to the account (FR-05-07 of [Statement import](05_statement_import.md)); bill notices still go through `CardDueRepository.recordNotice`.
 
+### 18.1 Forex markup UI 2026-10-27 (agent A2)
+
+FR-14-15 UI done in the account edit sheet (cards only): "Forex markup %" 0..20 with the GST hint, stored as bps in `accounts.forex_markup_bps` via `AccountAdminRepository.setForexMarkupBps`; a change calls `ForexRepository.recompute`. Invalid input shows "Markup must be 0 to 20%".
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -508,3 +512,4 @@ Hardening 2026-10-22: statement import now writes a card's available limit to th
 | 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |
 | 2026-10-26 | Cards: cycle spend, statement history, paid auto-verification from bank debits, late-payment risk flag | Fold adoption |
 | 2026-10-27 | Audit: cards screen, Edit amounts, Mark paid confirmed done; reminders, Remind tomorrow and forex markup UI confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Per-card forex markup field (FR-14-15) | Kotlin parity |

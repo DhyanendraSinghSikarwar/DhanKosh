@@ -1,15 +1,25 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hisaab/app/di/email_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
+import 'package:hisaab/core/errors/failure.dart';
+import 'package:hisaab/features/email_ingestion/domain/entities/email_account.dart';
+import 'package:hisaab/features/email_ingestion/domain/usecases/manage_email_account.dart';
+import 'package:hisaab/features/email_ingestion/domain/verification_code.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/usecases/onboarding_usecases.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/validators/onboarding_validators.dart';
+import 'package:hisaab/shared/widgets/app_password_guide.dart';
 import 'package:hisaab/shared/widgets/sms_permission_card.dart';
 
-enum _Step { phone, details, access }
+enum _Step { phone, email, code, details, access }
 
 /// First-run gate: name and mobile, optional statement details, then the SMS
-/// ask (FR-01-01..08, FR-01-10). Email sign-in arrives with F-03.
+/// ask (FR-01-01..08, FR-01-10). Sign in with a mobile number (kept on the
+/// phone, not verified: there is no SMS gateway) or with an email verified by
+/// a mailed 6-digit code (FR-01-03).
 class WelcomeScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
   const WelcomeScreen({super.key});
@@ -24,6 +34,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final _altName = TextEditingController();
   final _altPhone = TextEditingController();
   final _pan = TextEditingController();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  final _code = TextEditingController();
+  EmailProvider _provider = EmailProvider.gmail;
+  String? _verified;
+  String? _emailMessage;
+  bool _emailBusy = false;
   DateTime? _dob;
   _Step _step = _Step.phone;
   bool _saving = false;
@@ -35,11 +52,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     _altName.dispose();
     _altPhone.dispose();
     _pan.dispose();
+    _email.dispose();
+    _password.dispose();
+    _code.dispose();
     super.dispose();
   }
 
   OnboardingInput get _input => OnboardingInput(
         name: _name.text,
+        email: _verified,
         phoneDigits: _phone.text,
         dob: _dob,
         pan: _pan.text,
@@ -97,6 +118,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             const SizedBox(height: 28),
             switch (_step) {
               _Step.phone => _phoneStep(),
+              _Step.email => _emailStep(),
+              _Step.code => _codeStep(),
               _Step.details => _detailsStep(),
               _Step.access => _accessStep(),
             },
@@ -117,6 +140,209 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  static String _failureText(Object e) => switch (e) {
+        AuthFailure() => 'Sign-in refused. Use an app password.',
+        TlsFailure() => 'Secure connection failed.',
+        NetworkFailure() => 'Could not reach the mail server.',
+        _ => 'Something went wrong.',
+      };
+
+  EmailAccount get _account =>
+      EmailAccount.forAddress(_email.text, provider: _provider);
+
+  Future<void> _sendCode() async {
+    final err = ManageEmailAccount.validate(_email.text, _password.text);
+    if (err != null) {
+      setState(() => _emailMessage = err);
+      return;
+    }
+    setState(() {
+      _emailBusy = true;
+      _emailMessage = null;
+    });
+    try {
+      await ref
+          .read(verifyEmailProvider)
+          .signInAndSendCode(_account, _password.text);
+      if (!mounted) return;
+      setState(() {
+        _step = _Step.code;
+        _emailMessage = 'We sent a 6-digit code to ${_account.address}. '
+            'Check your inbox and spam.';
+      });
+    } on Failure catch (f) {
+      if (mounted) setState(() => _emailMessage = _failureText(f));
+    } finally {
+      if (mounted) setState(() => _emailBusy = false);
+    }
+  }
+
+  Future<void> _resend() async {
+    setState(() => _emailBusy = true);
+    try {
+      await ref.read(verifyEmailProvider).resend();
+      if (mounted) setState(() => _emailMessage = 'A new code is on its way.');
+    } on Failure catch (f) {
+      if (mounted) setState(() => _emailMessage = _failureText(f));
+    } finally {
+      if (mounted) setState(() => _emailBusy = false);
+    }
+  }
+
+  Future<void> _verify() async {
+    final r = await ref.read(verifyEmailProvider).verify(_code.text);
+    if (!mounted) return;
+    if (r == VerificationResult.ok) {
+      _verified = _account.address;
+      _password.clear();
+      // The inbox is connected now; read bank mail in the background.
+      unawaited(ref.read(emailSyncRunnerProvider).run().then((_) {}));
+      setState(() {
+        _emailMessage = null;
+        _step = _Step.details;
+      });
+      return;
+    }
+    setState(
+      () => _emailMessage = switch (r) {
+        VerificationResult.wrong => 'That code does not match.',
+        VerificationResult.expired => 'The code expired. Tap Resend code.',
+        VerificationResult.tooManyAttempts =>
+          'Too many wrong tries. Tap Resend code.',
+        _ => 'Sign in again to get a code.',
+      },
+    );
+  }
+
+  Widget _emailStep() {
+    return ListenableBuilder(
+      listenable: Listenable.merge([_name, _email]),
+      builder: (context, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            key: const Key('welcome-name'),
+            controller: _name,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Full name (as per bank)',
+              prefixIcon: Icon(Icons.person_outline),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final p in EmailProvider.values)
+                ChoiceChip(
+                  key: Key('welcome-provider-${p.name}'),
+                  label: Text(p.label),
+                  selected: _provider == p,
+                  onSelected: (_) => setState(() => _provider = p),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const Key('welcome-email'),
+            controller: _email,
+            keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
+            decoration: const InputDecoration(
+              labelText: 'Email address',
+              prefixIcon: Icon(Icons.mail_outline),
+            ),
+            onChanged: (v) {
+              final d = EmailProvider.detect(v);
+              if (d != EmailProvider.custom && d != _provider) {
+                setState(() => _provider = d);
+              }
+            },
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const Key('welcome-email-password'),
+            controller: _password,
+            obscureText: true,
+            enableSuggestions: false,
+            autocorrect: false,
+            decoration: const InputDecoration(labelText: 'App password'),
+          ),
+          const SizedBox(height: 8),
+          AppPasswordGuide(_provider),
+          if (_emailMessage != null) ...[
+            const SizedBox(height: 8),
+            Text(_emailMessage!, key: const Key('welcome-email-message')),
+          ],
+          const SizedBox(height: 16),
+          FilledButton(
+            key: const Key('welcome-send-code'),
+            onPressed:
+                _emailBusy || _name.text.trim().isEmpty ? null : _sendCode,
+            child: Text(_emailBusy ? 'Sending...' : 'Send code'),
+          ),
+          TextButton(
+            key: const Key('welcome-use-phone'),
+            onPressed: () => setState(() {
+              _step = _Step.phone;
+              _emailMessage = null;
+            }),
+            child: const Text('Use mobile number instead'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _codeStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Verify your email',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 8),
+        if (_emailMessage != null)
+          Text(_emailMessage!, key: const Key('welcome-email-message')),
+        const SizedBox(height: 12),
+        TextField(
+          key: const Key('welcome-code'),
+          controller: _code,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(6),
+          ],
+          decoration: const InputDecoration(labelText: '6-digit code'),
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 16),
+        FilledButton(
+          key: const Key('welcome-verify'),
+          onPressed: _code.text.length == 6 && !_emailBusy ? _verify : null,
+          child: const Text('Verify'),
+        ),
+        TextButton(
+          key: const Key('welcome-resend'),
+          onPressed: _emailBusy ? null : _resend,
+          child: const Text('Resend code'),
+        ),
+        TextButton(
+          key: const Key('welcome-code-back'),
+          onPressed: () {
+            ref.read(verifyEmailProvider).cancel();
+            setState(() {
+              _step = _Step.email;
+              _code.clear();
+            });
+          },
+          child: const Text('Back'),
+        ),
+      ],
     );
   }
 
@@ -159,6 +385,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               onPressed:
                   ok ? () => setState(() => _step = _Step.details) : null,
               child: const Text('Continue'),
+            ),
+            TextButton(
+              key: const Key('welcome-use-email'),
+              onPressed: () => setState(() => _step = _Step.email),
+              child: const Text('Sign in with email instead'),
             ),
             TextButton(
               key: const Key('welcome-skip-setup'),

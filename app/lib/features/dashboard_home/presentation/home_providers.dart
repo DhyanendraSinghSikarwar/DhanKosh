@@ -1,6 +1,8 @@
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/scope_providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
+import 'package:hisaab/features/search_filters/domain/ledger_view_state.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -24,9 +26,11 @@ class HomeMonth extends _$HomeMonth {
 @riverpod
 Stream<PeriodTotals> homeTotals(Ref ref) {
   final m = ref.watch(homeMonthProvider);
-  return ref
-      .watch(transactionRepositoryProvider)
-      .watchTotals(fromMs: m.startMs, toMs: m.endMs);
+  return ref.watch(transactionRepositoryProvider).watchTotals(
+        fromMs: m.startMs,
+        toMs: m.endMs,
+        usage: bookUsage(ref.watch(bookProvider)),
+      );
 }
 
 /// Latest transactions (FR-17-12).

@@ -121,11 +121,11 @@ void main() {
       await env.close();
     });
 
-    test('start registers, pause cancels, resume registers', () async {
+    test('nightly stays registered while SMS is paused (FR-03-17)', () async {
       await engine.start();
       await engine.setEnabled(enabled: false);
       await engine.setEnabled(enabled: true);
-      expect(scheduler.log, ['on', 'off', 'on']);
+      expect(scheduler.log, ['on', 'on', 'on']);
     });
   });
 

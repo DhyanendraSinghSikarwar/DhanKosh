@@ -75,7 +75,7 @@ void main() {
   group('income (FR-11-05, FR-11-06)', () {
     test('income, cash flow and monthly flows exclude transfer and review',
         () async {
-      final r = IncomeRepositoryImpl(env.db);
+      final r = IncomeRepositoryImpl(env.txs);
       await env.ingest(
         parsed(
           amountMinor: 6000000,

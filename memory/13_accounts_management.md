@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-13 |
-| Status | In progress (Phase 1 data layer and basic UI; FD/RD/PPF and loan status SMS/mail create and update accounts via the ingest pipeline; tabs, edit fields, suggestions, gaps pending; own-transfer legs in ledger done) |
+| Status | In progress (Phase 1 data layer and UI; gap detection with GapCard, Add transaction/Assign/Ignore, duplicate and debit-link suggestions, Merge/Unmerge, Restore missing accounts, edit sheet with nickname, colour, network, link, usage, forex markup, account chart 6 months/Year/All time done; tabs with Book filter, matured-deposit auto-hide, notifications posting by the alerts engine and statement retry on unlock save pending) |
 | Priority | P0 |
 | Phase | 1 (account creation from messages, balances, lists); 2 for debit-card link, merge and gap detection; 3 for statement unlock details |
 | Last Updated | 2026-10-27 |
@@ -202,6 +202,9 @@ Gap UI: `GapCard` (amber "Untracked change . {summary}", candidate rows "Assign 
 - FR-13-16: The system shall post at most one balance-updated notification per account per day and at most 3 untracked-gap notifications per run, each gap once, for gaps within 14 days.
 - FR-13-17: The account detail screen shall show balance, range charts (6 months / Year / All time), spent and income figures, optional GapCard and "See transactions" including merged children.
 - FR-13-18: Added-while-Business-book accounts shall default to usage BUSINESS.
+- FR-13-19: An account marked Business (edit sheet usage control, `AccountUsage`) shows a Business badge on its tile; the Book store scopes lists and totals by it (FR-20-23).
+- FR-13-19: The edit sheet shall personalise an account: nickname, usage, type, card network, debit-card link (bank accounts of the same list), colour (8 swatches or none) and, for cards, forex markup 0..20% (stored as bps in `forexMarkupBps`, a change recomputes `inrMinor`, FR-14-15). Writes go through `AccountAdminRepository`.
+- FR-13-20: The encrypted backup shall carry and restore these fields (colour, network, last stated balance/limit, forex markup, debit-card link and merge target by `bank|last4` key) without changing JSON schema 1 ([Backup & Export](24_backup_export.md) FR-24-33).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -472,6 +475,7 @@ Integration:
 
 - TC-13-18 (FR-13-01, FR-13-03): ingest a bank SMS then a PhonePe notification for the same payment: one account, notification adopts it.
 - TC-13-19 (FR-13-12): orphaned transactions re-attach through Restore missing accounts.
+- TC-13-20 (FR-13-19): Business account tile shows the badge; business book totals use only that account (`cash_basis_repository_test.dart`).
 
 Fixtures: SMS corpus lines (HDFC `A/c *1234`, ICICI `Acct XX123`, SBI Corporate `ending with 96`, debit-card withdrawal stating the bank balance) from [Dedup & Review](07_dedup_review.md) samples; gap scenario table above.
 
@@ -515,6 +519,12 @@ Deviations: balance maths is Dart + one SQL aggregate per account (`watchWithAct
 
 Deposit messages (2026-10-25): an FD/RD/PPF booking, renewal, maturity or balance SMS/mail sets the deposit account's type, balance, maturity day and action, and hides it when closed (`ApplyStatementAccounts.applyDeposits`, same code as statements; no transactions). Older messages never rewind a newer balance. Test `capture_matrix_test.dart` `FD booking SMS opens an FD account`.
 
+### 18.1 Parity pass 2026-10-27 (agent A2)
+
+Done: FR-13-15 (`BalanceGaps.detect`, `GapPrefill`, `GapCandidates` in `domain/untracked_gap.dart`, pure and ported 1:1 from Kotlin `BalanceGaps.kt`; `UntrackedGapService` loads 240 days of rows through `TransactionRepository.watch`, builds the transfer-direction map from `xfer-out:`/`xfer-in:` sources and "Credit card bill" notes; dismissals in settings key `untracked_gaps.dismissed`, last choice per account in `untracked_gaps.choices`; `GapCard` on the detail screen with Assign (`TransactionRepository.setAccount`), Ignore and Add transaction sheet (`addManual` / `addOwnTransfer`, amount and time prefilled)). FR-13-16 rule only: `gapAlerts(...)` is a pure function (max 3, 14 days, once per `gap:<key>`, Kotlin texts) for the alerts engine; posting is the alerts feature. FR-13-09 (`merge_suggestions.dart`, `AccountSuggestions` cards, session-only dismissal), FR-13-08 and FR-13-12 UI (`mergeAccountInto`, edit-sheet Unmerge, overflow "Restore missing accounts" with the count snackbar through `AccountAdminRepository.restoreMissing` + `TransactionRepository.setAccount`), FR-13-11 delete with "Also delete its n transactions" (tombstones via `deleteTransactions`) and unlock-detail removal, FR-13-17 chart (`account_series.dart`, `AccountSeriesChart`, fl_chart, 6 months/Year/All time with Spent/Income totals and tap-a-month), FR-13-19, FR-13-20. Unlock details: the form stays in Profile (`BankDetailsSheet`); the router hands it to the edit sheet as `unlockSheet`. No schema change (existing columns only).
+
+Pending: tabs and Book filter (Book provider owned by the transactions work), matured FD/RD auto-hide, gap dot on tiles, posting the gap and balance notifications, retry of locked statements on unlock save.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -526,3 +536,5 @@ Deposit messages (2026-10-25): an FD/RD/PPF booking, renewal, maturity or balanc
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
 | 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |
 | 2026-10-27 | Audit: nickname, hide, delete, unlock details, balances confirmed done; Business marking UI, colour picker, network logo, debit link UI, merge and Unmerge UI, Restore missing, account detail charts and untracked-payment gaps confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Business badge on account tiles; own-transfer form lives in Add (memory 08, FR-08-25) | Kotlin parity |
+| 2026-10-27 | Untracked gaps, merge/link suggestions, Merge/Unmerge, Restore missing, delete options, edit sheet personalisation, account chart, backup of account fields (FR-13-15, 08, 09, 11, 12, 17, 19, 20) | Kotlin parity |

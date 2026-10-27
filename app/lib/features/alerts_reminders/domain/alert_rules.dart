@@ -4,6 +4,7 @@ import 'package:hisaab/features/analytics/domain/civil_date.dart';
 import 'package:hisaab/features/credit_cards/domain/card_reminder_plan.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_math.dart';
+import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/news_support_updates/domain/version_compare.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:parser_core/parser_core.dart';
@@ -489,17 +490,15 @@ abstract final class AlertRules {
   /// Spend and top category of [txs] inside [fromMs, toMs): debits that are
   /// not transfers or review rows, in INR (FR-21-21).
   static WeekSpend weekSpend(Iterable<LedgerTx> txs, int fromMs, int toMs) {
-    var total = 0;
+    final inRange =
+        txs.where((t) => t.timestamp >= fromMs && t.timestamp < toMs).toList();
+    // Headline total is cash basis (ADR-0011): card purchases excluded, card
+    // bill payments included. The top category still sees card purchases.
+    final total = SpendCalc.totals(inRange, context: txs.toList()).spentMinor;
     final by = <Category, int>{};
-    for (final t in txs) {
-      if (t.timestamp < fromMs ||
-          t.timestamp >= toMs ||
-          t.needsReview ||
-          t.type != TransactionType.debit) {
-        continue;
-      }
-      final inr = t.inrMinor ?? (t.currency == 'INR' ? t.amountMinor : 0);
-      total += inr;
+    for (final t in inRange) {
+      if (t.needsReview || t.type != TransactionType.debit) continue;
+      final inr = SpendCalc.rupees(t);
       by.update(t.category, (v) => v + inr, ifAbsent: () => inr);
     }
     Category? top;

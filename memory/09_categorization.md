@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-09 |
-| Status | In progress (data layer, category picker, Rules screen and editor done; Category detail, logos, taxonomy catalogue pending) |
+| Status | In progress (data layer, category picker, Rules screen and editor, Category detail (donut, 12-month trend, top merchants, budget, transactions, new sub-category) done; month stepper, expandable sub-rows, sub-category delete, logos, taxonomy catalogue pending); 2026-10-27 parity: brand logos (FR-09-32) and category icon picker (FR-09-33) done; sub-category dialog hook pending |
 | Priority | P0 |
 | Phase | 1 (core ledger + SMS; rule editor and category detail finish in Phase 4) |
 | Last Updated | 2026-10-27 |
@@ -361,6 +361,8 @@ Route `category/{key}?month={month}`; key is the enum name or `custom:<id>`; mon
 - FR-09-17: Budget category selection shall exclude SALARY, INCOME, REFUND, TRANSFER and categories already budgeted (see [Expense Tracking](10_expense_tracking.md)).
 - FR-09-18: Logo choice shall follow this order: (1) bundled WebP by `AppLogos` key (bank rules for a bank name; bank then merchant rules for a merchant); (2) `LogoPaths` vector (single-colour 24x24 Simple Icons path, tinted with the brand colour) when the brand defines one; (3) gradient monogram tile. A bundled WebP always wins over a vector (`BankLogo.kt:114-134`).
 - FR-09-19: `LogoPaths` vectors shall be kept for the brands that carry one (HDFC, ICICI, Axis, HSBC, Visa, Mastercard, Amex, Diners, Discover, JCB, Paytm, PhonePe, Google Pay), with the Simple Icons CC0 attribution and trademark note preserved in code comments (`LogoPaths.kt:3-6`).
+- FR-09-32: Bank, payment app and merchant names shall map offline to one of 140 bundled logos (`assets/logos/<key>.webp`) with the Kotlin `AppLogos` rule order (specific, merchants, generic; banks separately); `BrandLogo` shows the logo or a letter avatar. Used on ledger rows (merchant logo, else bank logo) and account tiles.
+- FR-09-33: Custom categories and sub-categories shall store an icon key; the Kotlin icon set (46 general + 78 category icons) maps to Flutter `Icons` in `CategoryIcons`; the New category dialog has an icon picker (`showNameIconDialog`), custom category chips show the icon. The sub-category dialog can call the same helper.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -660,9 +662,11 @@ Phase 1 UI. Code: `features/categorization/presentation/category_sheet.dart` (`s
 
 UI done: FR-09-05 (change category from the detail screen), FR-09-06 (every change learns an EXACT rule via `setCategory`), FR-09-08 (switch "Always use for {merchant}" saves a manual EXACT rule through `saveManualRule`), FR-09-09 (live count and "Also apply to past (n)" calls `applyRuleToPast`), FR-09-13 (custom categories listed under "Your categories", "New category" with name only; icon/colour fixed; custom sub-categories deferred), FR-09-16 basic (27 built-ins as chips, search by label; no groups).
 
-Deferred: FR-09-12 Rules screen, FR-09-14 Category detail, FR-09-15/18/19 logos, FR-09-16 groups and translated search, FR-09-17 budgets, sub-category edit, bulk change from multi-select.
+Deferred: FR-09-14 month stepper, expandable sub-rows and sub-category delete (Category detail itself done 2026-10-27: route `/category/:id`, `CategoryDetailScreen`, `CategoryDetail` domain, `categoryDetailProvider`, includes card purchases per ADR-0011; parent key `categoryParentKey` e.g. `EMI_LOAN`, `custom:<id>`; test `category_detail_screen_test.dart`), FR-09-12 Rules screen, FR-09-15/18/19 logos, FR-09-16 groups and translated search, FR-09-17 budgets, sub-category edit, bulk change from multi-select.
 
 2026-10-22: FR-09-08/09/12 done: `/rules` (`RulesScreen`, `RuleEditorSheet`, `RulesTile` embedded in More via `rulesTile`), Your rules and Learned sections, Undo on removal, live match count, apply to past. Bulk category from multi-select and free-text sub-category edit on detail. Tests: `test/features/categorization/rules_screen_test.dart`. Deferred: FR-09-14 Category detail, logos, groups, budgets, sub-category picker from the custom list.
+
+- 2026-10-27: Logos and icons. `features/categorization/domain/brand_logo_rules.dart` (140 rules ported by script from `AppLogos.kt`), `brand_logos.dart` (`BrandLogos.bank/merchant/allKeys`), `lib/shared/widgets/brand_logo.dart`; `presentation/category_icons.dart`, `name_icon_dialog.dart`. Icon key persists in the existing `custom_categories.icon` and sub-category `icon` columns; no schema change. Licence note: the logo images are the ones bundled by the Kotlin app (Simple Icons, CC0, plus store assets); brand logos remain the trademarks of their owners and are shown only to identify the user's own accounts and payees; nothing is fetched at run time. Tests `brand_logos_test.dart`, `category_icons_test.dart`. Deferred: sub-category dialog in Category detail (owned by Analysis work) still uses the plain name dialog, and sub-category rows do not show icons yet.
 
 ## 19. Change Log (date | change | reason)
 
@@ -675,3 +679,5 @@ Deferred: FR-09-12 Rules screen, FR-09-14 Category detail, FR-09-15/18/19 logos,
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
 | 2026-10-27 | Audit: Rules screen and learned rules confirmed done; Category detail, sub-category icons, icon picker and about 140 brand logos confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Category detail screen built (FR-09-14 partial: no stepper or expandable rows) | Kotlin parity |
+| 2026-10-27 | Logos and icons | Kotlin parity |

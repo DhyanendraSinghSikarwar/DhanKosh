@@ -38,3 +38,31 @@ class FakeImap implements ImapClient {
     return mails.where((m) => accept(m.from, m.subject)).toList();
   }
 }
+
+/// Fake SMTP port: records what would be mailed to the user's own address.
+class FakeSmtp implements MailSender {
+  Failure? error;
+  int sent = 0;
+  String? lastSubject;
+  String? lastTo;
+  String? lastPassword;
+
+  /// The 6-digit code in the last subject.
+  String get lastCode =>
+      RegExp(r'\d{6}').firstMatch(lastSubject ?? '')!.group(0)!;
+
+  @override
+  Future<void> sendToSelf(
+    EmailAccount account,
+    String password, {
+    required String subject,
+    required String body,
+  }) async {
+    final e = error;
+    if (e != null) throw e;
+    sent++;
+    lastSubject = subject;
+    lastTo = account.address;
+    lastPassword = password;
+  }
+}

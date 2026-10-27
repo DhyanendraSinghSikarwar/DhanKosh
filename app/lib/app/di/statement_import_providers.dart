@@ -4,6 +4,7 @@ import 'package:hisaab/app/di/lock_skipping_file_source.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/core/platform_channels/pdf_channel.dart';
 import 'package:hisaab/features/statement_import/data/file_source_impl.dart';
 import 'package:hisaab/features/statement_import/data/pdf_text_reader_impl.dart';
@@ -54,6 +55,7 @@ ImportStatement importStatement(Ref ref) => ImportStatement(
       cardDues: ref.watch(cardDueRepositoryProvider),
       accounts: ref.watch(applyStatementAccountsProvider),
       outcomes: ref.watch(statementOutcomeStoreProvider),
+      activity: ref.watch(activityLoggerProvider),
       lockedNotifier:
           AlertStatementLockedNotifier(ref.watch(alertPosterProvider)),
       passwordSource: () async => assemblePasswordSource(

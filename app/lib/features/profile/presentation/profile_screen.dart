@@ -1,7 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
+import 'package:hisaab/app/di/profile_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/entities/identity.dart';
@@ -9,7 +12,10 @@ import 'package:hisaab/features/onboarding_permissions/domain/entities/user_prof
 import 'package:hisaab/features/onboarding_permissions/domain/validators/onboarding_validators.dart';
 import 'package:hisaab/features/profile/domain/profile_draft.dart';
 import 'package:hisaab/features/profile/presentation/bank_details_sheet.dart';
+import 'package:hisaab/features/profile/presentation/photo_crop_screen.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/profile_avatar.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:parser_core/parser_core.dart' show AccountKind;
 
 /// Profile: personal details and per-bank unlock details (F-27;
@@ -53,17 +59,28 @@ class _FormState extends ConsumerState<_Form> {
   late final _email = TextEditingController(
     text: widget.profile.email ?? widget.identity?.email ?? '',
   );
+  late final _occupation =
+      TextEditingController(text: widget.profile.occupation ?? '');
   late final _pan = TextEditingController(text: widget.identity?.pan ?? '');
+  late final List<String> _altNames = [...?widget.identity?.allAltNames];
+  late final List<String> _altPhones = [...?widget.identity?.allAltPhones];
+  final _altName = TextEditingController();
+  final _altPhone = TextEditingController();
+  String? _photo;
   late DateTime? _dob = widget.identity?.dob;
   late final String _initial = _snapshot();
+  late final String? _photoAtStart = widget.profile.photoPath;
   bool _saving = false;
 
   String _snapshot() => [
         _name.text,
         _mobile.text,
         _email.text,
+        _occupation.text,
         _pan.text,
         _dob?.toIso8601String(),
+        _altNames.join(','),
+        _altPhones.join(','),
       ].join('|');
 
   @override
@@ -71,7 +88,10 @@ class _FormState extends ConsumerState<_Form> {
     _name.dispose();
     _mobile.dispose();
     _email.dispose();
+    _occupation.dispose();
     _pan.dispose();
+    _altName.dispose();
+    _altPhone.dispose();
     super.dispose();
   }
 
@@ -92,7 +112,6 @@ class _FormState extends ConsumerState<_Form> {
         ? null
         : OnboardingValidators.formatPhone(_mobile.text);
     final email = _email.text.trim().isEmpty ? null : _email.text.trim();
-    final old = widget.identity;
     // Sealed identity first, then the plain profile (FR-27-05).
     await ref.read(identityRepositoryProvider).save(
           Identity(
@@ -100,8 +119,10 @@ class _FormState extends ConsumerState<_Form> {
             dob: _dob,
             pan: _pan.text.isEmpty ? null : _pan.text,
             phone: phone,
-            altName: old?.altName,
-            altPhone: old?.altPhone,
+            altName: _altNames.isEmpty ? null : _altNames.first,
+            altPhone: _altPhones.isEmpty ? null : _altPhones.first,
+            moreNames: _altNames.skip(1).toList(),
+            morePhones: _altPhones.skip(1).toList(),
             email: email,
           ),
         );
@@ -110,8 +131,8 @@ class _FormState extends ConsumerState<_Form> {
             name: _name.text.trim(),
             email: email,
             phone: phone,
-            occupation: widget.profile.occupation,
-            photoPath: widget.profile.photoPath,
+            occupation: _occupation.text.trim(),
+            photoPath: _photo ?? _photoAtStart,
           ),
         );
     ref
@@ -122,6 +143,54 @@ class _FormState extends ConsumerState<_Form> {
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Saved')));
     Navigator.of(context).maybePop();
+  }
+
+  String? get _photoPath => _photo ?? _photoAtStart;
+
+  /// Picks, adjusts and saves the photo at once (FR-27-09).
+  Future<void> _changePhoto() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 2048,
+      maxHeight: 2048,
+    );
+    if (picked == null || !mounted) return;
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+    final png = await Navigator.of(context).push<Uint8List>(
+      MaterialPageRoute(builder: (_) => PhotoCropScreen(bytes: bytes)),
+    );
+    if (png == null) return;
+    await ref.read(setProfilePhotoProvider).set(png);
+    final p = await ref.read(profileRepositoryProvider).read();
+    ref.invalidate(profileDataProvider);
+    if (mounted) setState(() => _photo = p.photoPath);
+  }
+
+  Future<void> _removePhoto() async {
+    await ref.read(setProfilePhotoProvider).clear();
+    ref.invalidate(profileDataProvider);
+    if (mounted) setState(() => _photo = '');
+  }
+
+  void _addAltName() {
+    final v = _altName.text.trim();
+    if (v.isEmpty || _altNames.contains(v)) return;
+    setState(() {
+      _altNames.add(v);
+      _altName.clear();
+    });
+  }
+
+  void _addAltPhone() {
+    final d = OnboardingValidators.phoneDigits(_altPhone.text);
+    if (!OnboardingValidators.isValidPhone(d)) return;
+    final v = OnboardingValidators.formatPhone(d)!;
+    if (_altPhones.contains(v)) return;
+    setState(() {
+      _altPhones.add(v);
+      _altPhone.clear();
+    });
   }
 
   Future<void> _pickDob() async {
@@ -145,6 +214,36 @@ class _FormState extends ConsumerState<_Form> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        Column(
+          children: [
+            ProfileAvatar(
+              name: _name.text,
+              photoPath: _photoPath,
+              radius: 44,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                TextButton.icon(
+                  key: const Key('profile-photo-change'),
+                  icon: const Icon(Icons.photo_camera_outlined),
+                  label: Text(
+                    (_photoPath ?? '').isEmpty ? 'Add photo' : 'Change photo',
+                  ),
+                  onPressed: _changePhoto,
+                ),
+                if ((_photoPath ?? '').isNotEmpty)
+                  TextButton(
+                    key: const Key('profile-photo-remove'),
+                    onPressed: _removePhoto,
+                    child: const Text('Remove'),
+                  ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -179,6 +278,14 @@ class _FormState extends ConsumerState<_Form> {
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(labelText: 'Email'),
+                onChanged: (_) => setState(() {}),
+              ),
+              gap,
+              TextField(
+                key: const Key('profile-occupation'),
+                controller: _occupation,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(labelText: 'Occupation'),
                 onChanged: (_) => setState(() {}),
               ),
             ],
@@ -223,6 +330,78 @@ class _FormState extends ConsumerState<_Form> {
                   }
                   setState(() {});
                 },
+              ),
+              gap,
+              Text('Other names as per bank', style: theme.textTheme.bodySmall),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final n in _altNames)
+                    InputChip(
+                      key: Key('alt-name-$n'),
+                      label: Text(n),
+                      onDeleted: () => setState(() => _altNames.remove(n)),
+                    ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const Key('profile-alt-name'),
+                      controller: _altName,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(
+                        labelText: 'Add a name',
+                      ),
+                      onSubmitted: (_) => _addAltName(),
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('profile-alt-name-add'),
+                    tooltip: 'Add name',
+                    icon: const Icon(Icons.add),
+                    onPressed: _addAltName,
+                  ),
+                ],
+              ),
+              gap,
+              Text(
+                'Other mobiles as per bank',
+                style: theme.textTheme.bodySmall,
+              ),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final n in _altPhones)
+                    InputChip(
+                      key: Key('alt-phone-$n'),
+                      label: Text(n),
+                      onDeleted: () => setState(() => _altPhones.remove(n)),
+                    ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const Key('profile-alt-phone'),
+                      controller: _altPhone,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Add a mobile',
+                        prefixText: '+91 ',
+                      ),
+                      onSubmitted: (_) => _addAltPhone(),
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('profile-alt-phone-add'),
+                    tooltip: 'Add mobile',
+                    icon: const Icon(Icons.add),
+                    onPressed: _addAltPhone,
+                  ),
+                ],
               ),
               gap,
               ListTile(

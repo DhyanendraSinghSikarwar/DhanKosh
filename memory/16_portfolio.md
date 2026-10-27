@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-16 |
-| Status | In progress (Phase 3: MF order and NPS contribution recording wired (FR-16-19..21); data/domain layer and Portfolio tab UI done: net worth hero, history chart, allocation, holdings CRUD, maturities, exclusions; shortcut row, SIP list, investment transactions, as-of dates and optional AMFI NAV refresh done; history estimate, loans card, sparklines and statement link pending) |
+| Status | In progress (Phase 3: data/domain layer and Portfolio tab UI done: net worth hero, history chart, split-by-account bar, allocation donut with class filter, holdings with sparklines, Loans section, maturity calendar, layout-driven sections, exclusions; shortcut row, SIP list, investment transactions, as-of dates and optional AMFI NAV refresh done; 36-month history estimate in the domain with providers; Portfolio chart use and statement link pending) |
 | Priority | P1 |
 | Phase | 3 |
 | Last Updated | 2026-10-27 |
@@ -215,6 +215,13 @@ Fold adoption ([ADR-0010](../docs/adr/0010-fold-ideas-adoption-rules.md)). XIRR 
 - FR-16-24: A refresh shall update only non-manual MUTUAL_FUND holdings whose identifier is an ISIN and that have units: value = units x NAV (paise, rounded), `asOf` = NAV date (noon IST), previous value and date kept; skipped when the holding's figures are as new or newer.
 - FR-16-25: Portfolio shall show "as of <date>" on net worth (today), allocation (newest holding date) and every holding (its `asOf`), and an "Investment transactions" section of buys, redemptions and dividends: INVESTMENT rows and CREDIT rows in the investment category (not under review, not duplicates); INVESTMENT rows are Buy unless the text says redeem/sell, credits are Dividend when the text says dividend/IDCW/interest else Redemption; newest 10 shown.
 - FR-16-26: Portfolio shall show a shortcut row: Import statement (opens `/statements`), Add holding (existing sheet), Add SIP (the Bills SIP sheet, composed in the router) and the SIP list ([Recurring](12_recurring_transactions.md) FR-12-20).
+- FR-16-27: Portfolio sections (`value`, `allocation`, `networth`, `holdings`, `loans`, `maturity`) show, hide and reorder through the layout store ([28_theming_customisation.md](28_theming_customisation.md) FR-28-23); the app bar opens the editor.
+- FR-16-28: Net worth by account shows a stacked bar and legend of asset parts (top 6 plus Others), the assets and liabilities breakdown and "Choose which money counts" (opens the exclusions sheet).
+- FR-16-29: Asset allocation is a donut with class chips (All plus each class present); choosing a class shows that class's holdings.
+- FR-16-30: Each holding row shows a sparkline from its previous to its current value when a previous value exists; no new storage (uses `previousValueMinor`).
+- FR-16-31: A Loans section lists open loans with outstanding and EMI and opens `/loans` ([15_loans.md](15_loans.md)); hidden without open loans.
+- FR-16-32: The maturity calendar groups deposits maturing in the next 12 months by month.
+- FR-16-40: The net worth history shall be estimated for the last 36 month ends: each liquid account group's balance now minus its signed effects after that day, plus holdings stated by then; liabilities use the latest recorded point; a recorded point on the day wins; reconstructed points are flagged estimated.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -441,6 +448,7 @@ Fold adoption (`test/features/portfolio/nav_refresh_test.dart`, `portfolio_fold_
 - TC-16-24 (FR-16-23, FR-16-24): off by default (no download); on: updates the ISIN holding's value and `asOf` once a day, force bypasses the throttle, MF rows without an ISIN stay; failure and unreadable file change nothing; newer and manual rows are not overwritten.
 - TC-16-25 (FR-16-25): widget: every value shows "as of"; buys and dividends listed; kind rules.
 - TC-16-26 (FR-16-26): widget: the three shortcuts work and the SIP list slot shows; the settings sheet toggle and Refresh now.
+- TC-16-27 (FR-16-28, FR-16-29, FR-16-30, FR-16-32): chart-data builders with paise fixtures: split by account, liabilities, allocation by class and by holding, spark values, maturities by month.
 
 ## 16. Acceptance Criteria
 
@@ -487,6 +495,10 @@ Hardening 2026-10-22: statement holdings mismatch (FR-05-18) is surfaced by [Sta
 
 Capture gaps (2026-10-25): `IngestMessage._recordSide` now also records, besides card dues and EPF/NPS values: (1) MF purchase confirmations (`parseMfOrder`, SMS and mail bodies that yield no bank transaction) via `HoldingRepository.recordMfOrder` (FR-16-19); (2) NPS contributions (`InvestmentParser.npsContribution`) via `recordNpsContribution` plus an INVESTMENT transaction through the ledger unless a DEBIT/INVESTMENT of the same amount sits in [date-4d, date+2d] (FR-16-20, FR-16-21); (3) `registry.loanStatus` results through `ApplyStatementAccounts.applyDeposits` (FD/RD/PPF account type, balance, maturity, hide on close; loan account, principal only when none, outstanding as balance; no transactions; skipped when the number is the user's own phone tail; mail only when it is not also a transaction). Claims (MF message id and order key, NPS key) live in the `settings` row `holding_claims` (newline list, cap 500), written in the same DB transaction, so no schema change. Tests: `test/features/sms_ingestion/ingest_capture_gaps_test.dart`, `test/e2e/capture_matrix_test.dart`. Deviations: a contribution already counted by a newer statement returns false from `recordNpsContribution`, so no INVESTMENT row is added for it; broker trade SMS and contract notes are not recorded (the Kotlin app does not either).
 
+### 18.1 History estimate 2026-10-27 (agent A2)
+
+FR-16-40 done in the domain: `estimateWorthHistory` (pure, `net_worth_estimate.dart`), `NetWorthEstimator` (`net_worth_estimator.dart`), `NetWorthHistorySource` read-only SQL port (`net_worth_history_source_impl.dart`, same signed-effect rule as memory 13 section 3.5) and providers `netWorthEstimatorProvider` / `netWorthEstimateProvider` (`lib/app/di/net_worth_estimate_providers.dart`) returning `List<EstimatedPoint>` (point plus `estimated` flag). Portfolio UI use of it (dashed estimated segment) is the Portfolio chart work. Liabilities (card dues, loans) cannot be rebuilt, so history liabilities repeat the latest recorded figure; holdings count from their last update day. No schema change.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -501,3 +513,5 @@ Capture gaps (2026-10-25): `IngestMessage._recordSide` now also records, besides
 | 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |
 | 2026-10-26 | Portfolio: shortcut row, SIP list, investment transactions, as-of dates, optional AMFI NAV refresh, `mf_orders` kept; XIRR deferred | Fold adoption |
 | 2026-10-27 | Audit: net worth line with 1M..All ranges, holdings, maturities and exclusions confirmed done; history estimate, split-by-account bar, allocation donut, holding sparklines and Loans section confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Layout-driven sections, split-by-account bar, allocation donut with filter, holding sparklines, Loans section, maturity calendar by month (FR-16-27..32) | Kotlin parity |
+| 2026-10-27 | 36-month net worth history estimate, domain and providers (FR-16-40) | Kotlin parity |

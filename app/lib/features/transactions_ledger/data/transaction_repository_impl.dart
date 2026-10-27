@@ -10,6 +10,7 @@ import 'package:hisaab/features/categorization/domain/category_repository.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
 import 'package:hisaab/features/dedup_review/domain/dedup_policy.dart';
 import 'package:hisaab/features/dedup_review/domain/merge_rules.dart';
+import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/transactions_ledger/data/transaction_mappers.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
@@ -102,6 +103,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
     final candidates = await _candidates(p);
     var decision = await _policy.decide(p, candidates);
     final accountId = item.accountId ??
+        await _payeeAccount(p.merchant, p.upiId) ??
         await _accounts.ensureAccount(p, phoneLast4s: item.phoneLast4s);
 
     // FR-08-13: a bank message for a hand-entered transfer folds into its leg.
@@ -334,7 +336,15 @@ class TransactionRepositoryImpl implements TransactionRepository {
                   category: enumToDb(Category.transfer),
                   transactionHash: hash,
                   confidence: 1,
-                  note: Value(note),
+                  // FR-10-19: a payment to a card is a bill payment, so the
+                  // bank leg counts once as cash spend.
+                  note: Value(
+                    out && other?.kind == AccountKind.card
+                        ? (note == null || note.isEmpty
+                            ? TransferPairing.cardBillNote
+                            : '${TransferPairing.cardBillNote}: $note')
+                        : note,
+                  ),
                   createdAt: _now(),
                   inrMinor: Value(amountMinor),
                 ),
@@ -593,8 +603,40 @@ class TransactionRepositoryImpl implements TransactionRepository {
     );
   }
 
+  // FR-08-24: payee -> account map, in the settings table (no schema change).
+  static const _payeePrefix = 'payee_account:';
+
+  Future<int?> _payeeAccount(String? merchant, String? upiId) async {
+    final key = MerchantRule.keyOf(merchant, upiId);
+    if (key == null || key.isEmpty) return null;
+    final row = await (_db.select(_db.settings)
+          ..where((t) => t.key.equals('$_payeePrefix$key')))
+        .getSingleOrNull();
+    final id = int.tryParse(row?.value ?? '');
+    if (id == null) return null;
+    final a = await _accounts.byId(id);
+    return a == null || a.mergedIntoId != null ? null : id;
+  }
+
   @override
-  Future<void> setAccount(int id, int? accountId) async {
+  Future<void> setAccount(
+    int id,
+    int? accountId, {
+    bool rememberPayee = false,
+  }) async {
+    if (rememberPayee && accountId != null) {
+      final row = await byId(id);
+      final key =
+          row == null ? null : MerchantRule.keyOf(row.merchant, row.upiId);
+      if (key != null && key.isNotEmpty) {
+        await _db.into(_db.settings).insertOnConflictUpdate(
+              SettingsCompanion.insert(
+                key: '$_payeePrefix$key',
+                value: '$accountId',
+              ),
+            );
+      }
+    }
     final a = accountId == null ? null : await _accounts.byId(accountId);
     await _patch(
       id,
@@ -705,6 +747,60 @@ class TransactionRepositoryImpl implements TransactionRepository {
         return target.id;
       });
 
+  // FR-07-13: parse the source again into a row of its own.
+  @override
+  Future<int?> splitSource(int transactionId, int sourceId) =>
+      _db.transaction(() async {
+        final srcs = await (_db.select(_db.transactionSources)
+              ..where((s) => s.transactionId.equals(transactionId)))
+            .get();
+        if (srcs.length < 2) return null;
+        final src = srcs.where((s) => s.id == sourceId).firstOrNull;
+        final raw = src?.rawText;
+        if (src == null || raw == null) return null;
+        final source = enumFromDbOrNull(Source.values, src.source);
+        if (source == null) return null;
+        final res = parse(source, src.sender, raw, src.receivedAt);
+        if (res is! Parsed) return null;
+        final p = res.transaction;
+        final accountId = await _accounts.ensureAccount(p);
+        final id = await _insert(
+          p,
+          IngestItem(parsed: p, sourceMessageId: src.sourceMessageId),
+          accountId,
+          hash: '${p.transactionHash}#split:${src.id}',
+          rule: null,
+        );
+        await (_db.update(_db.transactionSources)
+              ..where((s) => s.id.equals(src.id)))
+            .write(TransactionSourcesCompanion(transactionId: Value(id)));
+        // The parent keeps only what its remaining messages state.
+        final rest = srcs.where((s) => s.id != src.id);
+        int? bal;
+        int? lim;
+        var read = false;
+        for (final s in rest) {
+          final t = s.rawText;
+          final k = enumFromDbOrNull(Source.values, s.source);
+          if (t == null || k == null) continue;
+          final r = parse(k, s.sender, t, s.receivedAt);
+          if (r is! Parsed) continue;
+          read = true;
+          bal ??= r.transaction.balanceMinor;
+          lim ??= r.transaction.availableLimitMinor;
+        }
+        if (read) {
+          await _patch(
+            transactionId,
+            TransactionsCompanion(
+              balanceMinor: Value(bal),
+              availableLimitMinor: Value(lim),
+            ),
+          );
+        }
+        return id;
+      });
+
   @override
   Future<void> keepSeparate(int id) => _patch(
         id,
@@ -783,6 +879,11 @@ class TransactionRepositoryImpl implements TransactionRepository {
           .map(toSourceRow)
           .toList();
 
+  /// Book scope; rows without an account are personal.
+  static String _usageSql(String usage) =>
+      'COALESCE((SELECT usage FROM accounts a WHERE a.id = '
+      "transactions.account_id), 'PERSONAL') = '$usage'";
+
   static String _accountScope(int id) =>
       'SELECT id FROM accounts WHERE id = $id OR merged_into_id = $id';
 
@@ -812,6 +913,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
           'transactions.account_id IN (${_accountScope(f.accountId!)})',
         ),
       if (f.category != null) t.category.equals(enumToDb(f.category!)),
+      if (f.accountKind != null) t.accountKind.equals(enumToDb(f.accountKind!)),
+      if (f.usage != null) CustomExpression<bool>(_usageSql(f.usage!)),
       if (f.sources.isNotEmpty)
         t.id.isInQuery(
           _db.selectOnly(_db.transactionSources)
@@ -864,37 +967,48 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Stream<List<LedgerTx>> watchRecent(int n) =>
       watch(const LedgerFilter(), limit: n);
 
-  // Spend/income per `MonthSpend` (memory 08 3.7): transfers and review rows out.
+  // Cash-basis totals (ADR-0011) through SpendCalc; rows within the card
+  // payment window outside the period only serve to pair payments.
   @override
   Stream<PeriodTotals> watchTotals({
     required int fromMs,
     required int toMs,
     int? accountId,
+    String? usage,
   }) =>
       _db
           .customSelect(
-            'SELECT '
-            "COALESCE(SUM(CASE WHEN type='DEBIT' AND category!='TRANSFER' THEN inr_minor END),0) AS spent, "
-            "COALESCE(SUM(CASE WHEN type='INVESTMENT' THEN inr_minor END),0) AS invested, "
-            "COALESCE(SUM(CASE WHEN type='CREDIT' AND category NOT IN ('TRANSFER','REFUND') THEN inr_minor END),0) AS income, "
-            "COALESCE(SUM(CASE WHEN type='CREDIT' AND category='REFUND' THEN inr_minor END),0) AS refund, "
-            'COUNT(*) AS n FROM transactions '
+            'SELECT * FROM transactions '
             'WHERE needs_review = 0 AND inr_minor IS NOT NULL '
             'AND timestamp >= ? AND timestamp < ?'
-            '${accountId == null ? '' : ' AND account_id IN (${_accountScope(accountId)})'}',
-            variables: [Variable<int>(fromMs), Variable<int>(toMs)],
+            '${accountId == null ? '' : ' AND account_id IN (${_accountScope(accountId)})'}'
+            '${usage == null ? '' : ' AND ${_usageSql(usage).replaceAll('transactions.account_id', 'account_id')}'}',
+            variables: [
+              Variable<int>(fromMs - TransferPairing.cardWindowMs),
+              Variable<int>(toMs + TransferPairing.cardWindowMs),
+            ],
             readsFrom: {_db.transactions, _db.accounts},
           )
-          .watchSingle()
-          .map(
-            (r) => PeriodTotals(
-              spentMinor: r.read<int>('spent'),
-              investedMinor: r.read<int>('invested'),
-              incomeMinor: r.read<int>('income'),
-              refundMinor: r.read<int>('refund'),
-              count: r.read<int>('n'),
-            ),
-          );
+          .watch()
+          .map((rows) {
+            final all = [
+              for (final r in rows) toLedgerTx(_db.transactions.map(r.data)),
+            ];
+            final inRange =
+                all.where((t) => t.timestamp >= fromMs && t.timestamp < toMs);
+            final cardOnly = all.isNotEmpty && all.every(SpendCalc.isCard);
+            final c =
+                SpendCalc.totals(inRange, context: all, cardAsSpend: cardOnly);
+            return PeriodTotals(
+              spentMinor: c.spentMinor,
+              investedMinor: c.investedMinor,
+              incomeMinor: c.incomeMinor,
+              refundMinor: c.refundMinor,
+              cardPurchasesMinor: c.cardPurchasesMinor,
+              cardPaymentsMinor: c.cardPaymentsMinor,
+              count: c.count,
+            );
+          });
 
   @override
   Stream<int> watchReviewCount() => _db

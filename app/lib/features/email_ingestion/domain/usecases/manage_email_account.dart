@@ -35,18 +35,25 @@ class ManageEmailAccount {
   Future<void> test(EmailAccount account, String password) =>
       _imap.testLogin(account, EmailAccount.cleanPassword(password));
 
-  /// Seals the password and saves the account.
+  /// Seals the password and saves (adds or replaces) the mailbox; its cursor
+  /// starts empty so the look-back window is read (FR-03-06).
   Future<void> save(EmailAccount account, String password) async {
-    await _credentials.write(EmailAccount.cleanPassword(password));
+    await _credentials.write(
+      account.address,
+      EmailAccount.cleanPassword(password),
+    );
     await _settings.saveAccount(account);
-    await _settings.forgetPosition();
   }
 
-  /// Wipes the password and forgets the account; transactions stay.
-  Future<void> disconnect() async {
-    await _credentials.wipe();
-    await _settings.clearAccount();
+  /// Wipes the password and forgets the mailbox; transactions stay.
+  Future<void> disconnect(String address) async {
+    await _credentials.wipe(address);
+    await _settings.removeAccount(address);
   }
+
+  /// Turns a mailbox on or off for syncs (FR-03-22).
+  Future<void> setEnabled(String address, {required bool enabled}) =>
+      _settings.setEnabled(address, enabled: enabled);
 
   /// Adds one address or domain; returns false when it is not valid.
   Future<bool> addSender(String input) async {

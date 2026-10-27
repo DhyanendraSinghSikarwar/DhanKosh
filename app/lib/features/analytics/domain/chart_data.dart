@@ -24,7 +24,7 @@ class StackedMonth {
   int get total => essentials + lifestyle + other;
 }
 
-/// Tap-selection state of the Analysis charts (FR-18-20, FR-18-21).
+/// Tap-selection state of the Analysis charts (FR-18-29).
 class ChartSelection {
   /// Creates a selection.
   const ChartSelection({
@@ -72,7 +72,7 @@ class ChartSelection {
         )
       : ChartSelection(heatDay: heatDay, heatSlot: heatSlot);
 
-  /// Taps a heat cell; the same cell clears (FR-18-22).
+  /// Taps a heat cell; the same cell clears (FR-18-29).
   ChartSelection tapHeat(int day, int slot) =>
       heatDay == day && heatSlot == slot
           ? ChartSelection(category: category, subcategory: subcategory)
@@ -136,7 +136,7 @@ abstract final class ChartData {
     Category category,
   ) {
     final m = <String, int>{};
-    for (final t in txs.where((t) => LedgerMath.isSpend(t))) {
+    for (final t in txs.where(LedgerMath.isSpend)) {
       if (t.category != category) continue;
       final k = t.subcategory ?? 'Other';
       m[k] = (m[k] ?? 0) + LedgerMath.rupees(t);
@@ -173,8 +173,4 @@ abstract final class ChartData {
   /// Diverging bar fractions in -1..1 (percent capped at +-50, FR-18-16).
   static List<double> divergence(List<CategoryChange> changes) =>
       [for (final c in changes) c.barPercent / 50];
-
-  /// Sankey layout: node heights as fractions of the larger side.
-  static List<double> fractions(List<int> values, int scale) =>
-      [for (final v in values) scale <= 0 ? 0 : v / scale];
 }

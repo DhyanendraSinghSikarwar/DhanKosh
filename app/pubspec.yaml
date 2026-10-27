@@ -32,8 +32,10 @@ dependencies:
   pdf: ^3.12.0
   pointycastle: ^3.9.1
   riverpod_annotation: ^4.0.7
+  share_plus: ^13.3.1
   shared_preferences: ^2.3.2
   sqlite3: ^3.7.1
+  image_picker: ^1.2.4
 dev_dependencies:
   build_runner: ^2.4.12
   drift_dev: ^2.20.0
@@ -50,6 +52,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/branding/
+    - assets/logos/
 
 # SQLCipher via package:sqlite3 build hook (sqlcipher_flutter_libs is obsolete). ADR-0003.
 hooks:

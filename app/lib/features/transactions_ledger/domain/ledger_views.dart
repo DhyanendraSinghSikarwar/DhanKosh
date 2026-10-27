@@ -4,7 +4,7 @@ import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// Transactions tab segments (FR-08-02..04).
-enum LedgerSegment { list, calendar, merchant }
+enum LedgerSegment { list, category, calendar, merchant }
 
 /// Caption above the calendar by kind (FR-08-21, memory 08 3.11).
 String calendarCaption(TxKind kind) => switch (kind) {
@@ -55,4 +55,56 @@ List<MerchantGroup> groupByMerchant(Iterable<LedgerTx> rows) {
       ),
   ]..sort((a, b) => b.grossMinor.compareTo(a.grossMinor));
   return out;
+}
+
+/// Spends of one category, card and account together (FR-08-23).
+class CategoryGroup {
+  const CategoryGroup(
+    this.category,
+    this.rows,
+    this.totalMinor,
+    this.accountMinor,
+    this.cardMinor,
+  );
+  final Category category;
+  final List<LedgerTx> rows;
+
+  /// [accountMinor] plus [cardMinor], refunds already taken off.
+  final int totalMinor;
+
+  /// Spend on bank accounts.
+  final int accountMinor;
+
+  /// Spend on cards (card refunds reduce it).
+  final int cardMinor;
+}
+
+/// Groups debits and refunds by category, largest total first. Card and
+/// account rows sit together, each tagged in the tile; a refund reduces the
+/// category on its own side (FR-08-23, ADR-0011).
+List<CategoryGroup> groupByCategory(Iterable<LedgerTx> rows) {
+  final map = <Category, List<LedgerTx>>{};
+  for (final t in rows) {
+    if (t.needsReview) continue;
+    final spend =
+        t.type == TransactionType.debit && t.category != Category.transfer;
+    final refund =
+        t.type == TransactionType.credit && t.category == Category.refund;
+    if (spend || refund) map.putIfAbsent(t.category, () => []).add(t);
+  }
+  final out = <CategoryGroup>[];
+  for (final e in map.entries) {
+    var acc = 0;
+    var card = 0;
+    for (final t in e.value) {
+      final v = (inrOf(t) ?? 0) * (t.type == TransactionType.debit ? 1 : -1);
+      if (t.accountKind == AccountKind.card) {
+        card += v;
+      } else {
+        acc += v;
+      }
+    }
+    out.add(CategoryGroup(e.key, e.value, acc + card, acc, card));
+  }
+  return out..sort((a, b) => b.totalMinor.compareTo(a.totalMinor));
 }

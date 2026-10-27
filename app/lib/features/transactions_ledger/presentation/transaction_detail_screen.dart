@@ -142,6 +142,13 @@ class _Body extends ConsumerWidget {
       if (choice.applyToPast) await txs.applyRuleToPast(rule);
     }
     _refresh(ref);
+    // FR-15-09: an EMI payment may be counted towards a loan.
+    if (choice.category.name == 'emiLoan' &&
+        choice.customCategoryId == null &&
+        (t.merchant ?? '').length >= 2 &&
+        context.mounted) {
+      await context.push('/loan-link/${t.id}');
+    }
   }
 
   // FR-08-10: sub-category as free text; empty clears it.
@@ -181,22 +188,35 @@ class _Body extends ConsumerWidget {
     final accounts =
         await ref.read(accountRepositoryProvider).watchVisible().first;
     if (!context.mounted) return;
+    var remember = false;
     final picked = await showDialog<int>(
       context: context,
-      builder: (ctx) => SimpleDialog(
-        title: const Text('Account'),
-        children: [
-          for (final a in accounts)
-            SimpleDialogOption(
-              key: Key('acct_${a.id}'),
-              onPressed: () => Navigator.pop(ctx, a.id),
-              child: Text(a.label),
-            ),
-        ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => SimpleDialog(
+          title: const Text('Account'),
+          children: [
+            for (final a in accounts)
+              SimpleDialogOption(
+                key: Key('acct_${a.id}'),
+                onPressed: () => Navigator.pop(ctx, a.id),
+                child: Text(a.label),
+              ),
+            if (t.merchant != null || t.upiId != null)
+              CheckboxListTile(
+                key: const Key('acct_remember'),
+                dense: true,
+                value: remember,
+                onChanged: (v) => setS(() => remember = v ?? false),
+                title: const Text('Remember for this payee'),
+              ),
+          ],
+        ),
       ),
     );
     if (picked == null) return;
-    await ref.read(transactionRepositoryProvider).setAccount(t.id, picked);
+    await ref
+        .read(transactionRepositoryProvider)
+        .setAccount(t.id, picked, rememberPayee: remember);
     ref.invalidate(_accountLabelProvider);
     _refresh(ref);
   }
@@ -290,6 +310,14 @@ class _Body extends ConsumerWidget {
               ),
               _Row('Date', when),
               _Row('Channel', t.channel.name.toUpperCase()),
+              if (t.currency != 'INR')
+                _Row(
+                  'In rupees',
+                  t.inrMinor == null
+                      ? 'Add a ${t.currency} rate in Settings'
+                      : '≈ ${formatAmount(t.inrMinor!, masked: masked)}',
+                  tag: 'detail_inr',
+                ),
               if (t.upiId != null) _Row('UPI id', t.upiId!),
               if (t.referenceNumber != null)
                 _Row('Reference', t.referenceNumber!),
@@ -308,7 +336,31 @@ class _Body extends ConsumerWidget {
         if (sources.isEmpty)
           const Text('No source messages')
         else
-          for (final s in sources) _MessageView(s),
+          for (final s in sources)
+            _MessageView(
+              s,
+              onSplit: sources.length > 1 && s.rawText != null
+                  ? () async {
+                      final id = await ref
+                          .read(transactionRepositoryProvider)
+                          .splitSource(t.id, s.id);
+                      ref
+                        ..invalidate(_sourcesProvider(t.id))
+                        ..invalidate(_txProvider(t.id));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              id == null
+                                  ? 'Could not split'
+                                  : 'Split into its own transaction',
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  : null,
+            ),
       ],
     );
   }
@@ -340,8 +392,11 @@ class _Row extends StatelessWidget {
 
 /// Source message with sender, time and copy (FR-08-20 basic).
 class _MessageView extends StatelessWidget {
-  const _MessageView(this.s);
+  const _MessageView(this.s, {this.onSplit});
   final TxSourceRow s;
+
+  /// Splits this message into its own row (FR-07-13); null when not allowed.
+  final VoidCallback? onSplit;
 
   @override
   Widget build(BuildContext context) {
@@ -364,9 +419,20 @@ class _MessageView extends StatelessWidget {
               Text(raw, maxLines: 10, overflow: TextOverflow.ellipsis),
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Clipboard.setData(ClipboardData(text: raw)),
-                  child: const Text('Copy text'),
+                child: Wrap(
+                  children: [
+                    if (onSplit != null)
+                      TextButton(
+                        key: Key('split_${s.id}'),
+                        onPressed: onSplit,
+                        child: const Text('Split out'),
+                      ),
+                    TextButton(
+                      onPressed: () =>
+                          Clipboard.setData(ClipboardData(text: raw)),
+                      child: const Text('Copy text'),
+                    ),
+                  ],
                 ),
               ),
             ],

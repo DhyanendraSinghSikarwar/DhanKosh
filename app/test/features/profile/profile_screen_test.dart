@@ -117,4 +117,61 @@ void main() {
     expect(find.text('0 saved  ·  0 statement passwords'), findsOneWidget);
     await teardownApp(t);
   });
+
+  // FR-27-16, FR-27-23
+  testWidgets('occupation and several alternate names and mobiles save',
+      (t) async {
+    await pump(t);
+    await t.enterText(find.byKey(const Key('profile-occupation')), 'Engineer');
+    await t.enterText(find.byKey(const Key('profile-alt-name')), 'A Demo');
+    await t.ensureVisible(find.byKey(const Key('profile-alt-name-add')));
+    await t.tap(find.byKey(const Key('profile-alt-name-add')));
+    await t.pump();
+    await t.enterText(find.byKey(const Key('profile-alt-name')), 'Asha D');
+    await t.tap(find.byKey(const Key('profile-alt-name-add')));
+    await t.pump();
+    await t.enterText(find.byKey(const Key('profile-alt-phone')), '98765');
+    await t.tap(find.byKey(const Key('profile-alt-phone-add')));
+    await t.pump();
+    expect(find.byKey(const Key('alt-phone-+91 98765')), findsNothing);
+    await t.enterText(find.byKey(const Key('profile-alt-phone')), '9876543210');
+    await t.tap(find.byKey(const Key('profile-alt-phone-add')));
+    await t.pump();
+    await t.enterText(find.byKey(const Key('profile-alt-phone')), '9123456780');
+    await t.tap(find.byKey(const Key('profile-alt-phone-add')));
+    await t.pump();
+    expect(saveEnabled(t), isTrue);
+    await t.ensureVisible(find.byKey(const Key('profile-save')));
+    await t.tap(find.byKey(const Key('profile-save')));
+    await t.pump();
+    await settle(t);
+    expect(profile.value.occupation, 'Engineer');
+    final id = identity.value!;
+    expect(id.altName, 'A Demo');
+    expect(id.moreNames, ['Asha D']);
+    expect(id.altPhone, '+91 9876543210');
+    expect(id.morePhones, ['+91 9123456780']);
+    await teardownApp(t);
+  });
+
+  testWidgets('a saved alternate can be removed', (t) async {
+    identity.value = const Identity(
+      name: 'Asha Demo',
+      altName: 'A Demo',
+      moreNames: ['Asha D'],
+    );
+    await pump(t);
+    expect(find.byKey(const Key('alt-name-Asha D')), findsOneWidget);
+    await t.ensureVisible(find.byKey(const Key('alt-name-A Demo')));
+    await t.tap(
+      find.descendant(
+        of: find.byKey(const Key('alt-name-A Demo')),
+        matching: find.byTooltip('Delete'),
+      ),
+    );
+    await t.pump();
+    expect(find.byKey(const Key('alt-name-A Demo')), findsNothing);
+    expect(saveEnabled(t), isTrue);
+    await teardownApp(t);
+  });
 }

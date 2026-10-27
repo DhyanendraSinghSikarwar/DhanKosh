@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/bank_sms_card.dart';
+import 'package:hisaab/features/settings_data_sources/presentation/history_days_card.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/paste_sms_card.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_providers.dart';
 
@@ -135,6 +136,17 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
           const BankSmsCard(),
           const SizedBox(height: 12),
           const PasteSmsCard(),
+          const SizedBox(height: 12),
+          const HistoryDaysCard(),
+          ListTile(
+            key: const Key('senders-tile'),
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.rule_folder_outlined),
+            title: const Text('Bank senders'),
+            subtitle: const Text('SMS ids and mail domains'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/settings/senders'),
+          ),
           ListTile(
             key: const Key('email-tile'),
             contentPadding: EdgeInsets.zero,

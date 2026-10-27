@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/bills_providers.dart';
+import 'package:hisaab/app/di/layout_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/features/portfolio/domain/asset_class.dart';
 import 'package:hisaab/features/portfolio/domain/holding.dart';
 import 'package:hisaab/features/portfolio/domain/maturity_items.dart';
+import 'package:hisaab/features/portfolio/domain/portfolio_charts.dart';
 import 'package:hisaab/features/portfolio/domain/portfolio_summary.dart';
+import 'package:hisaab/features/portfolio/presentation/allocation_card.dart';
 import 'package:hisaab/features/portfolio/presentation/exclusions_sheet.dart';
 import 'package:hisaab/features/portfolio/presentation/holding_labels.dart';
 import 'package:hisaab/features/portfolio/presentation/holding_sheet.dart';
+import 'package:hisaab/features/portfolio/presentation/holding_spark.dart';
 import 'package:hisaab/features/portfolio/presentation/investment_tx_section.dart';
+import 'package:hisaab/features/portfolio/presentation/maturity_calendar.dart';
 import 'package:hisaab/features/portfolio/presentation/net_worth_chart.dart';
+import 'package:hisaab/features/portfolio/presentation/networth_split_section.dart';
+import 'package:hisaab/features/portfolio/presentation/portfolio_loans_section.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_settings_sheet.dart';
+import 'package:hisaab/features/theming_customisation/domain/section_layout.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
@@ -31,7 +40,16 @@ const _ranges = <(String, int?)>[
 class PortfolioScreen extends ConsumerStatefulWidget {
   /// Creates the screen. [sipSection] and [sipSheet] are composed in
   /// `app/router.dart` (SIPs belong to Bills, F-12).
-  const PortfolioScreen({this.sipSection, this.sipSheet, super.key});
+  const PortfolioScreen({
+    this.sipSection,
+    this.sipSheet,
+    this.layoutEditor,
+    super.key,
+  });
+
+  /// Section editor shown from the app bar, composed by the router from
+  /// Customise (FR-28-15).
+  final Widget? layoutEditor;
 
   /// SIP list shown under the shortcuts (FR-16-26).
   final Widget? sipSection;
@@ -81,32 +99,10 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
             .fold<int>(0, (a, p) => a + p.amountMinor);
     final summary = summarisePortfolio(holdings, cashMinor: cash);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Portfolio'),
-        actions: [
-          IconButton(
-            key: const Key('portfolio-settings'),
-            tooltip: 'Portfolio settings',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => _sheet(const PortfolioSettingsSheet()),
-          ),
-          IconButton(
-            key: const Key('nw-filter'),
-            tooltip: 'Include in net worth',
-            icon: const Icon(Icons.tune),
-            onPressed: () => _sheet(const ExclusionsSheet()),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('holding-add'),
-        onPressed: () => _sheet(const HoldingSheet()),
-        icon: const Icon(Icons.add),
-        label: const Text('Add holding'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+    final visible = ref.watch(visibleSectionsProvider(ScreenIds.portfolio));
+    final loans = ref.watch(loansStateProvider).value?.loans ?? const [];
+    final sections = <String, Widget?>{
+      'value': Column(
         children: [
           _Hero(
             net: nw?.netMinor ?? 0,
@@ -170,23 +166,33 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               ],
             ),
           ),
-          if (summary.byClass.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _Allocation(summary: summary, money: money, asOfMs: asOfMs),
-          ],
+        ],
+      ),
+      'allocation': summary.byClass.isEmpty
+          ? null
+          : AllocationCard(
+              summary: summary,
+              holdings: holdings,
+              money: money,
+              asOfLabel: asOfMs > 0 ? 'as of ${asOfLabel(asOfMs)}' : '',
+            ),
+      'networth': nw == null || nw.parts.isEmpty
+          ? null
+          : NetWorthSplitSection(
+              worth: nw,
+              money: money,
+              onChoose: () => _sheet(const ExclusionsSheet()),
+            ),
+      'holdings': Column(
+        children: [
           if (widget.sipSection != null) ...[
-            const SizedBox(height: 12),
             widget.sipSection!,
+            const SizedBox(height: 12),
           ],
           if (holdings.isNotEmpty || invTxs.isNotEmpty) ...[
-            const SizedBox(height: 12),
             InvestmentTxSection(items: invTxs, money: money),
-          ],
-          if (maturities.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _Maturities(items: maturities),
           ],
-          const SizedBox(height: 16),
           if (holdings.isEmpty)
             const SizedBox(
               height: 220,
@@ -206,6 +212,59 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                   money: money,
                   onTap: (h) => _sheet(HoldingSheet(holding: h)),
                 ),
+        ],
+      ),
+      'loans': loans.any((l) => !l.closed)
+          ? PortfolioLoansSection(loans: loans, money: money)
+          : null,
+      'maturity':
+          maturities.isEmpty ? null : MaturityCalendar(items: maturities),
+    };
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Portfolio'),
+        actions: [
+          if (widget.layoutEditor != null)
+            IconButton(
+              key: const Key('portfolio-sections'),
+              tooltip: 'Edit sections',
+              icon: const Icon(Icons.view_agenda_outlined),
+              onPressed: () => _sheet(
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: widget.layoutEditor,
+                ),
+              ),
+            ),
+          IconButton(
+            key: const Key('portfolio-settings'),
+            tooltip: 'Portfolio settings',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => _sheet(const PortfolioSettingsSheet()),
+          ),
+          IconButton(
+            key: const Key('nw-filter'),
+            tooltip: 'Include in net worth',
+            icon: const Icon(Icons.tune),
+            onPressed: () => _sheet(const ExclusionsSheet()),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        key: const Key('holding-add'),
+        onPressed: () => _sheet(const HoldingSheet()),
+        icon: const Icon(Icons.add),
+        label: const Text('Add holding'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+        children: [
+          for (final id in visible)
+            if (sections[id] case final w?) ...[
+              w,
+              const SizedBox(height: 12),
+            ],
         ],
       ),
     );
@@ -276,15 +335,6 @@ class _Hero extends StatelessWidget {
   }
 }
 
-Color _classColor(AssetClass c, ColorScheme s) => switch (c) {
-      AssetClass.equity => s.primary,
-      AssetClass.retirement => s.tertiary,
-      AssetClass.debt => s.secondary,
-      AssetClass.gold => const Color(0xFFC9A227),
-      AssetClass.cash => const Color(0xFF26A69A),
-      AssetClass.other => s.outline,
-    };
-
 /// `d MMM yyyy` of [ms] in IST.
 String asOfLabel(int ms) {
   const m = [
@@ -293,119 +343,6 @@ String asOfLabel(int ms) {
   ];
   final d = DateTime.fromMillisecondsSinceEpoch(ms + 19800000, isUtc: true);
   return '${d.day} ${m[d.month - 1]} ${d.year}';
-}
-
-class _Allocation extends StatelessWidget {
-  const _Allocation({
-    required this.summary,
-    required this.money,
-    required this.asOfMs,
-  });
-
-  final PortfolioSummary summary;
-  final int asOfMs;
-  final String Function(int) money;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final entries = summary.byClass.entries.where((e) => e.value > 0).toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final total = entries.fold<int>(0, (a, e) => a + e.value);
-    return AppCard(
-      key: const Key('allocation'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Allocation', style: theme.textTheme.titleSmall),
-          if (asOfMs > 0)
-            Text(
-              'as of ${asOfLabel(asOfMs)}',
-              key: const Key('allocation-as-of'),
-              style: theme.textTheme.bodySmall,
-            ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: Row(
-              children: [
-                for (final e in entries)
-                  Expanded(
-                    flex: (e.value * 1000 ~/ total).clamp(1, 1000),
-                    child: Container(
-                      height: 12,
-                      color: _classColor(e.key, theme.colorScheme),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          for (final e in entries)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.circle,
-                    size: 10,
-                    color: _classColor(e.key, theme.colorScheme),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(e.key.label)),
-                  Text('${(e.value * 100 / total).round()}%'),
-                  const SizedBox(width: 12),
-                  Text(money(e.value)),
-                ],
-              ),
-            ),
-          if (summary.investedMinor > 0) ...[
-            const Divider(),
-            Text(
-              'Invested ${money(summary.investedMinor)}  ·  Gain '
-              '${summary.gainMinor < 0 ? '-' : '+'}'
-              '${money(summary.gainMinor.abs())}',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _Maturities extends StatelessWidget {
-  const _Maturities({required this.items});
-
-  final List<MaturityItem> items;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final sem = theme.extension<SemanticColors>()!;
-    return AppCard(
-      key: const Key('maturities'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Upcoming maturities', style: theme.textTheme.titleSmall),
-          for (final m in items)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Row(
-                children: [
-                  Expanded(child: Text(m.name)),
-                  Text(
-                    m.daysLeft == 0 ? 'Today' : 'in ${m.daysLeft} d',
-                    style: TextStyle(color: m.soon ? sem.warning : null),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }
 
 class _Group extends StatelessWidget {
@@ -453,6 +390,13 @@ class _Group extends StatelessWidget {
                     'Invested ${money(h.investedMinor!)}',
                   if (h.asOf != null) 'as of ${asOfLabel(h.asOf!)}',
                 ].join(' · '),
+              ),
+              leading: HoldingSpark(
+                key: Key('spark-${h.id}'),
+                values: holdingSpark(h),
+                color: (h.valueMinor ?? 0) >= (h.previousValueMinor ?? 0)
+                    ? sem.income
+                    : sem.expense,
               ),
               trailing: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

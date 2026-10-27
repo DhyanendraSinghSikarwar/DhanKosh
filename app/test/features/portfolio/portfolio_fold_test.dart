@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/bills_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -83,6 +84,9 @@ void main() {
             ),
           ),
           maturitiesProvider.overrideWith((ref) => Stream.value([])),
+          loansStateProvider.overrideWith(
+            (ref) async => const LoansState(loans: [], dismissed: {}),
+          ),
           navRefreshServiceProvider.overrideWithValue(
             NavRefreshService(
               holdings: holdings,

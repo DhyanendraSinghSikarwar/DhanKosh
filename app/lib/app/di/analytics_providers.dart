@@ -1,12 +1,15 @@
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/scope_providers.dart';
+import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/analytics/domain/analytics_math.dart';
 import 'package:hisaab/features/analytics/domain/analytics_models.dart';
 import 'package:hisaab/features/analytics/domain/analytics_view.dart';
 import 'package:hisaab/features/analytics/domain/civil_date.dart';
 import 'package:hisaab/features/analytics/domain/insight_extras.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
+import 'package:hisaab/features/search_filters/domain/ledger_view_state.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_deductions.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_income.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_plan.dart';
@@ -30,6 +33,13 @@ class AnalyticsPeriodChoice extends _$AnalyticsPeriodChoice {
   void select(AnalyticsPeriod p) => state = p;
 }
 
+/// Visible accounts and cards for the filter bar.
+@riverpod
+Stream<List<Account>> analyticsAccounts(Ref ref) =>
+    ref.watch(accountRepositoryProvider).watchVisible();
+
+DateTime _utcDay(DateTime d) => DateTime.utc(d.year, d.month, d.day);
+
 DateTime _todayIst() => dayOf(DateTime.now().millisecondsSinceEpoch);
 
 /// Used limit: limit minus limit left when known, else billed plus unbilled
@@ -45,11 +55,28 @@ Stream<AnalyticsView> analyticsView(Ref ref) async* {
   final period = ref.watch(analyticsPeriodChoiceProvider);
   final budgets = ref.watch(budgetsProvider).value ?? const [];
   final today = _todayIst();
+  final scopeAccount = ref.watch(accountScopeProvider);
+  final usage = bookUsage(ref.watch(bookProvider));
+  final picked = ref.watch(periodProvider);
+  final range = period == AnalyticsPeriod.custom && picked.customStart != null
+      ? (
+          from: _utcDay(picked.customStart!),
+          to: _utcDay(picked.customEnd ?? picked.customStart!),
+        )
+      : null;
   final cur = DateTime.utc(today.year, today.month);
-  final month = period == AnalyticsPeriod.thisMonth ? cur : addMonths(cur, -1);
+  final month = range != null
+      ? DateTime.utc(range.to.year, range.to.month)
+      : period == AnalyticsPeriod.lastMonth
+          ? addMonths(cur, -1)
+          : cur;
   final months = [for (var i = 11; i >= 0; i--) addMonths(month, -i)];
   final prev = addMonths(month, -1);
-  final to = DateTime.utc(month.year, month.month + 1, 0);
+  final to = range?.to ?? DateTime.utc(month.year, month.month + 1, 0);
+  final from = range?.from ?? month;
+  final days = to.difference(from).inDays + 1;
+  final prevTo = range != null ? from.subtract(const Duration(days: 1)) : null;
+  final prevFrom = prevTo?.subtract(Duration(days: days - 1));
   final winEnd = epochMsOf(addMonths(month, 1));
   final winStart = epochMsOf(months.first);
   final repo = ref.watch(transactionRepositoryProvider);
@@ -64,26 +91,35 @@ Stream<AnalyticsView> analyticsView(Ref ref) async* {
               _used(c.limitMinor!, c.limitLeftMinor, c.position.totalMinor),
         ),
   ];
-  await for (final all
-      in repo.watch(LedgerFilter(fromMs: winStart, toMs: winEnd))) {
+  await for (final raw in repo
+      .watch(LedgerFilter(fromMs: winStart, toMs: winEnd, usage: usage))) {
+    final all = [
+      for (final t in raw)
+        if (scopeAccount == null || t.accountId == scopeAccount) t,
+    ];
     List<LedgerTx> within(DateTime a, DateTime b) => all.where((t) {
           final d = dayOf(t.timestamp);
           return !d.isBefore(a) && !d.isAfter(b);
         }).toList();
-    final txs = within(month, to);
+    final txs = within(from, to);
     final slice = AnalyticsSlice(
       txs: txs,
-      previous: within(prev, DateTime.utc(prev.year, prev.month + 1, 0)),
+      previous: range != null
+          ? within(prevFrom!, prevTo!)
+          : within(prev, DateTime.utc(prev.year, prev.month + 1, 0)),
       year: all,
       months: months,
-      from: month,
+      from: from,
       to: to,
-      kind: period == AnalyticsPeriod.thisMonth
-          ? AnalyticsPeriodKind.month
-          : AnalyticsPeriodKind.lastMonth,
-      month: month,
-      previousFrom: prev,
-      previousTo: DateTime.utc(prev.year, prev.month + 1, 0),
+      kind: switch (period) {
+        AnalyticsPeriod.thisMonth => AnalyticsPeriodKind.month,
+        AnalyticsPeriod.lastMonth => AnalyticsPeriodKind.lastMonth,
+        AnalyticsPeriod.custom => AnalyticsPeriodKind.custom,
+      },
+      month: range != null ? null : month,
+      previousFrom: range != null ? prevFrom : prev,
+      previousTo:
+          range != null ? prevTo : DateTime.utc(prev.year, prev.month + 1, 0),
     );
     final data = AnalyticsMath.build(
       slice: slice,
@@ -101,6 +137,7 @@ Stream<AnalyticsView> analyticsView(Ref ref) async* {
       incomeSources: InsightExtras.incomeBySource(txs),
       subscriptions: InsightExtras.subscriptions(all, today),
       cards: cards,
+      year: all,
     );
   }
 }

@@ -18,9 +18,10 @@ enum EmailProvider {
     'outlook.office365.com',
     'https://account.live.com/proofs/AppPassword',
     [
-      'Turn on two-step verification first.',
-      'Create a new app password.',
-      'Paste it here. Work accounts may block this.',
+      'Open Advanced security options.',
+      'Turn on Two-step verification first. App passwords only appears after.',
+      'Tap Create a new app password.',
+      'Paste it here. Work or school accounts may block this.',
     ],
   ),
 
@@ -115,6 +116,7 @@ class EmailAccount {
     required this.provider,
     required String imapHost,
     this.imapPort = 993,
+    this.enabled = true,
   })  : address = address.trim().toLowerCase(),
         imapHost = imapHost.trim().toLowerCase();
 
@@ -158,6 +160,37 @@ class EmailAccount {
 
   /// IMAP TLS port.
   final int imapPort;
+
+  /// Whether syncs read this mailbox (FR-03-22).
+  final bool enabled;
+
+  /// Copy with a new [enabled] flag.
+  EmailAccount withEnabled({required bool enabled}) => EmailAccount(
+        address: address,
+        provider: provider,
+        imapHost: imapHost,
+        imapPort: imapPort,
+        enabled: enabled,
+      );
+
+  /// SMTP host used to mail the verification code to the address itself
+  /// (FR-03-03); same login as IMAP.
+  String get smtpHost => switch (provider) {
+        EmailProvider.gmail => 'smtp.gmail.com',
+        EmailProvider.outlook => 'smtp-mail.outlook.com',
+        EmailProvider.yahoo => 'smtp.mail.yahoo.com',
+        EmailProvider.icloud => 'smtp.mail.me.com',
+        EmailProvider.custom => imapHost.startsWith('imap.')
+            ? 'smtp.${imapHost.substring(5)}'
+            : 'smtp.${address.substring(address.lastIndexOf('@') + 1)}',
+      };
+
+  /// SMTP port: 465 (TLS from the start) or 587 (STARTTLS).
+  int get smtpPort => smtpSsl ? 465 : 587;
+
+  /// Outlook and iCloud use STARTTLS; the rest TLS from the start.
+  bool get smtpSsl =>
+      provider != EmailProvider.outlook && provider != EmailProvider.icloud;
 
   /// App passwords are pasted with spaces; the server wants none (FR-03-02).
   static String cleanPassword(String raw) => raw.replaceAll(RegExp(r'\s+'), '');

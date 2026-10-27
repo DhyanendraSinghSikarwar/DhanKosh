@@ -111,6 +111,7 @@ class AppearanceSettings {
     this.palette = PaletteId.dhankosh,
     this.pureBlack = false,
     this.textSize = TextSize.standard,
+    this.reduceMotion = false,
   });
 
   /// Mode.
@@ -125,18 +126,23 @@ class AppearanceSettings {
   /// Text size.
   final TextSize textSize;
 
+  /// Skip decorative motion even when the phone allows it (FR-28-10).
+  final bool reduceMotion;
+
   /// Copy with changes.
   AppearanceSettings copyWith({
     ThemeModeChoice? mode,
     PaletteId? palette,
     bool? pureBlack,
     TextSize? textSize,
+    bool? reduceMotion,
   }) =>
       AppearanceSettings(
         mode: mode ?? this.mode,
         palette: palette ?? this.palette,
         pureBlack: pureBlack ?? this.pureBlack,
         textSize: textSize ?? this.textSize,
+        reduceMotion: reduceMotion ?? this.reduceMotion,
       );
 }
 
@@ -146,6 +152,7 @@ abstract final class AppearanceKeys {
   static const palette = SettingKey<String>('theme_palette', 'dhankosh');
   static const pureBlack = SettingKey<bool>('pure_black', false);
   static const textScalePct = SettingKey<int>('text_scale_pct', 100);
+  static const reduceMotion = SettingKey<bool>('reduce_motion', false);
 }
 
 /// Appearance persistence port.

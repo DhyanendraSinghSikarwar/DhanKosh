@@ -3,17 +3,24 @@ import 'package:hisaab/app/di/bills_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/scope_providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
+import 'package:hisaab/core/utils/combine_latest.dart';
 import 'package:hisaab/core/utils/ist.dart';
 import 'package:hisaab/features/activity_log/domain/inbox_logic.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_attention.dart';
+import 'package:hisaab/features/dashboard_home/domain/home_charts.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_providers.dart';
 import 'package:hisaab/features/news_support_updates/domain/update_keys.dart';
 import 'package:hisaab/features/news_support_updates/domain/version_compare.dart';
+import 'package:hisaab/features/search_filters/domain/ledger_view_state.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:parser_core/parser_core.dart' show Category;
 
 // Home composition (F-17): reads other features through their providers so
 // Home presentation never imports another feature (ADR-0010).
@@ -109,4 +116,64 @@ final homeAttentionProvider = Provider<List<AttentionItem>>((ref) {
     ],
     updateVersion: ref.watch(homeUpdateVersionProvider),
   );
+});
+
+/// Rows of the shown month and the one before, for the running line, the
+/// category donut and the change versus last month (FR-17-06, FR-17-11).
+final homeMonthTxsProvider = StreamProvider<
+    ({
+      List<LedgerTx> cur,
+      List<LedgerTx> prev,
+    })>((ref) {
+  final m = ref.watch(homeMonthProvider);
+  final p = m.previous;
+  final repo = ref.watch(transactionRepositoryProvider);
+  final usage = bookUsage(ref.watch(bookProvider));
+  return combineLatest<({List<LedgerTx> cur, List<LedgerTx> prev})>(
+    [
+      repo.watch(
+        LedgerFilter(fromMs: m.startMs, toMs: m.endMs - 1, usage: usage),
+      ),
+      repo.watch(
+        LedgerFilter(fromMs: p.startMs, toMs: p.endMs - 1, usage: usage),
+      ),
+    ],
+    (v) => (
+      cur: v[0]! as List<LedgerTx>,
+      prev: v[1]! as List<LedgerTx>,
+    ),
+  );
+});
+
+/// Bills, EMIs, insurance renewals, income and card dues in the coming days
+/// (FR-17-09); filtered to 7 days by the widget.
+final homeUpcomingProvider = Provider<List<UpcomingRow>>((ref) {
+  final nowMs = DateTime.now().millisecondsSinceEpoch;
+  final today = Ist.dateOf(nowMs);
+  final todayDay = Ist.dayOf(nowMs);
+  final bills = ref.watch(billsProvider).value ?? const [];
+  final cards = ref.watch(cardLimitsProvider).value ?? const [];
+  return [
+    for (final b in bills)
+      UpcomingRow(
+        name: b.name,
+        amountMinor: b.amountMinor,
+        days: b.nextDue.difference(today).inDays,
+        kind: b.income
+            ? UpcomingKind.income
+            : b.loanKey != null
+                ? UpcomingKind.emi
+                : b.category == Category.insurance
+                    ? UpcomingKind.insurance
+                    : UpcomingKind.bill,
+      ),
+    for (final c in cards)
+      if (!c.paid && c.owedMinor > 0 && c.dueDay != null)
+        UpcomingRow(
+          name: '${c.name} card bill',
+          amountMinor: c.owedMinor,
+          days: c.dueDay! - todayDay,
+          kind: UpcomingKind.card,
+        ),
+  ];
 });

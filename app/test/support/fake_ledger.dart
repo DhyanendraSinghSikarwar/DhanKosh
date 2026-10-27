@@ -31,6 +31,7 @@ LedgerTx fakeTx(
   int? accountId,
   bool needsReview = false,
   String? reviewReason,
+  AccountKind kind = AccountKind.account,
 }) =>
     LedgerTx(
       id: id,
@@ -39,7 +40,7 @@ LedgerTx fakeTx(
       type: type,
       bankName: 'HDFC',
       accountLast4: '1234',
-      accountKind: AccountKind.account,
+      accountKind: kind,
       accountId: accountId,
       merchant: merchant,
       upiId: upiId,
@@ -59,6 +60,9 @@ LedgerTx fakeTx(
 /// account, category) and records writes.
 class FakeTxRepo implements TransactionRepository {
   FakeTxRepo(this.rows, {this.pairs = const []});
+
+  /// Rows moved with `rememberPayee`.
+  final List<int> remembered = [];
 
   List<LedgerTx> rows;
   List<ReviewPair> pairs;
@@ -185,8 +189,14 @@ class FakeTxRepo implements TransactionRepository {
   Future<void> setSubcategory(int id, String? sub) async => subs.add((id, sub));
 
   @override
-  Future<void> setAccount(int id, int? accountId) async =>
-      accountSets.add((id, accountId));
+  Future<void> setAccount(
+    int id,
+    int? accountId, {
+    bool rememberPayee = false,
+  }) async {
+    accountSets.add((id, accountId));
+    if (rememberPayee) remembered.add(id);
+  }
 
   @override
   Future<int> deleteTransactions(List<int> ids) async {
@@ -302,6 +312,10 @@ Future<void> pumpLedgerApp(
   List<GoRoute> routes = const [],
   bool dark = false,
 }) async {
+  // The filter header grew (book, card chips); a tall screen keeps rows built.
+  tester.view.physicalSize = const Size(900, 2400);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
   final router = GoRouter(
     routes: [
       GoRoute(path: '/', builder: (_, __) => home),

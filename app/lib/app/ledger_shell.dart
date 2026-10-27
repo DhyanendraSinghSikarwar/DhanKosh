@@ -19,12 +19,9 @@ class TransactionsTab extends ConsumerWidget {
     final view = ref.watch(ledgerViewProvider);
     return TransactionsLedgerScreen(
       filter: view.toFilter(DateTime.now()),
-      periodLabel: switch (view.period) {
-        PeriodKind.thisMonth => 'This month',
-        PeriodKind.lastMonth => 'Last month',
-        PeriodKind.custom => 'Custom range',
-        PeriodKind.all => 'All time',
-      },
+      periodLabel: view.period == PeriodKind.custom
+          ? 'Custom range'
+          : periodLabel(view.period),
       filterBuilder: (context, count) => LedgerFilterBar(resultCount: count),
       pickCategory: (ctx, t) => showCategorySheet(
         ctx,

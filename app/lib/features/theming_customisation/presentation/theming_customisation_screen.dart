@@ -4,6 +4,7 @@ import 'package:hisaab/app/di/appearance_providers.dart';
 import 'package:hisaab/app/theme/palettes.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/theming_customisation/domain/appearance.dart';
+import 'package:hisaab/features/theming_customisation/presentation/section_layout_card.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 
 /// Customise screen: Appearance section (F-28, FR-28-11..13).
@@ -57,6 +58,13 @@ class ThemingCustomisationScreen extends ConsumerWidget {
                   value: a.pureBlack,
                   onChanged: (v) => _save(ref, a.copyWith(pureBlack: v)),
                 ),
+                SwitchListTile(
+                  key: const Key('reduce-motion-switch'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(t('Reduce motion')),
+                  value: a.reduceMotion,
+                  onChanged: (v) => _save(ref, a.copyWith(reduceMotion: v)),
+                ),
                 const SizedBox(height: 8),
                 Text(t('Text size'), style: text.labelLarge),
                 const SizedBox(height: 8),
@@ -90,6 +98,10 @@ class ThemingCustomisationScreen extends ConsumerWidget {
               ],
             ),
           ],
+          const SizedBox(height: 16),
+          Text(t('Tab sections'), style: text.titleMedium),
+          const SizedBox(height: 8),
+          const SectionLayoutCard(),
         ],
       ),
     );

@@ -29,7 +29,7 @@ Future<void> pumpApp(
         budgetRepositoryProvider
             .overrideWithValue(BudgetRepositoryImpl(env.db)),
         incomeRepositoryProvider
-            .overrideWithValue(IncomeRepositoryImpl(env.db)),
+            .overrideWithValue(IncomeRepositoryImpl(env.txs)),
       ],
       child: MaterialApp.router(
         routerConfig: router,

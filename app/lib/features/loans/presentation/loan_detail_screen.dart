@@ -8,7 +8,9 @@ import 'package:hisaab/features/loans/domain/loan_link_repository.dart';
 import 'package:hisaab/features/loans/domain/loan_models.dart';
 import 'package:hisaab/features/loans/presentation/link_payment_sheet.dart';
 import 'package:hisaab/features/loans/presentation/loan_card.dart';
+import 'package:hisaab/features/loans/presentation/loan_emi_chart.dart';
 import 'package:hisaab/features/loans/presentation/loan_form_sheet.dart';
+import 'package:hisaab/features/loans/presentation/loan_merged_section.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 
@@ -138,6 +140,12 @@ class _Body extends ConsumerWidget {
               ),
           ],
         ),
+        if (schedule.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          LoanEmiChart(schedule: schedule),
+        ],
+        if (loan.accountId != null)
+          LoanMergedSection(accountId: loan.accountId!),
         if (schedule.isNotEmpty)
           ExpansionTile(
             key: const Key('loan-schedule'),

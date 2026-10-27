@@ -26,6 +26,7 @@ class ScanSms {
     required bool Function(String sender) accept,
     required SmsIngest ingest,
     SmsBatchIngest? ingestBatch,
+    Future<void> Function()? prepare,
     DateTime Function() now = DateTime.now,
     Future<void> Function(String message)? recordActivity,
     ActivityLogger? activity,
@@ -38,6 +39,7 @@ class ScanSms {
         _accept = accept,
         _ingest = ingest,
         _ingestBatch = ingestBatch,
+        _prepare = prepare,
         _now = now,
         _recordActivity = recordActivity,
         _activity = activity,
@@ -48,6 +50,7 @@ class ScanSms {
   final bool Function(String) _accept;
   final SmsIngest _ingest;
   final SmsBatchIngest? _ingestBatch;
+  final Future<void> Function()? _prepare;
   final DateTime Function() _now;
   final Future<void> Function(String)? _recordActivity;
   final ActivityLogger? _activity;
@@ -80,6 +83,7 @@ class ScanSms {
   /// Runs the scan; never throws for permission or ingest errors.
   Future<SmsScanResult> call(SmsScanRequest request) async {
     final started = _now();
+    await _prepare?.call();
     final settings = await _settings.read();
     final nowMs = started.millisecondsSinceEpoch;
     final since = windowStart(

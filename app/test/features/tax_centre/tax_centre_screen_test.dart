@@ -1,9 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/app/di/analytics_providers.dart';
 import 'package:hisaab/app/di/backup_providers.dart';
+import 'package:hisaab/app/di/share_providers.dart';
 import 'package:hisaab/app/theme/app_theme.dart';
 import 'package:hisaab/features/backup_export/data/report_service.dart';
 import 'package:hisaab/features/backup_export/domain/blob_gateway.dart';
@@ -14,6 +17,7 @@ import 'package:hisaab/features/tax_centre/domain/tax_income.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_plan.dart';
 import 'package:hisaab/features/tax_centre/presentation/tax_centre_screen.dart';
 import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
+import 'package:hisaab/shared/ports/share_gateway.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/report/report_document.dart';
 import 'package:mocktail/mocktail.dart';
@@ -168,4 +172,35 @@ void main() {
     expect(svc.saved, hasLength(2));
     await teardownApp(t);
   });
+
+  // FR-19-10: HD image and PDF through the share sheet.
+  testWidgets('share as image and PDF', (t) async {
+    final gw = _Share();
+    await pump(t, extra: [shareGatewayProvider.overrideWithValue(gw)]);
+    await t.tap(find.byKey(const Key('tax-share')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Share as image'));
+    await t.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    });
+    await t.pump();
+    expect(gw.files.single.name, 'DhanKosh-tax-estimate-2026-27.png');
+    // PNG signature.
+    expect(gw.files.single.bytes.take(4).toList(), [0x89, 0x50, 0x4e, 0x47]);
+    await teardownApp(t);
+  });
+}
+
+class _Share implements ShareGateway {
+  final files = <({String name, Uint8List bytes, String mime})>[];
+  @override
+  Future<bool> shareFile({
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    String? text,
+  }) async {
+    files.add((name: fileName, bytes: bytes, mime: mimeType));
+    return true;
+  }
 }

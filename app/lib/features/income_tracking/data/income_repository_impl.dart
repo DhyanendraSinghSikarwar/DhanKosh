@@ -1,76 +1,78 @@
-import 'package:drift/drift.dart';
-import 'package:hisaab/core/db/app_database.dart';
+import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/income_tracking/domain/cash_flow.dart';
 import 'package:hisaab/features/income_tracking/domain/income_repository.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
+import 'package:hisaab/features/transactions_ledger/domain/transfer_pairing.dart';
 
 /// [IncomeRepository] with read-only queries on `transactions`.
 class IncomeRepositoryImpl implements IncomeRepository {
   /// Creates the repository.
-  IncomeRepositoryImpl(this._db);
+  IncomeRepositoryImpl(this._tx);
 
-  final AppDatabase _db;
+  final TransactionRepository _tx;
 
-  static const _live = 'needs_review = 0 AND duplicate_of_id IS NULL '
-      "AND category != 'TRANSFER'";
-
-  @override
-  Future<int> incomeBetween(int fromMs, int toMs) async {
-    final r = await _db.customSelect(
-      'SELECT COALESCE(SUM(inr_minor),0) AS v FROM transactions '
-      "WHERE type = 'CREDIT' AND $_live AND timestamp BETWEEN ?1 AND ?2",
-      variables: [Variable.withInt(fromMs), Variable.withInt(toMs)],
-      readsFrom: {_db.transactions},
-    ).getSingle();
-    return r.read<int>('v');
-  }
-
-  static const _flowSql = '''
-SELECT
- COALESCE(SUM(CASE WHEN type='CREDIT' THEN inr_minor END),0) AS income,
- COALESCE(SUM(CASE WHEN type='DEBIT' THEN inr_minor END),0) AS spent,
- COALESCE(SUM(CASE WHEN type='INVESTMENT' THEN inr_minor END),0) AS invested
-FROM transactions WHERE $_live AND timestamp BETWEEN ?1 AND ?2''';
-
-  @override
-  Future<CashFlow> cashFlow(int fromMs, int toMs) async {
-    final r = await _db.customSelect(
-      _flowSql,
-      variables: [Variable.withInt(fromMs), Variable.withInt(toMs)],
-      readsFrom: {_db.transactions},
-    ).getSingle();
-    return CashFlow(
-      incomeMinor: r.read<int>('income'),
-      spentMinor: r.read<int>('spent'),
-      investedMinor: r.read<int>('invested'),
-    );
-  }
-
-  static const _monthSql = '''
-SELECT strftime('%Y-%m', (timestamp + 19800000) / 1000, 'unixepoch') AS ym,
- COALESCE(SUM(CASE WHEN type='CREDIT' THEN inr_minor END),0) AS income,
- COALESCE(SUM(CASE WHEN type='DEBIT' THEN inr_minor END),0) AS spent,
- COALESCE(SUM(CASE WHEN type='INVESTMENT' THEN inr_minor END),0) AS invested
-FROM transactions WHERE $_live AND timestamp BETWEEN ?1 AND ?2
-GROUP BY ym ORDER BY ym''';
-
-  Selectable<MonthFlow> _months(int fromMs, int toMs) => _db.customSelect(
-        _monthSql,
-        variables: [Variable.withInt(fromMs), Variable.withInt(toMs)],
-        readsFrom: {_db.transactions},
-      ).map(
-        (r) => MonthFlow(
-          yearMonth: r.read<String>('ym'),
-          incomeMinor: r.read<int>('income'),
-          spentMinor: r.read<int>('spent'),
-          investedMinor: r.read<int>('invested'),
+  // ADR-0011: totals come from SpendCalc (cash basis); the card payment
+  // window around the range only serves to pair payments.
+  Stream<List<LedgerTx>> _rows(int fromMs, int toMs) => _tx.watch(
+        LedgerFilter(
+          fromMs: fromMs - TransferPairing.cardWindowMs,
+          toMs: toMs + 1 + TransferPairing.cardWindowMs,
         ),
       );
 
+  static CashFlow _flow(CashTotals c) => CashFlow(
+        incomeMinor: c.incomeMinor + c.refundMinor,
+        spentMinor: c.spentMinor,
+        investedMinor: c.investedMinor,
+      );
+
   @override
-  Future<List<MonthFlow>> monthlyFlows(int fromMs, int toMs) =>
-      _months(fromMs, toMs).get();
+  Future<int> incomeBetween(int fromMs, int toMs) async =>
+      (await cashFlow(fromMs, toMs)).incomeMinor;
+
+  @override
+  Future<CashFlow> cashFlow(int fromMs, int toMs) async {
+    final all = await _rows(fromMs, toMs).first;
+    final inRange =
+        all.where((t) => t.timestamp >= fromMs && t.timestamp <= toMs);
+    return _flow(SpendCalc.totals(inRange, context: all));
+  }
+
+  static const _istMs = 19800000;
+
+  List<MonthFlow> _byMonth(List<LedgerTx> all, int fromMs, int toMs) {
+    final by = <String, List<LedgerTx>>{};
+    for (final t in all) {
+      if (t.timestamp < fromMs || t.timestamp > toMs) continue;
+      final d = DateTime.fromMillisecondsSinceEpoch(
+        t.timestamp + _istMs,
+        isUtc: true,
+      );
+      final ym = '${d.year}-${d.month.toString().padLeft(2, '0')}';
+      by.putIfAbsent(ym, () => []).add(t);
+    }
+    final keys = by.keys.toList()..sort();
+    return [
+      for (final k in keys)
+        () {
+          final f = _flow(SpendCalc.totals(by[k]!, context: all));
+          return MonthFlow(
+            yearMonth: k,
+            incomeMinor: f.incomeMinor,
+            spentMinor: f.spentMinor,
+            investedMinor: f.investedMinor,
+          );
+        }(),
+    ];
+  }
+
+  @override
+  Future<List<MonthFlow>> monthlyFlows(int fromMs, int toMs) async =>
+      _byMonth(await _rows(fromMs, toMs).first, fromMs, toMs);
 
   @override
   Stream<List<MonthFlow>> watchMonthlyFlows(int fromMs, int toMs) =>
-      _months(fromMs, toMs).watch();
+      _rows(fromMs, toMs).map((all) => _byMonth(all, fromMs, toMs));
 }

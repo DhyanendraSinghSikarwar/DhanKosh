@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/features/loans/presentation/loan_card.dart';
+import 'package:hisaab/features/loans/presentation/loan_duplicates_section.dart';
 import 'package:hisaab/features/loans/presentation/loan_form_sheet.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
@@ -44,6 +45,7 @@ class LoansScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
             children: [
+              const LoanDuplicatesSection(),
               for (final l in s.loans) ...[
                 LoanCard(
                   key: Key('loan-${l.key}'),

@@ -1,8 +1,10 @@
+import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_poster_impl.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_settings_store.dart';
+import 'package:hisaab/features/alerts_reminders/domain/alert_action_handler.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_models.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_poster.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alerts_engine.dart';
@@ -28,6 +30,15 @@ AlertSettingsRepository alertSettingsRepository(Ref ref) =>
 Stream<AlertSettings> alertSettings(Ref ref) =>
     ref.watch(alertSettingsRepositoryProvider).watch();
 
+/// Runs notification button actions (FR-21-03, FR-21-10).
+@Riverpod(keepAlive: true)
+AlertActionHandler alertActionHandler(Ref ref) => AlertActionHandler(
+      cardState: ref.watch(cardReminderStateStoreProvider),
+      paid: ref.watch(cardPaidStoreProvider),
+      txs: ref.watch(transactionRepositoryProvider),
+      poster: ref.watch(alertPosterProvider),
+    );
+
 /// Runs all alert checks and posts the results.
 @Riverpod(keepAlive: true)
 AlertsEngine alertsEngine(Ref ref) => AlertsEngine(
@@ -38,6 +49,8 @@ AlertsEngine alertsEngine(Ref ref) => AlertsEngine(
       poster: ref.watch(alertPosterProvider),
       settings: ref.watch(alertSettingsRepositoryProvider),
       txs: ref.watch(transactionRepositoryProvider),
+      cards: () => ref.read(cardDueServiceProvider).watchCards().first,
+      cardState: ref.watch(cardReminderStateStoreProvider),
       installedVersion: appVersion,
       updateVersion: () async {
         // Daily-throttled check, then the newest version it found (FR-31-34).

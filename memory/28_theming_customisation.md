@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-28 |
-| Status | In progress (Phase 5: 22 palettes ported verbatim, mode/pure-black/text size, Customise Appearance section and More tile done; Net worth, Tab sections, backdrop, reduce-motion pending) |
+| Status | In progress (Phase 5: 22 palettes ported verbatim, mode/pure-black/text size, Customise Appearance section and More tile done; layout store, Tab sections card, Home presets and Home/Portfolio edit mode done; Analysis consuming the store pending; Net worth card, backdrop, reduce-motion pending); 2026-10-27 parity: backdrop wash and glows (FR-28-08) and reduce motion (FR-28-10, FR-28-27) done |
 | Priority | P1 |
 | Phase | 0 (theme engine, tokens, text scale) and 5 (Customise screen polish, presets) |
 | Last Updated | 2026-10-27 |
@@ -227,6 +227,11 @@ DataStore `app_settings`: `theme` (SYSTEM / LIGHT / DARK, default SYSTEM), `them
 - FR-28-20: Each tab screen renders only visible sections in the stored order; the Analysis section order applies only to the Spending segment.
 - FR-28-21: Settings changes propagate to all screens without restart.
 - FR-28-22: Theme colours come from the code palette in section 3 (22 `PaletteSpec`s plus `MoneyColors`); the `SPEC_NOTES.md` design-token block is not authoritative and its differing values (bg, accent, surfaces, border) are not used.
+- FR-28-23: The layout store keeps one JSON list `[{id, visible, order}]` per screen id (`home`, `analytics`, `portfolio`) in the settings key `layout_<screen>`; defaults are the Section 3.7 orders (Home hides `budgets`; Portfolio adds `loans` after `holdings`); unknown ids are dropped, new ids are appended with their default visibility and bad JSON gives the defaults. `sectionLayoutProvider(screenId)` and `visibleSectionsProvider(screenId)` expose it to every screen.
+- FR-28-24: The Customise screen has a Tab sections card: a Home / Analysis / Portfolio selector, a reorderable list (drag handle) with a visibility switch per section, and Reset (replaces the up/down arrows of FR-28-15; same outcome).
+- FR-28-25: Home presets Minimal, Spender, Investor, Business and Everything are a working feature (chips in the editor): the preset's sections are shown first in order and every other section is hidden (answers open question 2; Kotlin 2.9.8 never called `apply()`).
+- FR-28-26: Home has an edit mode (tune button) that swaps the sections for the same editor; Portfolio opens it from its app bar; Analysis reads `visibleSectionsProvider('analytics')` for its Spending segment (consumer owned by [18_analytics.md](18_analytics.md)).
+- FR-28-27: A Reduce motion switch in Customise shall skip decorative motion (page transitions, spring and count-up) even when the phone allows it; effective value is `setting || system disableAnimations`, applied through `MediaQuery.disableAnimations`.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -459,6 +464,9 @@ Integration:
 - TC-28-17 (FR-28-21): changing palette in Customise changes the Home hero gradient without restart.
 - TC-28-18 (FR-28-12): settings survive app restart.
 - TC-28-19 (FR-28-22): DHANKOSH light uses bg `F6F8FA` and primary `2873BE` (not SPEC_NOTES `F7F7F5` / `2F5BEA`).
+- TC-28-20 (FR-28-23): resolve drops unknown ids, appends new ones, falls back on bad JSON; encode/resolve round trip keeps order and visibility.
+- TC-28-21 (FR-28-25): every preset leaves exactly its sections visible, first, in order.
+- TC-28-22 (FR-28-24, FR-28-26): widget: edit mode on Home applies Minimal, hides a section, and persists to the store.
 
 ## 16. Acceptance Criteria
 
@@ -490,6 +498,9 @@ Landed 2026-10-21: FR-28-01..07, 09, 12, 13, 21, 22 (TC-28-01..04, 11 via semant
 - Persisted in the settings store: `theme`, `theme_palette`, `pure_black`, `text_scale_pct` (int percent, the store has no double). Text scale applied in `app.dart` via `effectiveTextScale`; theme via `AppTheme.build`, `themeMode`.
 - `SemanticColors` values updated to the Kotlin `MoneyColors` (credit/debit/warn); `transfer` not added yet.
 - Deferred: FR-28-08 backdrop wash and glows, FR-28-10 reduce-motion handling (Flutter `disableAnimations` is not wired to custom motion), FR-28-11 Net worth card (FR-28-14), Tab sections card and layout logic (FR-28-15..20), hero-gradient consumers of `PaletteSpec.heroLight/heroDark`, SystemChrome overlay styling, GIFs.
+Layout store landed 2026-10-27: `features/theming_customisation/domain/section_layout.dart` (pure), `app/di/layout_providers.dart`, `presentation/section_layout_{editor,card}.dart`. Differs from Kotlin storage (`order_<tab>` plus a `hidden` set): one JSON key per screen, no migrations needed on a fresh install.
+
+- 2026-10-27: Backdrop and reduce motion: `app/theme/backdrop.dart` (`BackdropTheme` extension, `BackdropPainter`, `Backdrop`, `BackdropPageTransitionsBuilder`); `AppTheme.build(backdrop: true)` makes scaffolds transparent and paints the backdrop under each page via the page transition builder (so route overlaps stay clean); off on pure black. `AppearanceSettings.reduceMotion` (key `reduce_motion`), switch `reduce-motion-switch`. Tests `test/app/theme/backdrop_test.dart`.
 
 ## 19. Change Log (date | change | reason)
 
@@ -500,3 +511,5 @@ Landed 2026-10-21: FR-28-01..07, 09, 12, 13, 21, 22 (TC-28-01..04, 11 via semant
 | 2026-10-19 | Stated code palette is authoritative over SPEC_NOTES design tokens and listed discrepancies (FR-28-22, TC-28-19); persisted-keys table named `settings` per 26 | Audit Gate gap, scan_6 |
 | 2026-10-21 | Phase 5 theming + localization landed | Phase 5 |
 | 2026-10-27 | Audit: 22 palettes (incl. Fold), modes and text size confirmed done; Customise tab sections, presets, backdrop and reduce-motion confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Layout store (settings JSON per screen), Tab sections card with reorder and switches, working Home presets, Home edit mode, Portfolio `loans` section (FR-28-23..26) | Kotlin parity |
+| 2026-10-27 | Backdrop and reduce motion: `app/theme/backdrop.dart` (`BackdropTheme` extension, `BackdropPainter`, `Backdrop`, `BackdropPageTransitionsBuilder`); `AppTheme.build(backdrop: true)` makes scaffolds transparent and paints the backdrop under each page via the page transition builder (so route overlaps stay clean); off on pure black | Kotlin parity |

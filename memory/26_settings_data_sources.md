@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-26 |
-| Status | In progress (Phase 1: settings store and a first Data sources screen with SMS card, paste import, masking switch and developer tools; email, notification rows, history choices, More hub and About pending) |
+| Status | In progress (settings store, SMS card, paste import, masking, developer tools, History to read slider (7 to 365 days, re-read on increase) and the Bank senders editor (SMS ids and mail domains) done; notification row, More hub subtitles, About pending) |
 | Priority | P0 |
 | Phase | 1 (Data sources screen and settings store); 2 extends it with email and notification rows |
 | Last Updated | 2026-10-27 |
@@ -252,6 +252,8 @@ On start, off the main thread: restore language, scan SMS if permitted, schedule
 - FR-26-27: (Phase 1 addition) Developer section, shown while `developer_tools` is true (default true in this early build): "Add sample data" ingests 25 clearly dummy SMS (accounts XX1234 bank and XX5678 card, merchants prefixed DEMO) over the last 60 days through the normal ingest path.
 - FR-26-28: (Phase 1 addition) "Clear all data" with a confirm dialog deletes transactions, sources, tombstones, accounts, rules and custom categories and resets the SMS cursor; settings and the sealed identity stay.
 - FR-26-29: (Phase 1 addition) Privacy switch "Hide amounts" writes `hide_amounts` (default true).
+- FR-26-30: (parity addition) "History to read" card on Data sources: slider 7 to 365 days plus quick picks 7, 30, 90, 180, 365 (extends FR-26-02's fixed choices). It writes `history_days`, the single window shared by SMS and email (the SMS-only `lookback_days` key is gone). Raising it resets the SMS cursor (`sms_cursor` removed) and every mailbox cursor and starts a full SMS scan and an email sync in the background; lowering it only shortens the next first read. Re-reads are idempotent through ingest dedup and processed ids. Code: `ChangeHistoryDays` (`domain/usecases/change_history_days.dart`), `app/di/history_providers.dart`, `presentation/history_days_card.dart`.
+- FR-26-31: (parity addition) "Bank senders" screen (`/settings/senders`, tile on Data sources) with two tabs. SMS: sender ids; defaults come from the parser registry; each default has a switch, the user can add ids (stored upper-case; an added id is accepted by the pre-filter and read by the generic bank parser) and "Reset to defaults". Mail: default addresses and domains with switches, user additions, reset. This is additive (add, switch off, reset) rather than FR-26-18's "override replaces the default list entirely". Storage: `sms_sender_overrides` (JSON `{added, removed}`) for SMS, `email_custom_senders` and `email_removed_senders` for mail. `IngestMessage.accepts` consults a `SenderOverridesCache` (loaded by `prepare()` before scans, drains and engine start); with added senders parsing uses a derived registry (sequential, no isolate).
 - FR-26-25: The settings key-value store is one Drift table `settings(key TEXT PRIMARY KEY, value TEXT)`; every feature persisting a simple setting (including [01_onboarding_permissions.md](01_onboarding_permissions.md) and [17_dashboard_home.md](17_dashboard_home.md)) uses this name.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
@@ -532,9 +534,10 @@ Done: FR-26-12 (typed keys with defaults, streams, `hide_amounts` default true; 
 
 Phase 1 UI (2026-10-21): `presentation/settings_data_sources_screen.dart` (More tab), `bank_sms_card.dart`, `paste_sms_card.dart`, `settings_providers.dart`; `domain/sample_data.dart`, `domain/data_reset_repository.dart` (impl `features/transactions_ledger/data/data_reset_repository_impl.dart`, kept with the ledger data layer so every write to `transactions` stays there). `SettingsKeyValueStore` (data) backs the string `KeyValueStore` port for onboarding and SMS settings; `SettingKeys.developerTools` is new. Done: FR-26-03 (status, last read, last result, Scan now; "No permission / Paused / On" is shown as Allowed / Not allowed plus the enable switch), FR-26-04 (switch pauses live ingestion without revoking permission), FR-26-12 (store), FR-26-16, FR-26-17 (via F-01), FR-26-26..29.
 
-Pending: FR-26-01, 02, 05..11, 13 UI parts, 15, 18..25 (history choices, email, notification card, bank senders dialog, More hub subtitles, About, InfoButtons, updates).
+Pending: FR-26-01, 05, 07..11, 13 UI parts, 15, 19..25 (email card, notification card, More hub subtitles, About, InfoButtons, updates).
 
 Deviations: values are encoded text in one `settings(key, value)` table (bool, int, String, JSON string set); `history_days` is stored under this key rather than a separate DataStore name. The SMS ingestion agent's own settings store should be reconciled with this one.
+Parity round 2026-10-27 (agent D1): FR-26-02 (window UI; slider extends the fixed list), FR-26-06 and FR-26-18 (sender lists, additive model, see FR-26-31), FR-26-30, FR-26-31 done. `SmsSettingsStore` now reads and writes `history_days` (clamped 7..365). Tests: `settings_data_sources/history_and_senders_test.dart` (re-read rules, clamp, normalisation, store, pre-filter and parsing of an added sender, screens), `sms_data_test.dart`. Pending: notification row, More hub subtitles, About, InfoButtons.
 
 ## 19. Change Log (date | change | reason)
 
@@ -546,3 +549,4 @@ Deviations: values are encoded text in one `settings(key, value)` table (bool, i
 | 2026-10-21 | Phase 1 data layer landed (tables settings (key-value); typed `SettingKey`s and `SettingsRepository`) | Phase 1 |
 | 2026-10-21 | Phase 1 pipeline wiring + UI landed | Phase 1 |
 | 2026-10-27 | Audit: history-window UI (key only), SMS sender-list editor and sync pill confirmed not built | Kotlin parity audit |
+| 2026-10-27 | History to read slider with re-read on increase (one `history_days` for SMS and email), Bank senders editor for SMS ids and mail domains with an override store consulted by the parser pre-filter (FR-26-30, FR-26-31) | Kotlin parity (A7, C5) |

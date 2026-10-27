@@ -1,4 +1,5 @@
 import 'package:hisaab/features/analytics/domain/civil_date.dart';
+import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -76,14 +77,26 @@ abstract final class LedgerMath {
 
   static bool isSpend(LedgerTx t) =>
       t.type == TransactionType.debit && t.category != Category.transfer;
+  // Card credits are never income (ADR-0011, FR-10-20).
   static bool isIncome(LedgerTx t) =>
-      t.type == TransactionType.credit && t.category != Category.transfer;
+      t.type == TransactionType.credit &&
+      t.category != Category.transfer &&
+      !SpendCalc.isCard(t);
   static bool isInvest(LedgerTx t) => t.type == TransactionType.investment;
 
   static int _sum(Iterable<LedgerTx> l) => l.fold(0, (a, t) => a + rupees(t));
 
-  static int spent(Iterable<LedgerTx> txs) => _sum(txs.where(isSpend));
-  static int income(Iterable<LedgerTx> txs) => _sum(txs.where(isIncome));
+  /// Headline expense on the cash basis (ADR-0011): no card purchases, card
+  /// bill payments counted. Category views keep [isSpend].
+  static int spent(Iterable<LedgerTx> txs) => SpendCalc.totals(txs).spentMinor;
+  static int income(Iterable<LedgerTx> txs) {
+    final c = SpendCalc.totals(txs);
+    return c.incomeMinor + c.refundMinor;
+  }
+
+  /// Card purchases of [txs] (shown beside the headline, FR-10-18).
+  static int cardPurchases(Iterable<LedgerTx> txs) =>
+      SpendCalc.totals(txs).cardPurchasesMinor;
   static int invested(Iterable<LedgerTx> txs) => _sum(txs.where(isInvest));
 
   static const Set<Category> _essentials = {

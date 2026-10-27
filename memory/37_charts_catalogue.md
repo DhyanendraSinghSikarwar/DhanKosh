@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-37 |
-| Status | In Progress (22 Kotlin charts audited 2026-10-27: 5 Done, 10 Partial, 7 Missing; Flutter has `fl_chart` pie, bar and line plus a container heat grid) |
+| Status | In Progress (Analysis charts C1, C3, C4, C5, C9, C10, C11, C13 built 2026-10-27; Home, Portfolio, Account, Loan charts pending) |
 | Priority | P1 |
 | Phase | 5 |
 | Last Updated | 2026-10-27 |
@@ -37,19 +37,19 @@ Components in `app/src/main/kotlin/com/hisaab/app/ui/charts/`:
 Usage by screen (callers confirmed by search):
 | Id | Chart | Kotlin screen and source |
 |---|---|---|
-| C1 | Spend by category donut; selecting a slice cross-filters top merchants and trend; sub-category drill-down | `analytics/AnalyticsScreen.kt:182` |
+| C1 | `CategoryDonutCard` PieChart with tap-select, legend rows, drill-down, Back, Open category | Done |
 | C2 | Category donut, top 7 plus Others, percent legend | `home/HomeWidgets.kt:410` |
-| C3 | Sub-category donut | `category/CategoryDetailScreen.kt:155` |
-| C4 | 12-month stacked bars Essentials, Lifestyle, Other with average | `analytics/AnalyticsScreen.kt:252` |
-| C5 | When-you-spend heat grid, 7 days by 8 slots | `analytics/AnalyticsScreen.kt:324` |
+| C3 | `CategoryDetailScreen` sub-category donut (`/category/:id`) | Done |
+| C4 | `MonthlyTrendCard` stacked rods Essentials, Lifestyle, Other, dashed average line, tap reads a month | Done |
+| C5 | `HeatmapCard` tappable 7x8 grid with slot labels and readout | Done |
 | C6 | Top merchants list | `analytics/AnalyticsScreen.kt:356` |
 | C7 | Budget rings (amber at 80%, red at 100%) | `home/HomeWidgets.kt:452` |
 | C8 | Budget progress | Analysis Budgets card, `/budgets` |
-| C9 | Cash-flow Sankey, income inputs to Essentials, Lifestyle, Other, Invested, Saved | `analytics/AnalyticsSegments.kt:61` |
-| C10 | Savings-rate sparkline with average | `analytics/AnalyticsSegments.kt:93` |
-| C11 | Forecast fan chart (actual, expected, low, high, budget line) | `analytics/AnalyticsSegments.kt:133` |
+| C9 | `IncomeFlowCard` Sankey `CustomPainter` (`SankeyPainter`) with figures below | Done |
+| C10 | `SavingsRateCard` monthly line with average | Done |
+| C11 | `ForecastCard` fan `CustomPainter` (`FanPainter`: actual, expected, band, budget line) | Done |
 | C12 | 30-day cash balance sparkline | `analytics/AnalyticsSegments.kt:162` |
-| C13 | Compare diverging rows by category | `analytics/AnalyticsSegments.kt:207` |
+| C13 | `CompareCard` diverging bars | Done |
 | C14 | Net worth history line with 1M, 6M, 1Y, 3Y, All | `home/HomeWidgets.kt:204`, `invest/PortfolioSections.kt:305` |
 | C15 | Net worth split bar by account and class with legend | `invest/WorthBreakdown` (`PortfolioSections.kt`) |
 | C16 | Asset allocation donut with class filter | `invest/PortfolioSections.kt:238` |
@@ -153,15 +153,16 @@ Shared widgets in `lib/shared/widgets/charts/`; feature-specific wrappers stay i
 - AC-37-03: `docs/FEATURES.md` chart table matches section 7.
 
 ## 17. Open Questions
-1. Is the Sankey worth a custom painter, or do the bars suffice?
+1. Closed 2026-10-27: Sankey drawn with a custom painter (figures kept below it).
 2. Should `StackedArea` and `GroupedBarChart` (unused in Kotlin) be ported? Default: no.
 3. Does Home show the net worth line, as the Kotlin Home card does, given the new Flutter net worth card?
 
 ## 18. Implementation Notes
-Audit only; no chart code changed by this file. Existing charts: `app/lib/features/analytics/presentation/analytics_cards.dart`, `portfolio/presentation/net_worth_chart.dart`, `income_tracking/presentation/income_tracking_screen.dart`.
+Analysis charts built 2026-10-27 in `features/analytics/presentation/analytics_chart_cards.dart` (builders in `domain/chart_data.dart`) and `features/categorization/presentation/category_detail_screen.dart`. Audit text above otherwise. Existing charts: `app/lib/features/analytics/presentation/analytics_cards.dart`, `portfolio/presentation/net_worth_chart.dart`, `income_tracking/presentation/income_tracking_screen.dart`.
 
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
 |---|---|---|
 | 2026-10-27 | Created from the Kotlin chart audit | Kotlin parity audit |
+| 2026-10-27 | C1, C3, C4, C5, C9, C10, C11, C13 built (FR-37-02..06); status table updated | Kotlin parity |

@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-23 |
-| Status | In progress (rates table, triggers, repository and Forex rates screen with rate dialog done; transaction detail row and consumers of FR-23-07 owned by other features) |
+| Status | In progress (rates table, triggers, repository and Forex rates screen with rate dialog done; transaction detail row done; consumers of FR-23-07 owned by other features) |
 | Priority | P2 |
 | Phase | 4 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -396,6 +396,10 @@ int? inrMinorFor({amountMinor, currency, timestampMs, markupBps, ratesForCurrenc
 
 Phase 4 UI: `ForexRatesScreen` (`/settings/forex`, More tile `ForexTile`): "Your spends abroad" card from `watchForeign` ("{n} need a rate" opens the dialog with the currency preselected, else "All counted"), help line, rate list (currency, newest day) with delete (no confirmation), FAB and tap-to-edit opening the rate dialog (currency chips from currencies in use plus USD, EUR, GBP, AED, SGD; letters-only 3-char field; date picker; decimal rate; `RateDraft.canSave`). Saves go through `ForexRepository.upsert`/`delete`. Tests: `test/features/alerts_reminders/alerts_forex_screens_test.dart`. FR status additions: done FR-23-02, 03, 13, 14 partly (strings not yet localised); still pending FR-23-08 (transaction detail row).
 
+### 18.1 Detail row 2026-10-27 (agent A2)
+
+FR-23-08 done: Transaction detail shows "In rupees" for non-INR rows, `≈ ₹x` from `inrMinor` or "Add a {CUR} rate in Settings" when unpriced (key `detail_inr`). The per-card markup is edited in the account edit sheet (memory 13 FR-13-19) and recomputes via `ForexRepository.recompute`.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -405,3 +409,4 @@ Phase 4 UI: `ForexRatesScreen` (`/settings/forex`, More tile `ForexTile`): "Your
 | 2026-10-21 | Package `sqlcipher_flutter_libs` replaced by the `sqlite3` 3.x SQLCipher build hook | Package obsolete after sqlite3 3.x; see ADR-0003 |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
 | 2026-10-21 | Phase 4 alerts posting + forex UI landed | Phase 4 |
+| 2026-10-27 | Transaction detail "In rupees" row (FR-23-08) | Kotlin parity |

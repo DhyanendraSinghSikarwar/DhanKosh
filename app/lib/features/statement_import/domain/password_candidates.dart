@@ -11,11 +11,15 @@ List<String> passwordCandidates(PasswordSource src) {
   final id = src.identity;
   if (id != null) {
     final profile = _identity(id);
+    // FR-27-23: further alternate names and phones count like bank details.
+    final extra = pc.BankIdentity(names: id.moreNames, phones: id.morePhones);
+    final hasExtra = id.moreNames.isNotEmpty || id.morePhones.isNotEmpty;
     derived.addAll(
-      src.hasBankDetails
+      src.hasBankDetails || hasExtra
           ? pc.PasswordGuesser.forBanks(
               profile,
               [
+                if (hasExtra) extra,
                 for (final b in src.banks)
                   pc.BankIdentity(
                     customerId: b.customerId,

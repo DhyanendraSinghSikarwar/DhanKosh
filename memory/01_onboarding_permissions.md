@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-01 |
-| Status | In progress (Phase 1: domain, data, Welcome and permission UI done; email sign-in, Home card and app-lock skip pending) |
+| Status | In progress (Phase 1: domain, data, Welcome and permission UI done; email sign-in verified by a mailed code done; phone sign-in is stored unverified; Home card and app-lock skip done) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -452,13 +452,16 @@ Fixtures: identity `Identity(name: 'Asha Rao', dob: 1990-05-14, pan: 'ABCDE1234F
 Phase 1 status (2026-10-21): domain, data, Riverpod wiring and Welcome UI done; Home card, email sign-in and app-lock skip pending.
 
 - UI/wiring (2026-10-21): `presentation/welcome_screen.dart` (steps: name + mobile, optional statement details, SMS ask; FR-01-01, 02, 04, 05, 06, 16), `presentation/app_lifecycle_gate.dart` (wraps the app in `app.dart`; on start and every resume re-reads SMS access, drains queued messages, and asks POST_NOTIFICATIONS once after the gate closes; FR-01-09, FR-01-12, FR-01-14), shared `lib/shared/widgets/sms_permission_card.dart` (rationale or restricted-settings guidance; FR-01-10, FR-01-11, FR-01-13; reused by the Data sources card). Providers in `lib/app/di/pipeline_providers.dart`: `onboardingGateProvider` (FR-01-01; `/loading` blank route while unknown, `/welcome` while needed, redirect in `router.dart`), `smsPermissionProvider`, `smsPermissionWatcherProvider` (full scan on missing-to-granted), `identityRepositoryProvider` (flutter_secure_storage via `SecureStoreImpl`), `profileRepositoryProvider`, `finishOnboardingProvider`, `askNotificationsOnceProvider`.
-- Deviations: email sign-in (FR-01-03) is not offered until F-03 lands, so the gate is satisfied by name + mobile; a "Skip for now" on the first step stores `onboarding_skipped=true` (ends the gate with no profile; an extension of FR-01-05's skip). `blocked` is still kept in memory only. The Home "Read bank SMS" card (FR-01-13) is not placed on Home here; the same card is on Data sources. `publishOwnNumbers` is not wired: own-number tails are read from profile and identity at ingest time instead (`ingestMessageProvider`), which has the same effect for FR-01-08.
+- Deviations: (superseded 2026-10-27: email sign-in is now offered, see below) the first build satisfied the gate with name + mobile only; a "Skip for now" on the first step stores `onboarding_skipped=true` (ends the gate with no profile; an extension of FR-01-05's skip). `blocked` is still kept in memory only. The Home "Read bank SMS" card (FR-01-13) is not placed on Home here; the same card is on Data sources. `publishOwnNumbers` is not wired: own-number tails are read from profile and identity at ingest time instead (`ingestMessageProvider`), which has the same effect for FR-01-08.
 
 - FR done in code + unit tests: FR-01-01 (`onboardingNeeded`), FR-01-06, FR-01-07 (`FinishOnboarding`, `IdentityStore`, `ProfileStore`), FR-01-08 (`ownNumberTails` + publish callback), FR-01-09, FR-01-10, FR-01-11 (`SmsPermissionRepositoryImpl`, `SmsPermissionWatcher`), FR-01-12 (edge trigger only; the scan enqueue is wired by the lead), FR-01-14 (`AskNotificationsOnce`). Native-only, NOT compiled or run: permission dialogs, rationale, App info intent in `SmsBridge` (channel `com.hisaab/permissions`: `smsStatus -> {granted, rationale}`, `requestSms`, `requestNotifications -> bool`, `openAppSettings`). Pending (UI/app wiring): FR-01-02..05, 13, 15 (hook `beforeOpenSettings` exists), 16, 17.
 - Permission checks use the real state after every request; `blocked` is remembered in memory after a refusal with no rationale and is lost on process death (the next request re-infers it).
 - Decisions: PAN is trimmed and upper-cased before validation and storage (resolves open question 1 provisionally); skip still writes a sealed identity (name, email, mobile only); `SecureStore` and `KeyValueStore` are abstract ports, the lead binds them to flutter_secure_storage and the settings store; plain classes, no codegen; Android 13 restricted-settings guidance is UI copy plus `openAppSettings`.
 
 - Hardening 2026-10-22: FR-01-13 done (`dashboard_home/presentation/home_sms_card.dart`, TC-01-11 in `test/features/dashboard_home/home_sms_card_test.dart`); FR-01-15 done via the shared `LockSkipper` port (`lib/shared/ports/lock_skipper.dart`, provider `app/di/lock_skipper_provider.dart`) armed before the SMS and POST_NOTIFICATIONS requests and App info.
+Parity round 2026-10-27 (agent D1): FR-01-03 email sign-in is built. `welcome_screen.dart` steps: phone (name + mobile, "Sign in with email instead", "Skip for now") -> email (name, provider chips, address, app password, `AppPasswordGuide`, Send code) -> code (6 digits, Verify, Resend, Back) -> details -> SMS ask. The code flow is `VerifyEmail` from [03_email_ingestion.md](03_email_ingestion.md) (FR-03-03..05): nothing is saved before the code is typed; on OK the mailbox is connected, a first sync starts in the background, and the verified address is saved as the profile email (name from the form; mobile left empty). A refused login sends no code.
+Phone sign-in: there is no SMS gateway, so the mobile number is NOT verified. It is stored as typed (10 digits, `+91 `), used for statement-password guesses and the own-number guard, and the screen offers "Skip for now" (ends the gate with no profile). This differs from Kotlin only in having no phone verification step; the Kotlin app does not verify it either.
+Tests: `welcome_screen_test.dart` (email sign-in sends a code, wrong code, verify, profile seeded; refused login sends no code).
 
 ## 19. Change Log (date | change | reason)
 
@@ -470,3 +473,4 @@ Phase 1 status (2026-10-21): domain, data, Riverpod wiring and Welcome UI done; 
 | 2026-10-21 | Phase 1 native SMS channel + Dart data/domain landed | Phase 1 |
 | 2026-10-21 | Phase 1 pipeline wiring + UI landed | Phase 1 |
 | 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |
+| 2026-10-27 | Welcome offers email sign-in verified by a mailed 6-digit code (same mechanism as F-03), seeds name and email, connects the mailbox; phone sign-in kept as store-only with Skip | Kotlin parity (C13) |

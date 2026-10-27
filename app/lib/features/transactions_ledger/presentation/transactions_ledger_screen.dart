@@ -7,6 +7,7 @@ import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_views.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_calendar_view.dart';
+import 'package:hisaab/features/transactions_ledger/presentation/ledger_category_view.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_merchant_view.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_summary_strip.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_tx_tile.dart';
@@ -53,7 +54,9 @@ bool _same(LedgerFilter a, LedgerFilter b) =>
     a.toMs == b.toMs &&
     a.query == b.query &&
     a.accountId == b.accountId &&
-    a.category == b.category;
+    a.category == b.category &&
+    a.accountKind == b.accountKind &&
+    a.usage == b.usage;
 
 class _State extends ConsumerState<TransactionsLedgerScreen> {
   late Stream<List<LedgerTx>> _rows;
@@ -252,7 +255,7 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
                   )
                 else ...[
                   LedgerSummaryStrip(
-                    summary: summarize(rows),
+                    summary: summarize(rows, context: rows),
                     count: rows.length,
                     periodLabel: widget.periodLabel,
                     masked: masked,
@@ -265,6 +268,10 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
                       ButtonSegment(
                         value: LedgerSegment.list,
                         label: Text('List'),
+                      ),
+                      ButtonSegment(
+                        value: LedgerSegment.category,
+                        label: Text('Category'),
                       ),
                       ButtonSegment(
                         value: LedgerSegment.calendar,
@@ -308,6 +315,11 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
                               : DateTime.fromMillisecondsSinceEpoch(
                                   widget.filter.toMs!,
                                 ),
+                          rowBuilder: (t) => _tile(t, masked),
+                        ),
+                      LedgerSegment.category => LedgerCategoryView(
+                          rows: rows,
+                          masked: masked,
                           rowBuilder: (t) => _tile(t, masked),
                         ),
                       LedgerSegment.merchant => LedgerMerchantView(
@@ -375,7 +387,8 @@ class _DayCard extends StatelessWidget {
                   child: Text(label, style: theme.textTheme.titleSmall),
                 ),
                 Text(
-                  'Out ${formatAmount(s.spentMinor, masked: masked, paise: false)}',
+                  'Out ${formatAmount(s.spentMinor, masked: masked, paise: false)}'
+                  '${s.cardMinor > 0 ? ' · Card ${formatAmount(s.cardMinor, masked: masked, paise: false)}' : ''}',
                   key: Key('day_out_$label'),
                   style: theme.textTheme.labelMedium,
                 ),

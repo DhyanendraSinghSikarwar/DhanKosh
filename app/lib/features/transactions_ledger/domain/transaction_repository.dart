@@ -48,7 +48,10 @@ abstract interface class TransactionRepository {
 
   Future<void> setSubcategory(int id, String? subcategory);
   Future<void> setNote(int id, String? note);
-  Future<void> setAccount(int id, int? accountId);
+
+  /// Moves a row to [accountId]; [rememberPayee] files later rows of the same
+  /// payee under it too (FR-08-24).
+  Future<void> setAccount(int id, int? accountId, {bool rememberPayee = false});
 
   /// Deletes rows and writes tombstones for every source (FR-08-09).
   /// Returns rows deleted.
@@ -60,6 +63,12 @@ abstract interface class TransactionRepository {
   /// Merges selected rows into the oldest one (FR-08-08); returns its id,
   /// null when fewer than two rows exist.
   Future<int?> mergeRows(List<int> ids);
+
+  /// Undoes a merge: re-reads source [sourceId] of [transactionId] into its
+  /// own row (FR-07-13). Needs two or more sources and a readable text; the
+  /// parent keeps balances only its remaining sources state. Returns the new
+  /// row id, or null when nothing could be split.
+  Future<int?> splitSource(int transactionId, int sourceId);
 
   /// Clears the review flag, keeping both rows (FR-07-12).
   Future<void> keepSeparate(int id);
@@ -83,6 +92,7 @@ abstract interface class TransactionRepository {
     required int fromMs,
     required int toMs,
     int? accountId,
+    String? usage,
   });
 
   /// Flagged rows awaiting a decision (FR-08-19).

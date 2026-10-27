@@ -19,6 +19,41 @@ class EmailSyncReport {
   const EmailSyncReport.failed(String error, {int millis = 0})
       : this(mode: 'failed', error: error, millis: millis);
 
+  /// Sums the per-mailbox [reports] of one run (FR-03-06). The mode is `full`
+  /// when any mailbox read in full; `error` is the first failure, preferring
+  /// a non-retryable one so a final failure is never retried forever.
+  factory EmailSyncReport.combine(
+    List<EmailSyncReport> reports, {
+    int millis = 0,
+  }) {
+    if (reports.length == 1) return reports.first;
+    final failures = reports.where((r) => r.error != null).toList();
+    String? error;
+    if (failures.isNotEmpty) {
+      error = failures
+          .firstWhere((r) => r.retryable, orElse: () => failures.first)
+          .error;
+    }
+    int sum(int Function(EmailSyncReport r) f) =>
+        reports.fold(0, (a, r) => a + f(r));
+    final okReports = reports.where((r) => r.error == null);
+    return EmailSyncReport(
+      mode: okReports.any((r) => r.mode == 'full')
+          ? 'full'
+          : (okReports.isEmpty ? 'failed' : 'incremental'),
+      emails: sum((r) => r.emails),
+      parsed: sum((r) => r.parsed),
+      inserted: sum((r) => r.inserted),
+      merged: sum((r) => r.merged),
+      flagged: sum((r) => r.flagged),
+      skipped: sum((r) => r.skipped),
+      failed: sum((r) => r.failed),
+      statements: sum((r) => r.statements),
+      millis: millis,
+      error: error,
+    );
+  }
+
   /// `full`, `incremental` or `failed`.
   final String mode;
 

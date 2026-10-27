@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1: native, data, parser wiring, engine, Data sources UI, headless background drain, nightly scan and off-isolate parse implemented; the new Kotlin is not compiled or run on a device; Home progress pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -517,3 +517,4 @@ Phase 1 status (2026-10-21): native + Dart data/domain, parser wiring, live engi
 | 2026-10-21 | Phase 1 pipeline wiring + UI landed | Phase 1 |
 | 2026-10-21 | Phase 1 hardening: background SMS, nightly scan, off-isolate parse, dedup reconcile | Phase 1 |
 | 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |
+| 2026-10-27 | Note: the nightly job is now always registered (also while SMS reading is paused or without SMS access) because it also syncs email (F-03 FR-03-17); `SmsEngine.ensureNightly`, `prepare` hook loads the sender edits (F-26 FR-26-31); `lookback_days` replaced by shared `history_days` | Kotlin parity (C4, A7, C5) |

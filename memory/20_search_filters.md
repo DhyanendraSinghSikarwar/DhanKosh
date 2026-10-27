@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-20 |
-| Status | In progress (Phase 1: search and filters done; Fold adoption 2026-10-26: Source filter and amount range on the Transactions tab; Calendar and By-merchant honour the filters; global Book/Period store pending) |
+| Status | In progress (Phase 1: search and filters done; Fold adoption 2026-10-26: Source filter and amount range on the Transactions tab; Calendar and By-merchant honour the filters; global Book/Period store pending) ; 2026-10-27 shared Book and Period stores added (not persisted) |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-27 |
@@ -159,6 +159,9 @@ There is no cross-tab global search; the v2 spec lists FTS5 search as proposed.
 18. FR-20-18: KPI strip and counts describe the filtered (`shown`) list; transfers contribute 0; expenses include investments.
 19. FR-20-19: Empty states distinguish search miss, filter miss and empty period with the exact texts in section 2.5.
 21. FR-20-21: The Transactions filter bar has an amount range: Min and Max in rupees (digits, optional comma grouping and up to two decimals) converted to paise by integer math (`rupeesToMinor`; invalid or empty = open). `LedgerFilter.minMinor` and `maxMinor` are inclusive bounds on `amount_minor`. Together with the Source chips (FR-20-15) the range combines with every other filter by AND; "Clear" also resets Source and the range and empties the Min and Max fields.
+22. FR-20-22: The app-wide Period (`periodProvider`, `PeriodSelection`) offers This month, Last month, This week, This FY, Last FY, 12 months, All time and Custom range; the Transactions filter mirrors it, so Home, Transactions, Analysis and Portfolio lists can read one store.
+23. FR-20-23: The app-wide Book (`bookProvider`: All books, Personal, Business; default All books) is shown as chips (`BookChips`, `PeriodChips` in `lib/app/scope_bar.dart`) and scopes lists and totals by account usage (rows without an account are personal).
+24. FR-20-24: `LedgerFilter` carries `accountKind` and `usage`; `accountScopeProvider` holds the account or card an Analysis is scoped to.
 20. FR-20-20: A change of the global Book or Period while the Transactions tab is open updates the list without losing search text or chip selections.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
@@ -410,6 +413,8 @@ Fold adoption:
 - TC-20-15 (FR-20-15): through the real in-memory ledger, `LedgerFilter(sources: {sms})` returns only SMS-sourced rows, `{email, manual}` returns both groups, empty returns all.
 - TC-20-16 (FR-20-21): amount range is inclusive in paise (10,000 to 250,050 returns both bounds; min 250,051 and max 9,999 exclude them) and combines with sources.
 - TC-20-17 (FR-20-21): `rupeesToMinor` gives 125000 for "1250", 125050 for "1,250.5", 7 for "₹ 0.07" and null for "", "abc", "1.234", "-5"; `LedgerViewState` carries the filters into `toFilter` and `cleared()` resets them.
+- TC-20-18 (FR-20-22): `periodRange` for this week (Mon to Mon), this FY (Apr to Apr, Jan-Mar belongs to the previous FY), last FY, 12 months.
+- TC-20-19 (FR-20-23, FR-20-24): `bookProvider`, `periodProvider`, `accountScopeProvider` defaults and updates; business book returns only business-account rows; Cards chip and Book chips toggle in the filter bar.
 
 Fixtures (masked): `HDFC Bank: Rs 2450.50 debited from a/c XX1234 on 17-10-26 to VPA swiggy@icici (UPI Ref 6xxxxxxxx1)`; business account usage BUSINESS "ICICI ••9876"; personal "HDFC ••1234".
 
@@ -459,3 +464,4 @@ Deferred: FR-20-01/02 (global Book store, persistence), FR-20-03 This week / FY 
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
 | 2026-10-26 | Source filter and amount range on the Transactions filter bar (FR-20-15 in Flutter, FR-20-21; TC-20-15 to TC-20-17) | Fold adoption |
 | 2026-10-27 | Audit: search and type, bank, source, category filters confirmed done; app-wide Book store, Book chip, shared Period store and custom range confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Shared Period store (7 presets + custom), Book store and chips, account/card scope provider, Accounts/Cards chips (FR-20-22..24; persistence of Book/Period across launches still open) | Kotlin parity |

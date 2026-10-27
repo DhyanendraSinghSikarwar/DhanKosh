@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-15 |
-| Status | In progress (domain, link store and core UI done: Loans list, detail with schedule and payoff, add/edit loan, link/unlink, Not a loan; terms editor, link prompt, merge/duplicates UI, lender status wired (FR-15-13) through `ApplyStatementAccounts`; Phase 4 UI items above still pending) |
+| Status | In progress (domain, link store and core UI done: Loans list, detail with schedule and payoff, add/edit loan, link/unlink, Not a loan; terms editor, link prompt, merge/duplicates UI, lender status wired (FR-15-13) through `ApplyStatementAccounts`; Phase 4 UI items above still pending); 2026-10-27 parity: merge, unmerge, duplicates list, EMI stacked bars and link prompt done (FR-15-09, 12, 16..18) |
 | Priority | P2 |
 | Phase | 4 |
 | Last Updated | 2026-10-27 |
@@ -144,6 +144,9 @@ ModalBottomSheet "Which loan is this?": list of loans, "New loan" (creates an `A
 - FR-15-13: Lender status messages shall create/update LOAN accounts (`applyLoanStatus`) and unknown-lender accounts shall auto-type as LOAN for known lenders.
 - FR-15-14: Loans shall exclude needs-review rows and non-INR rows.
 - FR-15-15: Edit mode shall toggle merge/remove icons and the Add loan FAB.
+- FR-15-16: Duplicate loans shall list on the Loans screen with Merge and "Not duplicates" (ignored keys kept in the `loan_dup_ignored` settings list); merging sets `mergedIntoId` and drops links to the merged loan; the loan detail lists merged accounts with Unmerge.
+- FR-15-17: Loan detail shall show stacked bars of principal and interest per EMI (per year beyond 24 instalments).
+- FR-15-18: After a payment is categorised as an EMI (debit, merchant of 2 or more characters) the app shall offer to link it to a loan (route `/loan-link/:txId`; Not now closes).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -380,6 +383,8 @@ Tests: `test/features/loans/loans_test.dart` ports Kotlin `LoansTest` (EMI 867,8
 
 FR-15-13 done (2026-10-25): lender status messages (disbursal, outstanding) reach `ApplyStatementAccounts.applyDeposits` from `IngestMessage`; principal set only when the account has none, outstanding stored as balance. Test `ingest_capture_gaps_test.dart`.
 
+- 2026-10-27: Loans parity (FR-15-09, 12, 16..18). `LoanMergeActions` (domain), `loansProvider` file `app/di/loans_providers.dart` (`loanDuplicates`, `mergedLoanAccounts`), `LoanDuplicatesSection`, `LoanMergedSection`, `LoanEmiChart` (fl_chart stacked bars), `LoanLinkPromptScreen`; the transaction detail category edit pushes `/loan-link/:id` for EMI. Tests `test/features/bills_loans/loan_merge_test.dart`.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -391,3 +396,5 @@ FR-15-13 done (2026-10-25): lender status messages (disbursal, outstanding) reac
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
 | 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |
 | 2026-10-27 | Audit: detection, detail, schedule, link and Not a loan confirmed done; merge and Unmerge and the EMI stacked-bar chart confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Portfolio now has a Loans section linking here (FR-16-31); no change to loans behaviour | Kotlin parity |
+| 2026-10-27 | Loans parity (FR-15-09, 12, 16..18) | Kotlin parity |

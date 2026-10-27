@@ -453,3 +453,4 @@ IncomeClassifier.creditCategory(String text) -> Category;  bucketOf({category, m
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
+| 2026-10-27 | Income and cash flow now come from `SpendCalc.totals` (ADR-0011, memory 10 FR-10-19/20): card credits are never income, card purchases are out of Spent, card bill payments count | Kotlin parity, ADR-0011 |

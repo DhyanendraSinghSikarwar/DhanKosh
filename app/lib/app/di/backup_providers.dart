@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hisaab/app/di/accounts_providers.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
 import 'package:hisaab/app/di/goals_providers.dart';
 import 'package:hisaab/app/di/lock_skipper_provider.dart';
@@ -45,6 +46,7 @@ final backupDataProvider = Provider<BackupData>(
     BackupDeps(
       txs: ref.watch(transactionRepositoryProvider),
       accounts: ref.watch(accountRepositoryProvider),
+      accountAdmin: ref.watch(accountAdminRepositoryProvider),
       loans: ref.watch(loanAccountRepositoryProvider),
       categories: ref.watch(categoryRepositoryProvider),
       budgets: ref.watch(budgetRepositoryProvider),

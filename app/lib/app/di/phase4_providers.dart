@@ -36,7 +36,7 @@ Stream<List<Budget>> budgets(Ref ref) =>
 /// Income reads (F-11).
 @Riverpod(keepAlive: true)
 IncomeRepository incomeRepository(Ref ref) =>
-    IncomeRepositoryImpl(ref.watch(appDatabaseProvider));
+    IncomeRepositoryImpl(ref.watch(transactionRepositoryProvider));
 
 /// User recurring items (F-12).
 @Riverpod(keepAlive: true)

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/app/app.dart';
+import 'package:hisaab/app/di/email_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
+import 'package:hisaab/core/errors/failure.dart';
 import 'package:hisaab/features/onboarding_permissions/presentation/welcome_screen.dart';
 
+import '../../support/email_fakes.dart';
 import '../../support/pipeline_fakes.dart';
 
 void main() {
@@ -12,11 +16,15 @@ void main() {
   setUp(() => h = PipelineHarness());
   tearDown(() => h.dispose());
 
-  Future<ProviderContainer> pump(WidgetTester t, Widget home) async {
+  Future<ProviderContainer> pump(
+    WidgetTester t,
+    Widget home, {
+    List<Override> extra = const [],
+  }) async {
     t.view.devicePixelRatio = 1;
     t.view.physicalSize = const Size(800, 2400);
     addTearDown(t.view.reset);
-    final c = ProviderContainer(overrides: h.overrides);
+    final c = ProviderContainer(overrides: [...h.overrides, ...extra]);
     addTearDown(c.dispose);
     await t.pumpWidget(
       UncontrolledProviderScope(
@@ -112,5 +120,89 @@ void main() {
     await t.pump();
     await t.pump();
     expect(find.byKey(const Key('welcome-name')), findsOneWidget);
+  });
+
+  // FR-01-03: email sign-in verified by a mailed code; nothing is saved
+  // before the code is typed.
+  testWidgets('email sign-in sends a code, verifies it, seeds the profile',
+      (t) async {
+    final imap = FakeImap();
+    final smtp = FakeSmtp();
+    final c = await pump(
+      t,
+      const WelcomeScreen(),
+      extra: [
+        imapClientProvider.overrideWithValue(imap),
+        mailSenderProvider.overrideWithValue(smtp),
+      ],
+    );
+    Future<void> tapAsync(String key) async {
+      await t.runAsync(() async {
+        await t.tap(find.byKey(Key(key)));
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      });
+      await t.pump();
+    }
+
+    await t.ensureVisible(find.byKey(const Key('welcome-use-email')));
+    await tapAsync('welcome-use-email');
+    await t.enterText(find.byKey(const Key('welcome-name')), 'Demo User');
+    await t.enterText(find.byKey(const Key('welcome-email')), 'demo@gmail.com');
+    await t.enterText(
+      find.byKey(const Key('welcome-email-password')),
+      'abcd efgh',
+    );
+    await t.pump();
+    await t.ensureVisible(find.byKey(const Key('welcome-send-code')));
+    await tapAsync('welcome-send-code');
+    expect(smtp.lastTo, 'demo@gmail.com');
+    expect(find.byKey(const Key('welcome-code')), findsOneWidget);
+    expect(h.secure.map, isEmpty);
+
+    await t.enterText(find.byKey(const Key('welcome-code')), '000000');
+    await t.pump();
+    await tapAsync('welcome-verify');
+    expect(find.text('That code does not match.'), findsOneWidget);
+    expect(h.secure.map, isEmpty);
+
+    await t.enterText(find.byKey(const Key('welcome-code')), smtp.lastCode);
+    await t.pump();
+    await tapAsync('welcome-verify');
+    expect(h.secure.map['email_app_password:demo@gmail.com'], 'abcdefgh');
+    await t.ensureVisible(find.byKey(const Key('welcome-skip-details')));
+    await tapAsync('welcome-skip-details');
+    final p = await t.runAsync(c.read(profileRepositoryProvider).read);
+    expect(p!.name, 'Demo User');
+    expect(p.email, 'demo@gmail.com');
+    expect(p.phone, isNull);
+  });
+
+  testWidgets('a refused login sends no code (FR-01-03)', (t) async {
+    final imap = FakeImap()..error = const AuthFailure('x');
+    final smtp = FakeSmtp();
+    await pump(
+      t,
+      const WelcomeScreen(),
+      extra: [
+        imapClientProvider.overrideWithValue(imap),
+        mailSenderProvider.overrideWithValue(smtp),
+      ],
+    );
+    await t.ensureVisible(find.byKey(const Key('welcome-use-email')));
+    await t.tap(find.byKey(const Key('welcome-use-email')));
+    await t.pump();
+    await t.enterText(find.byKey(const Key('welcome-name')), 'Demo User');
+    await t.enterText(find.byKey(const Key('welcome-email')), 'demo@gmail.com');
+    await t.enterText(find.byKey(const Key('welcome-email-password')), 'pw');
+    await t.pump();
+    await t.ensureVisible(find.byKey(const Key('welcome-send-code')));
+    await t.runAsync(() async {
+      await t.tap(find.byKey(const Key('welcome-send-code')));
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    });
+    await t.pump();
+    expect(find.textContaining('app password'), findsWidgets);
+    expect(smtp.sent, 0);
+    expect(find.byKey(const Key('welcome-code')), findsNothing);
   });
 }

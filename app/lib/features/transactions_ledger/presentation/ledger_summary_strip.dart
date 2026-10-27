@@ -60,7 +60,23 @@ class LedgerSummaryStrip extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          if (summary.cardMinor > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Card purchases '
+              '${formatAmount(summary.cardMinor, masked: masked, paise: false)}'
+              ' · not in Expenses',
+              key: const Key('sum_card'),
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+          const SizedBox(height: 4),
+          Text(
+            'Expenses exclude card purchases, include card bill payments',
+            key: const Key('sum_basis'),
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 4),
           Text(
             '$count transactions · $periodLabel',
             key: const Key('sum_caption'),

@@ -98,15 +98,27 @@ void main() {
         t.widget<Text>(find.byKey(const Key('home_income'))).data,
         '₹85,000.00',
       );
-      await t.scrollUntilVisible(find.text('Swiggy'), 200);
+      await t.scrollUntilVisible(
+        find.text('Swiggy'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Swiggy'), findsOneWidget);
-      await t.scrollUntilVisible(find.text('HDFC Bank ••1234'), 200);
+      await t.scrollUntilVisible(
+        find.text('HDFC Bank ••1234'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('HDFC Bank ••1234'), findsOneWidget);
       expect(
         t.widget<Text>(find.byKey(const Key('home_balance'))).data,
         '₹1,32,549.50',
       );
-      await t.scrollUntilVisible(find.text('Swiggy'), -200);
+      await t.scrollUntilVisible(
+        find.text('Swiggy'),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await t.tap(find.text('Swiggy'));
       await settle(t);
       expect(visited, ['/transaction/1']);
@@ -118,6 +130,9 @@ void main() {
   for (final withGoal in [true, false]) {
     testWidgets('goals card on home only when goals exist ($withGoal)',
         (t) async {
+      t.view.physicalSize = const Size(800, 6000);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
       await seed(t);
       if (withGoal) {
         await t.runAsync(
@@ -130,6 +145,7 @@ void main() {
       await t.scrollUntilVisible(
         find.text('Swiggy'),
         200,
+        scrollable: find.byType(Scrollable).first,
       );
       expect(
         find.byKey(const Key('goals-summary'), skipOffstage: false),

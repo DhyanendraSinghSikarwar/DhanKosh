@@ -6,6 +6,10 @@ import 'package:hisaab/features/alerts_reminders/domain/alert_models.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_poster.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_rules.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alerted_key_store.dart';
+import 'package:hisaab/features/alerts_reminders/domain/card_reminder_state_store.dart';
+import 'package:hisaab/features/analytics/domain/civil_date.dart';
+import 'package:hisaab/features/credit_cards/domain/card_models.dart';
+import 'package:hisaab/features/credit_cards/domain/card_reminder_plan.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_repository.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_repository.dart';
@@ -18,8 +22,9 @@ import 'package:parser_core/parser_core.dart';
 /// Gathers inputs, runs [AlertRules] and posts the decisions (FR-21-05,
 /// FR-21-06, FR-21-07, FR-21-13, FR-21-14, FR-21-16, FR-21-19).
 ///
-/// Card reminders (FR-21-09) and untracked-change alerts (FR-21-08) are not
-/// wired yet; their rules exist in [AlertRules].
+/// Card reminders (FR-21-09, with `cards` and `cardState`) and new-transaction
+/// notifications (FR-21-02, with `txs`) are wired; untracked-change alerts
+/// (FR-21-08) are not yet.
 class AlertsEngine {
   /// Creates the engine.
   AlertsEngine({
@@ -30,6 +35,8 @@ class AlertsEngine {
     required AlertPoster poster,
     required AlertSettingsRepository settings,
     TransactionRepository? txs,
+    Future<List<CardLimit>> Function()? cards,
+    CardReminderStateStore? cardState,
     Future<String?> Function()? updateVersion,
     String installedVersion = '0.0.0',
     int Function()? nowMs,
@@ -40,6 +47,8 @@ class AlertsEngine {
         _poster = poster,
         _settings = settings,
         _txs = txs,
+        _cards = cards,
+        _cardState = cardState,
         _updateVersion = updateVersion,
         _installed = installedVersion,
         _nowMs = nowMs ?? (() => DateTime.now().millisecondsSinceEpoch);
@@ -51,6 +60,11 @@ class AlertsEngine {
   final AlertPoster _poster;
   final AlertSettingsRepository _settings;
   final TransactionRepository? _txs;
+  final Future<List<CardLimit>> Function()? _cards;
+  final CardReminderStateStore? _cardState;
+
+  /// New-transaction alerts only for rows created this recently (FR-21-02).
+  static const int newTxWindowMs = 30 * 60 * 1000;
 
   /// Runs the throttled update check and returns the newest known version
   /// (FR-31-34); null when none or no checker is wired.
@@ -59,6 +73,14 @@ class AlertsEngine {
   final int Function() _nowMs;
 
   static const _istOffsetMs = 19800000;
+
+  DateTime _today() {
+    final ist = DateTime.fromMillisecondsSinceEpoch(
+      _nowMs() + _istOffsetMs,
+      isUtc: true,
+    );
+    return DateTime.utc(ist.year, ist.month, ist.day);
+  }
 
   Future<void> _tail = Future.value();
 
@@ -83,6 +105,8 @@ class AlertsEngine {
       for (final check in <Future<List<AlertDecision>> Function()>[
         () => _budgetDecisions(settings, ist),
         () => _billDecisions(today),
+        () => _cardDecisions(settings, today),
+        () => _newTxDecisions(settings),
         () => _renewalDecisions(today),
         () => _weeklyDecisions(settings, today),
         () => _updateDecisions(settings),
@@ -116,6 +140,99 @@ class AlertsEngine {
     return posted;
   }
 
+  /// Card bill reminders at 5 days, 2 days, due day and overdue (FR-21-09).
+  Future<List<AlertDecision>> _cardDecisions(
+    AlertSettings settings,
+    DateTime today,
+  ) async {
+    final source = _cards;
+    final state = _cardState;
+    if (source == null || state == null) return const [];
+    final day = epochDayOf(today);
+    final inputs = <CardBillInput>[];
+    for (final c in await source()) {
+      final due = c.dueDay;
+      final rec = due == null ? null : await state.read(c.id, due);
+      inputs.add(
+        CardBillInput(
+          cardId: c.id,
+          name: c.name,
+          billedMinor: c.billedMinor,
+          dueEpochDay: due,
+          minDueMinor: c.minDueMinor,
+          estimated: c.estimated,
+          paid: c.paid || (rec?.paid ?? false),
+          sent: {
+            for (final s in DueStage.values)
+              if (rec?.stagesSent.contains(s.name) ?? false) s,
+          },
+          snoozedUntilEpochDay: rec?.snoozedUntilEpochDay,
+        ),
+      );
+    }
+    return AlertRules.cardBillAlerts(
+      cards: inputs,
+      todayEpochDay: day,
+      settings: settings,
+    );
+  }
+
+  /// "Rs X at Y" for rows ingested in the last 30 minutes (FR-21-02).
+  Future<List<AlertDecision>> _newTxDecisions(AlertSettings settings) async {
+    final txs = _txs;
+    if (txs == null || !settings.transactionNotifications) return const [];
+    final rows = await txs.watchRecent(200).first;
+    final alerted = await _alerted.all();
+    final now = _nowMs();
+    List<Category> usedMost({required bool credit}) {
+      final counts = <Category, int>{};
+      for (final r in rows) {
+        if ((r.type == TransactionType.credit) != credit) continue;
+        counts.update(r.category, (n) => n + 1, ifAbsent: () => 1);
+      }
+      final keys = counts.keys.toList()
+        ..sort((a, b) => counts[b]!.compareTo(counts[a]!));
+      return keys;
+    }
+
+    final out = <AlertDecision>[];
+    for (final r in rows) {
+      final key = 'tx:${r.id}';
+      if (now - r.createdAt > newTxWindowMs || alerted.contains(key)) continue;
+      if (r.duplicateOfId != null || r.needsReview) continue;
+      final credit = r.type == TransactionType.credit;
+      final d = AlertRules.newTransactionAlert(
+        txId: r.id,
+        amountMinor: r.amountMinor,
+        currency: r.currency,
+        isCredit: credit,
+        who: r.title,
+        category: r.category,
+        inserted: true,
+        isTransfer: r.type == TransactionType.transfer ||
+            r.type == TransactionType.investment ||
+            r.category == Category.transfer,
+        settings: settings,
+        last4: r.accountLast4,
+        usedMostFirst: usedMost(credit: credit),
+      );
+      if (d == null) continue;
+      out.add(
+        AlertDecision(
+          kind: d.kind,
+          key: key,
+          channel: d.channel,
+          notificationId: d.notificationId,
+          title: d.title,
+          body: d.body,
+          link: d.link,
+          actions: d.actions,
+        ),
+      );
+    }
+    return out;
+  }
+
   Future<bool> _deliver(AlertDecision d) async {
     if (d.cancel) {
       await _poster.cancel(d.notificationId);
@@ -131,6 +248,23 @@ class AlertsEngine {
     }
     // Key stored only after a successful post (memory 21 Open Question 1).
     if (ok && d.key.isNotEmpty) await _alerted.add(d.key, _nowMs());
+    final stage = d.stage;
+    final state = _cardState;
+    if (ok && stage != null && state != null && d.actions.isNotEmpty) {
+      final p = d.actions.first.payload;
+      final id = int.tryParse(p['cardId'] ?? '');
+      final due = int.tryParse(p['dueEpochDay'] ?? '');
+      if (id != null && due != null) {
+        for (final s in CardReminderPlan.markSent(stage)) {
+          await state.markSent(
+            id,
+            due,
+            s.name,
+            todayEpochDay: epochDayOf(_today()),
+          );
+        }
+      }
+    }
     return ok;
   }
 

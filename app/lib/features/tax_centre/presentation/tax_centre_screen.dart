@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/analytics_providers.dart';
 import 'package:hisaab/app/di/backup_providers.dart';
+import 'package:hisaab/app/di/share_providers.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_calculator.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_plan.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_report_builder.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_rules.dart';
 import 'package:hisaab/features/tax_centre/presentation/tax_what_if_sheet.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
+import 'package:hisaab/shared/report/pdf_report_renderer.dart';
+import 'package:hisaab/shared/ui/capture_png.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+
+final GlobalKey _shotKey = GlobalKey(debugLabel: 'tax-share-shot');
 
 /// Tax Centre: old vs new regime estimate (F-19, FR-19-01).
 class TaxCentreScreen extends ConsumerWidget {
@@ -27,6 +32,17 @@ class TaxCentreScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Tax Centre'),
         actions: [
+          PopupMenuButton<String>(
+            key: const Key('tax-share'),
+            tooltip: 'Share',
+            icon: const Icon(Icons.share_outlined),
+            enabled: plan != null && plan.hasIncome,
+            onSelected: (v) => _share(context, ref, plan!, v, masked: masked),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'image', child: Text('Share as image')),
+              PopupMenuItem(value: 'pdf', child: Text('Share as PDF')),
+            ],
+          ),
           IconButton(
             key: const Key('tax-export'),
             tooltip: 'Export PDF',
@@ -56,10 +72,78 @@ class TaxCentreScreen extends ConsumerWidget {
           if (plan == null)
             const Center(child: CircularProgressIndicator())
           else
-            ..._body(context, ref, plan, money),
+            RepaintBoundary(
+              key: _shotKey,
+              child: ColoredBox(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: _body(context, ref, plan, money),
+                ),
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  Future<bool> _confirmAmounts(
+    BuildContext context, {
+    String verb = 'Export',
+  }) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text('$verb with amounts?'),
+        content: const Text('The file shows real figures.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            key: const Key('tax-export-confirm'),
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(verb),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
+  }
+
+  // FR-19-10: HD image (scale 3) or PDF through the system share sheet.
+  Future<void> _share(
+    BuildContext context,
+    WidgetRef ref,
+    TaxPlan plan,
+    String kind, {
+    required bool masked,
+  }) async {
+    if (masked && !await _confirmAmounts(context, verb: 'Share')) return;
+    final stem = FinancialYear.fileStem(plan.fyStartYear);
+    final gateway = ref.read(shareGatewayProvider);
+    final bool ok;
+    if (kind == 'pdf') {
+      final bytes = await renderReportPdf(TaxReportBuilder.build(plan));
+      ok = await gateway.shareFile(
+        bytes: bytes,
+        fileName: '$stem.pdf',
+        mimeType: 'application/pdf',
+      );
+    } else {
+      final png = await captureBoundaryPng(_shotKey);
+      ok = png != null &&
+          await gateway.shareFile(
+            bytes: png,
+            fileName: '$stem.png',
+            mimeType: 'image/png',
+          );
+    }
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Could not share')));
+    }
   }
 
   // FR-19-09..11: needs income; asks first while amounts are hidden.
@@ -69,27 +153,7 @@ class TaxCentreScreen extends ConsumerWidget {
     TaxPlan plan, {
     required bool masked,
   }) async {
-    if (masked) {
-      final ok = await showDialog<bool>(
-        context: context,
-        builder: (c) => AlertDialog(
-          title: const Text('Export with amounts?'),
-          content: const Text('The PDF shows real figures.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              key: const Key('tax-export-confirm'),
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Export'),
-            ),
-          ],
-        ),
-      );
-      if (ok != true) return;
-    }
+    if (masked && !await _confirmAmounts(context)) return;
     final saved = await ref.read(reportServiceProvider).save(
           ref.read(blobGatewayProvider),
           TaxReportBuilder.build(plan),

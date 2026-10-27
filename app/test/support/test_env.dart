@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:hisaab/core/db/app_database.dart';
+import 'package:hisaab/features/accounts_management/data/account_admin_repository_impl.dart';
 import 'package:hisaab/features/accounts_management/data/account_repository_impl.dart';
 import 'package:hisaab/features/categorization/data/category_repository_impl.dart';
 import 'package:hisaab/features/settings_data_sources/data/settings_repository_impl.dart';
@@ -23,6 +24,10 @@ class TestEnv {
 
   final AppDatabase db;
   late final AccountRepositoryImpl accounts;
+
+  /// Personalisation and merge operations over the same database.
+  late final AccountAdminRepositoryImpl adminForTest =
+      AccountAdminRepositoryImpl(db, now: () => clock);
   late final CategoryRepositoryImpl categories;
   late final SettingsRepositoryImpl settings;
   late final TransactionRepositoryImpl txs;

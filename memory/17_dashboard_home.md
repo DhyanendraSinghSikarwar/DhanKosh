@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-17 |
-| Status | In progress (Phase 1 core Home plus Fold adoption: net worth card, Needs attention, Inbox bell with unread badge, privacy badge, spent opens Analysis, empty-state import action; widgets, sync, permissions cards pending) |
+| Status | In progress (Phase 1 core Home plus Fold adoption; layout-driven sections, greeting header, sync button and pill, Spent change and running line, category donut with drill, cash flow split bar, Upcoming, Insights, Mark paid done; notification bell sheet, collapsed header, permission prompts pending) |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-27 |
@@ -168,6 +168,15 @@ Safe-to-spend maths remains in `HomeViewModel.build` though no widget shows it: 
 28. FR-17-28: The empty Home keeps the header and privacy badge and offers one primary action "Scan SMS" (`/more`) plus "Import your first statement" (`/statements`).
 29. FR-17-29: The header bell opens the Inbox (`/activity`, [22_activity_log.md](22_activity_log.md)) and shows the unread count (hidden at 0, "99+" above 99); unread rules are FR-22-16.
 30. FR-17-30: Home shows the savings goals summary card ([36_goals_roundups_salary_plan.md](36_savings_goals.md) FR-36-09) below the cards and budgets blocks, embedded by the router like the cards strip; with no goals it renders nothing (no empty card).
+31. FR-17-31: The header shows an avatar with initials of the profile name (fallback "H"), the greeting, the profile name (fallback "Welcome"), a sync button with a progress pill, an add button (`/transactions/add`), hide-amounts, bell, accounts and an edit-sections button.
+32. FR-17-32: `homeSyncProvider` runs sync everything: 14-day SMS re-read with live scanned/found counts, email sync, alert checks; ignored while running; the pill shows live counts and then the number read for 3 s.
+33. FR-17-33: Home renders the visible sections in the stored order from the layout store ([28_theming_customisation.md](28_theming_customisation.md) FR-28-23); goals follow the last visible of cards or budgets; edit mode swaps the sections for the editor with presets.
+34. FR-17-34: The Spent card shows the headline, the percent change against the same elapsed days of the previous month, a running line chart (this month solid, last month dashed, cumulative per day through `SpendCalc`) and Income, Expenses, Saved tiles.
+35. FR-17-35: Spend by category is a donut of the top 7 categories plus Others with percent legend and the line "Includes card purchases" (ADR-0011); tapping a slice or row drills into that category's sub-categories, with a back button.
+36. FR-17-36: Cash flow shows a split bar of spent, invested and saved as shares of income when income is above zero.
+37. FR-17-37: Upcoming lists up to 5 bills, EMIs, insurance renewals, income and card dues due in 0..7 days, soonest first, with "Due today", "Tomorrow" or "In n days"; tap opens Bills.
+38. FR-17-38: Insights is a swipeable carousel of the Analysis insights with a tone tag and Dismiss (session only); hidden when none.
+39. FR-17-39: The card dues block shows Mark paid for an unpaid billed card due within 7 days; the accounts block folds.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -508,6 +517,8 @@ Integration:
 
 13. TC-17-13 (FR-17-17): tap sync with a fake SMS repo and connected email: scan and email start, pill appears, FAB ignores a second tap, alert checks run once, done text appears for 3 s.
 14. TC-17-14 (FR-17-06, FR-17-11, FR-17-12): ingest 3 SMS fixtures (HDFC debit ₹2,450.50 Swiggy UPI, salary credit, card spend) -> Home spent, category donut and recent list update without manual refresh.
+15. TC-17-31 (FR-17-34, FR-17-35, FR-17-36, FR-17-37): chart builders with paise fixtures: cumulative spend, top 7 plus Others, sub-category drill, split bar sums to 1000, upcoming window and wording.
+16. TC-17-32 (FR-17-33): widget: default sections show and Budgets is hidden; the Minimal preset hides the rest; hiding Upcoming in the editor persists.
 
 Fixture messages (masked): `HDFC Bank: Rs 2450.50 debited from a/c XX1234 on 17-10-26 to VPA swiggy@icici (UPI Ref 6xxxxxxxx1). Avl bal Rs 45,210.00` ; `Salary credited Rs 85,000.00 to a/c XX1234 on 01-10-26 ... Avl Bal Rs 1,30,210.00`.
 
@@ -558,3 +569,5 @@ Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insight
 | 2026-10-26 | Net worth card, Needs attention block (replaces the review notice), Inbox bell with unread badge, privacy badge, spent opens Analysis, empty-state import action (FR-17-25 to FR-17-29; TC-17-15 to TC-17-19) | Fold adoption |
 | 2026-10-26 | Goals card on Home | Fold adoption |
 | 2026-10-27 | Audit: Home layout store, presets, greeting header, sync pill, Upcoming, Insights, category donut, running line and previous-period change confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Layout-driven sections, header with name and sync pill, running line, category donut with drill, split bar, Upcoming, Insights, Mark paid (FR-17-31..39) | Kotlin parity |
+| 2026-10-27 | Home Spent is cash basis with a card purchases line (`home_card_purchases`); Home totals and month rows follow the app-wide Book (`bookProvider`, memory 20 FR-20-23) | Kotlin parity, ADR-0011 |

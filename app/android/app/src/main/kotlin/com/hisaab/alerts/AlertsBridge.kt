@@ -91,6 +91,23 @@ class AlertsBridge(context: Context) {
             if (Build.VERSION.SDK_INT >= 23) flags = flags or PendingIntent.FLAG_IMMUTABLE
             builder.setContentIntent(PendingIntent.getActivity(app, id, launch, flags))
         }
+        // Buttons only launch the app on an in-app route (`/alert-action?...`),
+        // which runs the action in Dart; no receiver or headless call needed.
+        val actions = call.argument<List<Map<String, String>>>("actions") ?: emptyList()
+        if (launch != null) {
+            var flags = PendingIntent.FLAG_UPDATE_CURRENT
+            if (Build.VERSION.SDK_INT >= 23) flags = flags or PendingIntent.FLAG_IMMUTABLE
+            actions.take(3).forEachIndexed { i, a ->
+                val label = a["label"] ?: return@forEachIndexed
+                val actionRoute = a["route"] ?: return@forEachIndexed
+                val actionIntent = Intent(launch).putExtra(EXTRA_ROUTE, actionRoute)
+                val pi = PendingIntent.getActivity(app, id * 4 + i + 1, actionIntent, flags)
+                @Suppress("DEPRECATION")
+                builder.addAction(0, label, pi)
+            }
+        }
+        val timeoutMs = call.argument<Number>("timeoutMs")?.toLong()
+        if (timeoutMs != null && Build.VERSION.SDK_INT >= 26) builder.setTimeoutAfter(timeoutMs)
         nm.notify(id, builder.build())
         return true
     }

@@ -1,12 +1,20 @@
+import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
-import 'package:parser_core/parser_core.dart';
 
-/// Spent / income for the rows shown (FR-20-18): transfers count 0,
-/// investments count as spent.
+/// Spent / income for the rows shown (FR-20-18, ADR-0011): cash basis, so
+/// card purchases are left out ([cardMinor]) and card bill payments count;
+/// transfers count 0, investments count as spent.
 class LedgerSummary {
-  const LedgerSummary({this.spentMinor = 0, this.incomeMinor = 0});
+  const LedgerSummary({
+    this.spentMinor = 0,
+    this.incomeMinor = 0,
+    this.cardMinor = 0,
+  });
   final int spentMinor;
   final int incomeMinor;
+
+  /// Card purchases shown beside the headline (FR-10-18).
+  final int cardMinor;
   int get netMinor => incomeMinor - spentMinor;
 }
 
@@ -14,24 +22,17 @@ class LedgerSummary {
 int? inrOf(LedgerTx t) =>
     t.inrMinor ?? (t.currency == 'INR' ? t.amountMinor : null);
 
-/// Totals of [rows], review rows excluded.
-LedgerSummary summarize(Iterable<LedgerTx> rows) {
-  var spent = 0;
-  var income = 0;
-  for (final t in rows) {
-    final v = inrOf(t);
-    if (v == null || t.needsReview) continue;
-    switch (t.type) {
-      case TransactionType.debit:
-      case TransactionType.investment:
-        spent += v;
-      case TransactionType.credit:
-        income += v;
-      case TransactionType.transfer:
-        break;
-    }
-  }
-  return LedgerSummary(spentMinor: spent, incomeMinor: income);
+/// Totals of [rows], review rows excluded; [context] pairs card payments.
+LedgerSummary summarize(
+  Iterable<LedgerTx> rows, {
+  Iterable<LedgerTx> context = const [],
+}) {
+  final c = SpendCalc.totals(rows, context: context);
+  return LedgerSummary(
+    spentMinor: c.spentMinor + c.investedMinor,
+    incomeMinor: c.incomeMinor + c.refundMinor,
+    cardMinor: c.cardPurchasesMinor,
+  );
 }
 
 /// One local day of rows, newest first (FR-08-02).
@@ -48,7 +49,9 @@ List<DayGroup> groupByDay(List<LedgerTx> rows) {
   DateTime? cur;
   var bucket = <LedgerTx>[];
   void flush() {
-    if (cur != null) out.add(DayGroup(cur, bucket, summarize(bucket)));
+    if (cur != null) {
+      out.add(DayGroup(cur, bucket, summarize(bucket, context: rows)));
+    }
   }
 
   for (final t in rows) {

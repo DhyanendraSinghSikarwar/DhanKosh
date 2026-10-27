@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/accounts_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/accounts_management/domain/restore_missing.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_providers.dart';
+import 'package:hisaab/features/accounts_management/presentation/account_suggestions.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_tile.dart';
 import 'package:hisaab/features/accounts_management/presentation/add_account_sheet.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
@@ -21,7 +24,28 @@ class AccountsManagementScreen extends ConsumerWidget {
     final list = ref.watch(accountsWithActivityProvider);
     final hidden = ref.watch(hiddenAccountsProvider).value ?? const [];
     return Scaffold(
-      appBar: AppBar(title: const Text('Accounts')),
+      appBar: AppBar(
+        title: const Text('Accounts'),
+        actions: [
+          PopupMenuButton<int>(
+            key: const Key('accounts_menu'),
+            onSelected: (_) async {
+              final n = await restoreMissingAccounts(
+                ref.read(accountAdminRepositoryProvider),
+                ref.read(transactionRepositoryProvider),
+              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Restored $n accounts')),
+                );
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 0, child: Text('Restore missing accounts')),
+            ],
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('accounts_add'),
         onPressed: () => showAddAccountSheet(context),
@@ -45,6 +69,7 @@ class AccountsManagementScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
             children: [
+              AccountSuggestions(items),
               _Section('Accounts', banks, masked: masked),
               _Section('Cards', cards, masked: masked),
               if (hidden.isNotEmpty) ...[

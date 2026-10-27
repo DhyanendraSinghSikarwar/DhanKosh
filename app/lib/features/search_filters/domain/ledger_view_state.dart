@@ -1,8 +1,55 @@
+import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:parser_core/parser_core.dart';
 
-/// Period choices of the Transactions tab (FR-20-03; Phase 1 subset).
-enum PeriodKind { thisMonth, lastMonth, custom, all }
+/// Shared period choices (FR-20-03, FR-20-22): this month, last month, this
+/// week, this and last financial year (Apr-Mar), 12 months, all time, custom.
+enum PeriodKind {
+  thisMonth,
+  lastMonth,
+  thisWeek,
+  thisFy,
+  lastFy,
+  last12Months,
+  all,
+  custom,
+}
+
+/// Short chip label of [k].
+String periodLabel(PeriodKind k) => switch (k) {
+      PeriodKind.thisMonth => 'This month',
+      PeriodKind.lastMonth => 'Last month',
+      PeriodKind.thisWeek => 'This week',
+      PeriodKind.thisFy => 'This FY',
+      PeriodKind.lastFy => 'Last FY',
+      PeriodKind.last12Months => '12 months',
+      PeriodKind.all => 'All time',
+      PeriodKind.custom => 'Custom',
+    };
+
+/// The app-wide period (FR-20-22): a kind plus inclusive custom dates.
+class PeriodSelection {
+  const PeriodSelection(this.kind, {this.customStart, this.customEnd});
+
+  final PeriodKind kind;
+  final DateTime? customStart;
+  final DateTime? customEnd;
+
+  /// `[fromMs, toMs)` for [now].
+  PeriodRange range(DateTime now) => periodRange(
+        kind,
+        now,
+        customStart: customStart,
+        customEnd: customEnd,
+      );
+}
+
+/// `PERSONAL` / `BUSINESS` for the book scope; null for all books.
+String? bookUsage(Book b) => switch (b) {
+      Book.all => null,
+      Book.personal => 'PERSONAL',
+      Book.business => 'BUSINESS',
+    };
 
 /// `[fromMs, toMs)` in epoch ms; null bounds are open.
 typedef PeriodRange = ({int? fromMs, int? toMs});
@@ -30,6 +77,22 @@ PeriodRange periodRange(
       return (
         fromMs: ms(DateTime(now.year, now.month - 1)),
         toMs: ms(DateTime(now.year, now.month)),
+      );
+    case PeriodKind.thisWeek:
+      final start = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+      return (
+        fromMs: ms(start),
+        toMs: ms(DateTime(start.year, start.month, start.day + 7)),
+      );
+    case PeriodKind.thisFy:
+    case PeriodKind.lastFy:
+      final fy = now.month >= 4 ? now.year : now.year - 1;
+      final y = kind == PeriodKind.thisFy ? fy : fy - 1;
+      return (fromMs: ms(DateTime(y, 4)), toMs: ms(DateTime(y + 1, 4)));
+    case PeriodKind.last12Months:
+      return (
+        fromMs: ms(DateTime(now.year, now.month - 11)),
+        toMs: ms(DateTime(now.year, now.month + 1)),
       );
     case PeriodKind.custom:
       if (customStart == null) return (fromMs: null, toMs: null);
@@ -65,6 +128,8 @@ class LedgerViewState {
     this.sources = const {},
     this.minMinor,
     this.maxMinor,
+    this.book = Book.all,
+    this.accountKind,
   });
 
   final TxKind kind;
@@ -82,6 +147,12 @@ class LedgerViewState {
   final int? minMinor;
   final int? maxMinor;
 
+  /// Book scope (FR-20-23), mirrored from the shared book store.
+  final Book book;
+
+  /// Accounts only or cards only (FR-08-23); null shows both.
+  final AccountKind? accountKind;
+
   /// True when a chip filter (type, account, category, source, amount) is
   /// set (FR-20-16).
   bool get hasChipFilters =>
@@ -90,7 +161,8 @@ class LedgerViewState {
       category != null ||
       sources.isNotEmpty ||
       minMinor != null ||
-      maxMinor != null;
+      maxMinor != null ||
+      accountKind != null;
 
   LedgerViewState copyWith({
     TxKind? kind,
@@ -103,6 +175,8 @@ class LedgerViewState {
     Set<Source>? sources,
     int? Function()? minMinor,
     int? Function()? maxMinor,
+    Book? book,
+    AccountKind? Function()? accountKind,
   }) =>
       LedgerViewState(
         kind: kind ?? this.kind,
@@ -115,6 +189,8 @@ class LedgerViewState {
         sources: sources ?? this.sources,
         minMinor: minMinor != null ? minMinor() : this.minMinor,
         maxMinor: maxMinor != null ? maxMinor() : this.maxMinor,
+        book: book ?? this.book,
+        accountKind: accountKind != null ? accountKind() : this.accountKind,
       );
 
   /// Resets type, account and category; keeps search and period (FR-20-16).
@@ -123,6 +199,7 @@ class LedgerViewState {
         customStart: customStart,
         customEnd: customEnd,
         query: query,
+        book: book,
       );
 
   /// The repository filter for [now].
@@ -143,6 +220,8 @@ class LedgerViewState {
       sources: sources,
       minMinor: minMinor,
       maxMinor: maxMinor,
+      accountKind: accountKind,
+      usage: bookUsage(book),
     );
   }
 }

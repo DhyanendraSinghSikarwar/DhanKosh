@@ -7,12 +7,14 @@ import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/email_ingestion/data/email_settings_store.dart';
 import 'package:hisaab/features/email_ingestion/data/enough_mail_imap_client.dart';
+import 'package:hisaab/features/email_ingestion/data/enough_mail_smtp_sender.dart';
 import 'package:hisaab/features/email_ingestion/data/processed_email_repository_impl.dart';
 import 'package:hisaab/features/email_ingestion/data/secure_email_credential_store.dart';
 import 'package:hisaab/features/email_ingestion/domain/email_ports.dart';
 import 'package:hisaab/features/email_ingestion/domain/usecases/email_sync_runner.dart';
 import 'package:hisaab/features/email_ingestion/domain/usecases/manage_email_account.dart';
 import 'package:hisaab/features/email_ingestion/domain/usecases/sync_email.dart';
+import 'package:hisaab/features/email_ingestion/domain/usecases/verify_email.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart'
     show IngestOutcome;
@@ -28,6 +30,10 @@ part 'email_providers.g.dart';
 /// IMAP over enough_mail; override in tests.
 @Riverpod(keepAlive: true)
 ImapClient imapClient(Ref ref) => EnoughMailImapClient();
+
+/// SMTP over enough_mail for the verification code; override in tests.
+@Riverpod(keepAlive: true)
+MailSender mailSender(Ref ref) => EnoughMailSmtpSender();
 
 /// Non-secret email settings and sync cursor.
 @Riverpod(keepAlive: true)
@@ -138,4 +144,13 @@ ManageEmailAccount manageEmailAccount(Ref ref) => ManageEmailAccount(
       imap: ref.watch(imapClientProvider),
       settings: ref.watch(emailSettingsRepositoryProvider),
       credentials: ref.watch(emailCredentialStoreProvider),
+    );
+
+/// Connect with a mailed 6-digit code (FR-03-03). Holds the pending sign-in in
+/// memory, so it lives as long as the app.
+@Riverpod(keepAlive: true)
+VerifyEmail verifyEmail(Ref ref) => VerifyEmail(
+      imap: ref.watch(imapClientProvider),
+      sender: ref.watch(mailSenderProvider),
+      manage: ref.watch(manageEmailAccountProvider),
     );

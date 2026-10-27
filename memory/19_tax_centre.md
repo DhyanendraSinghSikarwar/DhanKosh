@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-19 |
-| Status | In progress (domain plus Tax Centre screen at /tax; 2026-10-26: PDF export of income, detected deductions and regime comparison with the disclaimer, gated on income and a hidden-amounts confirm; PNG, share sheet, EPF input and FR-19-16 cache file not done) |
+| Status | In progress (domain plus Tax Centre screen at /tax; 2026-10-26: PDF export of income, detected deductions and regime comparison with the disclaimer, gated on income and a hidden-amounts confirm; PNG, share sheet, EPF input and FR-19-16 cache file not done); 2026-10-27 parity: Share as HD image and PDF added (FR-19-18) |
 | Priority | P2 |
 | Phase | 4 |
 | Last Updated | 2026-10-27 |
@@ -147,6 +147,7 @@ Tax rules (`TaxRules`, header "Rules as of 2026-10-11"; paise; LAKH = 10,000,000
 15. FR-19-15: Tax rules are versioned data (`FY2024_25`, `FY2025_26`, `FY2026_27`); the latest year drives the limits shown in labels.
 - FR-19-16: The shared tax file is a temporary export in `cacheDir/shared/` (Flutter: `getTemporaryDirectory()/shared/`), named `DhanKosh-tax-estimate-<fy>-<yy>.png|pdf`; any older `DhanKosh-tax-estimate*` file is deleted before writing (`TaxReport.kt:61-65`), and it is never kept in durable storage or backups.
 - FR-19-17: Flutter has no legacy tax store to migrate. The Kotlin app deletes `filesDir/datastore/tax_overrides.preferences_pb` when its tax data source is constructed (`TaxScreen.kt:229-231`); the upgrade/import path ([Upgrade Migration](33_upgrade_migration_from_kotlin.md)) shall ignore and not restore that file, and what-if figures stay in memory only.
+- FR-19-18: The result shall be shareable as an HD PNG (RepaintBoundary at pixel ratio 3) and as the PDF through the system share sheet (`ShareGateway`, `share_plus`), file stem `DhanKosh-tax-estimate-YYYY-YY`; while amounts are hidden it asks first ("Share with amounts?"); the app lock is skipped around the sheet (FR-25-06).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -515,6 +516,8 @@ Tests: `test/features/tax_centre/tax_centre_screen_test.dart` (examples B and C 
 
 - 2026-10-26: FR-19-09 done (needs income, confirm while amounts are hidden), FR-19-11 done (disclaimer footer, real figures). FR-19-10 partly: a one-click A4 PDF through the save-as picker (`BlobGateway`, `ReportService.save`) named `DhanKosh-tax-estimate-<yyyy>-<yy>.pdf` (`DhanKosh-tax-estimate-last-12-months.pdf` for the 12-month period); the PNG and the platform share sheet are not built. FR-19-16 (cache `shared/` file) is not needed because nothing is kept after saving. Code: `domain/tax_report_builder.dart` (`TaxReportBuilder.build(plan)` returns the shared `ReportDocument`: Income, Deductions detected with 80C/80D lines and NPS, Regime comparison with the cheaper regime note), export action in `presentation/tax_centre_screen.dart`, renderer in `lib/shared/report/` ([24_backup_export.md](24_backup_export.md)).
 
+- 2026-10-27: Share parity: `ShareGateway` port (`shared/ports/share_gateway.dart`), `SharePlusGateway` (`core/share`), `captureBoundaryPng` (`shared/ui/capture_png.dart`), provider `shareGatewayProvider`; Tax Centre app bar menu `tax-share` (image or PDF). New package `share_plus` (free, no network); Android needs no extra manifest entry (share_plus provides its FileProvider). Test in `tax_centre_screen_test.dart`.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -526,3 +529,4 @@ Tests: `test/features/tax_centre/tax_centre_screen_test.dart` (examples B and C 
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
 | 2026-10-26 | Tax-year PDF export (FR-19-09, FR-19-11, FR-19-10 PDF only) | Fold adoption |
 | 2026-10-27 | Audit: regimes, what-if and PDF share confirmed done; HD image share and share sheet confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Share parity: `ShareGateway` port (`shared/ports/share_gateway.dart`), `SharePlusGateway` (`core/share`), `captureBoundaryPng` (`shared/ui/capture_png.dart`), provider `shareGatewayProvider`; Tax Centre app bar menu `tax-share` (image or PDF) | Kotlin parity |

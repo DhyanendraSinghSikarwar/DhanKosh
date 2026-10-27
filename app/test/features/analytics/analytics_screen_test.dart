@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/app/di/analytics_providers.dart';
+import 'package:hisaab/app/di/layout_providers.dart';
 import 'package:hisaab/app/theme/app_theme.dart';
 import 'package:hisaab/features/analytics/domain/analytics_math.dart';
 import 'package:hisaab/features/analytics/domain/analytics_models.dart';
 import 'package:hisaab/features/analytics/domain/analytics_view.dart';
+import 'package:hisaab/features/analytics/domain/chart_data.dart';
 import 'package:hisaab/features/analytics/domain/civil_date.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
 import 'package:hisaab/features/analytics/presentation/analytics_screen.dart';
+import 'package:hisaab/features/theming_customisation/domain/section_layout.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:parser_core/parser_core.dart';
@@ -76,6 +79,7 @@ AnalyticsView _view(DateTime month, List<LedgerTx> all) {
     insights: AnalyticsMath.insights(txs, const [], today),
     heat: LedgerMath.heat(txs),
     merchants: LedgerMath.topMerchants(txs),
+    year: all,
   );
 }
 
@@ -108,6 +112,10 @@ void main() {
       ProviderScope(
         overrides: [
           hideAmountsProvider.overrideWith((ref) => Stream.value(false)),
+          analyticsAccountsProvider.overrideWith((ref) => Stream.value([])),
+          visibleSectionsProvider.overrideWith(
+            (ref, id) => SectionLayout.visibleIds(SectionLayout.defaults(id)),
+          ),
           analyticsViewProvider.overrideWith((ref) {
             final p = ref.watch(analyticsPeriodChoiceProvider);
             return Stream.value(
@@ -164,6 +172,51 @@ void main() {
     await t.tap(find.text('Forecast'));
     await settle(t);
     expect(find.text('Forecast is for the current month.'), findsOneWidget);
+    await teardownApp(t);
+  });
+
+  testWidgets('donut selection cross-filters and drills (FR-18-29)', (t) async {
+    await pump(t, data: rows);
+    await t.tap(find.text('Last month'));
+    await settle(t);
+    expect(find.text('Fresh Mart (1)'), findsOneWidget);
+    expect(find.text('Cafe One (1)'), findsOneWidget);
+    await t.tap(find.byKey(const Key('donut-row-1')));
+    await settle(t);
+    expect(find.byKey(const Key('donut-back')), findsOneWidget);
+    expect(find.text('Cafe One (1)'), findsOneWidget);
+    expect(find.text('Fresh Mart (1)'), findsNothing);
+    await t.tap(find.byKey(const Key('donut-back')));
+    await settle(t);
+    expect(find.text('Fresh Mart (1)'), findsOneWidget);
+    await teardownApp(t);
+  });
+
+  testWidgets('heat cell tap reads and filters (FR-18-29)', (t) async {
+    await pump(t, data: rows);
+    await t.tap(find.text('Last month'));
+    await settle(t);
+    final cell = ChartData.heatCell(rows[1])!;
+    final key = Key('heat-${cell.$1}-${cell.$2}');
+    await t.ensureVisible(find.byKey(key));
+    await t.tap(find.byKey(key));
+    await settle(t);
+    expect(find.byKey(const Key('heat-readout')), findsOneWidget);
+    await t.tap(find.byKey(key));
+    await settle(t);
+    expect(find.byKey(const Key('heat-readout')), findsNothing);
+    await teardownApp(t);
+  });
+
+  testWidgets('basis note shows card purchases (ADR-0011)', (t) async {
+    await pump(t, data: rows);
+    await t.tap(find.text('Last month'));
+    await settle(t);
+    expect(find.byKey(const Key('analytics-basis-note')), findsOneWidget);
+    expect(
+      find.textContaining('Expenses exclude card purchases'),
+      findsOneWidget,
+    );
     await teardownApp(t);
   });
 }

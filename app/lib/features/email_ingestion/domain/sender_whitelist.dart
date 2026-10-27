@@ -7,14 +7,16 @@ class SenderWhitelist {
   SenderWhitelist({
     Iterable<String>? defaults,
     Iterable<String> custom = const [],
-  })  : defaults = _clean(defaults ?? standardDefaults()),
+    Iterable<String> removed = const [],
+  })  : defaults = _clean(defaults ?? standardDefaults())
+          ..removeAll(_clean(removed)),
         custom = _clean(custom);
 
   /// Defaults from the parser registry (banks plus statement senders).
   static Set<String> standardDefaults() =>
       ParserRegistry.standard().defaultEmailSenders.toSet();
 
-  /// Built-in entries, lower-case.
+  /// Built-in entries still on, lower-case (switched-off ones are left out).
   final Set<String> defaults;
 
   /// User-added entries (address or domain), lower-case.

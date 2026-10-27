@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-24 |
-| Status | In progress (CSV done; encrypted full backup and restore, PDF summary and portfolio reports done with tests; device pickers, Kotlin-free; large-file timing and real-device restore untested; per-account card network/colour/limit and merged-account links not restored) |
+| Status | In progress (CSV done; encrypted full backup and restore, PDF summary and portfolio reports done with tests; device pickers, Kotlin-free; large-file timing and real-device restore untested; per-account card network, colour, limits, markup and merge/link restored) |
 | Priority | P1 |
 | Phase | 5 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -162,6 +162,7 @@ Accounts' nicknames, balances, types, merges and hidden flags, custom categories
 30. FR-24-30: "Portfolio report" writes an A4 PDF with value, invested, gain, return, allocation by class and the holdings list.
 31. FR-24-31: Reports are built and rendered on the phone with the `pdf` package, carry the footer "Made on your phone by DhanKosh. This file was not sent anywhere.", and use Latin-1 text only (other characters print as `?`). The Tax Centre export is specified in [19_tax_centre.md](19_tax_centre.md).
 32. FR-24-32: The backup also carries user SIPs (`sips`), goals with their contributions (`goals`) and recorded MF orders (`mfOrders`). They are optional sections of JSON schema 1: older files without them restore unchanged, and the counts show "SIPs", "goals", "MF orders". Restore goes through `SipRepository.add`, `GoalRepository.addGoal`/`addContribution` and `HoldingRepository.restoreMfOrders`; items are merged by content (SIP name, amount, frequency, day, start; goal name, target, date; contribution amount, day, note; order identifier, time, amount, units), so a second restore adds nothing. Restored orders claim their dedup keys so the same purchase arriving later by mail or SMS is not counted again.
+33. FR-24-33: The `accounts` section also carries `balance`, `limit`, `balanceAt`, `markup` (bps), `linked` and `mergedInto` (`bank|last4` keys) next to the existing colour, network, nickname and usage. All are optional keys of schema 1; merged-away accounts are now exported. Restore sets colour, network, markup and the stated figures on created accounts, fills missing colour/network on existing ones and re-links debit cards and merges once all accounts exist (`AccountAdminRepository`).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -470,3 +471,4 @@ Built 2026-10-26 (Fold adoption): FR-24-17..31 done. Code: `data/backup_crypto.d
 | 2026-10-21 | Phase 5 backup/export landed | Phase 5 |
 | 2026-10-26 | Encrypted full backup and restore (FR-24-17..28), PDF summary and portfolio reports (FR-24-29..31); format documented in 10.1 | Fold adoption |
 | 2026-10-26 | Backup includes SIPs, goals, MF orders | Fold adoption |
+| 2026-10-27 | Backup carries and restores account colour, network, limits, markup, debit link and merge links (FR-24-33) | Kotlin parity |

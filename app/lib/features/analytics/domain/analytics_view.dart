@@ -6,20 +6,6 @@ import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 /// Periods the Analysis tab can show (FR-18-12).
 enum AnalyticsPeriod { thisMonth, lastMonth, custom }
 
-/// Account/card scope of Analysis (FR-18-27); empty means every account.
-class AnalyticsScope {
-  /// Creates a scope.
-  const AnalyticsScope({this.accountIds = const {}});
-
-  /// Selected account and card ids.
-  final Set<int> accountIds;
-
-  /// Whether [accountId] is in scope.
-  bool allows(int? accountId) =>
-      accountIds.isEmpty ||
-      (accountId != null && accountIds.contains(accountId));
-}
-
 /// Everything the Analysis tab renders for one period (FR-18-01).
 class AnalyticsView {
   /// Creates a view.

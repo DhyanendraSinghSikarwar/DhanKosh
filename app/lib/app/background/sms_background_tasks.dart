@@ -37,6 +37,7 @@ Future<bool> smsDrainTask({ProviderContainer Function()? create}) =>
     _withContainer(
       (c) async {
         final ingest = c.read(ingestMessageProvider);
+        await ingest.prepare();
         await DrainPendingSms(
           live: c.read(smsLiveSourceProvider),
           handle: HandleLiveSms(

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-27 |
-| Status | In progress (Phase 3: data layer and Profile screen done: name, mobile, email, DOB, PAN, per-bank unlock details, password count; photo, crop, header tint and Support icon pending) |
+| Status | In progress (Phase 3: personal fields, occupation, photo with crop/zoom/rotate, several alternate names and mobiles, per-bank unlock details done; header tint and Support icon pending) |
 | Priority | P1 |
 | Phase | 1 (first-run identity and Profile screen); statement-password use lands in Phase 3 |
 | Last Updated | 2026-10-27 |
@@ -159,6 +159,9 @@ A collector keeps `transactions.phoneLast4s` = last 4 digits of the user's own n
 - FR-27-18: The identity is exposed to the statements feature as a read-only `Identity` object.
 - FR-27-19: No profile value is sent off device or included in backups.
 - FR-27-20: Avatar shown on Home header and More top bar uses the photo, or initials fallback, consistently.
+- FR-27-21: (parity addition) Photo picker uses `image_picker` (gallery, max 2048 px); `PhotoCropScreen` offers pinch zoom 1x to 6x, pan and 90-degree rotation and returns a 512 x 512 PNG rendered from the visible square (dart:ui, no extra package). Saved in app-private storage as `profile/photo_<timestamp>.png` (a new name each time so image caches never show the old one); the previous file is deleted; Remove deletes the file and stores an empty path; Erase all deletes it. Deviation from FR-27-10: PNG, not JPEG, since dart:ui has no JPEG encoder; double-tap zoom and reset are not built.
+- FR-27-22: (parity addition) The Personal card has an Occupation field stored in plain settings (`profile_occupation`).
+- FR-27-23: (parity addition) "Other names as per bank" and "Other mobiles as per bank" are lists (chips with add and remove) in the sealed identity; the first entry is `altName` / `altPhone`, the rest are `moreNames` / `morePhones` (JSON keys added to the sealed identity). Every entry feeds the statement-password guesses as an extra bank identity, so the cap stays 300.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -429,7 +432,9 @@ APIs: `BankIdentityRepository.read(accountId)/readAll()/save(BankIdentity)` (an 
 Tests: `test/features/phase3/phase3_repositories_test.dart` (profile and passwords group); `test/features/profile/profile_screen_test.dart` (validation, save order, counts).
 
 UI (2026-10-21): `/profile` (`presentation/{profile_screen,bank_details_sheet}.dart`, providers in `lib/app/di/portfolio_providers.dart`), linked from a Profile tile at the top of More. Save is gated by `ProfileDraft.canSave` plus a valid mobile; writes the sealed identity first, then the profile (FR-27-05 order), then refreshes the onboarding gate. FR-27-06 (partly), 07, 08, 13, 15 UI done; the alternate name/phone are preserved but not editable yet.
-Deferred UI: photo pick/crop/tint (FR-27-09..12), avatar on Home/More (FR-27-20), Support icon, alternate fields, link from Accounts.
+Deferred UI: photo tint (FR-27-12), avatar on Home/More (FR-27-20, widget provided), Support icon, link from Accounts.
+Parity round 2026-10-27 (agent D1): FR-27-09 (picker, crop, rotate), FR-27-10 and 11 (save and remove; PNG deviation), FR-27-21..23 done. Code: `presentation/photo_crop_screen.dart`, `domain/profile_photo.dart` (`ProfilePhotoStore`, `SetProfilePhoto`), `data/profile_photo_store_impl.dart`, `app/di/profile_providers.dart`, shared `lib/shared/widgets/profile_avatar.dart` (`ProfileAvatar(name:, photoPath:, radius:)`; Home and More headers should use it with `UserProfile.name` and `photoPath` from `profileDataProvider`, FR-27-20; wiring on Home belongs to F-17). `UserProfile.photoPath == ''` means no photo. Pending: header gradient from the photo (FR-27-12), Support icon, double-tap zoom.
+Tests: `profile_photo_test.dart` (use case, file store, avatar, crop screen output size and rotation), `profile_screen_test.dart` (occupation, alternates), `statement_import/extra_alternates_test.dart`.
 
 ## 19. Change Log (date | change | reason)
 
@@ -440,3 +445,4 @@ Deferred UI: photo pick/crop/tint (FR-27-09..12), avatar on Home/More (FR-27-20)
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |
 | 2026-10-21 | Phase 3 Portfolio + Profile UI landed | Phase 3 |
 | 2026-10-27 | Audit: fields and bank unlock details confirmed done; occupation and photo with crop confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Profile photo with crop, zoom and rotate (PNG, app-private), shared `ProfileAvatar` widget, occupation field, several alternate names and mobiles (FR-27-21..23) | Kotlin parity (D2) |

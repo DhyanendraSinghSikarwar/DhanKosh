@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hisaab/app/theme/backdrop.dart';
 import 'package:hisaab/app/theme/palettes.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/features/theming_customisation/domain/appearance.dart';
@@ -12,22 +13,46 @@ abstract final class AppTheme {
   /// Default (DhanKosh) dark theme.
   static ThemeData dark() => build(PaletteId.dhankosh, Brightness.dark);
 
-  /// Theme for [palette] (FR-28-01, FR-28-04, FR-28-06, FR-28-07).
+  /// Theme for [palette]; [backdrop] adds the wash and glows (FR-28-08), off
+  /// on true black. (FR-28-01, FR-28-04, FR-28-06, FR-28-07).
   /// Material You dynamic colour is never used.
   static ThemeData build(
     PaletteId palette,
     Brightness b, {
     bool pureBlack = false,
+    bool backdrop = false,
   }) {
     var spec = allPaletteSpecs[palette.index];
     if (pureBlack && b == Brightness.dark) spec = spec.pureBlack();
     final scheme = b == Brightness.dark ? spec.dark : spec.light;
     final base = ThemeData(useMaterial3: true, colorScheme: scheme);
+    // The backdrop is off on true black (no gradients over pure black).
+    final withBackdrop = backdrop && !(pureBlack && b == Brightness.dark);
     return base.copyWith(
-      scaffoldBackgroundColor: scheme.surface,
+      scaffoldBackgroundColor:
+          withBackdrop ? Colors.transparent : scheme.surface,
+      pageTransitionsTheme: withBackdrop
+          ? const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: BackdropPageTransitionsBuilder(),
+                TargetPlatform.iOS: BackdropPageTransitionsBuilder(),
+                TargetPlatform.linux: BackdropPageTransitionsBuilder(),
+                TargetPlatform.macOS: BackdropPageTransitionsBuilder(),
+                TargetPlatform.windows: BackdropPageTransitionsBuilder(),
+              },
+            )
+          : null,
       textTheme: _tabular(base.textTheme),
       extensions: [
         if (b == Brightness.dark) SemanticColors.dark else SemanticColors.light,
+        if (withBackdrop)
+          BackdropTheme(
+            base: scheme.surface,
+            bottom: b == Brightness.dark ? spec.bottomDark : spec.bottomLight,
+            glows: spec.glows,
+            dark: b == Brightness.dark,
+            glowStrength: spec.glowStrength,
+          ),
       ],
     );
   }

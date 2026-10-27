@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/core/money/money.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
+import 'package:hisaab/features/dedup_review/presentation/compare_screen.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -96,6 +97,14 @@ class _PairCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              TextButton(
+                key: Key('compare_$id'),
+                onPressed: () => Navigator.push<void>(
+                  context,
+                  MaterialPageRoute(builder: (_) => CompareScreen(pair)),
+                ),
+                child: const Text('Compare'),
+              ),
               TextButton(
                 key: Key('keep_$id'),
                 onPressed: onKeep,

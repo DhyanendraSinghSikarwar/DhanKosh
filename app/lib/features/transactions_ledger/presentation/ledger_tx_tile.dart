@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/core/money/money.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
+import 'package:hisaab/features/categorization/domain/brand_logos.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:hisaab/shared/widgets/brand_logo.dart';
 import 'package:parser_core/parser_core.dart' hide Money;
 
 /// Signed amount text of [t] in the row's own currency (paise only).
@@ -65,7 +67,12 @@ class LedgerTxTile extends StatelessWidget {
       selectedTileColor: theme.colorScheme.secondaryContainer,
       leading: selecting
           ? Icon(selected ? Icons.check_circle : Icons.circle_outlined)
-          : null,
+          : BrandLogo(
+              logoKey: BrandLogos.merchant(tx.merchant) ??
+                  BrandLogos.bank(tx.bankName),
+              label: tx.title,
+              size: 36,
+            ),
       onLongPress: onToggle,
       onTap: selecting && onToggle != null
           ? onToggle
@@ -75,6 +82,7 @@ class LedgerTxTile extends StatelessWidget {
         [
           tx.category.label,
           if (last4 != null) '${tx.bankName} ••$last4' else tx.bankName,
+          if (tx.accountKind == AccountKind.card) 'Card' else 'Account',
           if (tx.needsReview) 'Needs review',
         ].join(' · '),
         maxLines: 1,

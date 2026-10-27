@@ -1,5 +1,6 @@
 import 'package:hisaab/core/db/enum_codec.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/accounts_management/domain/account_admin_repository.dart';
 import 'package:hisaab/features/accounts_management/domain/account_repository.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_models.dart'
     show weeklySummaryKey;
@@ -55,10 +56,15 @@ class BackupDeps {
     required this.goals,
     required this.settings,
     required this.reset,
+    this.accountAdmin,
   });
 
   final TransactionRepository txs;
   final AccountRepository accounts;
+
+  /// Personalisation and merge links (FR-24-25); optional so older wiring
+  /// still works.
+  final AccountAdminRepository? accountAdmin;
   final LoanAccountRepository loans;
   final CategoryRepository categories;
   final BudgetRepository budgets;
@@ -122,10 +128,31 @@ class BackupData {
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
   }
 
-  Future<List<Account>> _allAccounts() async => [
+  Future<List<Account>> _allAccounts() async =>
+      await _d.accountAdmin?.all() ??
+      [
         ...await _d.accounts.watchVisible().first,
         ...await _d.accounts.watchHidden().first,
       ];
+
+  /// Colour, network, markup and last stated figures of a restored account.
+  Future<void> _restoreFields(int id, Map<String, Object?> a) async {
+    final admin = _d.accountAdmin;
+    if (admin != null) {
+      if (a['color'] != null) await admin.setColor(id, a['color'] as int?);
+      if (a['markup'] != null) {
+        await admin.setForexMarkupBps(id, a['markup'] as int?);
+      }
+    }
+    if (a['balance'] != null || a['limit'] != null) {
+      await _d.accounts.updateBalance(
+        id,
+        at: (a['balanceAt'] as int?) ?? 0,
+        balanceMinor: a['balance'] as int?,
+        limitMinor: a['limit'] as int?,
+      );
+    }
+  }
 
   // ---------------------------------------------------------------- collect
 
@@ -133,6 +160,11 @@ class BackupData {
   Future<Map<String, Object?>> collect({required int now}) async {
     final accounts = await _allAccounts();
     final accKey = {for (final a in accounts) a.id: _acct(a.bankName, a.last4)};
+    final markups = {
+      for (final a in accounts)
+        if (a.kind == AccountKind.card)
+          a.id: await _d.accountAdmin?.forexMarkupBps(a.id),
+    };
     final customs = await _d.categories.watchCustomCategories().first;
     final customName = {for (final c in customs) c.id: c.name};
 
@@ -226,6 +258,14 @@ class BackupData {
             'manual': a.manualBalanceMinor,
             'manualAt': a.manualBalanceAt,
             'hidden': a.hidden,
+            'balance': a.latestBalanceMinor,
+            'limit': a.availableLimitMinor,
+            'balanceAt': a.balanceUpdatedAt,
+            'markup': markups[a.id],
+            'linked':
+                a.linkedAccountId == null ? null : accKey[a.linkedAccountId],
+            'mergedInto':
+                a.mergedIntoId == null ? null : accKey[a.mergedIntoId],
           },
       ],
       'loans': [
@@ -519,6 +559,7 @@ class BackupData {
         );
         if (id == null) continue;
         bump('accounts');
+        await _restoreFields(id, a);
         if (a['nickname'] != null) {
           await _d.accounts.rename(id, a['nickname'] as String?);
         }
@@ -533,6 +574,15 @@ class BackupData {
           await _d.accounts.setHidden(id, hidden: true);
         }
       } else {
+        if (existing.colorArgb == null && a['color'] != null) {
+          await _d.accountAdmin?.setColor(existing.id, a['color'] as int?);
+        }
+        if (existing.cardNetwork == null && a['network'] != null) {
+          await _d.accountAdmin?.setNetwork(
+            existing.id,
+            enumFromDbOrNull(CardNetwork.values, a['network'] as String?),
+          );
+        }
         if (existing.nickname == null && a['nickname'] != null) {
           await _d.accounts.rename(existing.id, a['nickname'] as String?);
         }
@@ -545,6 +595,25 @@ class BackupData {
             a['manual'] as int?,
             a['manualAt'] as int?,
           );
+        }
+      }
+    }
+    // Merge and debit-card links, once every account exists.
+    final admin = _d.accountAdmin;
+    if (admin != null) {
+      known = {
+        for (final a in await _allAccounts()) _acct(a.bankName, a.last4): a,
+      };
+      for (final a in list('accounts')) {
+        final me = known[_acct(a['bank']! as String, a['last4']! as String)];
+        if (me == null) continue;
+        final linked = known[a['linked']];
+        if (me.linkedAccountId == null && linked != null) {
+          await admin.setLinkedAccount(me.id, linked.id);
+        }
+        final into = known[a['mergedInto']];
+        if (me.mergedIntoId == null && into != null && into.id != me.id) {
+          await admin.merge(me.id, into.id);
         }
       }
     }

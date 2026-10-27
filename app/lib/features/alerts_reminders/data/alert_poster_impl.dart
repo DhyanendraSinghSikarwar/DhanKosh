@@ -36,6 +36,11 @@ class AlertPosterImpl implements AlertPoster {
         title: decision.title,
         body: decision.body,
         route: alertRouteFor(decision.link),
+        actions: [
+          for (final a in decision.actions)
+            {'label': a.label, 'route': alertActionRoute(a)},
+        ],
+        timeoutMs: decision.timeoutMs,
       );
     } on Object {
       return false;

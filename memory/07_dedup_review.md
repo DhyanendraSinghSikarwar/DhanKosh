@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-07 |
-| Status | In progress (Phase 1: matcher and data layer done; Review screen basic; manual merge via ledger multi-select; Compare and split pending) |
+| Status | In progress (matcher and data layer done; Review screen with Compare screen (differences highlighted, Merge / Keep separate / Split) and Split on Transaction detail done; manual merge via ledger multi-select; undo toast pending) |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-27 |
@@ -397,6 +397,10 @@ Reconciliation note (2026-10-21, Phase 1 hardening): done. The ledger has ONE ma
 
 2026-10-22: manual merge of selected rows is `TransactionRepository.mergeRows` (oldest kept, sources moved), reached from Transactions multi-select (see [Transactions](08_transactions_ledger.md)). Compare view and split remain deferred.
 
+### 18.1 Parity pass 2026-10-27 (agent A2)
+
+Done: FR-07-11 (`compare_rows.dart` pure field diff, `CompareScreen` pushed from "Compare" on each pair; differing rows tinted `tertiaryContainer`; uses ten rows, Kotlin's nine plus Type and Bank), FR-07-13 (`TransactionRepository.splitSource(transactionId, sourceId)`: needs >= 2 sources and a readable `rawText`, re-parses with `parse()`, inserts a row with hash `<hash>#split:<sourceId>`, moves the source, and re-derives the parent's balance/limit from its remaining readable sources; no tombstone is written because no message is deleted). UI: "Split out" per message on Transaction detail and per message in the Compare screen. Tests: `test/features/transactions_ledger/split_source_test.dart`, compare case in `test/features/accounts_management/account_ui_parity_test.dart`.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -411,3 +415,4 @@ Reconciliation note (2026-10-21, Phase 1 hardening): done. The ledger has ONE ma
 | 2026-10-21 | Phase 1 hardening: background SMS, nightly scan, off-isolate parse, dedup reconcile | Phase 1 |
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
 | 2026-10-27 | Audit: matcher and 30-minute rule confirmed done; split and Compare confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Compare screen and split (FR-07-11, FR-07-13) | Kotlin parity |

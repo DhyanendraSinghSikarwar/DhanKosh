@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:hisaab/core/errors/failure.dart';
 import 'package:hisaab/features/email_ingestion/domain/email_ports.dart';
 import 'package:hisaab/features/email_ingestion/domain/email_text.dart';
+import 'package:hisaab/features/email_ingestion/domain/entities/email_account.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/email_sync_report.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/raw_email.dart';
 import 'package:hisaab/features/email_ingestion/domain/sender_whitelist.dart';
@@ -65,25 +66,53 @@ class SyncEmail {
 
   static const _overlap = Duration(days: 1);
 
-  /// Runs a sync and always returns a report; never throws.
+  /// Syncs every enabled mailbox in turn and returns one combined report;
+  /// never throws (FR-03-06). A failing mailbox does not stop the others;
+  /// the combined `error` is the first failure.
   Future<EmailSyncReport> call() async {
     final started = _now();
     int elapsed() => _now().difference(started).inMilliseconds;
     try {
-      final account = await _settings.account();
-      if (account == null) return const EmailSyncReport.failed('not_connected');
-      final password = await _credentials.read();
+      final accounts = [
+        for (final a in await _settings.accounts())
+          if (a.enabled) a,
+      ];
+      if (accounts.isEmpty) {
+        return const EmailSyncReport.failed('not_connected');
+      }
+      final reports = <EmailSyncReport>[];
+      for (final a in accounts) {
+        reports.add(await _syncOne(a));
+      }
+      return EmailSyncReport.combine(reports, millis: elapsed());
+    } on Object catch (e) {
+      return EmailSyncReport.failed(
+        e is Failure ? 'failed' : e.runtimeType.toString(),
+        millis: elapsed(),
+      );
+    }
+  }
+
+  /// Runs a sync of one mailbox and always returns a report; never throws.
+  Future<EmailSyncReport> _syncOne(EmailAccount account) async {
+    final started = _now();
+    int elapsed() => _now().difference(started).inMilliseconds;
+    final address = account.address;
+    try {
+      final password = await _credentials.read(address);
       if (password == null || password.isEmpty) {
-        await _settings.setNeedsReauth(value: true);
+        await _settings.setNeedsReauth(address, value: true);
         return const EmailSyncReport.failed('auth');
       }
-      final last = await _settings.lastSyncAt();
+      final last = await _settings.lastSyncAt(address);
       final full = last <= 0;
       final since = full
           ? started.subtract(Duration(days: await _settings.lookbackDays()))
           : DateTime.fromMillisecondsSinceEpoch(last).subtract(_overlap);
-      final whitelist =
-          SenderWhitelist(custom: await _settings.customSenders());
+      final whitelist = SenderWhitelist(
+        custom: await _settings.customSenders(),
+        removed: await _settings.removedDefaultSenders(),
+      );
 
       final List<RawEmail> mails;
       try {
@@ -94,14 +123,14 @@ class SyncEmail {
           accept: whitelist.allows,
         );
       } on AuthFailure {
-        await _settings.setNeedsReauth(value: true);
+        await _settings.setNeedsReauth(address, value: true);
         return EmailSyncReport.failed('auth', millis: elapsed());
       } on TlsFailure {
         return EmailSyncReport.failed('tls', millis: elapsed());
       } on NetworkFailure {
         return EmailSyncReport.failed('network', millis: elapsed());
       }
-      return await _process(mails, full, started, elapsed);
+      return await _process(address, mails, full, started, elapsed);
     } on Object catch (e) {
       // Class name only: never the message, it may carry mail content.
       return EmailSyncReport.failed(
@@ -112,6 +141,7 @@ class SyncEmail {
   }
 
   Future<EmailSyncReport> _process(
+    String address,
     List<RawEmail> mails,
     bool full,
     DateTime started,
@@ -193,15 +223,16 @@ class SyncEmail {
       statements: statements,
       millis: elapsed(),
     );
-    await _settings.setNeedsReauth(value: false);
+    await _settings.setNeedsReauth(address, value: false);
     // A failed message keeps the cursor so it is retried (overlap window).
     if (failed == 0) {
       await _settings.saveSync(
+        address,
         at: started.millisecondsSinceEpoch,
         report: report.summary,
       );
     } else {
-      await _settings.saveReport(report.summary);
+      await _settings.saveReport(address, report.summary);
     }
     return report;
   }

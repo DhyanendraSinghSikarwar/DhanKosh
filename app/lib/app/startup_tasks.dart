@@ -78,6 +78,10 @@ class _StartupTasksState extends ConsumerState<StartupTasks>
     if (!mounted) return;
     try {
       _startWidget();
+      if (Platform.isAndroid) {
+        // FR-03-17: the nightly mail sync does not depend on SMS access.
+        unawaited(ref.read(smsEngineProvider).ensureNightly());
+      }
       unawaited(ref.read(updateControllerProvider.notifier).check());
     } on Object {
       // Background chores never break the app.

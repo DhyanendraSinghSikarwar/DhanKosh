@@ -50,7 +50,8 @@ class _Settings implements AlertSettingsRepository {
 void main() {
   // Friday 2026-09-25: last completed week is Mon 14 to Sun 20 Sep.
   final friday = DateTime.utc(2026, 9, 25);
-  const on = AlertSettings(weeklySummary: true);
+  const on =
+      AlertSettings(weeklySummary: true, transactionNotifications: false);
 
   group('AlertRules.weeklySummary (FR-21-21)', () {
     test('week starts on the Monday before last', () {
@@ -203,7 +204,7 @@ void main() {
     });
 
     test('toggle off posts nothing', () async {
-      settings.value = const AlertSettings();
+      settings.value = const AlertSettings(transactionNotifications: false);
       expect(await engine.run(), 0);
     });
   });

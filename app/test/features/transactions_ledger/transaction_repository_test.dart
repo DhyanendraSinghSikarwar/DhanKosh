@@ -325,12 +325,14 @@ void main() {
     await add(900000, TransactionType.transfer, Category.transfer, 5);
     final t =
         await env.txs.watchTotals(fromMs: t0 - hour, toMs: t0 + day).first;
-    expect(t.spentMinor, 35050);
+    // ADR-0011: the transfer is a bank-side card bill payment, so it counts.
+    expect(t.spentMinor, 935050);
+    expect(t.cardPaymentsMinor, 900000);
     expect(t.incomeMinor, 500000);
     expect(t.refundMinor, 3000);
     expect(t.investedMinor, 70000);
-    expect(t.netSpentMinor, 32050);
-    expect(t.outMinor, 105050);
+    expect(t.netSpentMinor, 932050);
+    expect(t.outMinor, 1005050);
     expect(t.count, 6);
     // Outside the period.
     final none = await env.txs

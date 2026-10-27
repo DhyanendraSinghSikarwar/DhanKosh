@@ -18,7 +18,9 @@ class SmsEngine {
     required ScanSms Function() scan,
     required this.senderPattern,
     SmsScanScheduler? scheduler,
+    Future<void> Function()? prepare,
   })  : _live = live,
+        _prepare = prepare,
         _settings = settings,
         _handle = handle,
         _scan = scan,
@@ -29,6 +31,7 @@ class SmsEngine {
   final HandleLiveSms _handle;
   final ScanSms Function() _scan;
   final SmsScanScheduler? _scheduler;
+  final Future<void> Function()? _prepare;
 
   /// Case-insensitive address regex pushed to the native receiver.
   final String senderPattern;
@@ -48,6 +51,7 @@ class SmsEngine {
   /// Never throws.
   Future<void> start() async {
     try {
+      await _prepare?.call();
       await configure();
       await _safe(_syncSchedule);
       await _sub?.cancel();
@@ -86,16 +90,16 @@ class SmsEngine {
     }
   }
 
-  /// Nightly scan on while reading is on, off while paused (FR-02-14).
+  /// Nightly job registered whether or not SMS reading is on (FR-02-14,
+  /// FR-03-17): it also syncs every mailbox, and skips only the SMS part
+  /// while reading is paused.
   Future<void> _syncSchedule() async {
-    final scheduler = _scheduler;
-    if (scheduler == null) return;
-    if ((await _settings.read()).enabled) {
-      await scheduler.scheduleNightly();
-    } else {
-      await scheduler.cancelNightly();
-    }
+    await _scheduler?.scheduleNightly();
   }
+
+  /// Registers the nightly job on its own, for launches where SMS access was
+  /// never granted. Never throws.
+  Future<void> ensureNightly() => _safe(_syncSchedule);
 
   /// Stops listening.
   Future<void> stop() async {

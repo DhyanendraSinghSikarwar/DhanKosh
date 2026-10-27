@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/cards_providers.dart';
+import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_due_format.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -57,6 +58,16 @@ class CardsHomeStrip extends ConsumerWidget {
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
+                if (!c.paid &&
+                    c.owedMinor > 0 &&
+                    c.dueDay != null &&
+                    daysToDue(c.dueDay!, now) <= 7)
+                  TextButton(
+                    key: Key('home_card_paid_${c.id}'),
+                    onPressed: () =>
+                        ref.read(cardDueActionsProvider).markPaid(c),
+                    child: const Text('Mark paid'),
+                  ),
               ],
             ),
           ],

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/email_account.dart';
 import 'package:hisaab/features/email_ingestion/presentation/email_controller.dart';
+import 'package:hisaab/shared/widgets/app_password_guide.dart';
 
 /// Email sources: mailbox login, senders, sync (F-03, FR-03-22).
 class EmailSettingsScreen extends ConsumerStatefulWidget {
@@ -17,6 +19,7 @@ class _State extends ConsumerState<EmailSettingsScreen> {
   final _password = TextEditingController();
   final _host = TextEditingController();
   final _sender = TextEditingController();
+  final _code = TextEditingController();
   EmailProvider _provider = EmailProvider.gmail;
 
   @override
@@ -25,6 +28,7 @@ class _State extends ConsumerState<EmailSettingsScreen> {
     _password.dispose();
     _host.dispose();
     _sender.dispose();
+    _code.dispose();
     super.dispose();
   }
 
@@ -34,11 +38,11 @@ class _State extends ConsumerState<EmailSettingsScreen> {
         host: _provider == EmailProvider.custom ? _host.text : null,
       );
 
-  Future<void> _confirmDisconnect() async {
+  Future<void> _confirmRemove(String address) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Disconnect email?'),
+        title: Text('Remove $address?'),
         content: const Text('Wipes the saved password. Transactions stay.'),
         actions: [
           TextButton(
@@ -46,15 +50,15 @@ class _State extends ConsumerState<EmailSettingsScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            key: const Key('email-disconnect-confirm'),
+            key: const Key('email-remove-confirm'),
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Disconnect'),
+            child: const Text('Remove'),
           ),
         ],
       ),
     );
     if (ok ?? false) {
-      await ref.read(emailControllerProvider.notifier).disconnect();
+      await ref.read(emailControllerProvider.notifier).remove(address);
     }
   }
 
@@ -74,49 +78,117 @@ class _State extends ConsumerState<EmailSettingsScreen> {
         error: (e, _) => const Center(child: Text('Could not load email.')),
         data: (s) {
           final busy = s.busy != null;
-          final showForm = !s.connected || s.needsReauth;
+          final awaiting = s.codeSentTo != null;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              if (s.connected) ...[
+              for (final v in s.accounts)
                 ListTile(
+                  key: Key('email-account-${v.account.address}'),
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.mail_outline),
-                  title: Text(s.account!.address),
+                  title: Text(v.account.address),
                   subtitle: Text(
-                    s.needsReauth ? 'Sign in again' : 'Connected',
-                    key: const Key('email-status'),
+                    v.needsReauth
+                        ? 'Sign in again'
+                        : (v.account.enabled ? 'Connected' : 'Off'),
+                    key: Key('email-status-${v.account.address}'),
                   ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Switch(
+                        key: Key('email-enabled-${v.account.address}'),
+                        value: v.account.enabled,
+                        onChanged: busy
+                            ? null
+                            : (on) => c.setEnabled(
+                                  v.account.address,
+                                  enabled: on,
+                                ),
+                      ),
+                      IconButton(
+                        key: Key('email-remove-${v.account.address}'),
+                        tooltip: 'Remove',
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: busy
+                            ? null
+                            : () => _confirmRemove(v.account.address),
+                      ),
+                    ],
+                  ),
+                  onTap: v.needsReauth
+                      ? () => setState(() {
+                            _address.text = v.account.address;
+                            _provider = v.account.provider;
+                          })
+                      : null,
                 ),
-                if (s.lastReport != null)
+              for (final v in s.accounts)
+                if (v.lastReport != null)
                   Text(
-                    s.lastReport!,
-                    key: const Key('email-last-report'),
+                    '${v.account.address}: ${v.lastReport}',
+                    key: Key('email-last-report-${v.account.address}'),
                     style: text.bodySmall,
                   ),
+              if (s.connected) ...[
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    FilledButton(
-                      key: const Key('email-sync'),
-                      onPressed: busy || s.needsReauth ? null : c.syncNow,
-                      child: Text(s.busy == 'sync' ? 'Syncing...' : 'Sync now'),
-                    ),
-                    OutlinedButton(
-                      key: const Key('email-disconnect'),
-                      onPressed: busy ? null : _confirmDisconnect,
-                      child: const Text('Disconnect'),
-                    ),
-                  ],
+                FilledButton(
+                  key: const Key('email-sync'),
+                  onPressed: busy ? null : c.syncNow,
+                  child: Text(s.busy == 'sync' ? 'Syncing...' : 'Sync now'),
                 ),
                 if (s.busy == 'sync') ...[
                   const SizedBox(height: 12),
                   const LinearProgressIndicator(key: Key('email-progress')),
                 ],
               ],
-              if (showForm) ...[
-                head('Login'),
+              if (awaiting) ...[
+                head('Verify your email'),
+                TextField(
+                  key: const Key('email-code'),
+                  controller: _code,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(6),
+                  ],
+                  decoration: const InputDecoration(labelText: '6-digit code'),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    FilledButton(
+                      key: const Key('email-verify'),
+                      onPressed: busy
+                          ? null
+                          : () async {
+                              await c.verify(_code.text);
+                              _code.clear();
+                              final done = ref
+                                      .read(emailControllerProvider)
+                                      .value
+                                      ?.codeSentTo ==
+                                  null;
+                              if (done) _address.clear();
+                            },
+                      child: const Text('Verify'),
+                    ),
+                    OutlinedButton(
+                      key: const Key('email-resend'),
+                      onPressed: busy ? null : c.resendCode,
+                      child: const Text('Resend code'),
+                    ),
+                    TextButton(
+                      key: const Key('email-cancel-code'),
+                      onPressed: busy ? null : c.cancelVerify,
+                      child: const Text('Cancel'),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                head(s.connected ? 'Add another mailbox' : 'Login'),
                 Wrap(
                   spacing: 8,
                   children: [
@@ -159,20 +231,7 @@ class _State extends ConsumerState<EmailSettingsScreen> {
                   decoration: const InputDecoration(labelText: 'App password'),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'An app password is separate from your normal one.',
-                  style: text.bodySmall,
-                ),
-                for (var i = 0; i < _provider.steps.length; i++)
-                  Text(
-                    '${i + 1}. ${_provider.steps[i]}',
-                    style: text.bodySmall,
-                  ),
-                if (_provider.appPasswordUrl != null)
-                  SelectableText(
-                    _provider.appPasswordUrl!,
-                    style: text.bodySmall,
-                  ),
+                AppPasswordGuide(_provider),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -186,14 +245,16 @@ class _State extends ConsumerState<EmailSettingsScreen> {
                       ),
                     ),
                     FilledButton(
-                      key: const Key('email-save'),
+                      key: const Key('email-send-code'),
                       onPressed: busy
                           ? null
                           : () async {
-                              await c.save(_form, _password.text);
+                              await c.sendCode(_form, _password.text);
                               _password.clear();
                             },
-                      child: const Text('Save'),
+                      child: Text(
+                        s.busy == 'send' ? 'Sending...' : 'Send code',
+                      ),
                     ),
                   ],
                 ),

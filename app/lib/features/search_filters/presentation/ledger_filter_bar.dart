@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/scope_bar.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/search_filters/domain/ledger_view_state.dart';
 import 'package:hisaab/features/search_filters/presentation/ledger_view_notifier.dart';
@@ -22,11 +23,10 @@ const Map<TxKind, String> _kinds = {
   TxKind.transfers: 'Transfers',
 };
 
-const Map<PeriodKind, String> _periods = {
-  PeriodKind.thisMonth: 'This month',
-  PeriodKind.lastMonth: 'Last month',
-  PeriodKind.custom: 'Custom',
-  PeriodKind.all: 'All time',
+const Map<AccountKind?, String> _accountKinds = {
+  null: 'All',
+  AccountKind.account: 'Accounts',
+  AccountKind.card: 'Cards',
 };
 
 const Map<Source, String> _sourceLabels = {
@@ -81,18 +81,6 @@ class _LedgerFilterBarState extends ConsumerState<LedgerFilterBar> {
     setState(() {});
   }
 
-  Future<void> _pickRange() async {
-    final notifier = ref.read(ledgerViewProvider.notifier);
-    final now = DateTime.now();
-    final r = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(now.year - 10),
-      lastDate: DateTime(now.year + 1),
-      helpText: 'Choose dates',
-    );
-    if (r != null) notifier.setCustom(r.start, r.end);
-  }
-
   @override
   Widget build(BuildContext context) {
     final view = ref.watch(ledgerViewProvider);
@@ -141,22 +129,17 @@ class _LedgerFilterBarState extends ConsumerState<LedgerFilterBar> {
           ),
         ),
         const SizedBox(height: 8),
+        const PeriodChips(),
+        const SizedBox(height: 4),
+        const BookChips(),
         _ChipRow(
           children: [
-            for (final e in _periods.entries)
+            for (final e in _accountKinds.entries)
               ChoiceChip(
-                key: Key('period_${e.key.name}'),
-                label: Text(
-                  e.key == PeriodKind.custom ? _customLabel(view) : e.value,
-                ),
-                selected: view.period == e.key,
-                onSelected: (_) {
-                  if (e.key == PeriodKind.custom) {
-                    unawaited(_pickRange());
-                  } else {
-                    notifier.setPeriod(e.key);
-                  }
-                },
+                key: Key('acckind_${e.key?.name ?? 'all'}'),
+                label: Text(e.value),
+                selected: view.accountKind == e.key,
+                onSelected: (_) => notifier.setAccountKind(e.key),
               ),
           ],
         ),
@@ -262,13 +245,6 @@ class _LedgerFilterBarState extends ConsumerState<LedgerFilterBar> {
         ),
       ],
     );
-  }
-
-  static String _customLabel(LedgerViewState v) {
-    final s = v.customStart;
-    if (v.period != PeriodKind.custom || s == null) return 'Custom';
-    final e = v.customEnd ?? s;
-    return '${s.day}/${s.month} – ${e.day}/${e.month}';
   }
 
   static String _accountLabel(int? id, List<Account> accounts) {

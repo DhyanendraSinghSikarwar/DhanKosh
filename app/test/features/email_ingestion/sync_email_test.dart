@@ -26,6 +26,7 @@ void main() {
   late SyncEmail sync;
   late DateTime clock;
   final t0 = DateTime(2026, 10, 20, 11, 15);
+  const addr = 'me@gmail.com';
 
   const bank = 'HDFC Bank InstaAlerts <alerts@hdfcbank.net>';
   const body = 'Dear Customer,\n\nRs.450.00 has been debited from account '
@@ -83,7 +84,7 @@ void main() {
   tearDown(() => env.close());
 
   test('not connected reports a code, nothing runs (FR-03-18)', () async {
-    await settings.clearAccount();
+    await settings.removeAccount('me@gmail.com');
     final r = await sync();
     expect(r.error, 'not_connected');
     expect(imap.fetches, 0);
@@ -112,7 +113,7 @@ void main() {
     expect(await env.count('transactions'), 1);
     expect(await env.count('processed_emails'), 1);
     expect(r.summary, startsWith('full: 1 emails, 1 transactions (1 new'));
-    expect(await settings.lastSyncAt(), clock.millisecondsSinceEpoch);
+    expect(await settings.lastSyncAt(addr), clock.millisecondsSinceEpoch);
     // Look-back: 90 days before now.
     expect(imap.lastSince, clock.subtract(const Duration(days: 90)));
   });
@@ -142,7 +143,7 @@ void main() {
     );
     expect(await m.addSender('MyBank.example'), isTrue);
     expect(await m.addSender('not an address'), isFalse);
-    expect(await settings.lastSyncAt(), 0); // position forgotten
+    expect(await settings.lastSyncAt(addr), 0); // position forgotten
     expect((await sync()).emails, 1);
   });
 
@@ -180,7 +181,7 @@ void main() {
   test('auth failure keeps cursor and ids, flags sign-in (FR-03-18)', () async {
     imap.mails = [mail('imap:<a@x>')];
     await sync();
-    final cursor = await settings.lastSyncAt();
+    final cursor = await settings.lastSyncAt(addr);
     imap
       ..error = const AuthFailure('sign-in refused')
       ..mails = [mail('imap:<z@x>')];
@@ -188,8 +189,8 @@ void main() {
     final r = await sync();
     expect(r.error, 'auth');
     expect(r.ok, isFalse);
-    expect(await settings.needsReauth(), isTrue);
-    expect(await settings.lastSyncAt(), cursor);
+    expect(await settings.needsReauth(addr), isTrue);
+    expect(await settings.lastSyncAt(addr), cursor);
     expect(await env.count('processed_emails'), 1);
   });
 
@@ -198,7 +199,7 @@ void main() {
     final r = await sync();
     expect(r.error, 'network');
     expect(r.retryable, isTrue);
-    expect(await settings.lastSyncAt(), 0);
+    expect(await settings.lastSyncAt(addr), 0);
   });
 
   test('tls failure is final, not retryable', () async {
@@ -234,8 +235,8 @@ void main() {
     imap.mails = [mail('imap:<a@x>')];
     await sync();
     await ManageEmailAccount(imap: imap, settings: settings, credentials: creds)
-        .disconnect();
-    expect(await creds.read(), isNull);
+        .disconnect(addr);
+    expect(await creds.read(addr), isNull);
     expect(await settings.account(), isNull);
     expect(await env.count('transactions'), 1);
     expect((await sync()).error, 'not_connected');

@@ -14,8 +14,8 @@ class SmsSettingsStore implements SmsSettingsRepository {
   static const _lastScan = 'last_sms_scan';
   static const _lastResult = 'last_sms_result';
   static const _dismissed = 'sms_prompt_dismissed';
-  static const _lookback = 'lookback_days';
-  static const _allowedLookback = {7, 30, 90, 180, 365};
+  // One window for SMS and email (F-26 `history_days`), 7 to 365 days.
+  static const _lookback = 'history_days';
 
   @override
   Future<SmsSettings> read() async {
@@ -26,7 +26,7 @@ class SmsSettingsStore implements SmsSettingsRepository {
       lastScanAt: int.tryParse(await _kv.getString(_lastScan) ?? ''),
       lastResult: await _kv.getString(_lastResult),
       promptDismissed: (await _kv.getString(_dismissed)) == 'true',
-      lookbackDays: _allowedLookback.contains(lookback) ? lookback! : 90,
+      lookbackDays: (lookback ?? 90).clamp(7, 365),
     );
   }
 
@@ -52,7 +52,7 @@ class SmsSettingsStore implements SmsSettingsRepository {
 
   @override
   Future<void> setLookbackDays(int days) async {
-    if (_allowedLookback.contains(days)) {
+    if (days >= 7 && days <= 365) {
       await _kv.setString(_lookback, '$days');
     }
   }

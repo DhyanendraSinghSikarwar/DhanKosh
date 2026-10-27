@@ -11,13 +11,16 @@ class AlertsChannel extends ChannelBase {
 
   /// Posts a notification; creates the native channel on demand. Returns
   /// false when notifications are not allowed. [channelId] is one of
-  /// `budget`, `bills`, `cards`, `info`; [route] is opened on tap.
+  /// `budget`, `bills`, `cards`, `info`; [route] is opened on tap; each of
+  /// [actions] (`label`, `route`) is a button that opens its route.
   Future<bool> post({
     required int id,
     required String channelId,
     required String title,
     required String body,
     String? route,
+    List<Map<String, String>> actions = const [],
+    int? timeoutMs,
   }) async =>
       (await invoke<bool>('post', {
         'id': id,
@@ -25,6 +28,8 @@ class AlertsChannel extends ChannelBase {
         'title': title,
         'body': body,
         'route': route,
+        'actions': actions,
+        'timeoutMs': timeoutMs,
       })) ??
       false;
 

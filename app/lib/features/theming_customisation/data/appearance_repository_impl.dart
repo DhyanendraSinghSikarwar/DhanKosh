@@ -47,6 +47,11 @@ class AppearanceRepositoryImpl implements AppearanceRepository {
                 ),
           )
           ..add(
+            _store.watch(AppearanceKeys.reduceMotion).listen(
+                  (v) => emit(cur.copyWith(reduceMotion: v)),
+                ),
+          )
+          ..add(
             _store.watch(AppearanceKeys.textScalePct).listen(
                   (v) => emit(cur.copyWith(textSize: TextSize.of(v / 100))),
                 ),
@@ -62,6 +67,7 @@ class AppearanceRepositoryImpl implements AppearanceRepository {
     await _store.write(AppearanceKeys.mode, s.mode.name);
     await _store.write(AppearanceKeys.palette, s.palette.name);
     await _store.write(AppearanceKeys.pureBlack, s.pureBlack);
+    await _store.write(AppearanceKeys.reduceMotion, s.reduceMotion);
     await _store.write(
       AppearanceKeys.textScalePct,
       (s.textSize.factor * 100).round(),

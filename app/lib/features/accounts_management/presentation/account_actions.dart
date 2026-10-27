@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/accounts_management/domain/account_admin_repository.dart';
 import 'package:hisaab/features/accounts_management/domain/account_repository.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_tile.dart';
+import 'package:hisaab/features/profile/domain/bank_identity_repository.dart';
+import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
 
 Future<String?> _prompt(
   BuildContext context, {
@@ -133,5 +136,118 @@ Future<bool> confirmDelete(
   );
   if (ok != true) return false;
   await repo.delete(a.id);
+  return true;
+}
+
+/// Picks an account to merge [a] into and merges after confirming
+/// (FR-13-08); true when merged.
+Future<bool> mergeAccountInto(
+  BuildContext context,
+  AccountAdminRepository admin,
+  Account a,
+) async {
+  final all = [
+    for (final x in await admin.all())
+      if (x.id != a.id &&
+          x.mergedIntoId == null &&
+          !x.hidden &&
+          x.kind == a.kind)
+        x,
+  ];
+  if (!context.mounted) return false;
+  final target = await showDialog<Account>(
+    context: context,
+    builder: (ctx) => SimpleDialog(
+      title: const Text('Merge into'),
+      children: [
+        if (all.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('No other account to merge into.'),
+          ),
+        for (final x in all)
+          SimpleDialogOption(
+            key: Key('merge_target_${x.id}'),
+            onPressed: () => Navigator.pop(ctx, x),
+            child: Text(x.label),
+          ),
+      ],
+    ),
+  );
+  if (target == null || !context.mounted) return false;
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text('Merge into ${target.label}?'),
+      content: const Text('Shown together. You can unmerge any time.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          key: const Key('merge_confirm'),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Merge'),
+        ),
+      ],
+    ),
+  );
+  if (ok != true) return false;
+  await admin.merge(a.id, target.id);
+  return true;
+}
+
+/// Delete with the option to remove its transactions (tombstoned) too;
+/// unlock details are removed with the account (FR-13-11, FR-13-14).
+/// True when deleted.
+Future<bool> deleteAccountWithOptions(
+  BuildContext context, {
+  required Account account,
+  required AccountRepository accounts,
+  required TransactionRepository transactions,
+  BankIdentityRepository? identities,
+}) async {
+  final ids = await transactions.idsForAccount(account.id);
+  if (!context.mounted) return false;
+  var withTx = false;
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, set) => AlertDialog(
+        title: Text('Delete ${account.label}?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Transactions stay, without an account.'),
+            if (ids.isNotEmpty)
+              CheckboxListTile(
+                key: const Key('delete_with_tx'),
+                contentPadding: EdgeInsets.zero,
+                value: withTx,
+                title: Text('Also delete its ${ids.length} transactions'),
+                onChanged: (v) => set(() => withTx = v ?? false),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('delete_confirm'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (ok != true) return false;
+  if (withTx) await transactions.deleteTransactions(ids);
+  await accounts.delete(account.id);
+  await identities?.remove(account.id);
   return true;
 }

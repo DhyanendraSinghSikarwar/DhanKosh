@@ -7,6 +7,7 @@ import 'package:hisaab/app/di/notification_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
+import 'package:hisaab/app/di/sender_providers.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/core/platform_channels/background_channel.dart';
 import 'package:hisaab/core/platform_channels/permissions_channel.dart';
@@ -118,6 +119,7 @@ IngestMessage ingestMessage(Ref ref) => IngestMessage(
       cardDues: ref.watch(cardDueRepositoryProvider),
       holdings: ref.watch(holdingRepositoryProvider),
       accounts: ref.watch(applyStatementAccountsProvider),
+      senderOverrides: ref.watch(senderOverridesCacheProvider),
     );
 
 /// Builds a ScanSms; onProgress feeds the Settings progress line.
@@ -134,6 +136,7 @@ ScanSms Function(void Function(SmsScanProgress)? onProgress) scanSmsFactory(
         inbox: inbox,
         settings: settings,
         accept: ingest.accepts,
+        prepare: ingest.prepare,
         ingest: ingest.call,
         ingestBatch: (batch) async => [
           for (final d in await ingest.ingestBatch(batch)) d.outcome,
@@ -159,6 +162,7 @@ SmsEngine smsEngine(Ref ref) {
       activity: ref.watch(activityLoggerProvider),
     ),
     scan: () => scan(null),
+    prepare: ingest.prepare,
     senderPattern: SmsEngine.senderPatternDefault,
     scheduler: SmsScanSchedulerImpl(
       const BackgroundChannel(),

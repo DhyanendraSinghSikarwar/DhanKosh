@@ -9,6 +9,8 @@ class Identity {
     this.altName,
     this.altPhone,
     this.email,
+    this.moreNames = const [],
+    this.morePhones = const [],
   });
 
   /// Parses [toJson] output.
@@ -20,6 +22,8 @@ class Identity {
         altName: j['altName'] as String?,
         altPhone: j['altPhone'] as String?,
         email: j['email'] as String?,
+        moreNames: [...(j['moreNames'] as List? ?? const []).cast<String>()],
+        morePhones: [...(j['morePhones'] as List? ?? const []).cast<String>()],
       );
 
   /// Full name as per bank.
@@ -43,6 +47,24 @@ class Identity {
   /// Stored, not used for password guesses.
   final String? email;
 
+  /// Further alternate names after [altName] (FR-27-23).
+  final List<String> moreNames;
+
+  /// Further alternate phones after [altPhone] (FR-27-23).
+  final List<String> morePhones;
+
+  /// Every alternate name, primary first.
+  List<String> get allAltNames => [
+        if (altName != null && altName!.isNotEmpty) altName!,
+        ...moreNames,
+      ];
+
+  /// Every alternate phone, primary first.
+  List<String> get allAltPhones => [
+        if (altPhone != null && altPhone!.isNotEmpty) altPhone!,
+        ...morePhones,
+      ];
+
   /// ISO-date JSON map.
   Map<String, Object?> toJson() => {
         'name': name,
@@ -52,5 +74,7 @@ class Identity {
         'altName': altName,
         'altPhone': altPhone,
         'email': email,
+        'moreNames': moreNames,
+        'morePhones': morePhones,
       };
 }

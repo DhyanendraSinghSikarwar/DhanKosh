@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-22 |
-| Status | In progress (Fold adoption 2026-10-26: Inbox with unread bell badge, groups and problem entries; Phase 5: schema v5 table, repository with coalescing and 200 cap, ActivityLogger port wired into SMS scan, live SMS and email runs, Activity screen and More tile done; notification, statements and email statement counts not recorded; native-only live runs not logged) |
+| Status | In progress (Fold adoption 2026-10-26: Inbox with unread bell badge, groups and problem entries; Phase 5: schema v5 table, repository with coalescing and 200 cap, ActivityLogger port wired into SMS scan, live SMS and email runs, Activity screen and More tile done; picked-statement imports and notifications recorded; native-only live runs not logged) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -437,6 +437,10 @@ Phase 5 (2026-10-21). Code: `features/activity_log/{domain,data,presentation}`; 
 - Fold adoption 2026-10-26: `domain/inbox_logic.dart` (`InboxLogic.unread`, `groupOf`, `senderCode`, `topSenderCode`), new `ActivitySource.problems` (stored in the existing text `source` column, no schema change), `ScanSms` and `HandleLiveSms` record problems, `ActivityLogScreen` titled "Inbox" with group chips and unread dots, setting `activity_last_seen` (`SettingKeys.activityLastSeen`), bell and unread provider in `app/di/home_composition_providers.dart` (see [17](17_dashboard_home.md)). The More tile keeps the label "Activity log". Tests: `inbox_logic_test.dart`, `problem_entries_test.dart`, `home_blocks_test.dart`.
 - Hardening 2026-10-22: payment-app notifications now log one `notifications` entry per watched-app notification (`NotificationEngine` with optional `ActivityLogger`; unwatched, summary, empty and switched-off ones are not logged). Statement import logging is PENDING: the statement owner must call `activityLoggerProvider` (`ActivitySource.statements`) from the import flow. Next scheduled sync is now written when the nightly job is (re)registered and after each run.
 
+### 18.1 Statement entries 2026-10-27 (agent A2)
+
+`ImportStatement` records one `STATEMENTS` entry per picked file (counts `added`/`merged`/`review`, `statements` 1, `locked` for locked or wrong password, `skipped` for unsupported, note = reason code only; never text). Emailed statements are counted by the email entry; already-imported files log nothing. Payment-app notifications were already logged by `NotificationEngine` (FR-22-01).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -446,3 +450,4 @@ Phase 5 (2026-10-21). Code: `features/activity_log/{domain,data,presentation}`; 
 | 2026-10-21 | Phase 5 security + activity log landed | Phase 5 |
 | 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |
 | 2026-10-26 | Inbox: unread bell badge, groups, `PROBLEMS` entries with sender code only (FR-22-15 to FR-22-17; TC-22-13 to TC-22-16) | Fold adoption |
+| 2026-10-27 | Statement imports record activity entries (counts and codes only) | Kotlin parity |

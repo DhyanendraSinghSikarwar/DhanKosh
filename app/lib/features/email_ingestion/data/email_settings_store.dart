@@ -4,7 +4,8 @@ import 'package:hisaab/features/email_ingestion/domain/email_ports.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/email_account.dart';
 import 'package:hisaab/features/sms_ingestion/domain/key_value_store.dart';
 
-/// [EmailSettingsRepository] over the settings table. The password is not
+/// [EmailSettingsRepository] over the settings table: one JSON list of
+/// mailboxes with their cursor and report (FR-03-06). Passwords are not
 /// here, see `SecureEmailCredentialStore`.
 class EmailSettingsStore implements EmailSettingsRepository {
   /// Creates the store.
@@ -12,91 +13,149 @@ class EmailSettingsStore implements EmailSettingsRepository {
 
   final KeyValueStore _kv;
 
-  static const _address = 'email_address';
-  static const _provider = 'email_provider';
-  static const _host = 'email_imap_host';
-  static const _port = 'email_imap_port';
-  static const _lastSync = 'email_last_sync';
-  static const _lastReport = 'email_last_report';
-  static const _reauth = 'email_needs_reauth';
+  static const _list = 'email_accounts';
   static const _senders = 'email_custom_senders';
+  static const _removed = 'email_removed_senders';
 
   /// Shared look-back key (F-26 `history_days`).
   static const _history = 'history_days';
 
-  @override
-  Future<EmailAccount?> account() async {
-    final address = await _kv.getString(_address);
-    if (address == null) return null;
-    final provider =
-        EmailProvider.values.asNameMap()[await _kv.getString(_provider)] ??
-            EmailProvider.detect(address);
+  Future<List<Map<String, Object?>>> _read() async {
+    final raw = await _kv.getString(_list);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      return [
+        for (final m in jsonDecode(raw) as List)
+          Map<String, Object?>.from(m as Map),
+      ];
+    } on Object {
+      return [];
+    }
+  }
+
+  Future<void> _write(List<Map<String, Object?>> rows) =>
+      _kv.setString(_list, rows.isEmpty ? '' : jsonEncode(rows));
+
+  static EmailAccount _account(Map<String, Object?> m) {
+    final address = m['address']! as String;
+    final provider = EmailProvider.values.asNameMap()[m['provider']] ??
+        EmailProvider.detect(address);
     return EmailAccount(
       address: address,
       provider: provider,
-      imapHost: await _kv.getString(_host) ?? provider.imapHost,
-      imapPort: int.tryParse(await _kv.getString(_port) ?? '') ?? 993,
+      imapHost: (m['host'] as String?) ?? provider.imapHost,
+      imapPort: (m['port'] as int?) ?? 993,
+      enabled: (m['enabled'] as bool?) ?? true,
     );
+  }
+
+  Future<void> _update(
+    String address,
+    void Function(Map<String, Object?> row) change,
+  ) async {
+    final a = address.trim().toLowerCase();
+    final rows = await _read();
+    for (final r in rows) {
+      if (r['address'] == a) change(r);
+    }
+    await _write(rows);
+  }
+
+  Future<Map<String, Object?>?> _row(String address) async {
+    final a = address.trim().toLowerCase();
+    for (final r in await _read()) {
+      if (r['address'] == a) return r;
+    }
+    return null;
+  }
+
+  @override
+  Future<List<EmailAccount>> accounts() async =>
+      [for (final r in await _read()) _account(r)];
+
+  @override
+  Future<EmailAccount?> account() async {
+    final all = await accounts();
+    return all.isEmpty ? null : all.first;
   }
 
   @override
   Future<void> saveAccount(EmailAccount a) async {
-    await _kv.setString(_address, a.address);
-    await _kv.setString(_provider, a.provider.name);
-    await _kv.setString(_host, a.imapHost);
-    await _kv.setString(_port, '${a.imapPort}');
-    await _kv.setString(_reauth, 'false');
+    final rows = await _read()
+      ..removeWhere((r) => r['address'] == a.address)
+      ..add({
+        'address': a.address,
+        'provider': a.provider.name,
+        'host': a.imapHost,
+        'port': a.imapPort,
+        'enabled': a.enabled,
+      });
+    await _write(rows);
   }
 
   @override
-  Future<void> clearAccount() async {
-    for (final k in [
-      _address,
-      _provider,
-      _host,
-      _port,
-      _lastSync,
-      _lastReport,
-      _reauth,
-    ]) {
-      await _kv.setString(k, '');
+  Future<void> setEnabled(String address, {required bool enabled}) =>
+      _update(address, (r) => r['enabled'] = enabled);
+
+  @override
+  Future<void> removeAccount(String address) async {
+    final a = address.trim().toLowerCase();
+    await _write(
+      await _read()
+        ..removeWhere((r) => r['address'] == a),
+    );
+  }
+
+  @override
+  Future<int> lastSyncAt(String address) async =>
+      (await _row(address))?['lastSync'] as int? ?? 0;
+
+  @override
+  Future<void> saveSync(
+    String address, {
+    required int at,
+    required String report,
+  }) =>
+      _update(address, (r) {
+        r['lastSync'] = at;
+        r['report'] = report;
+      });
+
+  @override
+  Future<void> saveReport(String address, String report) =>
+      _update(address, (r) => r['report'] = report);
+
+  @override
+  Future<void> forgetPosition() async {
+    final rows = await _read();
+    for (final r in rows) {
+      r['lastSync'] = 0;
     }
+    await _write(rows);
   }
 
   @override
-  Future<int> lastSyncAt() async =>
-      int.tryParse(await _kv.getString(_lastSync) ?? '') ?? 0;
+  Future<String?> lastReport(String address) async =>
+      (await _row(address))?['report'] as String?;
 
   @override
-  Future<void> saveSync({required int at, required String report}) async {
-    await _kv.setString(_lastSync, '$at');
-    await _kv.setString(_lastReport, report);
+  Future<int> lookbackDays() async {
+    final d = int.tryParse(await _kv.getString(_history) ?? '') ?? 90;
+    return d.clamp(7, 365);
   }
 
   @override
-  Future<void> saveReport(String report) => _kv.setString(_lastReport, report);
+  Future<bool> needsReauth(String address) async =>
+      (await _row(address))?['reauth'] as bool? ?? false;
 
   @override
-  Future<void> forgetPosition() => _kv.setString(_lastSync, '');
-
-  @override
-  Future<String?> lastReport() => _kv.getString(_lastReport);
-
-  @override
-  Future<int> lookbackDays() async =>
-      int.tryParse(await _kv.getString(_history) ?? '') ?? 90;
-
-  @override
-  Future<bool> needsReauth() async => await _kv.getString(_reauth) == 'true';
-
-  @override
-  Future<void> setNeedsReauth({required bool value}) =>
-      _kv.setString(_reauth, '$value');
+  Future<void> setNeedsReauth(String address, {required bool value}) =>
+      _update(address, (r) => r['reauth'] = value);
 
   @override
   Future<Set<String>> customSenders() async {
     final raw = await _kv.getString(_senders);
-    if (raw == null) return {};
+    if (raw == null || raw.isEmpty) return {};
     try {
       return (jsonDecode(raw) as List).cast<String>().toSet();
     } on Object {
@@ -108,6 +167,26 @@ class EmailSettingsStore implements EmailSettingsRepository {
   Future<void> saveCustomSenders(Set<String> senders) async {
     await _kv.setString(
       _senders,
+      senders.isEmpty ? '' : jsonEncode(senders.toList()),
+    );
+    await forgetPosition();
+  }
+
+  @override
+  Future<Set<String>> removedDefaultSenders() async {
+    final raw = await _kv.getString(_removed);
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      return (jsonDecode(raw) as List).cast<String>().toSet();
+    } on Object {
+      return {};
+    }
+  }
+
+  @override
+  Future<void> saveRemovedDefaultSenders(Set<String> senders) async {
+    await _kv.setString(
+      _removed,
       senders.isEmpty ? '' : jsonEncode(senders.toList()),
     );
     await forgetPosition();

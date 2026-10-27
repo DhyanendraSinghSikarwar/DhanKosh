@@ -7,13 +7,16 @@ import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
+import 'package:hisaab/features/email_ingestion/data/email_settings_store.dart';
 import 'package:hisaab/features/email_ingestion/domain/email_ports.dart';
+import 'package:hisaab/features/email_ingestion/domain/entities/email_account.dart';
 import 'package:hisaab/features/profile/domain/bank_identity.dart';
 import 'package:hisaab/features/profile/domain/bank_identity_repository.dart';
 import 'package:hisaab/features/security_privacy/domain/app_lock_service.dart';
 import 'package:hisaab/features/security_privacy/domain/security_settings.dart';
 import 'package:hisaab/features/security_privacy/presentation/lock_controller.dart';
 import 'package:hisaab/features/security_privacy/presentation/security_privacy_screen.dart';
+import 'package:hisaab/features/settings_data_sources/data/settings_key_value_store.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/features/statement_import/domain/saved_password.dart';
 import 'package:hisaab/features/transactions_ledger/data/data_reset_repository_impl.dart';
@@ -54,13 +57,13 @@ class _Ids implements BankIdentityRepository {
 }
 
 class _Creds implements EmailCredentialStore {
-  bool wiped = false;
+  final wiped = <String>[];
   @override
-  Future<String?> read() async => 'pw';
+  Future<String?> read(String address) async => 'pw';
   @override
-  Future<void> write(String p) async {}
+  Future<void> write(String address, String p) async {}
   @override
-  Future<void> wipe() async => wiped = true;
+  Future<void> wipe(String address) async => wiped.add(address);
 }
 
 void main() {
@@ -68,6 +71,7 @@ void main() {
   late _Passwords pw;
   late _Ids ids;
   late _Creds creds;
+  late EmailSettingsStore mailSettings;
   late String route;
 
   setUp(() {
@@ -75,6 +79,7 @@ void main() {
     pw = _Passwords();
     ids = _Ids();
     creds = _Creds();
+    mailSettings = EmailSettingsStore(SettingsKeyValueStore(env.settings));
     route = '';
   });
   tearDown(() => env.close());
@@ -90,6 +95,7 @@ void main() {
         savedPasswordRepositoryProvider.overrideWithValue(pw),
         bankIdentityRepositoryProvider.overrideWithValue(ids),
         emailCredentialStoreProvider.overrideWithValue(creds),
+        emailSettingsRepositoryProvider.overrideWithValue(mailSettings),
       ],
     );
     addTearDown(c.dispose);
@@ -175,13 +181,16 @@ void main() {
     await t.enterText(find.byKey(const Key('erase-word')), 'ERASE');
     await t.pump();
     expect(confirm().onPressed, isNotNull);
+    await t.runAsync(
+      () => mailSettings.saveAccount(EmailAccount.forAddress('me@gmail.com')),
+    );
     await t.tap(find.byKey(const Key('security-erase-confirm')));
     await settle(t);
     expect(await t.runAsync(() => env.count('transactions')), 0);
     expect(await t.runAsync(() => env.count('accounts')), 0);
     expect(pw.items, isEmpty);
     expect(ids.removed, [7]);
-    expect(creds.wiped, isTrue);
+    expect(creds.wiped, ['me@gmail.com']);
   });
 
   testWidgets('cancel keeps data; export first opens the backup screen',

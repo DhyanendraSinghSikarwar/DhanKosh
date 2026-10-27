@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-21 |
-| Status | In progress (rules done; posting engine, native `alerts` channel, Alerts settings screen and launch-route handling landed but native Kotlin unverified on device; card reminders, untracked-change alerts, new-transaction/balance/statement notifications, action buttons and AlertsWorker scheduling pending; 2026-10-26: weekly summary (rule, engine check, toggle) added) |
+| Status | In progress (rules done; posting engine, native `alerts` channel, Alerts settings screen and launch-route handling landed but native Kotlin unverified on device; card reminders, untracked-change alerts, new-transaction/balance/statement notifications, action buttons and AlertsWorker scheduling pending; 2026-10-26: weekly summary (rule, engine check, toggle) added); 2026-10-27 parity: Card reminders, new-transaction alerts with category buttons and action routes (FR-21-22..25); untracked-change alerts still pending; Kotlin buttons uncompiled |
 | Priority | P1 |
 | Phase | 4 |
 | Last Updated | 2026-10-27 |
@@ -166,6 +166,10 @@ Scaffold "Notifications & alerts" with cards:
 19. FR-21-19: A global mutex serialises alert checks so concurrent triggers cannot double-send.
 20. FR-21-20: All amounts in alert text use Indian grouping; amounts without paise except in the new-transaction title (`Money.format` default).
 21. FR-21-21: Weekly summary (new; setting `weekly_summary_alert`, bool, default false, switch "Weekly summary" on the Alerts screen). On any alerts run the engine looks at the last completed Monday-to-Sunday IST week and the week before it (debits that are not transfers or review rows, INR). If the toggle is on, something was spent in either week and the key `weekly:<monday yyyy-MM-dd>` is not in the alerted keys, it posts once: title "Week 14-20 Sep: ₹4,200 spent", body "₹1,100 less than the week before. Top: Food & Dining ₹1,800." ("more", "Same as the week before." or "Nothing was spent the week before."). The key is stored after a successful post, so a week is announced once; opening the app later in the week still sends it. Link `hisaab://home`, id `AlertText.stableId(key)`.
+22. FR-21-22: The engine shall post card bill reminders (stages 5 days, 2 days, due day, overdue) from `CardDueService` cards, honouring paid, snoozed and already-sent state kept in `CardReminderStateStore`, and mark the stage sent only after a successful post.
+23. FR-21-23: Notification buttons (card Mark paid, Remind tomorrow, new-transaction category buttons) shall open the in-app route `/alert-action?a=<paid|snooze|category>&...`; `AlertActionHandler` runs the action once (mark paid, snooze to the next day, set category with a "Saved as" confirmation) and returns home. Kotlin only launches the route.
+24. FR-21-24: The engine shall post a new-transaction notification (with up to 3 category buttons) for non-transfer, non-review rows created in the last 30 minutes, once per row (key `tx:<id>`), when transaction notifications are on.
+25. FR-21-25: The weekly summary total shall use the cash-basis `SpendCalc.totals` (ADR-0011: card purchases excluded, card bill payments included).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -490,6 +494,8 @@ FR status additions: done FR-21-05, 06, 07 (posted), 14, 16, 17 (no resume re-ch
 
 - 2026-10-26: weekly summary built. `AlertRules.lastWeekStart/weeklyKey/weeklySummary/weekSpend` (pure), `WeekSpend` and `weeklySummaryKey` in `alert_models.dart`, `AlertSettings.weeklySummary`, `AlertSettingsRepository.setWeeklySummary`, `AlertsEngine._weeklyDecisions` (optional `txs` repository; the engine runs it in the same isolated check list), kind `weeklySummary` on the `budgets_bills` Dart channel and native id `info`. No new scheduler: it rides the existing resume and nightly runs. Included in the encrypted backup settings subset ([24_backup_export.md](24_backup_export.md)).
 
+- 2026-10-27: Alerts parity. Domain: `AlertsEngine` gains `_cardDecisions` and `_newTxDecisions` (optional `cards` and `cardState` inputs); `AlertActionHandler` and `alertActionRoute(AlertAction)` added; `AlertActionScreen` at `/alert-action`. Kotlin contract: `AlertsBridge.post` now also takes `actions` (list of `{label, route}`, at most 3, each an `addAction` PendingIntent that launches the main activity with extra `hisaab_route`) and `timeoutMs` (`setTimeoutAfter`, SDK 26+); no receiver and no headless call, so a button tap briefly opens the app. Not compiled here; CI compiles it. Deferred: untracked-change alert wiring (needs the gaps function), statement notices, balance-updated notice.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -502,3 +508,4 @@ FR status additions: done FR-21-05, 06, 07 (posted), 14, 16, 17 (no resume re-ch
 | 2026-10-26 | Weekly summary notification (FR-21-21, TC-21-15) | Fold adoption |
 | 2026-10-27 | 'Update available' notification and switch (default on), once per version, deep link to the updates screen; spec in [31](31_news_support_updates.md) FR-31-28..38 | Update feature |
 | 2026-10-27 | Audit: rules and weekly summary confirmed done; card reminders, budget and low-balance posting, action buttons and untracked alerts confirmed not wired | Kotlin parity audit |
+| 2026-10-27 | Alerts parity | Kotlin parity |

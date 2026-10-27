@@ -3,31 +3,44 @@ import 'package:hisaab/core/errors/failure.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/email_account.dart';
 import 'package:hisaab/features/email_ingestion/domain/sender_whitelist.dart';
 import 'package:hisaab/features/email_ingestion/domain/usecases/manage_email_account.dart';
+import 'package:hisaab/features/email_ingestion/domain/verification_code.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'email_controller.g.dart';
 
-/// What the Email screen shows (FR-03-22).
-class EmailScreenState {
-  /// Creates a state.
-  const EmailScreenState({
-    this.account,
+/// One mailbox row on the Email screen (FR-03-22, FR-03-06).
+class EmailAccountView {
+  /// Creates a row.
+  const EmailAccountView({
+    required this.account,
     this.needsReauth = false,
     this.lastReport,
-    this.customSenders = const {},
-    this.defaultSenderCount = 0,
-    this.busy,
-    this.message,
   });
 
-  /// Saved account, or null.
-  final EmailAccount? account;
+  /// The mailbox.
+  final EmailAccount account;
 
   /// Sign in again.
   final bool needsReauth;
 
   /// Last sync result line.
   final String? lastReport;
+}
+
+/// What the Email screen shows (FR-03-22).
+class EmailScreenState {
+  /// Creates a state.
+  const EmailScreenState({
+    this.accounts = const [],
+    this.customSenders = const {},
+    this.defaultSenderCount = 0,
+    this.busy,
+    this.message,
+    this.codeSentTo,
+  });
+
+  /// Saved mailboxes.
+  final List<EmailAccountView> accounts;
 
   /// User-added senders.
   final Set<String> customSenders;
@@ -35,14 +48,17 @@ class EmailScreenState {
   /// Built-in senders.
   final int defaultSenderCount;
 
-  /// `test`, `save` or `sync` while running.
+  /// `test`, `send`, `verify` or `sync` while running.
   final String? busy;
 
   /// Result of the last action.
   final String? message;
 
-  /// Connected with a saved login.
-  bool get connected => account != null;
+  /// Address a verification code was mailed to, while awaiting it.
+  final String? codeSentTo;
+
+  /// At least one saved login.
+  bool get connected => accounts.isNotEmpty;
 
   /// Copy with new [busy] and [message].
   EmailScreenState copyWith({
@@ -51,13 +67,12 @@ class EmailScreenState {
     bool clearBusy = false,
   }) =>
       EmailScreenState(
-        account: account,
-        needsReauth: needsReauth,
-        lastReport: lastReport,
+        accounts: accounts,
         customSenders: customSenders,
         defaultSenderCount: defaultSenderCount,
         busy: clearBusy ? null : (busy ?? this.busy),
         message: message,
+        codeSentTo: codeSentTo,
       );
 }
 
@@ -67,15 +82,24 @@ class EmailController extends _$EmailController {
   @override
   Future<EmailScreenState> build() => _load();
 
-  Future<EmailScreenState> _load({String? message}) async {
+  Future<EmailScreenState> _load({String? message, String? codeSentTo}) async {
     final s = ref.read(emailSettingsRepositoryProvider);
     return EmailScreenState(
-      account: await s.account(),
-      needsReauth: await s.needsReauth(),
-      lastReport: await s.lastReport(),
+      accounts: [
+        for (final a in await s.accounts())
+          EmailAccountView(
+            account: a,
+            needsReauth: await s.needsReauth(a.address),
+            lastReport: await s.lastReport(a.address),
+          ),
+      ],
       customSenders: await s.customSenders(),
-      defaultSenderCount: SenderWhitelist().defaults.length,
+      defaultSenderCount:
+          SenderWhitelist(removed: await s.removedDefaultSenders())
+              .defaults
+              .length,
       message: message,
+      codeSentTo: codeSentTo,
     );
   }
 
@@ -86,6 +110,15 @@ class EmailController extends _$EmailController {
         TlsFailure() => 'Secure connection failed.',
         NetworkFailure() => 'Could not reach the mail server.',
         _ => 'Something went wrong.',
+      };
+
+  static String _resultText(VerificationResult r) => switch (r) {
+        VerificationResult.ok => 'Verified.',
+        VerificationResult.wrong => 'That code does not match.',
+        VerificationResult.expired => 'The code expired. Tap Resend code.',
+        VerificationResult.tooManyAttempts =>
+          'Too many wrong tries. Tap Resend code.',
+        VerificationResult.none => 'Sign in again to get a code.',
       };
 
   /// Signs in without saving (Test connection).
@@ -106,8 +139,8 @@ class EmailController extends _$EmailController {
     state = AsyncData(_cur.copyWith(message: msg, clearBusy: true));
   }
 
-  /// Saves the login (password to secure storage only).
-  Future<void> save(EmailAccount account, String password) async {
+  /// Signs in and mails a 6-digit code to the address (FR-03-03).
+  Future<void> sendCode(EmailAccount account, String password) async {
     final err = ManageEmailAccount.validate(
       account.address,
       password,
@@ -117,22 +150,74 @@ class EmailController extends _$EmailController {
       state = AsyncData(_cur.copyWith(message: err));
       return;
     }
-    state = AsyncData(_cur.copyWith(busy: 'save'));
-    await ref.read(manageEmailAccountProvider).save(account, password);
-    state = AsyncData(await _load(message: 'Saved.'));
+    state = AsyncData(_cur.copyWith(busy: 'send'));
+    try {
+      await ref.read(verifyEmailProvider).signInAndSendCode(account, password);
+      state = AsyncData(
+        await _load(
+          message: 'We sent a 6-digit code to ${account.address}. '
+              'Check your inbox and spam.',
+          codeSentTo: account.address,
+        ),
+      );
+    } on Failure catch (f) {
+      state = AsyncData(_cur.copyWith(message: _failure(f), clearBusy: true));
+    }
   }
 
-  /// Syncs now through the shared runner.
+  /// Mails a new code.
+  Future<void> resendCode() async {
+    final to = _cur.codeSentTo;
+    state = AsyncData(_cur.copyWith(busy: 'send'));
+    try {
+      await ref.read(verifyEmailProvider).resend();
+      state = AsyncData(
+        await _load(message: 'A new code is on its way.', codeSentTo: to),
+      );
+    } on Failure catch (f) {
+      state = AsyncData(
+        await _load(message: _failure(f), codeSentTo: to),
+      );
+    }
+  }
+
+  /// Checks the typed code; on success the mailbox is saved (FR-03-03).
+  Future<void> verify(String code) async {
+    final to = _cur.codeSentTo;
+    final r = await ref.read(verifyEmailProvider).verify(code);
+    state = AsyncData(
+      await _load(
+        message: _resultText(r),
+        codeSentTo: r == VerificationResult.ok ? null : to,
+      ),
+    );
+  }
+
+  /// Drops the pending code step.
+  Future<void> cancelVerify() async {
+    ref.read(verifyEmailProvider).cancel();
+    state = AsyncData(await _load());
+  }
+
+  /// Syncs every enabled mailbox through the shared runner.
   Future<void> syncNow() async {
     state = AsyncData(_cur.copyWith(busy: 'sync'));
     final r = await ref.read(emailSyncRunnerProvider).run();
     state = AsyncData(await _load(message: r.summary));
   }
 
-  /// Wipes the password and forgets the account.
-  Future<void> disconnect() async {
-    await ref.read(manageEmailAccountProvider).disconnect();
-    state = AsyncData(await _load(message: 'Disconnected.'));
+  /// Wipes one mailbox's password and forgets it.
+  Future<void> remove(String address) async {
+    await ref.read(manageEmailAccountProvider).disconnect(address);
+    state = AsyncData(await _load(message: 'Removed $address.'));
+  }
+
+  /// Turns a mailbox on or off for syncs (FR-03-22).
+  Future<void> setEnabled(String address, {required bool enabled}) async {
+    await ref
+        .read(manageEmailAccountProvider)
+        .setEnabled(address, enabled: enabled);
+    state = AsyncData(await _load());
   }
 
   /// Adds a sender address or domain.

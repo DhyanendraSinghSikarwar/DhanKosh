@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-08 |
-| Status | In progress (data layer, core UI, transfer/EMI pairing, Calendar, By merchant, multi-select done; OCR, gaps, own-transfer form, split pending) |
+| Status | In progress (data layer, core UI, transfer/EMI pairing, Calendar, By merchant, multi-select done; OCR, gaps, own-transfer form, split pending) ; 2026-10-27 parity: By category, Card/Account chips, payee-account map and own-transfer form done; 2026-10-27 parity: screenshot OCR fill done (FR-08-26); gaps, own-transfer and split are other items |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-27 |
@@ -176,6 +176,10 @@ Calendar segment (`TransactionsScreen.kt:225-244`): the day value is the sum of 
 - FR-08-20: The shared MessageView shall offer a "Copy text" action (full raw text to clipboard) only when raw text exists, collapse text over 10 lines or 700 chars with "Show all" / "Show full email" (email) / "Show less", and show "The original text wasn't kept for this one." when no text is stored (see 3.10; shared with [Dedup & Review](07_dedup_review.md) and [Statement Import](05_statement_import.md)).
 - FR-08-21: The Transactions calendar shall caption by kind ("Daily spend", "Daily income", "Daily transfers", "Daily investments", "Flagged amounts by day") and colour Income cells with the positive colour, all other kinds with the accent colour (see 3.11).
 - FR-08-22: `deleted_messages` tombstones (owned by this feature, see section 9) shall be written on transaction delete and checked at ingest; inserts ignore duplicates.
+- FR-08-23: Rows are tagged Card or Account in the list; the filter bar offers All / Accounts / Cards; a By category segment groups spends by category with card and account together, a subtotal split (Account x, Card y) and card refunds as a negative Refund group; the summary strip shows Income / Expenses (cash basis, ADR-0011) / Net, the card purchases figure and a one-line basis note.
+- FR-08-24: The detail account picker offers "Remember for this payee"; the payee-to-account map (settings key `payee_account:<merchant key>`, no schema change) files later ingested rows of that payee under the chosen account.
+- FR-08-25: The Add screen has a Transfer mode (From, To, amount, date, note) that writes both legs through `TransactionRepository.addOwnTransfer`; a transfer into a card writes the bank leg with the card bill note so it counts once as a payment (FR-10-19).
+- FR-08-26: Add transaction shall offer "Fill from a screenshot": pick an image, read it on device with ML Kit Latin text recognition (`google_mlkit_text_recognition`, bundled model, offline), parse with `FreeTextParser.draft`, fill the form for review (amount, type, payee, reference, category, date, account guessed by last digits and bank) and never save by itself. States: scanning bar, "No amount found in that screenshot. Fill the details in yourself.", "Filled in from the screenshot. Check the details, then save.", "Couldn't read that image."
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -421,6 +425,9 @@ Integration:
 - TC-08-15 (FR-08-20, FR-08-21): widget test: MessageView copy button writes full raw text; collapse threshold 10 lines / 700 chars; labels per source; empty state.
 - TC-08-16 (FR-08-21): calendar caption and colour per kind (Income uses positive colour).
 - TC-08-17 (FR-08-22): `DeletedMessages` PK `(source, messageId)` ignores duplicates; ingest skips a tombstoned message.
+- TC-08-18 (FR-08-23): `groupByCategory` merges card and account food spends (10,000 + 25,000) with a -5,000 card refund group; widget test taps Category segment and sees the Account/Card split and `sum_card`.
+- TC-08-19 (FR-08-24): after `setAccount(..., rememberPayee: true)` a new row of the same merchant lands on that account.
+- TC-08-20 (FR-08-25): Transfer mode saves `addOwnTransfer(1 -> 2, 50025)`; a transfer to a card counts 55,000 as a card payment in `watchTotals`.
 
 Fixtures: corpus samples 1-14 (Part B 8), HDFC bill payment pair, own-transfer JSON, OCR texts for PhonePe/GPay screenshots (masked).
 
@@ -466,6 +473,8 @@ Deviation: features cannot import each other's presentation, so `app/ledger_shel
 
 Still deferred: own-transfer form in the Add screen, `reclassifyCardBills` sweep, FR-08-12 OCR, FR-08-16 gaps, split, undo for bulk delete, source chips. GIFs not captured.
 
+- 2026-10-27: Screenshot OCR (FR-08-12, FR-08-26): ports `TextRecognizerPort` and `ScreenshotSource` (domain/ocr_port.dart), `ScreenshotFillService` (domain/screenshot_fill.dart), `MlkitTextRecognizer`, `FilePickerScreenshotSource` (data), `OcrFillCard` (presentation), providers `app/di/ocr_providers.dart`; hooked into `AddTransactionScreen` by one card and `_applyFill`. The row is saved through `addManual` (source MANUAL); keeping the screenshot source and OCR text is deferred (needs a repository parameter). ML Kit adds roughly 10 MB per ABI to the APK. Tests `screenshot_fill_test.dart` with a fake OCR port.
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -478,3 +487,5 @@ Still deferred: own-transfer form in the Add screen, `reclassifyCardBills` sweep
 | 2026-10-21 | Phase 1 UI landed | Phase 1 |
 | 2026-10-22 | Ledger: transfer/EMI pairing, calendar+merchant views, bulk actions, rules screen | Hardening |
 | 2026-10-27 | Audit: List, Calendar, By merchant, multi-select merge, filters confirmed done; screenshot OCR, split, account change with Remember, brand logos, own-transfer form and gap card confirmed not built | Kotlin parity audit |
+| 2026-10-27 | Card/Account tag and chips, By category segment, cash-basis summary strip, Remember for this payee, own-transfer Add mode (FR-08-23..25) | Kotlin parity, ADR-0011 |
+| 2026-10-27 | Screenshot OCR (FR-08-12, FR-08-26): ports `TextRecognizerPort` and `ScreenshotSource` (domain/ocr_port.dart), `ScreenshotFillService` (domain/screenshot_fill.dart), `MlkitTextRecognizer`, `FilePickerScreenshotSource` (data), `OcrFillCard` (presentation), providers `app/di/ocr_providers.dart`; hooked into `AddTransactionScreen` by one card and `_applyFill` | Kotlin parity |

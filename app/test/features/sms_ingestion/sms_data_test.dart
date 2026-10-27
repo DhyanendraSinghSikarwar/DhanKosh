@@ -89,7 +89,7 @@ void main() {
     await store.saveScan(cursor: 50, lastScanAt: 9, lastResult: 'ok');
     await store.saveScan(cursor: 20, lastScanAt: 10, lastResult: 'ok2');
     await store.setLookbackDays(30);
-    await store.setLookbackDays(31); // ignored
+    await store.setLookbackDays(400); // out of range, ignored
     s = await store.read();
     expect(s.enabled, isFalse);
     expect(s.cursor, 50);

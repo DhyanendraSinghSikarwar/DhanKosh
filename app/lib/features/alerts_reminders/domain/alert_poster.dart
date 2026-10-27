@@ -64,3 +64,18 @@ String alertRouteFor(String link) {
       return '/home';
   }
 }
+
+/// In-app route a notification button opens (FR-21-03, FR-21-10). The
+/// `/alert-action` route runs the action, then returns to the previous
+/// screen; Kotlin only launches the route (no Dart work in a receiver).
+String alertActionRoute(AlertAction a) {
+  final name = switch (a.id) {
+    'com.hisaab.app.CARD_DUE_PAID' => 'paid',
+    'com.hisaab.app.CARD_DUE_SNOOZE' => 'snooze',
+    _ => a.id,
+  };
+  return Uri(
+    path: '/alert-action',
+    queryParameters: {'a': name, ...a.payload},
+  ).toString();
+}

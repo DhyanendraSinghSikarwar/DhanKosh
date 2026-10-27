@@ -1,4 +1,5 @@
 import 'package:hisaab/features/expense_tracking/domain/budget.dart';
+import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/portfolio/domain/holding.dart';
 import 'package:hisaab/features/portfolio/domain/portfolio_summary.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
@@ -37,8 +38,7 @@ abstract final class ReportBuilders {
   static int _inr(LedgerTx t) =>
       t.inrMinor ?? (t.currency == 'INR' ? t.amountMinor : 0);
 
-  static bool _counts(LedgerTx t) =>
-      !t.needsReview && t.type != TransactionType.transfer;
+  static bool _counts(LedgerTx t) => !t.needsReview && t.duplicateOfId == null;
 
   /// Month name and year, e.g. `October 2026`.
   static String monthLabel(int year, int month) =>
@@ -58,19 +58,18 @@ abstract final class ReportBuilders {
     int? assetsMinor,
     int? liabilitiesMinor,
   }) {
-    final rows = txs
+    final inRange = txs
         .where((t) => t.timestamp >= fromMs && t.timestamp < toMs)
         .where(_counts)
         .toList();
+    final rows =
+        inRange.where((t) => t.type != TransactionType.transfer).toList();
+    // ADR-0011: headline on the cash basis; categories show card purchases.
+    final cash = SpendCalc.totals(inRange, context: txs);
+    final spent = cash.spentMinor;
+    final earned = cash.incomeMinor;
     final spend = rows.where((t) => t.type == TransactionType.debit).toList();
-    final income = rows
-        .where(
-          (t) =>
-              t.type == TransactionType.credit && t.category != Category.refund,
-        )
-        .toList();
-    final spent = spend.fold(0, (a, t) => a + _inr(t));
-    final earned = income.fold(0, (a, t) => a + _inr(t));
+    final categorised = spend.fold(0, (a, t) => a + _inr(t));
 
     final byCat = <Category, int>{};
     for (final t in spend) {
@@ -111,7 +110,8 @@ abstract final class ReportBuilders {
           heading: 'Summary',
           rows: [
             ['Income', reportMoney(earned)],
-            ['Spent', reportMoney(spent)],
+            ['Spent (cash basis)', reportMoney(spent)],
+            ['Card purchases', reportMoney(cash.cardPurchasesMinor)],
             ['Saved', reportMoney(earned - spent)],
             ['Transactions', '${rows.length}'],
           ],
@@ -124,7 +124,7 @@ abstract final class ReportBuilders {
               [
                 e.key.label,
                 reportMoney(e.value),
-                _pct(e.value, spent),
+                _pct(e.value, categorised),
               ],
           ],
         ),

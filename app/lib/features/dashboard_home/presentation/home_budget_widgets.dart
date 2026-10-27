@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/budget_providers.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
+import 'package:hisaab/features/dashboard_home/domain/home_charts.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_providers.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget.dart';
@@ -139,6 +140,16 @@ class HomeCashFlowCard extends ConsumerWidget {
                   : 'Saved ${amt(f.savedMinor)} · ${f.ratePercent}%',
               key: const Key('home_cashflow_saved'),
             ),
+            if (f.incomeMinor > 0) ...[
+              const SizedBox(height: 8),
+              _SplitBar(
+                bar: splitBar(
+                  incomeMinor: f.incomeMinor,
+                  spentMinor: f.spentMinor,
+                  investedMinor: f.investedMinor,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -153,4 +164,34 @@ Color _ringColor(BuildContext context, BudgetBand band) {
     BudgetBand.amber => colors?.warning ?? Colors.orange,
     BudgetBand.normal => colors?.income ?? Colors.green,
   };
+}
+
+/// Spent / invested / saved as shares of income (FR-17-08, B12).
+class _SplitBar extends StatelessWidget {
+  const _SplitBar({required this.bar});
+
+  final ({int spent, int invested, int saved}) bar;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final colors = Theme.of(context).extension<SemanticColors>();
+    Widget seg(int flex, Color c) => flex == 0
+        ? const SizedBox.shrink()
+        : Expanded(
+            flex: flex,
+            child: Container(height: 10, color: c),
+          );
+    return ClipRRect(
+      key: const Key('home_split_bar'),
+      borderRadius: BorderRadius.circular(5),
+      child: Row(
+        children: [
+          seg(bar.spent, colors?.expense ?? Colors.red),
+          seg(bar.invested, scheme.primary),
+          seg(bar.saved, colors?.income ?? Colors.green),
+        ],
+      ),
+    );
+  }
 }

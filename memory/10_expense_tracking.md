@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-10 |
-| Status | In progress (Phase 4: budgets repository, maths, Budgets screen (`/budgets`) and Home budget rings done; global Book/Period filters, spent-widget chart, alert posting, widget and tap-through pending) |
+| Status | In progress (Phase 4: budgets repository, maths, Budgets screen (`/budgets`) and Home budget rings done; global Book/Period filters, spent-widget chart, alert posting, widget and tap-through pending) Cash basis (ADR-0011) implemented 2026-10-27: SpendCalc, watchTotals, income repository, Analysis headline, reports, weekly summary; Home book scope |
 | Priority | P0 |
 | Phase | 1 (totals, Book and Period filters, Home spent widget); 4 for Budgets screen, alerts and analytics budget bars |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-10-27 |
 
 ## 1. Description
 
@@ -165,6 +165,11 @@ Glance widget "DhanKosh spend", 3x2 cells (min 180x110dp, resizable), `updatePer
 - FR-10-15: The Analysis budgets card shall scale limits by the number of months spanned, draw a pace tick only for a single current month, and colour by the alert level.
 - FR-10-16: The Android home-screen widget (if shipped) shall show spent-today and spent-this-month using `outflow`, refresh on ingest and honour hide-amounts.
 - FR-10-17: Tapping a budget card or Home budget ring shall open Transactions filtered by that category and month.
+- FR-10-18: The Transactions tab and every category view (category donut, By category, category budgets) shall include credit card purchases; rows are tagged Card or Account; chips All / Accounts / Cards filter them (ADR-0011).
+- FR-10-19: The headline total expense (Home Spent, Transactions Expenses, Analysis headline, Net, savings rate, cash flow, widget, PDF reports, weekly summary) shall be on the cash basis: account spends (not own transfers) plus credit card bill payments, and shall exclude card purchases. A payment counts once: the bank-side leg (TRANSFER with the card bill note); the card-side payment record counts only when no bank leg of the same amount lies within 5 days.
+- FR-10-20: A credit on a card is never income; a card refund reduces its category on the card and is not netted from the headline.
+- FR-10-21: Screens showing a headline beside a category breakdown shall show the card purchases figure and one line: "Expenses exclude card purchases, include card bill payments".
+- FR-10-22: The rule shall live once in `SpendCalc.totals` (`CashTotals`: spent, card purchases, card payments, invested, income, refund, card refund); `ledgerSpent`, `netSpent`, `outflow`, `LedgerMath.spent/income`, `watchTotals`, the income repository, report builders and the weekly summary all call it. Rows outside the period within the 5-day window pair payments through the `context` argument. A card-only account scope counts card purchases as spend.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -378,6 +383,9 @@ Unit:
 - TC-10-09 (FR-10-11, FR-10-12): alert at 90 then 100, key dedupe, highest level only, new month re-arms, level changed to 80 fires at 80.
 - TC-10-10 (FR-10-15): 3-month period scales limit x3; pace tick null for last month.
 - TC-10-11 (FR-10-09): budget category list excludes SALARY, INCOME, REFUND, TRANSFER and already-budgeted ones.
+- TC-10-15 (FR-10-18, FR-10-19): account food 500 + card shopping 1,200: headline 500, card purchases 1,200; paired bill payment 1,500 counts once (bank leg); unpaired card record counts; a context leg outside the period pairs without double count (`spend_calc_cash_test.dart`).
+- TC-10-16 (FR-10-20): card credit 900 and card refund 100 add no income; account refund 200 reduces `netSpentMinor`; own transfer and investment stay out of spend.
+- TC-10-17 (FR-10-19, FR-10-22): in-memory DB: card purchase, bank debit and a paid bill give `spentMinor` = bank spend + payment, `cardPurchasesMinor`, `cardPaymentsMinor` (`cash_basis_repository_test.dart`); Transactions strip shows `sum_card` and `sum_basis`.
 
 Widget:
 
@@ -458,3 +466,4 @@ Alert dedupe keys live in `AlertedKeyStore` ([21](21_alerts_reminders.md)); the 
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
+| 2026-10-27 | ADR-0011 cash basis: `SpendCalc.totals`/`CashTotals`, card purchases shown beside headline, card payments counted once, card credits never income (FR-10-18..22). Parity exception: the Kotlin app counts card purchases as spend and ignores the bill payment. Shared `bookProvider`/`periodProvider` live in `lib/app/di/scope_providers.dart` | Owner requirement, Kotlin parity |

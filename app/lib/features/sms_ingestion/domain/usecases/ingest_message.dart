@@ -8,6 +8,7 @@ import 'package:hisaab/features/portfolio/domain/holding_repository.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart'
     as sms;
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
+import 'package:hisaab/features/sms_ingestion/domain/sender_overrides.dart';
 import 'package:hisaab/features/statement_import/domain/usecases/apply_statement_accounts.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart' as led;
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
@@ -39,7 +40,9 @@ class IngestMessage {
     CardDueRepository? cardDues,
     HoldingRepository? holdings,
     ApplyStatementAccounts? accounts,
+    SenderOverridesCache? senderOverrides,
   })  : _ledger = ledger,
+        _overrides = senderOverrides,
         _accounts = accounts,
         _cardDues = cardDues,
         _holdings = holdings,
@@ -54,9 +57,37 @@ class IngestMessage {
   final Future<Set<String>> Function()? _tails;
   final ParserRegistry _registry;
   final bool _customRegistry;
+  final SenderOverridesCache? _overrides;
+  (SenderOverrides, ParserRegistry)? _derived;
 
-  /// Cheap sender pre-filter (FR-02-02).
-  bool accepts(String sender) => _registry.accepts(sender);
+  /// The registry with the user's added senders (FR-26-31); the base one
+  /// while nothing is added.
+  ParserRegistry get _active {
+    final o = _overrides?.current;
+    if (o == null || o.added.isEmpty) return _registry;
+    final d = _derived;
+    if (d != null && identical(d.$1, o)) return d.$2;
+    final r = ParserRegistry(_registry.parsers, UserSenderParser(o.added));
+    _derived = (o, r);
+    return r;
+  }
+
+  /// Loads the user's sender edits; await before a scan or drain so the
+  /// synchronous [accepts] sees them (FR-26-31).
+  Future<void> prepare() async {
+    await _overrides?.ensureLoaded();
+  }
+
+  /// Cheap sender pre-filter (FR-02-02) with the user's sender edits
+  /// (FR-26-31): switched-off senders never pass, added ones always do.
+  bool accepts(String sender) {
+    final o = _overrides?.current;
+    if (o != null && !o.isEmpty) {
+      if (o.blocks(sender)) return false;
+      if (o.allows(sender)) return true;
+    }
+    return _registry.accepts(sender);
+  }
 
   /// Matches the SmsIngest typedef: SMS in, outcome out.
   Future<IngestOutcome> call(sms.InboxSms message) =>
@@ -69,7 +100,10 @@ class IngestMessage {
   /// registry run on a worker isolate so the UI isolate stays free; results
   /// equal the sequential [parse] (FR-02-10).
   Future<List<ParseResult>> parseAll(List<sms.InboxSms> batch) async {
-    if (batch.length < isolateThreshold || _customRegistry) {
+    await _overrides?.ensureLoaded();
+    if (batch.length < isolateThreshold ||
+        _customRegistry ||
+        _active != _registry) {
       return [for (final m in batch) _parse(m)];
     }
     final rows = [
@@ -97,7 +131,7 @@ class IngestMessage {
       ];
 
   ParseResult _parse(sms.InboxSms m, [Source source = Source.sms]) =>
-      parse(source, m.sender, m.body, m.receivedAt, registry: _registry);
+      parse(source, m.sender, m.body, m.receivedAt, registry: _active);
 
   /// Ingests [message]; [source] is SMS or email. [messageId] defaults to the
   /// SMS id.
@@ -105,8 +139,10 @@ class IngestMessage {
     sms.InboxSms message, {
     Source source = Source.sms,
     String? messageId,
-  }) =>
-      _store(message, _parse(message, source), source, messageId);
+  }) async {
+    await _overrides?.ensureLoaded();
+    return await _store(message, _parse(message, source), source, messageId);
+  }
 
   Future<MessageIngestDetail> _store(
     sms.InboxSms message,
@@ -240,7 +276,7 @@ class IngestMessage {
     // also a transaction.
     final accounts = _accounts;
     if (accounts != null && (source == Source.sms || !hasTransaction)) {
-      final st = _registry.loanStatus(message.body, message.sender, at, source);
+      final st = _active.loanStatus(message.body, message.sender, at, source);
       if (st != null &&
           !(await _tails?.call() ?? const {}).contains(st.last4)) {
         if (await accounts.applyDeposits([st]) > 0) stored = true;

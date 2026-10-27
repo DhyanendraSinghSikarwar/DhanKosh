@@ -7,11 +7,13 @@ import 'package:hisaab/features/accounts_management/presentation/account_detail_
 import 'package:hisaab/features/accounts_management/presentation/accounts_management_screen.dart';
 import 'package:hisaab/features/activity_log/presentation/activity_log_screen.dart';
 import 'package:hisaab/features/activity_log/presentation/activity_tile.dart';
+import 'package:hisaab/features/alerts_reminders/presentation/alert_action_screen.dart';
 import 'package:hisaab/features/alerts_reminders/presentation/alerts_reminders_screen.dart';
 import 'package:hisaab/features/alerts_reminders/presentation/alerts_tile.dart';
 import 'package:hisaab/features/analytics/presentation/analytics_screen.dart';
 import 'package:hisaab/features/backup_export/presentation/backup_export_screen.dart';
 import 'package:hisaab/features/backup_export/presentation/backup_tile.dart';
+import 'package:hisaab/features/categorization/presentation/category_detail_screen.dart';
 import 'package:hisaab/features/categorization/presentation/rules_screen.dart';
 import 'package:hisaab/features/categorization/presentation/rules_tile.dart';
 import 'package:hisaab/features/credit_cards/presentation/cards_home_strip.dart';
@@ -26,6 +28,7 @@ import 'package:hisaab/features/forex_rates/presentation/forex_rates_screen.dart
 import 'package:hisaab/features/forex_rates/presentation/forex_tile.dart';
 import 'package:hisaab/features/income_tracking/presentation/income_tracking_screen.dart';
 import 'package:hisaab/features/loans/presentation/loan_detail_screen.dart';
+import 'package:hisaab/features/loans/presentation/loan_link_prompt_screen.dart';
 import 'package:hisaab/features/loans/presentation/loans_screen.dart';
 import 'package:hisaab/features/loans/presentation/loans_tile.dart';
 import 'package:hisaab/features/localization/presentation/language_screen.dart';
@@ -39,6 +42,7 @@ import 'package:hisaab/features/news_support_updates/presentation/updates_tile.d
 import 'package:hisaab/features/notification_ingestion/presentation/notification_access_card.dart';
 import 'package:hisaab/features/onboarding_permissions/presentation/welcome_screen.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_screen.dart';
+import 'package:hisaab/features/profile/presentation/bank_details_sheet.dart';
 import 'package:hisaab/features/profile/presentation/profile_screen.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/bills_tile.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/recurring_transactions_screen.dart';
@@ -49,13 +53,16 @@ import 'package:hisaab/features/savings_goals/presentation/goals_summary_card.da
 import 'package:hisaab/features/savings_goals/presentation/goals_tile.dart';
 import 'package:hisaab/features/security_privacy/presentation/security_privacy_screen.dart';
 import 'package:hisaab/features/security_privacy/presentation/security_tile.dart';
+import 'package:hisaab/features/settings_data_sources/presentation/sender_lists_screen.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_data_sources_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statement_detail_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_tile.dart';
 import 'package:hisaab/features/tax_centre/presentation/tax_centre_screen.dart';
 import 'package:hisaab/features/tax_centre/presentation/tax_tile.dart';
+import 'package:hisaab/features/theming_customisation/domain/section_layout.dart';
 import 'package:hisaab/features/theming_customisation/presentation/customise_tile.dart';
+import 'package:hisaab/features/theming_customisation/presentation/section_layout_editor.dart';
 import 'package:hisaab/features/theming_customisation/presentation/theming_customisation_screen.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/add_transaction_screen.dart';
 
@@ -92,6 +99,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/transactions/add',
         builder: (_, __) => const AddTransactionScreen(),
+      ),
+      GoRoute(
+        path: '/category/:id',
+        builder: (_, state) =>
+            CategoryDetailScreen(id: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/budgets',
@@ -137,6 +149,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(
+        path: '/loan-link/:txId',
+        builder: (_, state) => LoanLinkPromptScreen(
+          txId: int.tryParse(state.pathParameters['txId'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: '/alert-action',
+        builder: (_, state) =>
+            AlertActionScreen(query: state.uri.queryParameters),
+      ),
+      GoRoute(
         path: '/settings/alerts',
         builder: (_, __) => const AlertsRemindersScreen(),
       ),
@@ -179,6 +202,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const EmailSettingsScreen(),
       ),
       GoRoute(
+        path: '/settings/senders',
+        builder: (_, __) => const SenderListsScreen(),
+      ),
+      GoRoute(
         path: '/accounts',
         builder: (_, __) => const AccountsManagementScreen(),
         routes: [
@@ -186,6 +213,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: ':id',
             builder: (_, state) => AccountDetailScreen(
               accountId: int.parse(state.pathParameters['id']!),
+              unlockSheet: (acc) => BankDetailsSheet(account: acc),
             ),
           ),
         ],
@@ -200,6 +228,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (_, __) => const DashboardHomeScreen(
                   cardsSection: CardsHomeStrip(),
                   goalsSection: GoalsSummaryCard(),
+                  layoutEditor: SectionLayoutEditor(screenId: ScreenIds.home),
                 ),
               ),
             ],
@@ -219,6 +248,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (_, __) => const PortfolioScreen(
                   sipSection: SipSection(),
                   sipSheet: _sipSheet,
+                  layoutEditor:
+                      SectionLayoutEditor(screenId: ScreenIds.portfolio),
                 ),
               ),
             ],

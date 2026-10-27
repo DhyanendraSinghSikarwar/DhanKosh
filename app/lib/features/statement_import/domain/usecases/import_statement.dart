@@ -3,6 +3,8 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart' show sha256;
+import 'package:hisaab/features/activity_log/domain/activity_logger.dart';
+import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/credit_cards/domain/card_due_repository.dart';
 import 'package:hisaab/features/credit_cards/domain/card_models.dart';
 import 'package:hisaab/features/portfolio/domain/asset_class.dart';
@@ -55,8 +57,10 @@ class ImportStatement {
     ApplyStatementAccounts? accounts,
     StatementOutcomeStore? outcomes,
     StatementLockedNotifier? lockedNotifier,
+    ActivityLogger? activity,
     int Function()? clock,
-  })  : _statements = statements,
+  })  : _activity = activity,
+        _statements = statements,
         _saved = savedPasswords,
         _pdf = pdf,
         _sheets = sheets,
@@ -70,6 +74,7 @@ class ImportStatement {
         _notifier = lockedNotifier,
         _clock = clock ?? (() => DateTime.now().millisecondsSinceEpoch);
 
+  final ActivityLogger? _activity;
   final StatementRepository _statements;
   final SavedPasswordRepository _saved;
   final PdfTextReader _pdf;
@@ -97,7 +102,34 @@ class ImportStatement {
       _import(file, origin);
 
   Future<ImportResult> _import(PickedFile file, EmailOrigin? origin) async {
+    final started = DateTime.fromMillisecondsSinceEpoch(_clock());
     final r = await _importInner(file, origin);
+    // FR-22-01 (D7): one entry per picked file, counts and codes only. Emailed
+    // statements are counted by the email entry.
+    if (origin == null && r is! ImportAlreadyDone) {
+      await _activity?.record(
+        ActivityEntry(
+          at: started,
+          source: ActivitySource.statements,
+          read: 1,
+          relevant: r is ImportDone ? 1 : 0,
+          added: r is ImportDone ? r.added : 0,
+          merged: r is ImportDone ? r.merged : 0,
+          review: r is ImportDone ? r.review : 0,
+          statements: r is ImportDone ? 1 : 0,
+          locked: r is ImportLocked || r is ImportWrongPassword ? 1 : 0,
+          skipped: r is ImportUnsupported ? 1 : 0,
+          millis: DateTime.now().difference(started).inMilliseconds,
+          note: switch (r) {
+            ImportUnsupported(:final reason) => reason.name,
+            ImportLocked() => 'locked',
+            ImportWrongPassword() => 'wrong_password',
+            ImportFileMissing() => 'file_missing',
+            _ => null,
+          },
+        ),
+      );
+    }
     // FR-35-22: outcome kind and counts only, never statement text.
     final f = <String, Object?>{
       'result': r.runtimeType.toString(),

@@ -4,6 +4,8 @@ import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/categorization/domain/category_choice.dart';
 import 'package:hisaab/features/categorization/domain/custom_category.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
+import 'package:hisaab/features/categorization/presentation/category_icons.dart';
+import 'package:hisaab/features/categorization/presentation/name_icon_dialog.dart';
 import 'package:parser_core/parser_core.dart';
 
 final _customCategoriesProvider = StreamProvider<List<CustomCategory>>(
@@ -69,34 +71,11 @@ class _CategorySheetState extends ConsumerState<CategorySheet> {
       );
 
   Future<void> _newCategory() async {
-    final c = TextEditingController();
-    final name = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('New category'),
-        content: TextField(
-          key: const Key('new_category_name'),
-          controller: c,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'Name'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            key: const Key('new_category_add'),
-            onPressed: () => Navigator.pop(ctx, c.text.trim()),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-    if (name == null || name.isEmpty) return;
+    final made = await showNameIconDialog(context, title: 'New category');
+    if (made == null) return;
     final id = await ref.read(categoryRepositoryProvider).addCustomCategory(
-          name: name,
-          icon: 'label',
+          name: made.name,
+          icon: made.icon,
           colorArgb: 0xFF607D8B,
         );
     if (mounted) {
@@ -166,6 +145,7 @@ class _CategorySheetState extends ConsumerState<CategorySheet> {
                         for (final c in customs)
                           ChoiceChip(
                             key: Key('custom_${c.id}'),
+                            avatar: Icon(CategoryIcons.get(c.icon), size: 18),
                             label: Text(c.name),
                             selected: _custom == c.id,
                             onSelected: (_) => setState(() {

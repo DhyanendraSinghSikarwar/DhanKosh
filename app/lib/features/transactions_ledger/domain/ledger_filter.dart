@@ -15,6 +15,8 @@ class LedgerFilter {
     this.banks = const {},
     this.minMinor,
     this.maxMinor,
+    this.accountKind,
+    this.usage,
   });
 
   final TxKind kind;
@@ -36,6 +38,13 @@ class LedgerFilter {
   /// Inclusive amount bounds in paise (FR-20-21); null is open.
   final int? minMinor;
   final int? maxMinor;
+
+  /// Accounts only or cards only (FR-08-23); null shows both.
+  final AccountKind? accountKind;
+
+  /// Book scope by account usage, `PERSONAL` or `BUSINESS` (FR-20-24). Rows
+  /// without an account belong to the personal book.
+  final String? usage;
 }
 
 /// Totals for a period; review rows and rows without an INR value excluded.
@@ -45,11 +54,20 @@ class PeriodTotals {
     this.investedMinor = 0,
     this.incomeMinor = 0,
     this.refundMinor = 0,
+    this.cardPurchasesMinor = 0,
+    this.cardPaymentsMinor = 0,
     this.count = 0,
   });
 
-  /// DEBIT, not transfer.
+  /// Cash-basis expense (ADR-0011): account debits plus card bill payments;
+  /// card purchases excluded.
   final int spentMinor;
+
+  /// Card purchases, listed but not in [spentMinor] (FR-10-18).
+  final int cardPurchasesMinor;
+
+  /// Card bill payments inside [spentMinor].
+  final int cardPaymentsMinor;
 
   /// INVESTMENT.
   final int investedMinor;

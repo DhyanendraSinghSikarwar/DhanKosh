@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-03 |
-| Status | In progress (Phase 2: IMAP app-password sync, sender whitelist, screen and tests done; Gmail OAuth/API, verification code, multi-account (statement attachments are implemented, FR-03-16) and scheduling NOT built) |
+| Status | In progress (IMAP app-password sync, 6-digit code verification over SMTP, several mailboxes with on/off, per-provider guides, nightly sync independent of the SMS switch and history re-read done; Gmail OAuth/API NOT built) |
 | Priority | P1 |
 | Phase | 2 |
 | Last Updated | 2026-10-27 |
@@ -599,10 +599,10 @@ FR status:
 |---|---|---|
 | FR-03-01 | Done (presets Gmail, Outlook, Yahoo, iCloud, Other; Zoho/AOL/Rediff fall to Other = `imap.<domain>`) | `domain/entities/email_account.dart` |
 | FR-03-02 | Done (TLS, 20 s timeout, spaces stripped, auth/network/tls mapped to `AuthFailure`/`NetworkFailure`/`TlsFailure` in `core/errors/failure.dart`) | `data/enough_mail_imap_client.dart` |
-| FR-03-03, 03-04 | Not built (no SMTP verification code; Test connection signs in instead) | - |
-| FR-03-05 | Partial: password only in `SecureStore` (key `email_app_password`, wipe = empty value); no immediate scheduling | `data/secure_email_credential_store.dart` |
-| FR-03-06 | Partial: one account; disconnect wipes password and settings, transactions stay | `usecases/manage_email_account.dart` |
-| FR-03-07 | Done, concise (steps and link per preset) | `EmailProvider.steps` |
+| FR-03-03, 03-04 | Done: IMAP login proves the app password, `VerifyEmail` mails `DhanKosh verification code: <6 digits>` to the same address over SMTP (`enough_mail` `SmtpClient`; Gmail/Yahoo 465 TLS, Outlook/iCloud 587 STARTTLS, custom `smtp.<domain>:465`). `VerificationCode` keeps a SHA-256 of `address|code` in memory only, TTL 10 min, 5 wrong tries, new code replaces the old; results `ok/wrong/expired/tooManyAttempts/none`. Nothing is saved before OK | `domain/verification_code.dart`, `domain/usecases/verify_email.dart`, `data/enough_mail_smtp_sender.dart` |
+| FR-03-05 | Done: after OK the password goes to `SecureStore` under `email_app_password:<address>` (wipe = empty value) and the mailbox is saved; the nightly job is always registered (FR-03-17), the first sync starts from the screen or Welcome | `data/secure_email_credential_store.dart` |
+| FR-03-06 | Done: several mailboxes (list in settings key `email_accounts`, one secret and one cursor each), per-mailbox remove with confirm wipes that password only, transactions stay; Erase all wipes every secret | `usecases/manage_email_account.dart`, `data/email_settings_store.dart` |
+| FR-03-07 | Done, concise: shared `AppPasswordGuide` shows the steps and link for Gmail, Outlook (two-step note first), Yahoo, iCloud, Other on the Email screen and on Welcome; Zoho/AOL fall to Other | `EmailProvider.steps`, `lib/shared/widgets/app_password_guide.dart` |
 | FR-03-08, 03-11 | Not built (Gmail API) | - |
 | FR-03-09 | Done: `\All` folder else INBOX (EXAMINE), `SINCE d-Mon-yyyy`, one envelope fetch, filter, then body | `EnoughMailImapClient.fetchSince` |
 | FR-03-10 | Done: `since = lastSync - 1 day`, ids `imap:<Message-ID>` else `imap:uid:<n>`, processed skipped | `usecases/sync_email.dart` |
@@ -611,25 +611,30 @@ FR status:
 | FR-03-14 | Partial: body to `IngestMessage` with `Source.email`; outcome PARSED / REJECTED stored; loan status, card-due and attachments not wired | `processed_emails` |
 | FR-03-15 | Done (own pure-Dart HTML-to-text, no `html` package) | `domain/email_text.dart` |
 | FR-03-16 | Not built (attachments) | - |
-| FR-03-17 | Not scheduled here: entry point `EmailSyncRunner.run()` (provider `emailSyncRunnerProvider`) for the lead's workmanager task | `usecases/email_sync_runner.dart` |
+| FR-03-17 | Done: `smsNightlyTask` runs `EmailSyncRunner` (all enabled mailboxes) whether or not SMS reading is on; `SmsEngine` now always registers the nightly job and `StartupTasks` registers it on every Android launch even without SMS access; retry only when `retryable` (any mailbox network error) | `usecases/email_sync_runner.dart`, `app/background/sms_background_tasks.dart`, `sms_engine.dart` |
 | FR-03-18 | Done: auth sets `needsReauth` and keeps cursor and ids; `retryable` only for network; a message that throws is not marked and the cursor stays | `SyncEmail` |
-| FR-03-19 | Reads shared `history_days` (default 90); raising it does not yet clear the cursor | `EmailSettingsStore` |
+| FR-03-19 | Done: reads shared `history_days` (7 to 365, default 90); raising it clears every mailbox cursor and starts the catch-up (see FR-26-02, FR-26-30) | `EmailSettingsStore`, `app/di/history_providers.dart` |
 | FR-03-20 | Done: no bodies, passwords or server text in reports, failures or logs | - |
 | FR-03-21 | Done (`full` / `incremental` mode) | `EmailSyncReport.summary` |
-| FR-03-22 | Partial: route `/settings/email` (provider picker, login, Test connection, Save, Sync now with progress, senders, Disconnect), entry tile in More; no Data sources card or enable toggle | `presentation/email_settings_screen.dart` |
+| FR-03-22 | Partial: route `/settings/email` (mailbox list with on/off switch, per-mailbox status and last report, remove with confirm, provider picker, login, Test connection, Send code / Verify / Resend, Sync now with progress for all, senders), entry tile in More; no Data sources card | `presentation/email_settings_screen.dart` |
 
 Decisions and deviations:
 - Schema v2 adds `processed_emails` (`messageId` PK, `processedAt`, `outcome`, `transactionId?`); `onUpgrade` creates it for v1 databases, no other table touched.
-- Non-secret state lives in the settings table as strings: `email_address`, `email_provider`, `email_imap_host`, `email_imap_port`, `email_last_sync`, `email_last_report`, `email_needs_reauth`, `email_custom_senders` (JSON list). Cleared values are empty strings.
+- Non-secret state lives in the settings table as strings: `email_accounts` (JSON list; per mailbox `address`, `provider`, `host`, `port`, `enabled`, `lastSync`, `report`, `reauth`), `email_custom_senders` and `email_removed_senders` (JSON lists). The single-mailbox keys of the first build (`email_address` and friends) are no longer read; that build never shipped. Cleared values are empty strings.
 - `SecureStore` has no delete; wipe writes an empty string.
 - `SyncEmail` takes an `IngestEmail` function; `lib/app/di/email_providers.dart` binds it to `IngestMessage.detail(..., source: Source.email, messageId)`. SMS and email of one payment end as one transaction with two sources (dedup in the ledger).
 - The use case reads at most 300 allowed emails per sync.
 
 Tests: `test/features/email_ingestion/sync_email_test.dart` (TC-03-01, 03-03, 03-06, 03-07, 03-08, 03-12, 03-16, 03-18 equivalents plus SMS+email dedup), `email_text_and_client_test.dart` (TC-03-10, error mapping), `email_settings_screen_test.dart` (TC-03-17 subset), `test/core/db/migration_v1_v2_test.dart`.
 
-Not done: Gmail API and OAuth, mailed verification code, multiple accounts, attachments and statement import, loan status and card-due from email, nightly 02:30 job and retry wiring (lead), Home sync pill, GIFs, raising look-back clearing the cursor.
+Not done: Gmail API and OAuth, Home sync pill, GIFs, Data sources Email card (the Email screen is its own route).
 
 Hardening 2026-10-22: FR-03-16 done for IMAP: `EnoughMailImapClient.attachmentsOf` picks PDF/XLSX/XLS/CSV (name or MIME, max 5 per mail, 25 MB cap, default names) into `RawEmail.attachments`; `SyncEmail` hands each to `IngestStatementFile` (wired to `ImportStatement.importEmailAttachment` in `email_providers.dart`), counts `EmailSyncReport.statements`, marks the mail PARSED; re-sync is idempotent by statement key. A rejected body that is an INDmoney summary records holdings. Tests: `email_statement_attachments_test`. Not done: MF-order/EPF/NPS body pipeline, Gmail API.
+Parity round 2026-10-27 (agent D1). Design decisions where the Kotlin behaviour was open:
+- The code is sent exactly like Kotlin (`sendToSelf` over SMTP with the same app password, TLS 465 or STARTTLS 587); there is no other send path, so nothing but the user's own mail provider is contacted.
+- `SyncEmail.call()` loops the enabled mailboxes in order; one failing mailbox never stops the next. `EmailSyncReport.combine` sums the counts, mode is `full` if any ran in full, `error` is the first failure (a retryable one is preferred so WorkManager retries; a retry only re-reads unprocessed mail).
+- Sender whitelist: custom additions and a new `email_removed_senders` set (default entries switched off from the Bank senders screen, FR-26-31) are applied to every mailbox; the mail side of the Bank senders list is this same whitelist.
+- Tests: `email_verification_test.dart` (code expiry, 5 attempts, resend, SMTP presets, VerifyEmail with fake IMAP and SMTP, multi-mailbox loop with per-mailbox cursor, failures, disabled, removed defaults), `email_settings_screen_test.dart` (code gate, two mailboxes, guides), `welcome_screen_test.dart` (email sign-in).
 
 ## 19. Change Log (date | change | reason)
 
@@ -642,3 +647,4 @@ Hardening 2026-10-22: FR-03-16 done for IMAP: `EnoughMailImapClient.attachmentsO
 | 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |
 | 2026-10-25 | Corrected status: attachments implemented | Doc fix |
 | 2026-10-27 | Audit: Gmail sign-in is Not possible until the owner registers a Google OAuth client; 6-digit code, multiple mailboxes, nightly email scheduler and history-window UI confirmed not built; IMAP app-password sync confirmed done | Kotlin parity audit |
+| 2026-10-27 | 6-digit code over SMTP before a mailbox is saved, several mailboxes with on/off and per-mailbox secret and cursor, per-provider guide widget, nightly job registered independently of the SMS switch, history re-read clears all cursors, switched-off default senders | Kotlin parity (A10, A11, C12, C4, A7, C5) |

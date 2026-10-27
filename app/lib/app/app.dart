@@ -19,11 +19,12 @@ class HisaabApp extends ConsumerWidget {
     final lang = ref.watch(languageProvider.select((s) => s.active));
     return MaterialApp.router(
       title: 'DhanKosh',
-      theme: AppTheme.build(a.palette, Brightness.light),
+      theme: AppTheme.build(a.palette, Brightness.light, backdrop: true),
       darkTheme: AppTheme.build(
         a.palette,
         Brightness.dark,
         pureBlack: a.pureBlack,
+        backdrop: true,
       ),
       themeMode: switch (a.mode) {
         ThemeModeChoice.system => ThemeMode.system,
@@ -41,7 +42,11 @@ class HisaabApp extends ConsumerWidget {
         return KeyedSubtree(
           key: ValueKey(lang),
           child: MediaQuery(
-            data: mq.copyWith(textScaler: TextScaler.linear(scale)),
+            data: mq.copyWith(
+              textScaler: TextScaler.linear(scale),
+              // Reduce motion (FR-28-10): the setting or the phone's own.
+              disableAnimations: mq.disableAnimations || a.reduceMotion,
+            ),
             child: LockGate(
               child: AppLifecycleGate(
                 child: AlertsLifecycle(
