@@ -6,6 +6,7 @@ import 'package:hisaab/features/expense_tracking/data/budget_repository_impl.dar
 import 'package:hisaab/features/expense_tracking/presentation/budget_widgets.dart';
 import 'package:hisaab/features/expense_tracking/presentation/expense_tracking_screen.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
+import 'package:hisaab/features/theming_customisation/domain/section_layout.dart';
 import 'package:parser_core/parser_core.dart';
 
 import '../../support/parsed.dart';
@@ -113,9 +114,23 @@ void main() {
 
   // FR-10-14 Home rings
   testWidgets('home rings and masked', (t) async {
+    t.view.physicalSize = const Size(800, 6000);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await t.runAsync(
+      () => env.settings.write(
+        SectionLayout.key(ScreenIds.home),
+        SectionLayout.encode(
+          SectionLayout.setVisible(
+            SectionLayout.defaults(ScreenIds.home),
+            'budgets',
+            visible: true,
+          ),
+        ),
+      ),
+    );
     await seed(t);
     await pumpApp(t, env, _routes(), initial: '/home');
-    await t.scrollUntilVisible(find.byKey(const Key('home_budgets')), 200);
     expect(find.byKey(const Key('home_budgets')), findsOneWidget);
     expect(find.byKey(const Key('home_ring_food')), findsOneWidget);
     expect(find.text('Budgets'), findsOneWidget);
@@ -123,9 +138,23 @@ void main() {
   });
 
   testWidgets('home rings empty prompts Set budgets', (t) async {
+    t.view.physicalSize = const Size(800, 6000);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await t.runAsync(
+      () => env.settings.write(
+        SectionLayout.key(ScreenIds.home),
+        SectionLayout.encode(
+          SectionLayout.setVisible(
+            SectionLayout.defaults(ScreenIds.home),
+            'budgets',
+            visible: true,
+          ),
+        ),
+      ),
+    );
     await t.runAsync(() => env.ingest(parsed(time: now() - 1000, ref: 'X')));
     await pumpApp(t, env, _routes(), initial: '/home');
-    await t.scrollUntilVisible(find.text('Set budgets'), 200);
     expect(find.text('Set budgets'), findsOneWidget);
     await teardownApp(t);
   });

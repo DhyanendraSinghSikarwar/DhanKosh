@@ -83,6 +83,8 @@ void main() {
     addTearDown(t.view.reset);
     final id = await seedGap(t);
     await pumpApp(t, env, _routes, initial: '/accounts/$id');
+    await settle(t);
+    await settle(t);
     await t.tap(find.byKey(const Key('gap_add')));
     await settle(t);
     expect(find.byKey(const Key('gap_choice_payment')), findsOneWidget);

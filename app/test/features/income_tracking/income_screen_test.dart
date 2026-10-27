@@ -69,6 +69,9 @@ void main() {
 
   // FR-11-06 Home cash flow
   testWidgets('home cash flow card', (t) async {
+    t.view.physicalSize = const Size(800, 6000);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
     await seed(t);
     await pumpApp(t, env, _routes(), initial: '/home');
     expect(find.byKey(const Key('home_cashflow')), findsOneWidget);
