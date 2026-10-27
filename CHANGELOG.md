@@ -4,6 +4,8 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
+## [0.0.4] - 2026-10-27
+
 ### Changed
 - Total expense is now on a cash basis: account spends plus credit-card bill payments, never card purchases (ADR-0011). Transactions, categories and budgets still list card purchases, tagged Card or Account, with All/Accounts/Cards filters.
 
