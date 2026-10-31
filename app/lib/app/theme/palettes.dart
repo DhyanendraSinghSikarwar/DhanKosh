@@ -2,6 +2,7 @@
 // GENERATED-FROM-KOTLIN port of Palettes.kt (hisaab_apk); values are verbatim.
 // FR-28-02, FR-28-22.
 import 'package:flutter/material.dart';
+import 'package:hisaab/app/theme/palette_mint.dart';
 import 'package:hisaab/app/theme/palette_spec.dart';
 
 final pDhanKosh = PaletteSpec(
@@ -1151,6 +1152,7 @@ final pSpiceDune = PaletteSpec(
 
 /// Palette specs by registry index (same order as `PaletteId`).
 final List<PaletteSpec> allPaletteSpecs = [
+  pMint,
   pDhanKosh,
   pFold,
   pClassic,

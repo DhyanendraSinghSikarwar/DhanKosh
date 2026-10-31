@@ -67,7 +67,7 @@ import 'package:hisaab/features/theming_customisation/presentation/customise_til
 import 'package:hisaab/features/theming_customisation/presentation/section_layout_editor.dart';
 import 'package:hisaab/features/theming_customisation/presentation/theming_customisation_screen.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/add_transaction_screen.dart';
-import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/pill_navigation_bar.dart';
 
 Widget _sipSheet(BuildContext _) => const SipSetupSheet();
 
@@ -320,34 +320,34 @@ class _ScaffoldWithNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: shell,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: PillNavigationBar(
         selectedIndex: shell.currentIndex,
         onDestinationSelected: (i) =>
             shell.goBranch(i, initialLocation: i == shell.currentIndex),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded, color: AppIcons.mint),
+            selectedIcon: Icon(Icons.home_rounded),
             label: 'Home',
           ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long, color: AppIcons.blue),
+            selectedIcon: Icon(Icons.receipt_long),
             label: 'Transactions',
           ),
           NavigationDestination(
             icon: Icon(Icons.pie_chart_outline),
-            selectedIcon: Icon(Icons.pie_chart, color: AppIcons.amber),
+            selectedIcon: Icon(Icons.pie_chart),
             label: 'Portfolio',
           ),
           NavigationDestination(
             icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights, color: AppIcons.violet),
+            selectedIcon: Icon(Icons.insights),
             label: 'Analysis',
           ),
           NavigationDestination(
             icon: Icon(Icons.menu),
-            selectedIcon: Icon(Icons.menu_open, color: AppIcons.teal),
+            selectedIcon: Icon(Icons.menu_open),
             label: 'More',
           ),
         ],

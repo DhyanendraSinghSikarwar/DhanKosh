@@ -7,11 +7,11 @@ import 'package:hisaab/features/theming_customisation/domain/appearance.dart';
 abstract final class AppTheme {
   static const Color seed = Color(0xFF1B6B5A);
 
-  /// Default (DhanKosh) light theme.
-  static ThemeData light() => build(PaletteId.dhankosh, Brightness.light);
+  /// Default (Mint) light theme.
+  static ThemeData light() => build(PaletteId.mint, Brightness.light);
 
-  /// Default (DhanKosh) dark theme.
-  static ThemeData dark() => build(PaletteId.dhankosh, Brightness.dark);
+  /// Default (Mint) dark theme.
+  static ThemeData dark() => build(PaletteId.mint, Brightness.dark);
 
   /// Theme for [palette]; [backdrop] adds the wash and glows (FR-28-08), off
   /// on true black. (FR-28-01, FR-28-04, FR-28-06, FR-28-07).
@@ -43,6 +43,39 @@ abstract final class AppTheme {
             )
           : null,
       textTheme: _tabular(base.textTheme),
+      cardTheme: CardThemeData(
+        color: scheme.surfaceContainer,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        height: 68,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: scheme.primaryContainer,
+        indicatorShape: const StadiumBorder(),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (s) => IconThemeData(
+            size: 22,
+            color: s.contains(WidgetState.selected)
+                ? scheme.primary
+                : scheme.onSurfaceVariant,
+          ),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (s) => TextStyle(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w600,
+            color: s.contains(WidgetState.selected)
+                ? scheme.primary
+                : scheme.onSurfaceVariant,
+          ),
+        ),
+      ),
       extensions: [
         if (b == Brightness.dark) SemanticColors.dark else SemanticColors.light,
         if (withBackdrop)

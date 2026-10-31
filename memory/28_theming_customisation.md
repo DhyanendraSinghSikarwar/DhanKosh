@@ -3,19 +3,19 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-28 |
-| Status | In progress (Phase 5: 22 palettes ported verbatim, mode/pure-black/text size, Customise Appearance section and More tile done; layout store, Tab sections card, Home presets and Home/Portfolio edit mode done; Analysis consuming the store pending; Net worth card, backdrop, reduce-motion pending); 2026-10-27 parity: backdrop wash and glows (FR-28-08) and reduce motion (FR-28-10, FR-28-27) done |
+| Status | In progress (Phase 5: 22 palettes (plus Mint default, pill nav and filled cards, 2026-10-31) ported verbatim, mode/pure-black/text size, Customise Appearance section and More tile done; layout store, Tab sections card, Home presets and Home/Portfolio edit mode done; Analysis consuming the store pending; Net worth card, backdrop, reduce-motion pending); 2026-10-27 parity: backdrop wash and glows (FR-28-08) and reduce motion (FR-28-10, FR-28-27) done |
 | Priority | P1 |
 | Phase | 0 (theme engine, tokens, text scale) and 5 (Customise screen polish, presets) |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 
-Theming and Customisation gives DhanKosh its own look and lets the user tune it. The user can pick light, dark or system mode, an optional pure-black mode, one of 22 colour palettes, one of four text sizes, and which sections show on the Home, Analysis and Portfolio tabs and in what order. It exists so the app suits different eyes, screens and habits while money colours keep the same meaning on every palette.
+Theming and Customisation gives DhanKosh its own look and lets the user tune it. The user can pick light, dark or system mode, an optional pure-black mode, one of 23 colour palettes, one of four text sizes, and which sections show on the Home, Analysis and Portfolio tabs and in what order. It exists so the app suits different eyes, screens and habits while money colours keep the same meaning on every palette.
 
 ## 2. What This Feature Will Do
 
 - Applies the app's own theme in light, dark or system mode, never the phone's dynamic colours.
-- Offers 22 colour palettes in three groups: Classic, Hero and Cinema.
+- Offers 23 colour palettes (22 ported plus Mint) in three groups: Classic, Hero and Cinema.
 - Offers a pure-black dark mode that applies only in dark mode.
 - Keeps money-in green, money-out red and warning amber the same on every palette.
 - Offers four text sizes (Small, Default, Large, XL) and limits growth so layouts do not break.
@@ -206,11 +206,11 @@ DataStore `app_settings`: `theme` (SYSTEM / LIGHT / DARK, default SYSTEM), `them
 ## 5. Functional Requirements (FR-28-01 ...)
 
 - FR-28-01: The app theme is built from a `PaletteSpec` of the selected palette, the selected mode (system, light, dark), the pure-black flag, and the text scale; Material You dynamic colour is never used.
-- FR-28-02: All 22 palettes are available, with the exact primary, background, hero, glow and bottom values in Section 2.2 and full token sets ported from `Palettes.kt`.
-- FR-28-03: Default theme is SYSTEM, default palette DHANKOSH, pure black off, text scale 1.0.
+- FR-28-02: All 22 Kotlin palettes plus Mint (FR-28-29) are available, with the exact primary, background, hero, glow and bottom values in Section 2.2 and full token sets ported from `Palettes.kt`.
+- FR-28-03: Default theme is SYSTEM, default palette MINT (existing users keep their stored choice), pure black off, text scale 1.0.
 - FR-28-04: Pure black applies only in dark mode and sets the surface levels listed in Section 2.1.
 - FR-28-05: Semantic colours (credit, debit, warn, transfer) and chart palette are independent of the chosen palette.
-- FR-28-06: Cards are flat on white (light) or the container colour (dark), separated by a 1 dp hairline; no surface tint.
+- FR-28-06: Cards are filled with the `surfaceContainer` colour, radius 20, no border and no surface tint (CardTheme and `AppCard`).
 - FR-28-07: All text styles use tabular figures.
 - FR-28-08: The backdrop is drawn as a vertical wash plus three radial glows with the alphas and positions in Section 2.4; glow strength scales per palette and by 0.62 in light mode.
 - FR-28-09: Text scale choices are Small 0.9, Default 1.0, Large 1.1, XL 1.2; stored values snap to the nearest step within 0.05; effective scale = `system * factor`, and for `factor > 1` capped at `max(1.3, system)`.
@@ -231,6 +231,9 @@ DataStore `app_settings`: `theme` (SYSTEM / LIGHT / DARK, default SYSTEM), `them
 - FR-28-24: The Customise screen has a Tab sections card: a Home / Analysis / Portfolio selector, a reorderable list (drag handle) with a visibility switch per section, and Reset (replaces the up/down arrows of FR-28-15; same outcome).
 - FR-28-25: Home presets Minimal, Spender, Investor, Business and Everything are a working feature (chips in the editor): the preset's sections are shown first in order and every other section is hidden (answers open question 2; Kotlin 2.9.8 never called `apply()`).
 - FR-28-26: Home has an edit mode (tune button) that swaps the sections for the same editor; Portfolio opens it from its app bar; Analysis reads `visibleSectionsProvider('analytics')` for its Spending segment (consumer owned by [18_analytics.md](18_analytics.md)).
+- FR-28-28: The bottom bar is a floating rounded pill (`PillNavigationBar`: margin, `surfaceContainerHigh`, stadium indicator in `primaryContainer`, small labels, selected icon in `primary`).
+- FR-28-29: A 23rd palette `PaletteId.mint` ('DhanKosh Mint', first of Classic) is the default; dark tokens: primary `8FD19E`, primaryContainer `1F4D4A`, surface `0B0E0D`, surfaceContainer `1A1F1E`, surfaceContainerHigh `222827`, outlineVariant `2A312F`, onSurface `E8EEEA`, onSurfaceVariant `8C9893`, tertiary `7FA9E6`, error `E8837C`; a light counterpart is defined in `app/theme/palette_mint.dart`.
+- FR-28-30: `SectionLabel` (shared) renders uppercase, 11 px, letter-spaced, muted section headings.
 - FR-28-27: A Reduce motion switch in Customise shall skip decorative motion (page transitions, spring and count-up) even when the phone allows it; effective value is `setting || system disableAnimations`, applied through `MediaQuery.disableAnimations`.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
@@ -513,3 +516,4 @@ Layout store landed 2026-10-27: `features/theming_customisation/domain/section_l
 | 2026-10-27 | Audit: 22 palettes (incl. Fold), modes and text size confirmed done; Customise tab sections, presets, backdrop and reduce-motion confirmed not built | Kotlin parity audit |
 | 2026-10-27 | Layout store (settings JSON per screen), Tab sections card with reorder and switches, working Home presets, Home edit mode, Portfolio `loans` section (FR-28-23..26) | Kotlin parity |
 | 2026-10-27 | Backdrop and reduce motion: `app/theme/backdrop.dart` (`BackdropTheme` extension, `BackdropPainter`, `Backdrop`, `BackdropPageTransitionsBuilder`); `AppTheme.build(backdrop: true)` makes scaffolds transparent and paints the backdrop under each page via the page transition builder (so route overlaps stay clean); off on pure black | Kotlin parity |
+| 2026-10-31 | Mockup look: Mint palette default, card and nav styling (FR-28-28..30; 23 palettes, Classic group 11; filled radius-20 cards without border; `PillNavigationBar`; `SectionLabel`) | Match approved mockups |

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Flat card with a hairline border (the app's standard surface).
+/// Filled card, radius 20, no border (the app's standard surface).
 class AppCard extends StatelessWidget {
   /// Creates a card around [child].
   const AppCard({
@@ -23,11 +23,10 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-      side: BorderSide(color: scheme.outlineVariant),
+      borderRadius: BorderRadius.circular(20),
     );
     return Material(
-      color: scheme.surface,
+      color: scheme.surfaceContainer,
       shape: shape,
       clipBehavior: Clip.antiAlias,
       child: InkWell(

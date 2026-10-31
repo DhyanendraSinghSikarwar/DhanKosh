@@ -1,0 +1,68 @@
+// DhanKosh Mint: the approved mockup palette (FR-28-02, FR-28-29).
+import 'package:flutter/material.dart';
+import 'package:hisaab/app/theme/palette_spec.dart';
+
+/// Mint palette; dark tokens are the mockup tokens, light is a counterpart.
+final pMint = PaletteSpec(
+  light: lightScheme(
+    const Color(0xFF2F7D4F),
+    const Color(0xFFD5EEDC),
+    const Color(0xFF0B3A20),
+    const Color(0xFF2E8A86),
+    const Color(0xFFD3EEEB),
+    const Color(0xFF06312F),
+    const Color(0xFF3D6FB8),
+    const Color(0xFFDCE8F8),
+    const Color(0xFF0E2D57),
+    background: const Color(0xFFF3F6F4),
+    ink: const Color(0xFF111A16),
+    muted: const Color(0xFF5B6963),
+    outline: const Color(0xFF9AA6A0),
+    outlineVariant: const Color(0xFFE0E6E2),
+    high: const Color(0xFFE9EFEB),
+    highest: const Color(0xFFE0E7E3),
+    inversePrimary: const Color(0xFF8FD19E),
+  ),
+  dark: darkScheme(
+    const Color(0xFF8FD19E),
+    const Color(0xFF0B2E16),
+    const Color(0xFF1F4D4A),
+    const Color(0xFFCDEFEA),
+    const Color(0xFF7CC4BE),
+    const Color(0xFF00322F),
+    const Color(0xFF1F4D4A),
+    const Color(0xFFCDEFEA),
+    const Color(0xFF7FA9E6),
+    const Color(0xFF0A2A52),
+    const Color(0xFF244A7E),
+    const Color(0xFFD6E4FA),
+    background: const Color(0xFF0B0E0D),
+    ink: const Color(0xFFE8EEEA),
+    muted: const Color(0xFF8C9893),
+    outline: const Color(0xFF5E6B66),
+    outlineVariant: const Color(0xFF2A312F),
+    lowest: const Color(0xFF080A09),
+    container: const Color(0xFF1A1F1E),
+    high: const Color(0xFF222827),
+    highest: const Color(0xFF2A312F),
+    bright: const Color(0xFF2C3331),
+    inversePrimary: const Color(0xFF2F7D4F),
+  ).copyWith(
+    error: const Color(0xFFE8837C),
+    onError: const Color(0xFF4A0904),
+  ),
+  heroLight: const <Color>[
+    Color(0xFF2F7D4F),
+    Color(0xFF2E8A86),
+    Color(0xFF3D6FB8),
+  ],
+  heroDark: const <Color>[
+    Color(0xFF1F4D4A),
+    Color(0xFF1F4D4A),
+    Color(0xFF244A7E),
+  ],
+  glows: const <Color>[Color(0xFF8FD19E), Color(0xFF7FA9E6), Color(0xFF7CC4BE)],
+  bottomLight: const Color(0xFFEBF0ED),
+  bottomDark: const Color(0xFF0B0E0D),
+  glowStrength: 0.2,
+);

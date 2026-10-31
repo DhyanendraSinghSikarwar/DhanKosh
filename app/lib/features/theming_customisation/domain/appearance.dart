@@ -29,9 +29,10 @@ enum PaletteGroup {
   final String label;
 }
 
-/// The 22 palettes in Kotlin enum order (FR-28-02). Index matches the
+/// The 23 palettes in Kotlin enum order (FR-28-02). Index matches the
 /// palette registry in `app/theme/palettes.dart`.
 enum PaletteId {
+  mint('DhanKosh Mint', PaletteGroup.classic),
   dhankosh('DhanKosh', PaletteGroup.classic),
   fold('Fold', PaletteGroup.classic),
   classic('Classic', PaletteGroup.classic),
@@ -63,10 +64,10 @@ enum PaletteId {
   /// Customise group.
   final PaletteGroup group;
 
-  /// Palette by stored name; DhanKosh when unknown.
+  /// Palette by stored name; Mint when unknown.
   static PaletteId parse(String? name) => values.firstWhere(
         (p) => p.name == name,
-        orElse: () => PaletteId.dhankosh,
+        orElse: () => PaletteId.mint,
       );
 }
 
@@ -108,7 +109,7 @@ class AppearanceSettings {
   /// Creates settings.
   const AppearanceSettings({
     this.mode = ThemeModeChoice.system,
-    this.palette = PaletteId.dhankosh,
+    this.palette = PaletteId.mint,
     this.pureBlack = false,
     this.textSize = TextSize.standard,
     this.reduceMotion = false,
@@ -149,7 +150,7 @@ class AppearanceSettings {
 /// Persisted keys (FR-28-21); text scale stored as whole percent.
 abstract final class AppearanceKeys {
   static const mode = SettingKey<String>('theme', 'system');
-  static const palette = SettingKey<String>('theme_palette', 'dhankosh');
+  static const palette = SettingKey<String>('theme_palette', 'mint');
   static const pureBlack = SettingKey<bool>('pure_black', false);
   static const textScalePct = SettingKey<int>('text_scale_pct', 100);
   static const reduceMotion = SettingKey<bool>('reduce_motion', false);

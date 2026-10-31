@@ -33,6 +33,10 @@ flutter run
 
 SMS and notification access need the real device. On Android 13+ a sideloaded app is subject to "restricted settings": open App info, three-dot menu, Allow restricted settings, then grant SMS and notification access (feature [01](../memory/01_onboarding_permissions.md)).
 
+## Screenshots
+
+`tools/screenshots.sh <out-dir> [name,name]` renders the real app (dark, Mint palette, seeded dummy data from `app/test/screenshots/seed_data.dart`) to full-length PNGs: home, transactions, portfolio, the four analysis sub-tabs, more, accounts, bills, card detail, profile, support, news and the refresh sheet. It runs `app/test/screenshots/screens_test.dart`, which is skipped unless `SHOTS_DIR` is set. Optional env: `SHOT_HEIGHT` (default 1700), `SHOT_SCALE` (default 2). Needs Roboto and MaterialIcons in the SDK cache (`/home/user/sdk/flutter/bin/cache/artifacts/material_fonts`).
+
 ## CI
 
 `.github/workflows/ci.yml` jobs: **Docs and structure** (memory and architecture checks), **Analyse and test** (format, analyze, test), **Debug APK** (builds and uploads the artifact). No signing secrets are used. Release signing is the manual Release workflow below ([feature 32](../memory/32_release_pipeline.md)).

@@ -30,18 +30,18 @@ void main() {
   test('defaults (TC-28-01, FR-28-03)', () {
     const a = AppearanceSettings();
     expect(a.mode, ThemeModeChoice.system);
-    expect(a.palette, PaletteId.dhankosh);
+    expect(a.palette, PaletteId.mint);
     expect(a.pureBlack, false);
     expect(a.textSize.factor, 1);
   });
 
-  test('22 palettes, three groups 10/6/6 (FR-28-02, FR-28-13)', () {
-    expect(PaletteId.values.length, 22);
-    expect(allPaletteSpecs.length, 22);
+  test('23 palettes, three groups 11/6/6 (FR-28-02, FR-28-13)', () {
+    expect(PaletteId.values.length, 23);
+    expect(allPaletteSpecs.length, 23);
     int n(PaletteGroup g) => PaletteId.values.where((p) => p.group == g).length;
     expect(
       [n(PaletteGroup.classic), n(PaletteGroup.hero), n(PaletteGroup.cinema)],
-      [10, 6, 6],
+      [11, 6, 6],
     );
     for (final s in allPaletteSpecs) {
       expect(s.heroLight.length, 3);
@@ -49,8 +49,22 @@ void main() {
     }
   });
 
+  test('Mint dark tokens match the mockup (FR-28-29)', () {
+    final d = allPaletteSpecs[PaletteId.mint.index].dark;
+    expect(d.primary, const Color(0xFF8FD19E));
+    expect(d.primaryContainer, const Color(0xFF1F4D4A));
+    expect(d.surface, const Color(0xFF0B0E0D));
+    expect(d.surfaceContainer, const Color(0xFF1A1F1E));
+    expect(d.surfaceContainerHigh, const Color(0xFF222827));
+    expect(d.outlineVariant, const Color(0xFF2A312F));
+    expect(d.onSurface, const Color(0xFFE8EEEA));
+    expect(d.onSurfaceVariant, const Color(0xFF8C9893));
+    expect(d.tertiary, const Color(0xFF7FA9E6));
+    expect(d.error, const Color(0xFFE8837C));
+  });
+
   test('DHANKOSH values (TC-28-19)', () {
-    final s = allPaletteSpecs[0];
+    final s = allPaletteSpecs[PaletteId.dhankosh.index];
     expect(s.light.surface, const Color(0xFFF6F8FA));
     expect(s.light.primary, const Color(0xFF2873BE));
     expect(s.dark.surface, const Color(0xFF0B1418));
