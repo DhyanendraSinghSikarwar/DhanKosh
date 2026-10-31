@@ -9,15 +9,23 @@ import 'package:hisaab/features/dashboard_home/presentation/home_spent_chart.dar
 import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/mock_kit.dart';
 
 /// Spent this month: headline, change versus last month, running line,
 /// income / expenses / saved (FR-17-06).
-class HomeSpentCard extends ConsumerWidget {
+class HomeSpentCard extends ConsumerStatefulWidget {
   /// Creates the card.
   const HomeSpentCard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeSpentCard> createState() => _HomeSpentCardState();
+}
+
+class _HomeSpentCardState extends ConsumerState<HomeSpentCard> {
+  bool _info = false;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.extension<SemanticColors>();
     final masked = ref.watch(hideAmountsProvider).value ?? true;
@@ -42,70 +50,110 @@ class HomeSpentCard extends ConsumerWidget {
     final prevSeries = rows == null
         ? const <int>[]
         : cumulativeSpend(rows.prev, daysInMonth: daysPrev);
+    final prevLabel = prevSame > 0
+        ? ' ${formatAmount(prevSame, masked: masked, paise: false)}'
+        : '';
+    final muted = theme.colorScheme.onSurfaceVariant;
     return AppCard(
+      margin: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              IconButton(
-                key: const Key('home_month_prev'),
-                icon: const Icon(Icons.chevron_left),
-                onPressed: notifier.previous,
-              ),
-              Expanded(
-                child: Text(
+          CardHeader(
+            isCurrent ? 'Spent this month' : 'Spent',
+            info: InfoDot(
+              key: const Key('home_spent_info'),
+              onTap: () => setState(() => _info = !_info),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _Step(
+                  key: const Key('home_month_prev'),
+                  icon: Icons.chevron_left,
+                  onTap: notifier.previous,
+                ),
+                Text(
                   month.label,
                   key: const Key('home_month_label'),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium,
+                  style: MockText.small(context),
                 ),
-              ),
-              IconButton(
-                key: const Key('home_month_next'),
-                icon: const Icon(Icons.chevron_right),
-                onPressed: isCurrent ? null : notifier.next,
-              ),
-            ],
+                _Step(
+                  key: const Key('home_month_next'),
+                  icon: Icons.chevron_right,
+                  onTap: isCurrent ? null : notifier.next,
+                ),
+              ],
+            ),
           ),
-          Text(isCurrent ? 'Spent this month' : 'Spent'),
+          if (_info)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Money out of your accounts, including payments to credit '
+                'cards. Card purchases are not counted again.',
+                key: const Key('home_spent_note'),
+                style: MockText.small(context),
+              ),
+            ),
+          const SizedBox(height: 2),
           InkWell(
             key: const Key('home_spent_tap'),
             onTap: () => context.go('/analysis'),
             child: Text(
-              formatAmount(spent, masked: masked),
+              formatAmount(spent, masked: masked, paise: false),
               key: const Key('home_spent'),
-              style: theme.textTheme.headlineMedium,
+              style: MockText.big(context),
             ),
           ),
+          if (change != null)
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '${change > 0 ? '▲' : change < 0 ? '▼' : ''} '
+                        '${change.abs()}%',
+                    style: TextStyle(
+                      color: change > 0 ? colors?.expense : colors?.income,
+                    ),
+                  ),
+                  TextSpan(text: ' vs last month$prevLabel'),
+                ],
+              ),
+              key: const Key('home_spent_change'),
+              style: MockText.small(context, color: muted),
+            ),
           if ((totals?.cardPurchasesMinor ?? 0) > 0)
             Text(
               'Card purchases '
               '${formatAmount(totals!.cardPurchasesMinor, masked: masked, paise: false)}'
               ' · paid via card bills',
               key: const Key('home_card_purchases'),
-              style: theme.textTheme.bodySmall,
-            ),
-          if (change != null)
-            Text(
-              '${change > 0 ? '▲' : change < 0 ? '▼' : ''} '
-              '${change.abs()}% vs last month',
-              key: const Key('home_spent_change'),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: change > 0 ? colors?.expense : colors?.income,
-              ),
+              style: MockText.small(context),
             ),
           if (curSeries.length > 1 || prevSeries.length > 1) ...[
             const SizedBox(height: 8),
             HomeSpentChart(current: curSeries, previous: prevSeries),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          LegendRow([
+            LegendItem(
+              isCurrent ? 'This month' : month.label,
+              theme.colorScheme.primary,
+            ),
+            LegendItem('Last month', muted),
+          ]),
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
                 child: _Tile(
                   label: 'Income',
-                  value: formatAmount(totals?.incomeMinor ?? 0, masked: masked),
+                  value: formatAmount(
+                    totals?.incomeMinor ?? 0,
+                    masked: masked,
+                    paise: false,
+                  ),
                   color: colors?.income,
                   valueKey: const Key('home_income'),
                 ),
@@ -113,7 +161,11 @@ class HomeSpentCard extends ConsumerWidget {
               Expanded(
                 child: _Tile(
                   label: 'Expenses',
-                  value: formatAmount(totals?.outMinor ?? 0, masked: masked),
+                  value: formatAmount(
+                    totals?.outMinor ?? 0,
+                    masked: masked,
+                    paise: false,
+                  ),
                   valueKey: const Key('home_expenses'),
                 ),
               ),
@@ -123,6 +175,7 @@ class HomeSpentCard extends ConsumerWidget {
                   value: formatAmount(
                     (totals?.incomeMinor ?? 0) - (totals?.outMinor ?? 0),
                     masked: masked,
+                    paise: false,
                   ),
                   valueKey: const Key('home_saved'),
                 ),
@@ -133,6 +186,26 @@ class HomeSpentCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _Step extends StatelessWidget {
+  const _Step({required this.icon, required this.onTap, super.key});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => InkResponse(
+        onTap: onTap,
+        radius: 16,
+        child: Icon(
+          icon,
+          size: 20,
+          color: onTap == null
+              ? Theme.of(context).disabledColor
+              : Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      );
 }
 
 class _Tile extends StatelessWidget {
@@ -150,15 +223,15 @@ class _Tile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: theme.textTheme.bodySmall),
+        Text(label, style: MockText.small(context)),
         Text(
           value,
           key: valueKey,
-          style: theme.textTheme.titleSmall?.copyWith(color: color),
+          style: MockText.body(context, color: color)
+              .copyWith(fontWeight: FontWeight.w600),
         ),
       ],
     );

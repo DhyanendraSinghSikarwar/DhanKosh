@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hisaab/features/portfolio/domain/investment_tx.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/section_label.dart';
 
 /// Investment transactions: buys, redemptions and dividends (FR-16-25).
 class InvestmentTxSection extends StatelessWidget {
@@ -25,13 +26,12 @@ class InvestmentTxSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return AppCard(
       key: const Key('investment-txs'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Investment transactions', style: theme.textTheme.titleSmall),
+          const SectionLabel('Investment transactions'),
           if (items.isEmpty)
             const Padding(
               padding: EdgeInsets.only(top: 8),

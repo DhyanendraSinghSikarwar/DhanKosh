@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart';
 import 'package:hisaab/features/portfolio/domain/portfolio_charts.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/section_label.dart';
 
 /// Net worth by account: stacked bar with legend, assets and liabilities
 /// breakdown, and the "choose which money counts" action (FR-16-06, B7).
@@ -41,14 +42,19 @@ class NetWorthSplitSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Net worth by account', style: theme.textTheme.titleSmall),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              key: const Key('networth-choose'),
-              onPressed: onChoose,
-              child: const Text('Choose which money counts'),
-            ),
+          Row(
+            children: [
+              const Expanded(child: SectionLabel('Net worth by account')),
+              TextButton(
+                key: const Key('networth-choose'),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                onPressed: onChoose,
+                child: const Text('Choose what counts'),
+              ),
+            ],
           ),
           if (total > 0) ...[
             const SizedBox(height: 4),

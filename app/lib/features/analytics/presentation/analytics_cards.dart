@@ -1,39 +1,19 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:hisaab/features/analytics/domain/analytics_math.dart';
 import 'package:hisaab/features/analytics/domain/analytics_models.dart';
-import 'package:hisaab/features/analytics/domain/ledger_math.dart';
-import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/features/analytics/presentation/analytics_card.dart';
+import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
+import 'package:hisaab/features/analytics/presentation/charts/line_chart_view.dart';
 
 /// Formats paise for display.
 typedef MoneyText = String Function(int minor);
 
-/// Series colours.
-const chartPalette = [
-  Color(0xFF2E7D6B),
-  Color(0xFF3F6FB5),
-  Color(0xFFC77D2B),
-  Color(0xFF8A5BB0),
-  Color(0xFFC0504D),
-  Color(0xFF4C9AA8),
-  Color(0xFF9AA03A),
-  Color(0xFF7A7F87),
-];
+/// Series colours (mint, blue, amber, violet, red, teal, olive, grey).
+const chartPalette = ChartColors.palette;
 
 /// Titled card shell.
-Widget titledCard(BuildContext context, String title, Widget child) => Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
-      ),
-    );
+Widget titledCard(BuildContext context, String title, Widget child) =>
+    AnalyticsCard(label: title, child: child);
 
 /// Label and value row.
 Widget labelRow(
@@ -58,7 +38,11 @@ Widget labelRow(
                 : t.bodyMedium,
           ),
         ),
-        Text(value, style: t.bodyMedium?.copyWith(color: color)),
+        Text(
+          value,
+          style:
+              t.bodyMedium?.copyWith(color: color, fontWeight: FontWeight.w600),
+        ),
       ],
     ),
   );
@@ -83,23 +67,40 @@ class InsightsCard extends StatelessWidget {
         key: const Key('analytics-insights'),
         children: [
           for (final i in insights)
-            ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                switch (i.tone) {
-                  Tone.good => Icons.check_circle_outline,
-                  Tone.warn => Icons.warning_amber_outlined,
-                  Tone.info => Icons.info_outline,
-                },
-                color: switch (i.tone) {
-                  Tone.good => scheme.primary,
-                  Tone.warn => scheme.error,
-                  Tone.info => scheme.outline,
-                },
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5, right: 10),
+                    child: Icon(
+                      Icons.circle,
+                      size: 8,
+                      color: switch (i.tone) {
+                        Tone.good => ChartColors.mint,
+                        Tone.warn => ChartColors.red,
+                        Tone.info => scheme.onSurfaceVariant,
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(i.title),
+                        Text(
+                          i.detail,
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              title: Text(i.title),
-              subtitle: Text(i.detail),
             ),
         ],
       ),
@@ -145,7 +146,7 @@ class KpiRow extends StatelessWidget {
             context,
             over ? 'Overspent' : 'Saved',
             money(saved.abs()),
-            color: over ? Theme.of(context).colorScheme.error : null,
+            color: over ? ChartColors.red : null,
           ),
           labelRow(context, 'Per day', money(data.perDay)),
         ],
@@ -172,13 +173,43 @@ class TopMerchantsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (merchants.isEmpty) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
     return titledCard(
       context,
       'Top merchants',
       Column(
         children: [
           for (final m in merchants)
-            labelRow(context, '${m.name} (${m.count})', money(m.total)),
+            Padding(
+              key: Key('merchant-${m.name}'),
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        text: m.name,
+                        children: [
+                          if (m.count > 1)
+                            TextSpan(
+                              text: '  ×${m.count}',
+                              style: TextStyle(
+                                color: scheme.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
+                        ],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    money(m.total),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -204,6 +235,7 @@ class BudgetsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final lines = data.budgets?.lines ?? const [];
     if (lines.isEmpty) return const SizedBox.shrink();
+    final style = ChartStyle.of(context);
     return titledCard(
       context,
       'Budgets',
@@ -211,15 +243,32 @@ class BudgetsCard extends StatelessWidget {
         children: [
           for (final l in lines)
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 10),
               child: Column(
                 children: [
-                  labelRow(
-                    context,
-                    l.category.label,
-                    '${money(l.spentMinor)} / ${money(l.limitMinor)}',
+                  Row(
+                    children: [
+                      Expanded(child: Text(l.category.label)),
+                      Text(
+                        '${money(l.spentMinor)} / ${money(l.limitMinor)}',
+                        style: TextStyle(color: style.label, fontSize: 12),
+                      ),
+                    ],
                   ),
-                  LinearProgressIndicator(value: l.fraction.clamp(0, 1)),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      minHeight: 6,
+                      value: l.fraction.clamp(0, 1),
+                      color: l.fraction >= 1
+                          ? ChartColors.red
+                          : l.fraction >= 0.8
+                              ? ChartColors.amber
+                              : ChartColors.mint,
+                      backgroundColor: style.track,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -229,12 +278,13 @@ class BudgetsCard extends StatelessWidget {
   }
 }
 
-/// 30-day cash projection (FR-18-15).
+/// 30-day cash projection line (FR-18-15).
 class CashProjectionCard extends StatelessWidget {
   /// Creates the card.
   const CashProjectionCard({
     required this.data,
     required this.money,
+    this.masked = false,
     super.key,
   });
 
@@ -244,23 +294,67 @@ class CashProjectionCard extends StatelessWidget {
   /// Amount formatter.
   final MoneyText money;
 
+  /// Axis labels hidden.
+  final bool masked;
+
   @override
   Widget build(BuildContext context) {
     final c = data.cash;
-    if (c == null) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    if (c == null) {
+      return titledCard(
+        context,
+        'Cash balance, next 30 days',
+        Text(
+          'No bank balance known yet. Balances are read from bank SMS, or you '
+          'can set one on an account.',
+          key: const Key('analytics-cash-empty'),
+          style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
+        ),
+      );
+    }
+    final muted = TextStyle(color: scheme.onSurfaceVariant, fontSize: 13);
     return titledCard(
       context,
-      'Next 30 days',
+      'Cash balance, next 30 days',
       Column(
         key: const Key('analytics-cash'),
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _line(context, c.series.map((e) => e.toDouble()).toList()),
-          labelRow(context, 'Today', money(c.start)),
-          labelRow(context, 'In 30 days', money(c.end)),
+          LineChartView(
+            height: 130,
+            series: [
+              LineSeries(
+                [for (final v in c.series) v.toDouble()],
+                ChartColors.blue,
+                fill: true,
+                endDot: true,
+              ),
+            ],
+            yLabel: (v) => axisLabel(v, masked: masked),
+            xLabels: [
+              (0, 'Today'),
+              (c.series.length ~/ 2, '+15d'),
+              (c.series.length - 1, '+30d'),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Lowest ${money(c.lowest)} on ${AnalyticsMath.shortDay(c.lowestOn)}.',
+            style: muted,
+          ),
+          Text(
+            'Today ${money(c.start)} · In 30 days ${money(c.end)}',
+            style: muted,
+          ),
           if (c.shortfall)
-            Text(
-              'Cash may run short on ${AnalyticsMath.shortDay(c.lowestOn)}',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                'Cash may run short on ${AnalyticsMath.shortDay(c.lowestOn)}.',
+                key: const Key('analytics-cash-short'),
+                style: const TextStyle(color: ChartColors.red, fontSize: 13),
+              ),
             ),
         ],
       ),
@@ -268,24 +362,20 @@ class CashProjectionCard extends StatelessWidget {
   }
 }
 
-Widget _line(BuildContext context, List<double> ys) {
-  final scheme = Theme.of(context).colorScheme;
-  return SizedBox(
-    height: 120,
-    child: LineChart(
-      LineChartData(
-        gridData: const FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-        titlesData: const FlTitlesData(show: false),
-        lineTouchData: const LineTouchData(enabled: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: [for (final (i, y) in ys.indexed) FlSpot(i.toDouble(), y)],
-            color: scheme.primary,
-            dotData: const FlDotData(show: false),
-          ),
-        ],
-      ),
-    ),
-  );
+/// Muted caption under a chart.
+class ChartCaption extends StatelessWidget {
+  /// Creates the caption.
+  const ChartCaption(this.text, {super.key});
+
+  /// Caption text.
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        text,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontSize: 12,
+        ),
+      );
 }

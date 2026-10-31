@@ -66,10 +66,10 @@ List<ChartShare> allocationShares(
   ]..sort((a, b) => b.amountMinor.compareTo(a.amountMinor));
 }
 
-/// Previous then current value of [h] for a sparkline (B13); empty without a
-/// previous figure.
+/// Previous (else invested) then current value of [h] for a sparkline (B13);
+/// empty without either figure.
 List<int> holdingSpark(Holding h) {
-  final p = h.previousValueMinor;
+  final p = h.previousValueMinor ?? h.investedMinor;
   final v = h.valueMinor;
   return p == null || v == null ? const [] : [p, v];
 }

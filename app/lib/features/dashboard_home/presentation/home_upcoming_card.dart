@@ -6,6 +6,7 @@ import 'package:hisaab/features/dashboard_home/domain/home_charts.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/mock_kit.dart';
 
 /// Upcoming in 7 days: bills, EMIs, insurance, card dues (FR-17-09); More
 /// opens the month calendar (FR-17-43).
@@ -23,42 +24,37 @@ class HomeUpcomingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final masked = ref.watch(hideAmountsProvider).value ?? true;
     final rows = upcomingRows(ref.watch(homeUpcomingProvider));
     return AppCard(
       key: const Key('home_upcoming'),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Upcoming · 7 days',
-                  style: theme.textTheme.titleMedium,
-                ),
-              ),
-              TextButton(
-                key: const Key('home_upcoming_more'),
-                onPressed: () => context.push('/bills'),
-                child: const Text('More ›'),
-              ),
-            ],
+          CardHeader(
+            'Upcoming',
+            trailing: MoreLink(
+              'More ›',
+              key: const Key('home_upcoming_more'),
+              onTap: () => context.push('/bills'),
+            ),
           ),
           if (rows.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text('Nothing due in the next 7 days'),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Nothing due in the next 7 days',
+                style: MockText.small(context),
+              ),
             ),
-          for (final r in rows)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              leading: IconBadge(_icon(r.kind), size: 36),
-              title: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Text(upcomingWhen(r.days)),
-              trailing: Text(formatAmount(r.amountMinor, masked: masked)),
+          for (final (i, r) in rows.indexed)
+            IconAmountRow(
+              icon: _icon(r.kind),
+              title: r.name,
+              subtitle: upcomingWhen(r.days),
+              amount: formatAmount(r.amountMinor, masked: masked, paise: false),
+              divider: i < rows.length - 1,
             ),
         ],
       ),

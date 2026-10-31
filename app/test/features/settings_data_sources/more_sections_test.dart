@@ -110,8 +110,9 @@ void main() {
       'clear-all',
       'support-tile',
       'updates-tile',
-      'scan-now',
-      'paste-body',
+      'bank-sms-row',
+      'paste-sms-row',
+      'history-row',
     ]) {
       expect(find.byKey(Key(k)), findsOneWidget, reason: k);
     }
@@ -126,5 +127,17 @@ void main() {
     await t.tap(find.text('Business').last);
     await t.pumpAndSettle();
     expect(c.read(bookProvider), Book.business);
+  });
+
+  // FR-26-34
+  testWidgets('capture rows hold the heavy cards in sheets', (t) async {
+    await pump(t);
+    expect(find.byKey(const Key('scan-now')), findsNothing);
+    expect(find.byKey(const Key('paste-body')), findsNothing);
+    expect(find.text('Scan last 3 months'), findsOneWidget);
+    await t.ensureVisible(find.byKey(const Key('history-row')));
+    await t.tap(find.byKey(const Key('history-row')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const Key('history-slider')), findsOneWidget);
   });
 }

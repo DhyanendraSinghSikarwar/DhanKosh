@@ -69,13 +69,13 @@ class HomePreset {
 abstract final class SectionLayout {
   static const List<SectionDef> _home = [
     SectionDef('spent', 'Spent this month'),
-    SectionDef('cards', 'Credit card dues'),
     SectionDef('cashflow', 'Cash flow'),
+    SectionDef('budgets', 'Budgets'),
     SectionDef('upcoming', 'Upcoming'),
+    SectionDef('cards', 'Credit card dues'),
     SectionDef('insights', 'Insights'),
     SectionDef('categories', 'Spend by category'),
     SectionDef('recent', 'Recent transactions'),
-    SectionDef('budgets', 'Budgets', hiddenByDefault: true),
   ];
   static const List<SectionDef> _analytics = [
     SectionDef('categories', 'Spend by category'),
@@ -104,13 +104,13 @@ abstract final class SectionLayout {
     HomePreset('Business', ['cashflow', 'upcoming', 'insights', 'recent']),
     HomePreset('Everything', [
       'spent',
-      'cards',
       'cashflow',
+      'budgets',
       'upcoming',
+      'cards',
       'insights',
       'categories',
       'recent',
-      'budgets',
     ]),
   ];
 

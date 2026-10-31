@@ -22,8 +22,9 @@ class HomeSmsCard extends ConsumerWidget {
     }
     final n = ref.read(smsPermissionProvider.notifier);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: SmsPermissionCard(
+        compact: true,
         blocked: perm.blocked,
         onAllow: () =>
             unawaited(perm.blocked ? n.openAppSettings() : n.request()),

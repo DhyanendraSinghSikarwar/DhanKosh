@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/alerts_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_models.dart';
+import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
 
 /// Alerts settings: switches, budget percent and the OS permission state
 /// (FR-21-17, FR-21-18).
@@ -64,10 +66,10 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
         padding: const EdgeInsets.all(16),
         children: [
           if (_enabled == false)
-            Card(
-              key: const Key('alerts-off-banner'),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: AppCard(
+                key: const Key('alerts-off-banner'),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -93,50 +95,67 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
             key: const Key('alerts-copy'),
             style: text.bodySmall,
           ),
-          ListTile(
-            key: const Key('alerts-status'),
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.notifications_outlined),
-            title: Text(
-              switch (_enabled) {
-                null => 'Checking',
-                true => 'Notifications on',
-                false => 'Notifications off',
-              },
+          AppCard(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+            child: Column(
+              children: [
+                ListTile(
+                  key: const Key('alerts-status'),
+                  contentPadding: EdgeInsets.zero,
+                  leading: const IconBadge(AppIcons.notifications, size: 36),
+                  title: Text(
+                    switch (_enabled) {
+                      null => 'Checking',
+                      true => 'Notifications on',
+                      false => 'Notifications off',
+                    },
+                  ),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  key: const Key('alerts-transactions'),
+                  contentPadding: EdgeInsets.zero,
+                  secondary: const IconBadge(AppIcons.sms, size: 36),
+                  title: const Text('Transaction alerts'),
+                  subtitle: const Text('New spends, to pick a category'),
+                  value: s.transactionNotifications,
+                  onChanged: (v) =>
+                      unawaited(repo.setTransactionNotifications(value: v)),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  key: const Key('alerts-cards'),
+                  contentPadding: EdgeInsets.zero,
+                  secondary: const IconBadge(AppIcons.cards, size: 36),
+                  title: const Text('Card bill reminders'),
+                  subtitle: const Text('Mark paid or snooze'),
+                  value: s.cardDueReminders,
+                  onChanged: (v) =>
+                      unawaited(repo.setCardDueReminders(value: v)),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  key: const Key('alerts-weekly'),
+                  contentPadding: EdgeInsets.zero,
+                  secondary: const IconBadge(AppIcons.activity, size: 36),
+                  title: const Text('Weekly summary'),
+                  subtitle: const Text('Spent last week vs the week before'),
+                  value: s.weeklySummary,
+                  onChanged: (v) => unawaited(repo.setWeeklySummary(value: v)),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  key: const Key('alerts-update'),
+                  contentPadding: EdgeInsets.zero,
+                  secondary: const IconBadge(AppIcons.updates, size: 36),
+                  title: const Text('Update available'),
+                  subtitle: const Text('Once per new version'),
+                  value: s.updateAvailable,
+                  onChanged: (v) =>
+                      unawaited(repo.setUpdateAvailable(value: v)),
+                ),
+              ],
             ),
-          ),
-          SwitchListTile(
-            key: const Key('alerts-transactions'),
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Transaction alerts'),
-            subtitle: const Text('New spends, to pick a category'),
-            value: s.transactionNotifications,
-            onChanged: (v) =>
-                unawaited(repo.setTransactionNotifications(value: v)),
-          ),
-          SwitchListTile(
-            key: const Key('alerts-cards'),
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Card bill reminders'),
-            subtitle: const Text('Mark paid or snooze'),
-            value: s.cardDueReminders,
-            onChanged: (v) => unawaited(repo.setCardDueReminders(value: v)),
-          ),
-          SwitchListTile(
-            key: const Key('alerts-weekly'),
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Weekly summary'),
-            subtitle: const Text('Spent last week vs the week before'),
-            value: s.weeklySummary,
-            onChanged: (v) => unawaited(repo.setWeeklySummary(value: v)),
-          ),
-          SwitchListTile(
-            key: const Key('alerts-update'),
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Update available'),
-            subtitle: const Text('Once per new version'),
-            value: s.updateAvailable,
-            onChanged: (v) => unawaited(repo.setUpdateAvailable(value: v)),
           ),
           const SizedBox(height: 12),
           Text('Budget alert at', style: text.titleSmall),

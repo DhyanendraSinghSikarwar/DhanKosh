@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/categorization/domain/brand_logos.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
-import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/brand_logo.dart';
 import 'package:parser_core/parser_core.dart';
@@ -60,74 +59,96 @@ class AccountTile extends StatelessWidget {
     final a = item.account;
     final bal = item.currentBalanceMinor;
     final isCard = a.kind == AccountKind.card;
-    return AppCard(
+    return InkWell(
       key: Key('account_${a.id}'),
       onTap: onTap,
-      child: Row(
-        children: [
-          if (a.colorArgb == null &&
-              a.cardNetwork == null &&
-              BrandLogos.bank(a.bankName) != null)
-            BrandLogo(
-              key: Key('account_avatar_${a.id}'),
-              logoKey: BrandLogos.bank(a.bankName),
-              label: a.bankName,
-              size: 32,
-            )
-          else if (a.colorArgb == null && a.cardNetwork == null)
-            IconBadge(
-              _badge(a),
-              key: Key('account_avatar_${a.id}'),
-              size: 36,
-            )
-          else
-            CircleAvatar(
-              key: Key('account_avatar_${a.id}'),
-              radius: 16,
-              backgroundColor: a.colorArgb == null
-                  ? theme.colorScheme.surfaceContainerHighest
-                  : Color(a.colorArgb!),
-              child: Text(
-                a.cardNetwork == null
-                    ? a.bankName.characters.first.toUpperCase()
-                    : a.cardNetwork!.name.substring(0, 2).toUpperCase(),
-                style: theme.textTheme.labelSmall,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            if (a.colorArgb == null &&
+                a.cardNetwork == null &&
+                BrandLogos.bank(a.bankName) != null)
+              BrandLogo(
+                key: Key('account_avatar_${a.id}'),
+                logoKey: BrandLogos.bank(a.bankName),
+                label: a.bankName,
+                size: 32,
+              )
+            else if (a.colorArgb == null && a.cardNetwork == null)
+              IconBadge(
+                _badge(a),
+                key: Key('account_avatar_${a.id}'),
+                size: 36,
+              )
+            else
+              CircleAvatar(
+                key: Key('account_avatar_${a.id}'),
+                radius: 16,
+                backgroundColor: a.colorArgb == null
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : Color(a.colorArgb!),
+                child: Text(
+                  a.cardNetwork == null
+                      ? a.bankName.characters.first.toUpperCase()
+                      : a.cardNetwork!.name.substring(0, 2).toUpperCase(),
+                  style: theme.textTheme.labelSmall,
+                ),
+              ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(a.label, style: theme.textTheme.bodyLarge),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          a.accountType == null
+                              ? (isCard ? 'Card' : 'Account')
+                              : accountTypeLabel(a.accountType!),
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ),
+                      Flexible(
+                        child: Text(
+                          ' · ${_source(a)}'
+                          '${usedPercent == null ? '' : ' · $usedPercent% used'}',
+                          key: Key('account_source_${a.id}'),
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(a.label, style: theme.textTheme.titleMedium),
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        a.accountType == null
-                            ? (isCard ? 'Card' : 'Account')
-                            : accountTypeLabel(a.accountType!),
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ),
-                    Flexible(
-                      child: Text(
-                        ' · ${_source(a)}'
-                        '${usedPercent == null ? '' : ' · $usedPercent% used'}',
-                        key: Key('account_source_${a.id}'),
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ),
-                  ],
+                Text(
+                  cardDueMinor != null
+                      ? formatAmount(cardDueMinor!, masked: masked)
+                      : bal == null
+                          ? '-'
+                          : '${item.balanceIsEstimated ? '~' : ''}'
+                              '${formatAmount(bal, masked: masked)}',
+                  key: Key('account_balance_${a.id}'),
+                  style: theme.textTheme.bodyLarge,
                 ),
+                if (cardDueMinor != null)
+                  Text('due', style: theme.textTheme.bodySmall)
+                else if (isCard && bal != null)
+                  Text('limit left', style: theme.textTheme.bodySmall),
                 Container(
                   key: Key(
                     a.usage == AccountUsage.business
                         ? 'account_business_${a.id}'
                         : 'account_personal_${a.id}',
                   ),
-                  margin: const EdgeInsets.only(top: 2),
+                  margin: const EdgeInsets.only(top: 3),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
@@ -143,27 +164,8 @@ class AccountTile extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                cardDueMinor != null
-                    ? formatAmount(cardDueMinor!, masked: masked)
-                    : bal == null
-                        ? '-'
-                        : '${item.balanceIsEstimated ? '~' : ''}'
-                            '${formatAmount(bal, masked: masked)}',
-                key: Key('account_balance_${a.id}'),
-                style: theme.textTheme.titleMedium,
-              ),
-              if (cardDueMinor != null)
-                Text('due', style: theme.textTheme.bodySmall)
-              else if (isCard && bal != null)
-                Text('limit left', style: theme.textTheme.bodySmall),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -115,6 +115,19 @@ class PeriodChips extends ConsumerWidget {
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
                 key: Key('period_${k.name}'),
+                showCheckmark: false,
+                visualDensity: VisualDensity.compact,
+                labelStyle: const TextStyle(fontSize: 13),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                selectedColor: Theme.of(context).colorScheme.primaryContainer,
+                side: BorderSide(
+                  color: p.kind == k
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outlineVariant,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 label:
                     Text(k == PeriodKind.custom ? _custom(p) : periodLabel(k)),
                 selected: p.kind == k,

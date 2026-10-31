@@ -47,8 +47,7 @@ class NetWorthChart extends StatelessWidget {
     final maxY = hi <= minY ? minY + 1 : hi * 1.08;
     final step = (maxY - minY) / 3;
     String month(double x) {
-      final d =
-          DateTime.utc(1970).add(Duration(days: first + x.round()));
+      final d = DateTime.utc(1970).add(Duration(days: first + x.round()));
       return _months[d.month - 1];
     }
 
@@ -105,13 +104,11 @@ class NetWorthChart extends StatelessWidget {
                     FlSpot((p.day - first).toDouble(), p.netMinor / 100),
                 ],
                 color: scheme.primary,
-                barWidth: 2,
                 dotData: FlDotData(
                   checkToShowDot: (s, _) => s.x == span,
                   getDotPainter: (s, a, b, c) => FlDotCirclePainter(
                     radius: 4,
                     color: scheme.primary,
-                    strokeWidth: 0,
                   ),
                 ),
                 belowBarData: BarAreaData(

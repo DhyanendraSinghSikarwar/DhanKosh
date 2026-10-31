@@ -1,4 +1,5 @@
 import 'package:hisaab/app/di/phase3_providers.dart';
+import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/portfolio/data/net_worth_history_source_impl.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth_estimate.dart';
@@ -17,5 +18,9 @@ NetWorthEstimator netWorthEstimator(Ref ref) => NetWorthEstimator(
 
 /// Month-end points, estimated ones flagged; refresh with `ref.invalidate`.
 @riverpod
-Future<List<EstimatedPoint>> netWorthEstimate(Ref ref) =>
-    ref.watch(netWorthEstimatorProvider).estimate();
+Future<List<EstimatedPoint>> netWorthEstimate(Ref ref) {
+  final now = ref.watch(netWorthProvider).value;
+  return ref.watch(netWorthEstimatorProvider).estimate(
+        liabilitiesNowMinor: now?.liabilitiesMinor ?? 0,
+      );
+}

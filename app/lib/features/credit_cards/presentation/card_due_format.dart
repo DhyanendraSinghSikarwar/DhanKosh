@@ -44,3 +44,16 @@ String cardDateYear(int epochDay) {
   final d = DateTime.utc(1970).add(Duration(days: epochDay));
   return '${d.day} ${_months[d.month - 1]} ${d.year}';
 }
+
+/// `₹1,23,456` (no paise), or `₹••••` when [masked].
+String cardWhole(int minor, {bool masked = false}) =>
+    formatMoney(Money(minor), masked: masked, showPaise: false);
+
+/// Compact limit: `2.0L`, `50K`, `800` (paise in); `••••` when [masked].
+String cardCompact(int minor, {bool masked = false}) {
+  if (masked) return '••••';
+  final v = minor / 100;
+  if (v >= 100000) return '${(v / 100000).toStringAsFixed(1)}L';
+  if (v >= 1000) return '${(v / 1000).round()}K';
+  return v.round().toString();
+}

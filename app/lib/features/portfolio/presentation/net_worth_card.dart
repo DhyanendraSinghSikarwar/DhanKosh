@@ -54,8 +54,12 @@ class NetWorthCard extends StatelessWidget {
     final muted = theme.colorScheme.onSurfaceVariant;
     final change =
         points.length < 2 ? null : points.last.netMinor - points.first.netMinor;
-    Widget cell(String label, String value, CrossAxisAlignment a,
-            {Color? color, Key? key}) =>
+    Widget cell(
+      String label,
+      String value,
+      CrossAxisAlignment a, {
+      Color? color,
+    }) =>
         Column(
           crossAxisAlignment: a,
           children: [
@@ -63,7 +67,6 @@ class NetWorthCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               value,
-              key: key,
               style: theme.textTheme.titleSmall?.copyWith(color: color),
             ),
           ],
@@ -86,12 +89,21 @@ class NetWorthCard extends StatelessWidget {
             style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700),
           ),
           if (change != null)
-            Text(
-              '${change >= 0 ? '▲' : '▼'} ${money(change.abs())} '
-              '${_rangeWords[range]}',
-              key: const Key('nw-change'),
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: change >= 0 ? sem.income : sem.expense),
+            Row(
+              children: [
+                Icon(
+                  change >= 0 ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                  size: 22,
+                  color: change >= 0 ? sem.income : sem.expense,
+                ),
+                Text(
+                  '${money(change.abs())} ${_rangeWords[range]}',
+                  key: const Key('nw-change'),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: change >= 0 ? sem.income : sem.expense,
+                  ),
+                ),
+              ],
             ),
           const SizedBox(height: 12),
           PillTabs(

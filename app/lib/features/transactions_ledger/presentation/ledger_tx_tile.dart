@@ -8,11 +8,12 @@ import 'package:hisaab/features/transactions_ledger/presentation/ledger_category
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:parser_core/parser_core.dart' hide Money;
 
-/// Signed amount text of [t] in the row's own currency (paise only).
-String txAmountText(LedgerTx t, {required bool masked}) {
+/// Signed amount text of [t] in the row's own currency; [whole] drops `.00`.
+String txAmountText(LedgerTx t, {required bool masked, bool whole = false}) {
   final base = formatMoney(
     Money(t.amountMinor, currency: t.currency),
     masked: masked,
+    showPaise: !whole || t.amountMinor % 100 != 0,
   );
   return switch (t.type) {
     TransactionType.credit => '+$base',
@@ -83,7 +84,7 @@ class LedgerTxTile extends StatelessWidget {
     final credit = tx.type == TransactionType.credit;
     final style = categoryStyle(tx.category);
     final last4 = tx.accountLast4;
-    var amount = txAmountText(tx, masked: masked);
+    var amount = txAmountText(tx, masked: masked, whole: true);
     if (amount.startsWith('-')) amount = amount.substring(1);
     final bank = last4 != null ? '${tx.bankName} ••$last4' : tx.bankName;
     return InkWell(

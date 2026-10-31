@@ -176,29 +176,44 @@ class _Section extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
           child: Text(
-            '$title (${items.length})',
-            style: Theme.of(context).textTheme.titleSmall,
+            title,
+            key: Key('accounts_section_$title'),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
           ),
         ),
-        for (final a in items)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: AccountTile(
-              item: a,
-              masked: masked,
-              cardDueMinor: a.account.kind == AccountKind.card
-                  ? cardInfo[a.account.id]?.owedMinor ?? 0
-                  : null,
-              usedPercent: _used(cardInfo[a.account.id]),
-              onTap: () => a.account.kind == AccountKind.card &&
-                      a.account.accountType != AccountType.debitCard &&
-                      a.account.accountType != AccountType.prepaidCard
-                  ? _openCard(context, a.account.id)
-                  : context.push('/accounts/${a.account.id}'),
-            ),
+        AppCard(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          child: Column(
+            children: [
+              for (final (i, a) in items.indexed) ...[
+                if (i > 0)
+                  Divider(
+                    height: 1,
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                AccountTile(
+                  item: a,
+                  masked: masked,
+                  cardDueMinor: a.account.kind == AccountKind.card
+                      ? cardInfo[a.account.id]?.owedMinor ?? 0
+                      : null,
+                  usedPercent: _used(cardInfo[a.account.id]),
+                  onTap: () => a.account.kind == AccountKind.card &&
+                          a.account.accountType != AccountType.debitCard &&
+                          a.account.accountType != AccountType.prepaidCard
+                      ? _openCard(context, a.account.id)
+                      : context.push('/accounts/${a.account.id}'),
+                ),
+              ],
+            ],
           ),
+        ),
       ],
     );
   }
@@ -261,11 +276,14 @@ class _Header extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Balance', style: theme.textTheme.bodySmall),
+                    Text(
+                      'Balance across accounts',
+                      style: theme.textTheme.bodySmall,
+                    ),
                     Text(
                       formatAmount(total, masked: masked),
                       key: const Key('accounts_total'),
-                      style: theme.textTheme.headlineSmall,
+                      style: theme.textTheme.headlineMedium,
                     ),
                   ],
                 ),

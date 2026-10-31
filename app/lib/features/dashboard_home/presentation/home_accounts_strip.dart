@@ -4,6 +4,7 @@ import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/mock_kit.dart';
 
 /// Total balance plus a chip per account; opens Accounts.
 class HomeAccountsStrip extends StatefulWidget {
@@ -32,47 +33,71 @@ class _HomeAccountsStripState extends State<HomeAccountsStrip> {
     final total = liquidBalanceMinor(accounts);
     return AppCard(
       key: const Key('home_accounts_strip'),
+      margin: const EdgeInsets.only(bottom: 12),
       onTap: () => context.push('/accounts'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text('Accounts', style: theme.textTheme.titleMedium),
-              ),
-              IconButton(
-                key: const Key('home_accounts_fold'),
-                tooltip: _open ? 'Fold accounts' : 'Show accounts',
-                icon: Icon(_open ? Icons.expand_less : Icons.expand_more),
-                onPressed: () => setState(() => _open = !_open),
-              ),
-              const Icon(Icons.chevron_right),
-            ],
+          CardHeader(
+            'Accounts',
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkResponse(
+                  key: const Key('home_accounts_fold'),
+                  radius: 16,
+                  onTap: () => setState(() => _open = !_open),
+                  child: Icon(
+                    _open ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '›',
+                  style: MockText.body(
+                    context,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
           ),
           if (total != null)
             Text(
-              formatAmount(total, masked: masked),
+              formatAmount(total, masked: masked, paise: false),
               key: const Key('home_balance'),
-              style: theme.textTheme.titleLarge,
+              style: MockText.mid(context),
             ),
-          const SizedBox(height: 8),
-          if (!_open)
-            const SizedBox.shrink()
-          else if (accounts.isEmpty)
-            const Text('No accounts yet')
-          else
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                for (final a in accounts)
-                  Chip(
-                    label: Text(a.account.label),
-                    visualDensity: VisualDensity.compact,
-                  ),
-              ],
-            ),
+          if (_open) ...[
+            const SizedBox(height: 8),
+            if (accounts.isEmpty)
+              Text('No accounts yet', style: MockText.small(context))
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final a in accounts)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        border:
+                            Border.all(color: theme.colorScheme.outlineVariant),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        a.account.label,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                ],
+              ),
+          ],
         ],
       ),
     );

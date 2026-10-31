@@ -22,8 +22,12 @@ class NetWorthEstimator {
   final NetWorthRepository _history;
   final int Function() _now;
 
-  /// Month-end points, oldest first.
-  Future<List<EstimatedPoint>> estimate({int months = 36}) async {
+  /// Month-end points, oldest first. [liabilitiesNowMinor] stands in for
+  /// liabilities while nothing is recorded yet.
+  Future<List<EstimatedPoint>> estimate({
+    int months = 36,
+    int liabilitiesNowMinor = 0,
+  }) async {
     final now = _now();
     final today = (now + 19800000) ~/ 86400000;
     final since = now - (months + 1) * 31 * 86400000;
@@ -37,7 +41,9 @@ class NetWorthEstimator {
           if ((h.valueMinor ?? 0) > 0)
             HoldingValue((h.updatedAt + 19800000) ~/ 86400000, h.valueMinor!),
       ],
-      liabilitiesMinor: recorded.isEmpty ? 0 : recorded.last.liabilitiesMinor,
+      liabilitiesMinor: recorded.isEmpty
+          ? liabilitiesNowMinor
+          : recorded.last.liabilitiesMinor,
       recorded: recorded,
       months: months,
     );

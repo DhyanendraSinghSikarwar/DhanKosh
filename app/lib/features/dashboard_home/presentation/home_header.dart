@@ -12,6 +12,7 @@ import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_refresh_sheet.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
+import 'package:hisaab/shared/widgets/mock_kit.dart';
 
 /// Home header: avatar, greeting, name with Book tag, then eye, refresh and
 /// bell on top; add, accounts and edit below (FR-17-02, FR-17-17,
@@ -43,106 +44,113 @@ class HomeHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final name = ref.watch(profileDataProvider).value?.name?.trim();
     final hasName = name != null && name.isNotEmpty;
     final sync = ref.watch(homeSyncProvider);
     final book = ref.watch(bookProvider);
-    return Column(
+    return Row(
       children: [
-        Row(
-          children: [
-            InkWell(
-              key: const Key('home_avatar'),
-              customBorder: const CircleBorder(),
-              onTap: () => context.push('/profile'),
-              child: CircleAvatar(
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Text(initials(name)),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    greeting(DateTime.now().hour),
-                    key: const Key('home_greeting'),
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          hasName ? name : 'Welcome',
-                          key: const Key('home_name'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleLarge,
+        Expanded(
+          child: InkWell(
+            key: const Key('home_avatar'),
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => context.push('/profile'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  greeting(DateTime.now().hour),
+                  key: const Key('home_greeting'),
+                  style: MockText.small(context),
+                ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        hasName ? name : 'Welcome',
+                        key: const Key('home_name'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 21,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      if (book != Book.personal) ...[
-                        const SizedBox(width: 8),
-                        _BookTag(book),
-                      ],
-                    ],
-                  ),
-                  if (!hasName)
-                    Text(
-                      'Tap to set up your profile',
-                      style: theme.textTheme.bodySmall,
                     ),
-                ],
-              ),
+                    if (book != Book.personal) ...[
+                      const SizedBox(width: 8),
+                      _BookTag(book),
+                    ],
+                  ],
+                ),
+                if (!hasName)
+                  Text(
+                    'Tap to set up your profile',
+                    style: MockText.small(context),
+                  ),
+              ],
             ),
-            IconButton(
-              key: const Key('home_eye'),
-              tooltip: masked ? 'Show amounts' : 'Hide amounts',
-              icon: Icon(
-                masked
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
-              ),
-              onPressed: () => ref
-                  .read(settingsRepositoryProvider)
-                  .write(SettingKeys.hideAmounts, !masked),
-            ),
-            IconButton(
-              key: const Key('home_sync'),
-              tooltip: sync.running ? 'Syncing' : 'Fetch new SMS and email',
-              icon: sync.running
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.sync),
-              onPressed: () => _refresh(context, ref),
-            ),
-            const _InboxBell(),
-          ],
+          ),
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            IconButton(
-              key: const Key('home_add'),
-              tooltip: 'Add transaction',
-              icon: const Icon(Icons.add),
-              onPressed: () => context.push('/transactions/add'),
+        IconButton(
+          key: const Key('home_eye'),
+          tooltip: masked ? 'Show amounts' : 'Hide amounts',
+          icon: Icon(
+            masked ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          ),
+          onPressed: () => ref
+              .read(settingsRepositoryProvider)
+              .write(SettingKeys.hideAmounts, !masked),
+        ),
+        IconButton(
+          key: const Key('home_sync'),
+          tooltip: sync.running ? 'Syncing' : 'Fetch new SMS and email',
+          icon: sync.running
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.sync),
+          onPressed: () => _refresh(context, ref),
+        ),
+        const _InboxBell(),
+        if (editing)
+          IconButton(
+            key: const Key('home_edit_done'),
+            tooltip: 'Done',
+            icon: const Icon(Icons.check),
+            onPressed: onEdit,
+          ),
+        PopupMenuButton<String>(
+          key: const Key('home_menu'),
+          tooltip: 'More',
+          icon: const Icon(Icons.more_vert),
+          onSelected: (v) {
+            switch (v) {
+              case 'add':
+                unawaited(context.push('/transactions/add'));
+              case 'accounts':
+                unawaited(context.push('/accounts'));
+              case 'edit':
+                onEdit?.call();
+            }
+          },
+          itemBuilder: (_) => [
+            const PopupMenuItem(
+              key: Key('home_add'),
+              value: 'add',
+              child: Text('Add transaction'),
             ),
-            IconButton(
-              key: const Key('home_accounts_button'),
-              tooltip: 'Accounts',
-              icon: const Icon(Icons.account_balance_outlined),
-              onPressed: () => context.push('/accounts'),
+            const PopupMenuItem(
+              key: Key('home_accounts_button'),
+              value: 'accounts',
+              child: Text('Accounts'),
             ),
-            IconButton(
+            PopupMenuItem(
               key: const Key('home_edit'),
-              tooltip: editing ? 'Done' : 'Edit sections',
-              icon: Icon(editing ? Icons.check : Icons.tune),
-              onPressed: onEdit,
+              value: 'edit',
+              child: Text(editing ? 'Done editing' : 'Edit sections'),
             ),
           ],
         ),

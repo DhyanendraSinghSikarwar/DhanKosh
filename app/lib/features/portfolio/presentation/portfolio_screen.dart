@@ -1,30 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
 import 'package:hisaab/app/di/layout_providers.dart';
+import 'package:hisaab/app/di/net_worth_estimate_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/scope_bar.dart';
-import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/features/portfolio/domain/asset_class.dart';
 import 'package:hisaab/features/portfolio/domain/holding.dart';
 import 'package:hisaab/features/portfolio/domain/maturity_items.dart';
+import 'package:hisaab/features/portfolio/domain/net_worth.dart';
+import 'package:hisaab/features/portfolio/domain/net_worth_estimate.dart';
 import 'package:hisaab/features/portfolio/domain/portfolio_class.dart';
 import 'package:hisaab/features/portfolio/domain/portfolio_summary.dart';
 import 'package:hisaab/features/portfolio/presentation/allocation_card.dart';
+import 'package:hisaab/features/portfolio/presentation/compact_money.dart';
 import 'package:hisaab/features/portfolio/presentation/exclusions_sheet.dart';
 import 'package:hisaab/features/portfolio/presentation/holding_class_card.dart';
 import 'package:hisaab/features/portfolio/presentation/holding_sheet.dart';
 import 'package:hisaab/features/portfolio/presentation/investment_tx_section.dart';
 import 'package:hisaab/features/portfolio/presentation/maturity_calendar.dart';
-import 'package:hisaab/features/portfolio/presentation/net_worth_chart.dart';
+import 'package:hisaab/features/portfolio/presentation/net_worth_card.dart';
 import 'package:hisaab/features/portfolio/presentation/networth_split_section.dart';
-import 'package:hisaab/features/portfolio/presentation/portfolio_class_style.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_loans_section.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_settings_sheet.dart';
 import 'package:hisaab/features/theming_customisation/domain/section_layout.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
-import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
 
 const _ranges = <(String, int?)>[
@@ -88,16 +91,28 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     String money(int m) => formatAmount(m, masked: masked, paise: false);
 
     final days = _ranges[_range].$2;
-    final latest = points.isEmpty ? null : points.last.day;
-    final inRange = [
-      for (final p in points)
+    final all = _history(
+      points,
+      ref.watch(netWorthEstimateProvider).value ?? const [],
+    );
+    final latest = all.isEmpty ? null : all.last.day;
+    var inRange = [
+      for (final p in all)
         if (days == null || latest == null || p.day >= latest - days) p,
     ];
+    if (inRange.length < 2 && all.length >= 2) {
+      inRange = all.sublist(all.length - 2);
+    }
     final cash = nw == null
         ? 0
         : nw.parts
             .where((p) => p.kind == PartKind.bank && !p.liability)
             .fold<int>(0, (a, p) => a + p.amountMinor);
+    final loanDebt = nw == null
+        ? 0
+        : nw.parts
+            .where((p) => p.kind == PartKind.loan)
+            .fold<int>(0, (a, p) => a + p.amountMinor.abs());
     final summary = summarisePortfolio(holdings, cashMinor: cash);
     final groups = groupByClass(holdings);
     final focus = groups.any((g) => g.cls == _focus) ? _focus : null;
@@ -105,78 +120,17 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     final visible = ref.watch(visibleSectionsProvider(ScreenIds.portfolio));
     final loans = ref.watch(loansStateProvider).value?.loans ?? const [];
     final sections = <String, Widget?>{
-      'value': Column(
-        children: [
-          _Hero(
-            net: nw?.netMinor ?? 0,
-            assets: nw?.assetsMinor ?? 0,
-            liabilities: nw?.liabilitiesMinor ?? 0,
-            change: inRange.length < 2
-                ? null
-                : inRange.last.netMinor - inRange.first.netMinor,
-            base: inRange.length < 2 ? null : inRange.first.netMinor,
-            money: money,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            key: const Key('portfolio-shortcuts'),
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  key: const Key('shortcut-import'),
-                  onPressed: () => context.push('/statements'),
-                  child: const Text('Import statement'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  key: const Key('shortcut-holding'),
-                  onPressed: () => _sheet(const HoldingSheet()),
-                  child: const Text('Add holding'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  key: const Key('shortcut-sip'),
-                  onPressed: widget.sipSheet == null
-                      ? null
-                      : () => _sheet(widget.sipSheet!(context)),
-                  child: const Text('Add SIP'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          AppCard(
-            child: Column(
-              children: [
-                NetWorthChart(points: inRange),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    for (var i = 0; i < _ranges.length; i++)
-                      ChoiceChip(
-                        key: Key('range-${_ranges[i].$1}'),
-                        label: Text(_ranges[i].$1),
-                        selected: i == _range,
-                        onSelected: (_) => setState(() => _range = i),
-                      ),
-                  ],
-                ),
-                const Divider(height: 24),
-                _SummaryRow(
-                  investments: summary.valueMinor,
-                  bank: cash,
-                  loans: nw?.liabilitiesMinor ?? 0,
-                  money: money,
-                ),
-              ],
-            ),
-          ),
-        ],
+      'value': NetWorthCard(
+        net: nw?.netMinor ?? 0,
+        points: inRange,
+        range: _range,
+        onRange: (i) => setState(() => _range = i),
+        investments: summary.valueMinor,
+        bank: cash,
+        loans: loanDebt,
+        money: money,
+        masked: masked,
+        asOf: asOfLabel(DateTime.now().millisecondsSinceEpoch),
       ),
       'allocation': groups.isEmpty
           ? null
@@ -187,6 +141,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               investedMinor: summary.investedMinor,
               gainMinor: summary.gainMinor,
               money: money,
+              compact: (m) => masked ? '••••' : compactMoney(m),
               asOfLabel: asOfMs > 0 ? 'as of ${asOfLabel(asOfMs)}' : '',
             ),
       'networth': nw == null || nw.parts.isEmpty
@@ -197,15 +152,8 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               onChoose: () => _sheet(const ExclusionsSheet()),
             ),
       'holdings': Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (widget.sipSection != null) ...[
-            widget.sipSection!,
-            const SizedBox(height: 12),
-          ],
-          if (holdings.isNotEmpty || invTxs.isNotEmpty) ...[
-            InvestmentTxSection(items: invTxs, money: money),
-            const SizedBox(height: 12),
-          ],
           if (holdings.isEmpty)
             const SizedBox(
               height: 220,
@@ -217,6 +165,13 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               ),
             )
           else ...[
+            const Padding(
+              padding: EdgeInsets.fromLTRB(4, 6, 4, 10),
+              child: Text(
+                'Holdings',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ),
             _ClassChips(
               classes: [for (final g in groups) g.cls],
               focus: focus,
@@ -231,6 +186,14 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                   dateLabel: asOfLabel,
                   onTap: (h) => _sheet(HoldingSheet(holding: h)),
                 ),
+          ],
+          if (widget.sipSection != null) ...[
+            widget.sipSection!,
+            const SizedBox(height: 12),
+          ],
+          if (holdings.isNotEmpty || invTxs.isNotEmpty) ...[
+            InvestmentTxSection(items: invTxs, money: money),
+            const SizedBox(height: 12),
           ],
         ],
       ),
@@ -260,27 +223,51 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
             ),
             onPressed: () => context.push('/news'),
           ),
-          IconButton(
-            key: const Key('portfolio-settings'),
-            tooltip: 'Portfolio settings',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => _sheet(const PortfolioSettingsSheet()),
-          ),
           PopupMenuButton<String>(
             key: const Key('portfolio-more'),
             onSelected: (v) {
-              if (v == 'sections') {
-                _sheet(
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: widget.layoutEditor,
-                  ),
-                );
-              } else {
-                _sheet(const ExclusionsSheet());
+              switch (v) {
+                case 'import':
+                  unawaited(context.push('/statements'));
+                case 'holding':
+                  _sheet(const HoldingSheet());
+                case 'sip':
+                  _sheet(widget.sipSheet!(context));
+                case 'settings':
+                  _sheet(const PortfolioSettingsSheet());
+                case 'sections':
+                  _sheet(
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: widget.layoutEditor,
+                    ),
+                  );
+                default:
+                  _sheet(const ExclusionsSheet());
               }
             },
             itemBuilder: (_) => [
+              const PopupMenuItem(
+                key: Key('shortcut-import'),
+                value: 'import',
+                child: Text('Import statement'),
+              ),
+              const PopupMenuItem(
+                key: Key('shortcut-holding'),
+                value: 'holding',
+                child: Text('Add holding'),
+              ),
+              PopupMenuItem(
+                key: const Key('shortcut-sip'),
+                value: 'sip',
+                enabled: widget.sipSheet != null,
+                child: const Text('Add SIP'),
+              ),
+              const PopupMenuItem(
+                key: Key('portfolio-settings'),
+                value: 'settings',
+                child: Text('Portfolio settings'),
+              ),
               if (widget.layoutEditor != null)
                 const PopupMenuItem(
                   key: Key('portfolio-sections'),
@@ -296,84 +283,24 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         key: const Key('holding-add'),
+        heroTag: null,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        tooltip: 'Add holding',
         onPressed: () => _sheet(const HoldingSheet()),
-        icon: const Icon(Icons.add),
-        label: const Text('Add holding'),
+        child: const Icon(Icons.add),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 104),
         children: [
           for (final id in visible)
             if (sections[id] case final w?) ...[
               w,
               const SizedBox(height: 12),
             ],
-        ],
-      ),
-    );
-  }
-}
-
-class _Hero extends StatelessWidget {
-  const _Hero({
-    required this.net,
-    required this.assets,
-    required this.liabilities,
-    required this.change,
-    required this.base,
-    required this.money,
-  });
-
-  final int net;
-  final int assets;
-  final int liabilities;
-  final int? change;
-  final int? base;
-  final String Function(int) money;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final sem = theme.extension<SemanticColors>()!;
-    final c = change;
-    final b = base;
-    final pct = (c != null && b != null && b != 0)
-        ? ' (${(c / b.abs() * 100).toStringAsFixed(1)}%)'
-        : '';
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Net worth', style: theme.textTheme.labelLarge),
-          const SizedBox(height: 4),
-          Text(
-            money(net),
-            key: const Key('nw-value'),
-            style: theme.textTheme.headlineMedium,
-          ),
-          if (c != null)
-            Text(
-              '${c >= 0 ? '+' : '-'}${money(c.abs())}$pct',
-              key: const Key('nw-change'),
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: c >= 0 ? sem.income : sem.expense),
-            ),
-          const SizedBox(height: 8),
-          Text(
-            'as of ${asOfLabel(DateTime.now().millisecondsSinceEpoch)}',
-            key: const Key('nw-as-of'),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          Text(
-            'Assets ${money(assets)}  ·  Liabilities ${money(liabilities)}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
         ],
       ),
     );
@@ -390,56 +317,6 @@ String asOfLabel(int ms) {
   return '${d.day} ${m[d.month - 1]} ${d.year}';
 }
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({
-    required this.investments,
-    required this.bank,
-    required this.loans,
-    required this.money,
-  });
-
-  final int investments;
-  final int bank;
-  final int loans;
-  final String Function(int) money;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final sem = theme.extension<SemanticColors>()!;
-    Widget cell(String label, String value, {Color? color, Key? key}) =>
-        Expanded(
-          child: Column(
-            children: [
-              Text(
-                label,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              Text(
-                value,
-                key: key,
-                style: theme.textTheme.titleSmall?.copyWith(color: color),
-              ),
-            ],
-          ),
-        );
-    return Row(
-      key: const Key('nw-summary'),
-      children: [
-        cell('Investments', money(investments)),
-        cell('Bank', money(bank)),
-        cell(
-          'Loans',
-          loans > 0 ? '-${money(loans)}' : money(0),
-          color: loans > 0 ? sem.expense : null,
-        ),
-      ],
-    );
-  }
-}
-
 class _ClassChips extends StatelessWidget {
   const _ClassChips({
     required this.classes,
@@ -453,33 +330,63 @@ class _ClassChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    Widget chip(Key key, String label, VoidCallback tap, {required bool on}) =>
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: InkWell(
+            key: key,
+            borderRadius: BorderRadius.circular(16),
+            onTap: tap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: on ? scheme.primaryContainer : scheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: on
+                      ? scheme.primary
+                      : scheme.outlineVariant.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Text(label, style: const TextStyle(fontSize: 13)),
+            ),
+          ),
+        );
     return SingleChildScrollView(
       key: const Key('class-chips'),
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          ChoiceChip(
-            key: const Key('class-chip-all'),
-            label: const Text('All'),
-            selected: focus == null,
-            onSelected: (_) => onFocus(null),
+          chip(
+            const Key('class-chip-all'),
+            'All',
+            () => onFocus(null),
+            on: focus == null,
           ),
-          for (final c in classes) ...[
-            const SizedBox(width: 8),
-            ChoiceChip(
-              key: Key('class-chip-${c.name}'),
-              avatar: Icon(
-                portfolioClassIcon(c).icon,
-                size: 16,
-                color: portfolioClassColor(c),
-              ),
-              label: Text(c.label),
-              selected: focus == c,
-              onSelected: (_) => onFocus(c),
+          for (final c in classes)
+            chip(
+              Key('class-chip-${c.name}'),
+              c.label,
+              () => onFocus(c),
+              on: focus == c,
             ),
-          ],
         ],
       ),
     );
   }
+}
+
+/// Estimated month-ends before the first recorded day, then the recorded
+/// points, so the line is never blank when there is data (FR-16-05).
+List<WorthPoint> _history(
+  List<WorthPoint> recorded,
+  List<EstimatedPoint> estimate,
+) {
+  final firstRecorded = recorded.isEmpty ? null : recorded.first.day;
+  return [
+    for (final e in estimate)
+      if (firstRecorded == null || e.point.day < firstRecorded) e.point,
+    ...recorded,
+  ];
 }

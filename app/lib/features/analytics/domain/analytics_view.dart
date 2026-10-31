@@ -1,4 +1,5 @@
 import 'package:hisaab/features/analytics/domain/analytics_models.dart';
+import 'package:hisaab/features/analytics/domain/civil_date.dart';
 import 'package:hisaab/features/analytics/domain/insight_extras.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
@@ -19,6 +20,8 @@ class AnalyticsView {
     this.subscriptions = const [],
     this.cards = const [],
     this.year = const [],
+    this.from,
+    this.to,
   });
 
   /// Empty, still loading.
@@ -47,4 +50,25 @@ class AnalyticsView {
 
   /// Rows of the 12-month window (for cross-filtered bars, FR-18-20).
   final List<LedgerTx> year;
+
+  /// First and last day (UTC midnight) of the period, when known.
+  final DateTime? from;
+
+  /// Last day of the period, when known.
+  final DateTime? to;
+
+  /// [from], else the first of the month of the first row.
+  DateTime? get rangeFrom {
+    if (from != null) return from;
+    if (txs.isEmpty) return null;
+    final d = dayOf(txs.first.timestamp);
+    return DateTime.utc(d.year, d.month);
+  }
+
+  /// [to], else the last of the month of the first row.
+  DateTime? get rangeTo {
+    if (to != null) return to;
+    final f = rangeFrom;
+    return f == null ? null : DateTime.utc(f.year, f.month + 1, 0);
+  }
 }

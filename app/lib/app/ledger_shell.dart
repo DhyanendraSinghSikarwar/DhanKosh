@@ -23,6 +23,8 @@ class TransactionsTab extends ConsumerWidget {
           ? 'Custom range'
           : periodLabel(view.period),
       filterBuilder: (context, count) => LedgerFilterBar(resultCount: count),
+      titleActions: const LedgerTitleActions(),
+      sourceFilter: const LedgerSourceDropdown(),
       pickCategory: (ctx, t) => showCategorySheet(
         ctx,
         current: t.category,

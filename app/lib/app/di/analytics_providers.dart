@@ -138,6 +138,8 @@ Stream<AnalyticsView> analyticsView(Ref ref) async* {
       subscriptions: InsightExtras.subscriptions(all, today),
       cards: cards,
       year: all,
+      from: from,
+      to: to,
     );
   }
 }

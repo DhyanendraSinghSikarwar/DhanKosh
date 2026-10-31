@@ -164,6 +164,15 @@ class LedgerViewState {
       maxMinor != null ||
       accountKind != null;
 
+  /// Number of advanced filters set (type, account, category, source,
+  /// amount range), for the filter button badge.
+  int get advancedFilterCount =>
+      (kind != TxKind.all ? 1 : 0) +
+      (accountId != null ? 1 : 0) +
+      (category != null ? 1 : 0) +
+      (sources.isNotEmpty ? 1 : 0) +
+      (minMinor != null || maxMinor != null ? 1 : 0);
+
   LedgerViewState copyWith({
     TxKind? kind,
     PeriodKind? period,

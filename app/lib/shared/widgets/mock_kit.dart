@@ -150,7 +150,8 @@ class LegendRow extends StatelessWidget {
               Container(
                 width: 9,
                 height: 9,
-                decoration: BoxDecoration(color: i.color, shape: BoxShape.circle),
+                decoration:
+                    BoxDecoration(color: i.color, shape: BoxShape.circle),
               ),
               const SizedBox(width: 6),
               Text(i.label, style: MockText.small(context)),

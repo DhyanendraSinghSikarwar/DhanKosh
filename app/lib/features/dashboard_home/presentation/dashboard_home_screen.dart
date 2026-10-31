@@ -82,13 +82,12 @@ class _DashboardHomeScreenState extends ConsumerState<DashboardHomeScreen> {
     final recent = ref.watch(homeRecentProvider).value;
     final accounts = ref.watch(homeAccountsProvider).value;
     final visible = ref.watch(visibleSectionsProvider(ScreenIds.home));
-    final rest = [
-      for (final i in visible)
-        if (i != 'categories') i,
-    ];
     final loaded = totals != null && recent != null && accounts != null;
     final empty =
         loaded && recent.isEmpty && accounts.isEmpty && (totals.count == 0);
+    // Needs attention and goals follow the mock's cards: just before Recent,
+    // else at the end.
+    final tail = visible.contains('recent') ? 'recent' : null;
     return Scaffold(
       body: SafeArea(
         child: !loaded
@@ -96,15 +95,14 @@ class _DashboardHomeScreenState extends ConsumerState<DashboardHomeScreen> {
             : empty
                 ? _EmptyHome(masked: masked)
                 : ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     children: [
                       HomeHeader(
                         masked: masked,
                         editing: _editing,
                         onEdit: _toggleEdit,
                       ),
-                      const _PrivacyBadge(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       if (_editing && widget.layoutEditor != null)
                         AppCard(
                           key: const Key('home_edit_card'),
@@ -112,23 +110,14 @@ class _DashboardHomeScreenState extends ConsumerState<DashboardHomeScreen> {
                         )
                       else ...[
                         const HomeSmsCard(),
-                        const HomeAttentionCard(),
-                        for (final id in rest) ...[
-                          if (_section(id, recent, masked) case final w?) ...[
-                            w,
-                            const SizedBox(height: 16),
-                          ],
-                          if (widget.goalsSection != null &&
-                              _goalsAfter(rest) == id) ...[
-                            widget.goalsSection!,
-                            const SizedBox(height: 16),
-                          ],
+                        for (final id in visible) ...[
+                          if (id == tail) ..._attentionAndGoals(),
+                          if (_section(id, recent, masked) case final w?) w,
                         ],
+                        if (tail == null) ..._attentionAndGoals(),
                         HomeAccountsStrip(accounts: accounts, masked: masked),
-                        if (visible.contains('categories')) ...[
-                          const SizedBox(height: 16),
-                          const HomeCategoriesCard(),
-                        ],
+                        const SizedBox(height: 12),
+                        const _PrivacyBadge(),
                       ],
                     ],
                   ),
@@ -136,13 +125,10 @@ class _DashboardHomeScreenState extends ConsumerState<DashboardHomeScreen> {
     );
   }
 
-  /// Goals sit after the last visible of cards or budgets, else after the
-  /// last visible section (FR-17-30).
-  String _goalsAfter(List<String> visible) {
-    final ix = visible.where((i) => i == 'cards' || i == 'budgets').toList();
-    if (ix.isNotEmpty) return ix.last;
-    return visible.isEmpty ? '' : visible.last;
-  }
+  List<Widget> _attentionAndGoals() => [
+        const HomeAttentionCard(),
+        if (widget.goalsSection != null) widget.goalsSection!,
+      ];
 }
 
 class _PrivacyBadge extends StatelessWidget {
@@ -153,6 +139,7 @@ class _PrivacyBadge extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       key: const Key('home_privacy_badge'),
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(Icons.lock_outline, size: 14, color: theme.colorScheme.outline),
         const SizedBox(width: 4),

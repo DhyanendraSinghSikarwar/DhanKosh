@@ -47,13 +47,20 @@ void main() {
     await t.pump();
   }
 
+  Future<void> openRow(WidgetTester t, String key) async {
+    await t.ensureVisible(find.byKey(Key(key)));
+    await t.tap(find.byKey(Key(key)));
+    await t.pumpAndSettle();
+  }
+
   tearDown(() => h.dispose());
 
   testWidgets('shows status and permission card when SMS is off (FR-26-03)',
       (t) async {
     await pump(t, granted: false);
+    expect(find.byKey(const Key('sms-banner')), findsOneWidget);
     expect(find.text('Not allowed'), findsOneWidget);
-    expect(find.byKey(const Key('grant-sms')), findsOneWidget);
+    await openRow(t, 'bank-sms-row');
     final scan = t.widget<FilledButton>(find.byKey(const Key('scan-now')));
     expect(scan.onPressed, isNull);
   });
@@ -73,6 +80,7 @@ void main() {
       ],
     );
     expect(find.text('Allowed'), findsOneWidget);
+    await openRow(t, 'bank-sms-row');
     await tapAsync(t, const Key('scan-now'));
     for (var i = 0;
         i < 50 && find.byKey(const Key('scan-result')).evaluate().isEmpty;
@@ -90,6 +98,7 @@ void main() {
   testWidgets('paste import shows what was parsed or why not (FR-26-26)',
       (t) async {
     await pump(t);
+    await openRow(t, 'paste-sms-row');
     await t.enterText(
       find.byKey(const Key('paste-body')),
       'Rs.320.00 debited from A/c XX1234 on 20-10-26 '

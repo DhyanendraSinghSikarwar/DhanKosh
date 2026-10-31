@@ -5,6 +5,7 @@ import 'package:hisaab/features/recurring_transactions/domain/sip.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/sip_setup_sheet.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/section_label.dart';
 
 /// SIP list: name, amount, frequency, next date and total invested
 /// (FR-12-20). Used on Bills and Portfolio; tapping a row edits it. Shows
@@ -21,14 +22,13 @@ class SipSection extends ConsumerWidget {
     final sips = ref.watch(sipsProvider).value ?? const <Sip>[];
     final masked = ref.watch(hideAmountsProvider).value ?? true;
     if (sips.isEmpty && !showEmpty) return const SizedBox.shrink();
-    final theme = Theme.of(context);
     String money(int m) => formatAmount(m, masked: masked, paise: false);
     return AppCard(
       key: const Key('sip-section'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('SIPs', style: theme.textTheme.titleSmall),
+          const SectionLabel('SIPs'),
           if (sips.isEmpty)
             const Padding(
               padding: EdgeInsets.only(top: 8),

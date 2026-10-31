@@ -227,34 +227,43 @@ class _FormState extends ConsumerState<_Form> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Column(
-          children: [
-            ProfileAvatar(
-              name: _name.text,
-              photoPath: _photoPath,
-              radius: 44,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                TextButton.icon(
-                  key: const Key('profile-photo-change'),
-                  icon: const Icon(Icons.photo_camera_outlined),
-                  label: Text(
-                    (_photoPath ?? '').isEmpty ? 'Add photo' : 'Change photo',
+        AppCard(
+          key: const Key('profile-header'),
+          child: Column(
+            children: [
+              ProfileAvatar(
+                name: _name.text,
+                photoPath: _photoPath,
+                radius: 36,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _name.text.trim().isEmpty ? 'Your name' : _name.text.trim(),
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                children: [
+                  TextButton.icon(
+                    key: const Key('profile-photo-change'),
+                    icon: const Icon(Icons.photo_camera_outlined),
+                    label: Text(
+                      (_photoPath ?? '').isEmpty ? 'Add photo' : 'Change photo',
+                    ),
+                    onPressed: _changePhoto,
                   ),
-                  onPressed: _changePhoto,
-                ),
-                if ((_photoPath ?? '').isNotEmpty)
-                  TextButton(
-                    key: const Key('profile-photo-remove'),
-                    onPressed: _removePhoto,
-                    child: const Text('Remove'),
-                  ),
-              ],
-            ),
-          ],
+                  if ((_photoPath ?? '').isNotEmpty)
+                    TextButton(
+                      key: const Key('profile-photo-remove'),
+                      onPressed: _removePhoto,
+                      child: const Text('Remove'),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         AppCard(
@@ -310,7 +319,7 @@ class _FormState extends ConsumerState<_Form> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('For locked statements', style: theme.textTheme.titleSmall),
+              Text('Statement unlock', style: theme.textTheme.titleSmall),
               gap,
               ListTile(
                 key: const Key('profile-dob'),

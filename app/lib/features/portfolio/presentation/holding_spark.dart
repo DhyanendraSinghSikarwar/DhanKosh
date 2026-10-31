@@ -14,8 +14,8 @@ class HoldingSpark extends StatelessWidget {
   Widget build(BuildContext context) {
     if (values.length < 2) return const SizedBox.shrink();
     return SizedBox(
-      width: 48,
-      height: 24,
+      width: 64,
+      height: 28,
       child: LineChart(
         LineChartData(
           gridData: const FlGridData(show: false),
@@ -30,7 +30,15 @@ class HoldingSpark extends StatelessWidget {
               ],
               color: color,
               barWidth: 1.5,
-              dotData: const FlDotData(show: false),
+              isCurved: true,
+              curveSmoothness: 0.2,
+              dotData: FlDotData(
+                checkToShowDot: (s, _) => s.x == values.length - 1,
+                getDotPainter: (s, a, b, c) => FlDotCirclePainter(
+                  radius: 2.5,
+                  color: color,
+                ),
+              ),
             ),
           ],
         ),

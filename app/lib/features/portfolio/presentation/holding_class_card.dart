@@ -34,8 +34,102 @@ class HoldingClassCard extends StatelessWidget {
         PortfolioClass.epfo
             when group.items.any((h) => h.source != HoldingSource.manual) =>
           'From passbook SMS and mail',
-        _ => null,
+        _ => _newest > 0 ? 'as of ${dateLabel(_newest)}' : null,
       };
+
+  /// Newest statement date in the group; the header shows it once.
+  int get _newest => group.items.fold<int>(
+        0,
+        (a, h) => (h.asOf ?? 0) > a ? h.asOf! : a,
+      );
+
+  /// True when [h] was stated more than a day before the group's newest.
+  bool _stale(Holding h) => h.asOf != null && h.asOf! < _newest - 86400000;
+
+  String _sub(Holding h) {
+    final u = h.units;
+    final units = u == null
+        ? null
+        : '${u == u.roundToDouble() ? u.round() : u.toStringAsFixed(2)} '
+            '${h.kind == HoldingKind.stock ? 'shares' : 'units'}';
+    return [
+      if (units != null) units,
+      if (group.cls == PortfolioClass.other || h.kind == HoldingKind.etf)
+        holdingKindLabel(h.kind),
+      if (units == null && h.investedMinor != null)
+        'Invested ${money(h.investedMinor!)}',
+    ].join(' · ');
+  }
+
+  Widget _row(BuildContext context, Holding h, SemanticColors sem) {
+    final theme = Theme.of(context);
+    final pct = h.returnPct;
+    return InkWell(
+      key: Key('holding-${h.id}'),
+      onTap: () => onTap(h),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              child: Text(
+                h.name.trim().isEmpty ? '?' : h.name.trim()[0].toUpperCase(),
+                style: const TextStyle(fontSize: 13),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(h.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    _sub(h) +
+                        (_stale(h)
+                            ? '${_sub(h).isEmpty ? '' : ' · '}'
+                                'as of ${dateLabel(h.asOf!)}'
+                            : ''),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            HoldingSpark(
+              key: Key('spark-${h.id}'),
+              values: holdingSpark(h),
+              color: portfolioClassColor(group.cls),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 78,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(money(h.valueMinor ?? 0)),
+                  if (pct != null)
+                    Text(
+                      '${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: pct >= 0 ? sem.income : sem.expense,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +159,7 @@ class HoldingClassCard extends StatelessWidget {
                   children: [
                     Text(
                       money(group.valueMinor),
-                      style: theme.textTheme.titleSmall,
+                      style: theme.textTheme.titleMedium,
                     ),
                     if (pct != null)
                       Text(
@@ -88,49 +182,8 @@ class HoldingClassCard extends StatelessWidget {
                   ),
                 ),
               ),
-            for (final h in group.items)
-              ListTile(
-                key: Key('holding-${h.id}'),
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  h.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  [
-                    if (group.cls == PortfolioClass.other ||
-                        h.kind == HoldingKind.etf)
-                      holdingKindLabel(h.kind),
-                    if (h.investedMinor != null)
-                      'Invested ${money(h.investedMinor!)}',
-                    if (h.asOf != null) 'as of ${dateLabel(h.asOf!)}',
-                  ].join(' · '),
-                ),
-                leading: HoldingSpark(
-                  key: Key('spark-${h.id}'),
-                  values: holdingSpark(h),
-                  color: (h.valueMinor ?? 0) >= (h.previousValueMinor ?? 0)
-                      ? sem.income
-                      : sem.expense,
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(money(h.valueMinor ?? 0)),
-                    if (h.returnPct != null)
-                      Text(
-                        '${h.returnPct! >= 0 ? '+' : ''}'
-                        '${h.returnPct!.toStringAsFixed(1)}%',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: h.returnPct! >= 0 ? sem.income : sem.expense,
-                        ),
-                      ),
-                  ],
-                ),
-                onTap: () => onTap(h),
-              ),
+            const SizedBox(height: 4),
+            for (final h in group.items) _row(context, h, sem),
           ],
         ),
       ),

@@ -24,7 +24,7 @@ class HomeNetWorthCard extends ConsumerWidget {
     final colors = theme.extension<SemanticColors>();
     final change = nw.change;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: AppCard(
         key: const Key('home_networth'),
         onTap: () => context.go('/portfolio'),

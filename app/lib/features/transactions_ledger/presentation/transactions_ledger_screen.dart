@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/providers.dart';
-import 'package:hisaab/app/scope_bar.dart' show TabTitle;
+import 'package:hisaab/app/scope_bar.dart' show BookTag;
 import 'package:hisaab/features/transactions_ledger/domain/day_groups.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
@@ -31,6 +31,8 @@ class TransactionsLedgerScreen extends ConsumerStatefulWidget {
     required this.filter,
     required this.periodLabel,
     this.filterBuilder,
+    this.titleActions,
+    this.sourceFilter,
     this.pickCategory,
     super.key,
   });
@@ -44,6 +46,12 @@ class TransactionsLedgerScreen extends ConsumerStatefulWidget {
   /// Header above the summary; gets the shown-row count.
   final Widget Function(BuildContext context, int? count)? filterBuilder;
 
+  /// Search and filter icons at the right of the title row.
+  final Widget? titleActions;
+
+  /// Source dropdown beside the view dropdown (supplied by the app shell).
+  final Widget? sourceFilter;
+
   /// Category picker for the bulk action; hidden when null.
   final CategoryPicker? pickCategory;
 
@@ -55,7 +63,7 @@ String _segmentLabel(LedgerSegment s) => switch (s) {
       LedgerSegment.list => 'List',
       LedgerSegment.category => 'By category',
       LedgerSegment.calendar => 'Calendar',
-      LedgerSegment.merchant => 'By merchant',
+      LedgerSegment.merchant => 'Merchant',
     };
 
 bool _same(LedgerFilter a, LedgerFilter b) =>
@@ -218,16 +226,21 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
         if (!didPop) setState(_selected.clear);
       },
       child: Scaffold(
-        appBar: _selecting
-            ? _selectionBar()
-            : AppBar(title: const TabTitle('Transactions')),
+        appBar: _selecting ? _selectionBar() : null,
         floatingActionButton: _selecting
             ? null
             : FloatingActionButton(
                 key: const Key('ledger_add'),
+                heroTag: null,
                 tooltip: 'Add transaction',
+                backgroundColor: AppIcons.mint,
+                foregroundColor: const Color(0xFF06220F),
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 onPressed: () => context.push('/transactions/add'),
-                child: const Icon(Icons.add),
+                child: const Icon(Icons.add, size: 28),
               ),
         body: StreamBuilder<List<LedgerTx>>(
           stream: _rows,
@@ -236,14 +249,21 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
             if (rows != null) _shown = rows;
             final header = widget.filterBuilder?.call(context, rows?.length);
             return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+              padding: EdgeInsets.fromLTRB(
+                14,
+                _selecting ? 8 : MediaQuery.paddingOf(context).top + 8,
+                14,
+                96,
+              ),
               children: [
+                if (!_selecting) _titleRow(context),
                 if (header != null) header,
                 if (reviewCount > 0)
                   Padding(
-                    padding: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.only(bottom: 10),
                     child: AppCard(
                       key: const Key('review_banner'),
+                      padding: const EdgeInsets.all(12),
                       onTap: () => context.push('/review'),
                       child: Row(
                         children: [
@@ -257,7 +277,7 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
                       ),
                     ),
                   ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 if (rows == null)
                   const Padding(
                     padding: EdgeInsets.all(32),
@@ -270,19 +290,26 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
                     periodLabel: widget.periodLabel,
                     masked: masked,
                   ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: AppDropdown<LedgerSegment>(
-                      key: const Key('ledger_view_dropdown'),
-                      icon: Icons.view_agenda_outlined,
-                      value: _segment,
-                      options: LedgerSegment.values,
-                      labelOf: _segmentLabel,
-                      onChanged: (v) => setState(() => _segment = v),
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: widget.sourceFilter ?? const SizedBox.shrink(),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: AppDropdown<LedgerSegment>(
+                          key: const Key('ledger_view_dropdown'),
+                          expanded: true,
+                          value: _segment,
+                          options: LedgerSegment.values,
+                          labelOf: _segmentLabel,
+                          onChanged: (v) => setState(() => _segment = v),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   if (rows.isEmpty)
                     SizedBox(height: 280, child: _empty())
                   else
@@ -333,6 +360,34 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
     );
   }
 
+  Widget _titleRow(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Row(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      'Transactions',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                              ),
+                    ),
+                  ),
+                  const BookTag(),
+                ],
+              ),
+            ),
+            if (widget.titleActions != null) widget.titleActions!,
+          ],
+        ),
+      );
+
   // FR-20-19: empty state by cause.
   Widget _empty() {
     final f = widget.filter;
@@ -370,30 +425,37 @@ class _DayCard extends StatelessWidget {
     final theme = Theme.of(context);
     final label = dayLabel(group.day, DateTime.now());
     final s = group.summary;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: AppCard(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(label, style: theme.textTheme.titleSmall),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.titleSmall?.copyWith(fontSize: 14),
                 ),
-                Text(
-                  'Out ${formatAmount(s.spentMinor, masked: masked, paise: false)}'
-                  '${s.cardMinor > 0 ? ' · Card ${formatAmount(s.cardMinor, masked: masked, paise: false)}' : ''}',
-                  key: Key('day_out_$label'),
-                  style: theme.textTheme.labelMedium,
+              ),
+              Text(
+                'Out ${formatAmount(s.spentMinor, masked: masked, paise: false)}'
+                '${s.cardMinor > 0 ? ' · Card ${formatAmount(s.cardMinor, masked: masked, paise: false)}' : ''}',
+                key: Key('day_out_$label'),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-              ],
-            ),
-            for (final t in group.rows) tile(t),
-          ],
+              ),
+            ],
+          ),
         ),
-      ),
+        AppCard(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          child: Column(
+            children: withDividers([for (final t in group.rows) tile(t)]),
+          ),
+        ),
+      ],
     );
   }
 }

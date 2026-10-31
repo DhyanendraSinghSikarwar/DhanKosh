@@ -3,8 +3,10 @@ import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_views.dart';
-import 'package:hisaab/shared/providers/amount_masking.dart';
+import 'package:hisaab/features/transactions_ledger/presentation/ledger_tx_tile.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/section_label.dart';
 
 const _months = [
   'January',
@@ -97,14 +99,14 @@ class _State extends State<LedgerCalendarView> {
     );
     final m = DateTime(month.year, month.month);
     final values = dayValues(widget.rows, widget.kind);
-    final color =
-        widget.kind == TxKind.income ? sem.income : theme.colorScheme.primary;
+    final color = widget.kind == TxKind.income ? sem.income : AppIcons.mint;
+    final peak = values.values.fold<int>(0, (a, b) => a > b ? a : b);
     final days = DateTime(m.year, m.month + 1, 0).day;
     final lead = DateTime(m.year, m.month).weekday - 1;
     final cells = <Widget>[
       for (var i = 0; i < lead; i++) const SizedBox.shrink(),
       for (var d = 1; d <= days; d++)
-        _cell(theme, color, DateTime(m.year, m.month, d), values),
+        _cell(theme, color, DateTime(m.year, m.month, d), values, peak),
     ];
     final selected = _day;
     final dayRows = selected == null
@@ -155,11 +157,8 @@ class _State extends State<LedgerCalendarView> {
                   ),
                 ],
               ),
-              Text(
-                calendarCaption(widget.kind),
-                key: const Key('cal_caption'),
-                style: theme.textTheme.labelMedium,
-              ),
+              SectionLabel(calendarCaption(widget.kind),
+                  key: const Key('cal_caption')),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -175,7 +174,7 @@ class _State extends State<LedgerCalendarView> {
                 crossAxisCount: 7,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 0.8,
+                childAspectRatio: 1.15,
                 children: cells,
               ),
             ],
@@ -185,14 +184,16 @@ class _State extends State<LedgerCalendarView> {
         if (selected != null)
           AppCard(
             key: const Key('cal_day_rows'),
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             child: dayRows.isEmpty
                 ? const Padding(
-                    padding: EdgeInsets.only(bottom: 8),
+                    padding: EdgeInsets.symmetric(vertical: 12),
                     child: Text('No transactions on this day'),
                   )
                 : Column(
-                    children: [for (final t in dayRows) widget.rowBuilder(t)],
+                    children: withDividers(
+                      [for (final t in dayRows) widget.rowBuilder(t)],
+                    ),
                   ),
           ),
       ],
@@ -207,35 +208,28 @@ class _State extends State<LedgerCalendarView> {
     Color color,
     DateTime day,
     Map<DateTime, int> values,
+    int peak,
   ) {
     final v = values[day];
     final sel = _day != null && _sameDay(_day!, day);
+    final heat = v == null || peak == 0 ? 0.0 : 0.1 + 0.5 * (v / peak);
+    final base = theme.colorScheme.surfaceContainerHighest;
     return InkWell(
       key: Key('cal_day_${day.day}'),
+      borderRadius: BorderRadius.circular(8),
       onTap: () => setState(() => _day = day),
       child: Container(
-        margin: const EdgeInsets.all(1),
+        margin: const EdgeInsets.all(2),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: sel
-              ? theme.colorScheme.secondaryContainer
-              : v == null
-                  ? null
-                  : color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(6),
+          color: Color.alphaBlend(color.withValues(alpha: heat), base),
+          borderRadius: BorderRadius.circular(8),
+          border: sel ? Border.all(color: color, width: 1.5) : null,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('${day.day}', style: theme.textTheme.labelSmall),
-            if (v != null)
-              FittedBox(
-                child: Text(
-                  formatAmount(v, masked: widget.masked, paise: false),
-                  key: Key('cal_val_${day.day}'),
-                  style: theme.textTheme.labelSmall?.copyWith(color: color),
-                ),
-              ),
-          ],
+        child: Text(
+          '${day.day}',
+          key: v == null ? null : Key('cal_val_${day.day}'),
+          style: const TextStyle(fontSize: 11),
         ),
       ),
     );

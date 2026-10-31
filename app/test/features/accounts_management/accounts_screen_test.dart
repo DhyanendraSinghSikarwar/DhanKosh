@@ -220,7 +220,7 @@ void main() {
       );
     });
     await pumpApp(t, env, _routes);
-    expect(find.text('Bank accounts (1)'), findsOneWidget);
+    expect(find.text('Bank accounts'), findsOneWidget);
     expect(find.text('Cash and wallets (1)'), findsOneWidget);
     expect(find.text('Credit cards (1)'), findsOneWidget);
     expect(find.text('Business'), findsOneWidget);
@@ -229,7 +229,7 @@ void main() {
     );
     container.read(bookProvider.notifier).set(Book.business);
     await settle(t);
-    expect(find.text('Bank accounts (1)'), findsNothing);
+    expect(find.text('Bank accounts'), findsNothing);
     expect(find.text('Cash and wallets (1)'), findsOneWidget);
     expect(find.text('Credit cards (1)'), findsNothing);
     await teardownApp(t);

@@ -8,6 +8,7 @@ import 'package:hisaab/features/activity_log/domain/activity_stats.dart';
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/activity_log/domain/inbox_logic.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
+import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:intl/intl.dart';
 
 /// Activity log (F-22): totals, sync times, source filter and entries by day.
@@ -236,25 +237,23 @@ class _TotalsCard extends StatelessWidget {
             ],
           ),
         );
-    return Card(
+    return AppCard(
       key: Key('activity-$title'),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                kpi('SMS read', totals.sms),
-                kpi('Emails read', totals.emails),
-                kpi('Added', totals.added),
-                kpi('Statements', totals.statements),
-              ],
-            ),
-          ],
-        ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              kpi('SMS read', totals.sms),
+              kpi('Emails read', totals.emails),
+              kpi('Added', totals.added),
+              kpi('Statements', totals.statements),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -275,8 +274,9 @@ class _SyncCard extends StatelessWidget {
       d == null ? none : DateFormat('d MMM yyyy, h:mm a').format(d);
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) => AppCard(
         key: const Key('activity-sync'),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           children: [
             ListTile(
@@ -311,12 +311,13 @@ class _DayCard extends StatelessWidget {
   final int seen;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) => AppCard(
+        padding: const EdgeInsets.only(bottom: 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
               child: Text(title, style: Theme.of(context).textTheme.titleSmall),
             ),
             for (final e in entries)

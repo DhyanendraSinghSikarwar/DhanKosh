@@ -8,51 +8,77 @@ import 'package:hisaab/features/credit_cards/presentation/card_due_format.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/mock_kit.dart';
 
 /// Home Credit cards card: total due and a row per card of the shared Book
 /// with due amount, due date and a limit-used bar. A row opens the card
 /// page `/cards/:id` (FR-14-12, FR-14-24, FR-14-25). Empty when there is no
 /// card.
-class CardsHomeStrip extends ConsumerWidget {
+class CardsHomeStrip extends ConsumerStatefulWidget {
   /// Creates the strip.
   const CardsHomeStrip({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CardsHomeStrip> createState() => _CardsHomeStripState();
+}
+
+class _CardsHomeStripState extends ConsumerState<CardsHomeStrip> {
+  bool _info = false;
+
+  @override
+  Widget build(BuildContext context) {
     final cards = ref.watch(homeCardsProvider);
     if (cards.isEmpty) return const SizedBox.shrink();
     final masked = ref.watch(hideAmountsProvider).value ?? true;
-    final theme = Theme.of(context);
     final now = DateTime.now().millisecondsSinceEpoch;
     final total =
         cards.fold<int>(0, (s, v) => s + (v.card.paid ? 0 : v.dueMinor));
     return AppCard(
       key: const Key('home_cards_strip'),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InkWell(
             key: const Key('home_cards_header'),
             onTap: () => context.push('/cards'),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Credit cards',
-                    style: theme.textTheme.titleMedium,
-                  ),
+            child: CardHeader(
+              'Credit cards',
+              info: InfoDot(
+                key: const Key('home_cards_info'),
+                onTap: () => setState(() => _info = !_info),
+              ),
+              trailing: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: total == 0 ? 'No dues' : 'Total due '),
+                    if (total != 0)
+                      TextSpan(
+                        text: cardWhole(total, masked: masked),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                  ],
                 ),
-                Text(
-                  total == 0
-                      ? 'No dues'
-                      : 'Total due ${cardMoney(total, masked: masked)}',
-                  key: const Key('home_cards_total'),
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
+                key: const Key('home_cards_total'),
+                style: MockText.small(context),
+              ),
             ),
           ),
-          for (final v in cards) _CardRow(view: v, masked: masked, nowMs: now),
+          if (_info)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Read from your latest statements. Open a card to see '
+                'unbilled spends and edit anything that looks off.',
+                style: MockText.small(context),
+              ),
+            ),
+          const SizedBox(height: 6),
+          for (final (i, v) in cards.indexed)
+            _CardRow(view: v, masked: masked, nowMs: now, first: i == 0),
         ],
       ),
     );
@@ -64,11 +90,13 @@ class _CardRow extends ConsumerWidget {
     required this.view,
     required this.masked,
     required this.nowMs,
+    required this.first,
   });
 
   final CardView view;
   final bool masked;
   final int nowMs;
+  final bool first;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -87,57 +115,100 @@ class _CardRow extends ConsumerWidget {
         'Due ${cardDate(due)}'
       else
         'No dues',
-      if (limit != null) 'limit ${cardMoney(limit, masked: masked)}',
+      if (limit != null) 'limit ${cardCompact(limit, masked: masked)}',
     ].join(' · ');
     return InkWell(
       key: Key('home_card_${c.id}'),
       onTap: () => context.push('/cards/${c.id}'),
-      child: Padding(
-        padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: theme.colorScheme.outlineVariant),
+          ),
+        ),
         child: Column(
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const IconBadge(AppIcons.cards),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${c.name} ••${c.last4}'),
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: c.name),
+                            TextSpan(
+                              text: ' ••${c.last4}',
+                              style: MockText.small(context),
+                            ),
+                          ],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: MockText.body(context),
+                      ),
                       Text(
                         sub,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall,
+                        style: MockText.small(context),
                       ),
                     ],
                   ),
                 ),
-                Text(
-                  c.paid ? 'Paid' : cardMoney(owed, masked: masked),
-                  key: Key('home_card_due_${c.id}'),
-                  style: theme.textTheme.titleSmall,
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      c.paid ? 'Paid' : cardWhole(owed, masked: masked),
+                      key: Key('home_card_due_${c.id}'),
+                      style: MockText.mid(context),
+                    ),
+                    if (soon)
+                      InkWell(
+                        key: Key('home_card_paid_${c.id}'),
+                        onTap: () =>
+                            ref.read(cardDueActionsProvider).markPaid(c),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Text(
+                            'Mark paid',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Text(
+                        '›',
+                        style: MockText.body(
+                          context,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
                 ),
-                if (soon)
-                  TextButton(
-                    key: Key('home_card_paid_${c.id}'),
-                    onPressed: () =>
-                        ref.read(cardDueActionsProvider).markPaid(c),
-                    child: const Text('Mark paid'),
-                  )
-                else
-                  const Icon(Icons.chevron_right),
               ],
             ),
             if (used != null) ...[
               const SizedBox(height: 8),
-              LinearProgressIndicator(
-                key: Key('home_card_used_${c.id}'),
-                value: used,
-                minHeight: 6,
+              ClipRRect(
                 borderRadius: BorderRadius.circular(3),
-                color: used > 0.4 ? AppIcons.amber : AppIcons.mint,
+                child: LinearProgressIndicator(
+                  key: Key('home_card_used_${c.id}'),
+                  value: used,
+                  minHeight: 6,
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  color: used > 0.4 ? AppIcons.amber : AppIcons.mint,
+                ),
               ),
             ],
           ],

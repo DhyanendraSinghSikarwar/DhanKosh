@@ -50,15 +50,15 @@ void main() {
   testWidgets('FR-31-11/12 support pills build the UPI link', (t) async {
     final ch = _Channel();
     await t.pumpWidget(_app(const SupportScreen(upiId: 'dummy@upi'), ch));
-    expect(find.text('₹100'), findsOneWidget);
+    expect(find.text('₹49'), findsOneWidget);
     expect(find.text('dummy@upi'), findsNothing); // FR-31-13: never shown
-    await t.tap(find.byKey(const Key('support-pill-200')));
+    await t.tap(find.byKey(const Key('support-pill-199')));
     await t.pump();
     await t.tap(find.byKey(const Key('support-pay')));
     await t.pump();
     expect(
       ch.opened.single,
-      'upi://pay?pa=dummy@upi&pn=DhanKosh&cu=INR&am=200',
+      'upi://pay?pa=dummy@upi&pn=DhanKosh&cu=INR&am=199',
     );
   });
 

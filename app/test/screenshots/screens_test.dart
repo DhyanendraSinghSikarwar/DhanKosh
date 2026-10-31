@@ -144,6 +144,18 @@ void main() {
       await tester.tap(find.text('By category').last);
       await settle();
       await shot('transactions_by_category');
+      for (final v in const ['Calendar', 'Merchant']) {
+        await tester.tap(find.byKey(const Key('ledger_view_dropdown')));
+        await settle(2);
+        await tester.tap(find.text(v).last);
+        await settle();
+        await shot('transactions_${v.toLowerCase()}');
+      }
+      await tester.tap(find.byKey(const Key('ledger_filter_button')));
+      await settle();
+      await shot('transactions_filters');
+      await tester.tap(find.byKey(const Key('filters_done')));
+      await settle();
 
       await go('/portfolio');
       await shot('portfolio');

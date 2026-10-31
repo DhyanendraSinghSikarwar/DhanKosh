@@ -5,7 +5,10 @@ import 'package:parser_core/parser_core.dart' show Category;
 /// Icon and tint of a category for round row badges.
 ({IconData icon, Color color}) categoryStyle(Category c) => switch (c) {
       Category.food => (icon: Icons.restaurant, color: AppIcons.amber),
-      Category.groceries => (icon: Icons.shopping_basket, color: AppIcons.olive),
+      Category.groceries => (
+          icon: Icons.shopping_basket,
+          color: AppIcons.olive
+        ),
       Category.transport => (icon: Icons.directions_car, color: AppIcons.teal),
       Category.fuel => (icon: Icons.local_gas_station, color: AppIcons.red),
       Category.shopping => (icon: Icons.shopping_bag, color: AppIcons.violet),
@@ -23,7 +26,10 @@ import 'package:parser_core/parser_core.dart' show Category;
       Category.personalCare => (icon: Icons.spa, color: AppIcons.red),
       Category.household => (icon: Icons.chair, color: AppIcons.goldTone),
       Category.gifts => (icon: Icons.card_giftcard, color: AppIcons.red),
-      Category.donations => (icon: Icons.volunteer_activism, color: AppIcons.red),
+      Category.donations => (
+          icon: Icons.volunteer_activism,
+          color: AppIcons.red
+        ),
       Category.taxes => (icon: Icons.receipt_long, color: AppIcons.violet),
       Category.fees => (icon: Icons.account_balance, color: AppIcons.blue),
       Category.salary => (icon: Icons.work, color: AppIcons.mint),
