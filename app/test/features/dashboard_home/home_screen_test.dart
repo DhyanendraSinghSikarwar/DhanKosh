@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/scope_providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/features/dashboard_home/presentation/dashboard_home_screen.dart';
+import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
 import 'package:hisaab/features/savings_goals/data/goal_repository_impl.dart';
 import 'package:hisaab/features/savings_goals/domain/goal.dart';
 import 'package:hisaab/features/savings_goals/presentation/goals_summary_card.dart';
@@ -191,6 +194,101 @@ void main() {
       t.widget<Text>(find.byKey(const Key('home_spent'))).data,
       '₹2,450.50',
     );
+    await teardownApp(t);
+  });
+
+  // FR-17-32
+  testWidgets('Book tag shows next to the name unless Personal', (t) async {
+    await seed(t);
+    await pumpApp(t, env, _routes([]));
+    final c = ProviderScope.containerOf(t.element(find.byType(MaterialApp)));
+    c.read(bookProvider.notifier).set(Book.personal);
+    await settle(t);
+    expect(find.byKey(const Key('home_book_tag')), findsNothing);
+    c.read(bookProvider.notifier).set(Book.business);
+    await settle(t);
+    expect(find.text('Business'), findsOneWidget);
+    expect(find.byKey(const Key('home_book_tag')), findsOneWidget);
+    await teardownApp(t);
+  });
+
+  // FR-17-19, FR-17-33: the eye masks every number and the setting sticks.
+  testWidgets('eye hides amounts everywhere and stores the setting',
+      (t) async {
+    await seed(t);
+    await pumpApp(t, env, _routes([]));
+    expect(find.textContaining('2,450'), findsWidgets);
+    await t.tap(find.byKey(const Key('home_eye')));
+    await settle(t);
+    expect(find.textContaining('2,450'), findsNothing);
+    expect(find.textContaining('₹••••'), findsWidgets);
+    final stored =
+        await t.runAsync(() => env.settings.read(SettingKeys.hideAmounts));
+    expect(stored, isTrue);
+    await teardownApp(t);
+  });
+
+  // FR-17-34
+  testWidgets('refresh opens a sheet with steps, progress and a result',
+      (t) async {
+    t.view.physicalSize = const Size(800, 3000);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await seed(t);
+    await pumpApp(t, env, _routes([]));
+    await t.tap(find.byKey(const Key('home_sync')));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const Key('home_refresh_sheet')), findsOneWidget);
+    expect(find.byKey(const Key('home_refresh_progress')), findsOneWidget);
+    expect(find.text('SMS'), findsOneWidget);
+    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('Matching'), findsOneWidget);
+    for (var i = 0;
+        i < 40 && find.byKey(const Key('home_refresh_done')).evaluate().isEmpty;
+        i++) {
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await t.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.byKey(const Key('home_refresh_result')), findsOneWidget);
+    expect(
+      t.widget<Text>(find.byKey(const Key('home_refresh_result'))).data,
+      matches(RegExp(r'^\d+ new')),
+    );
+    await t.tap(find.byKey(const Key('home_refresh_done')));
+    await t.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const Key('home_refresh_sheet')), findsNothing);
+    await teardownApp(t);
+  });
+
+  // FR-17-37: category card at the end; slice tap drills down, back returns.
+  testWidgets('category donut drills into sub-categories and back',
+      (t) async {
+    t.view.physicalSize = const Size(800, 6000);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await seed(t);
+    await pumpApp(t, env, _routes([]));
+    final card = find.byKey(const Key('home_categories'));
+    expect(card, findsOneWidget);
+    expect(find.text('Spend by category'), findsOneWidget);
+    // It is the last card: the accounts strip sits above it.
+    expect(
+      t.getTopLeft(find.byKey(const Key('home_balance'))).dy,
+      lessThan(t.getTopLeft(card).dy),
+    );
+    await t.tap(find.byKey(const Key('home_categories_info')));
+    await t.pump();
+    expect(find.byKey(const Key('home_categories_note')), findsOneWidget);
+    await t.tap(find.byKey(const Key('home_cat_Food')));
+    await t.pump();
+    expect(find.byKey(const Key('home_categories_back')), findsOneWidget);
+    await t.tap(find.byKey(const Key('home_categories_back')));
+    await t.pump();
+    expect(find.byKey(const Key('home_categories_back')), findsNothing);
+    expect(find.text('Spend by category'), findsOneWidget);
     await teardownApp(t);
   });
 
