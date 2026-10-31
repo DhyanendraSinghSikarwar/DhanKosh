@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/providers.dart';
-import 'package:hisaab/app/scope_bar.dart';
+import 'package:hisaab/app/scope_bar.dart' show PeriodChips;
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/search_filters/domain/ledger_view_state.dart';
 import 'package:hisaab/features/search_filters/presentation/ledger_view_notifier.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
+import 'package:hisaab/shared/widgets/app_dropdown.dart';
 import 'package:parser_core/parser_core.dart';
 
 final StreamProvider<List<Account>> _visibleAccountsProvider =
@@ -23,11 +24,15 @@ const Map<TxKind, String> _kinds = {
   TxKind.transfers: 'Transfers',
 };
 
-const Map<AccountKind?, String> _accountKinds = {
-  null: 'All',
-  AccountKind.account: 'Accounts',
-  AccountKind.card: 'Cards',
-};
+enum _SourceKind {
+  all('All sources', null),
+  accounts('Accounts', AccountKind.account),
+  cards('Cards', AccountKind.card);
+
+  const _SourceKind(this.label, this.kind);
+  final String label;
+  final AccountKind? kind;
+}
 
 const Map<Source, String> _sourceLabels = {
   Source.sms: 'SMS',
@@ -131,17 +136,20 @@ class _LedgerFilterBarState extends ConsumerState<LedgerFilterBar> {
         const SizedBox(height: 8),
         const PeriodChips(),
         const SizedBox(height: 4),
-        const BookChips(),
-        _ChipRow(
-          children: [
-            for (final e in _accountKinds.entries)
-              ChoiceChip(
-                key: Key('acckind_${e.key?.name ?? 'all'}'),
-                label: Text(e.value),
-                selected: view.accountKind == e.key,
-                onSelected: (_) => notifier.setAccountKind(e.key),
-              ),
-          ],
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: AppDropdown<_SourceKind>(
+              key: const Key('source_dropdown'),
+              icon: Icons.account_balance_outlined,
+              value: _SourceKind.values
+                  .firstWhere((s) => s.kind == view.accountKind),
+              options: _SourceKind.values,
+              labelOf: (s) => s.label,
+              onChanged: (s) => notifier.setAccountKind(s.kind),
+            ),
+          ),
         ),
         _ChipRow(
           children: [

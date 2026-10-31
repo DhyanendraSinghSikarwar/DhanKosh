@@ -1,4 +1,5 @@
-/// Kind of holding (FR-16-08).
+/// Kind of holding (FR-16-08). Stored as text by name, so new kinds need no
+/// schema change.
 enum HoldingKind {
   mutualFund,
   stock,
@@ -6,6 +7,7 @@ enum HoldingKind {
   epf,
   nps,
   ppf,
+  sukanya,
   bond,
   gold,
   fd,
@@ -46,7 +48,10 @@ AssetClass assetClassOf(HoldingKind kind) => switch (kind) {
       HoldingKind.nps ||
       HoldingKind.ppf =>
         AssetClass.retirement,
-      HoldingKind.fd || HoldingKind.bond => AssetClass.debt,
+      HoldingKind.fd ||
+      HoldingKind.bond ||
+      HoldingKind.sukanya =>
+        AssetClass.debt,
       HoldingKind.gold => AssetClass.gold,
       HoldingKind.other => AssetClass.other,
     };

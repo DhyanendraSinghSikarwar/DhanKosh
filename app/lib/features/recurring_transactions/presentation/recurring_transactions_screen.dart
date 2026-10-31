@@ -19,7 +19,11 @@ import 'package:hisaab/shared/widgets/empty_state.dart';
 /// payments (FR-12-03, 04, 06, 09, 10). Route `/bills`.
 class RecurringTransactionsScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
-  const RecurringTransactionsScreen({super.key});
+  const RecurringTransactionsScreen({this.extraSection, super.key});
+
+  /// Optional section composed by the router under the calendar, for the
+  /// shown month and selected day (card dues with Mark paid, FR-12-09).
+  final Widget Function(DateTime month, DateTime? day)? extraSection;
 
   @override
   ConsumerState<RecurringTransactionsScreen> createState() => _State();
@@ -101,6 +105,8 @@ class _State extends ConsumerState<RecurringTransactionsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
+              if (widget.extraSection != null)
+                widget.extraSection!(_month, _day),
               if (shown.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(16),

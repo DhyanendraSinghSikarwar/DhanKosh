@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/settings_row.dart';
 
 /// More-screen entry to Security & privacy.
 class SecurityTile extends StatelessWidget {
@@ -7,12 +9,11 @@ class SecurityTile extends StatelessWidget {
   const SecurityTile({super.key});
 
   @override
-  Widget build(BuildContext context) => ListTile(
+  Widget build(BuildContext context) => SettingsRow(
         key: const Key('security-tile'),
-        contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.shield_outlined),
-        title: const Text('Security & privacy'),
-        trailing: const Icon(Icons.chevron_right),
+        badge: AppIcons.security,
+        title: 'Security',
+        subtitle: 'App lock, timeout, screenshots',
         onTap: () => context.push('/settings/security'),
       );
 }

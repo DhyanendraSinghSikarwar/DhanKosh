@@ -10,7 +10,6 @@ import 'package:hisaab/features/dashboard_home/presentation/home_budget_widgets.
 import 'package:hisaab/features/dashboard_home/presentation/home_categories_card.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_header.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_insights_card.dart';
-import 'package:hisaab/features/dashboard_home/presentation/home_net_worth_card.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_providers.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_recent_list.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_sms_card.dart';
@@ -83,6 +82,10 @@ class _DashboardHomeScreenState extends ConsumerState<DashboardHomeScreen> {
     final recent = ref.watch(homeRecentProvider).value;
     final accounts = ref.watch(homeAccountsProvider).value;
     final visible = ref.watch(visibleSectionsProvider(ScreenIds.home));
+    final rest = [
+      for (final i in visible)
+        if (i != 'categories') i,
+    ];
     final loaded = totals != null && recent != null && accounts != null;
     final empty =
         loaded && recent.isEmpty && accounts.isEmpty && (totals.count == 0);
@@ -108,21 +111,24 @@ class _DashboardHomeScreenState extends ConsumerState<DashboardHomeScreen> {
                           child: widget.layoutEditor!,
                         )
                       else ...[
-                        HomeNetWorthCard(masked: masked),
                         const HomeSmsCard(),
                         const HomeAttentionCard(),
-                        for (final id in visible) ...[
+                        for (final id in rest) ...[
                           if (_section(id, recent, masked) case final w?) ...[
                             w,
                             const SizedBox(height: 16),
                           ],
                           if (widget.goalsSection != null &&
-                              _goalsAfter(visible) == id) ...[
+                              _goalsAfter(rest) == id) ...[
                             widget.goalsSection!,
                             const SizedBox(height: 16),
                           ],
                         ],
                         HomeAccountsStrip(accounts: accounts, masked: masked),
+                        if (visible.contains('categories')) ...[
+                          const SizedBox(height: 16),
+                          const HomeCategoriesCard(),
+                        ],
                       ],
                     ],
                   ),

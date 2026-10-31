@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-08 |
-| Status | In progress (data layer, core UI, transfer/EMI pairing, Calendar, By merchant, multi-select done; OCR, gaps, own-transfer form, split pending) ; 2026-10-27 parity: By category, Card/Account chips, payee-account map and own-transfer form done; 2026-10-27 parity: screenshot OCR fill done (FR-08-26); gaps, own-transfer and split are other items |
+| Status | In progress (data layer, core UI, transfer/EMI pairing, Calendar, By merchant, multi-select done; OCR, gaps, own-transfer form, split pending) ; 2026-10-27 parity: By category, Card/Account chips, payee-account map and own-transfer form done; 2026-10-27 parity: screenshot OCR fill done (FR-08-26); gaps, own-transfer and split are other items ; 2026-10-31 mockups applied: source and view dropdowns, Book tag |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 
@@ -489,3 +489,4 @@ Still deferred: own-transfer form in the Add screen, `reclassifyCardBills` sweep
 | 2026-10-27 | Audit: List, Calendar, By merchant, multi-select merge, filters confirmed done; screenshot OCR, split, account change with Remember, brand logos, own-transfer form and gap card confirmed not built | Kotlin parity audit |
 | 2026-10-27 | Card/Account tag and chips, By category segment, cash-basis summary strip, Remember for this payee, own-transfer Add mode (FR-08-23..25) | Kotlin parity, ADR-0011 |
 | 2026-10-27 | Screenshot OCR (FR-08-12, FR-08-26): ports `TextRecognizerPort` and `ScreenshotSource` (domain/ocr_port.dart), `ScreenshotFillService` (domain/screenshot_fill.dart), `MlkitTextRecognizer`, `FilePickerScreenshotSource` (data), `OcrFillCard` (presentation), providers `app/di/ocr_providers.dart`; hooked into `AddTransactionScreen` by one card and `_applyFill` | Kotlin parity |
+| 2026-10-31 | Source dropdown (All sources, Accounts, Cards) replaces the Accounts/Cards chips; one view dropdown (List, By category, Calendar, By merchant) replaces the segment switcher; Book chips removed from the tab (Book is chosen in More) and a Book tag shows beside the title when not Personal; review banner uses a coloured IconBadge (FR-08-23, FR-20-23; tests: source dropdown filters, view dropdown switches, Book tag) | Approved Transactions/Analysis mockups |

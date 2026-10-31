@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-13 |
-| Status | In progress (Phase 1 data layer and UI; gap detection with GapCard, Add transaction/Assign/Ignore, duplicate and debit-link suggestions, Merge/Unmerge, Restore missing accounts, edit sheet with nickname, colour, network, link, usage, forex markup, account chart 6 months/Year/All time done; tabs with Book filter, matured-deposit auto-hide, notifications posting by the alerts engine and statement retry on unlock save pending) |
+| Status | In progress (grouped Accounts screen; Phase 1 data layer and UI; gap detection with GapCard, Add transaction/Assign/Ignore, duplicate and debit-link suggestions, Merge/Unmerge, Restore missing accounts, edit sheet with nickname, colour, network, link, usage, forex markup, account chart 6 months/Year/All time done; tabs with Book filter, matured-deposit auto-hide, notifications posting by the alerts engine and statement retry on unlock save pending) |
 | Priority | P0 |
 | Phase | 1 (account creation from messages, balances, lists); 2 for debit-card link, merge and gap detection; 3 for statement unlock details |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 
@@ -205,6 +205,7 @@ Gap UI: `GapCard` (amber "Untracked change . {summary}", candidate rows "Assign 
 - FR-13-19: An account marked Business (edit sheet usage control, `AccountUsage`) shows a Business badge on its tile; the Book store scopes lists and totals by it (FR-20-23).
 - FR-13-19: The edit sheet shall personalise an account: nickname, usage, type, card network, debit-card link (bank accounts of the same list), colour (8 swatches or none) and, for cards, forex markup 0..20% (stored as bps in `forexMarkupBps`, a change recomputes `inrMinor`, FR-14-15). Writes go through `AccountAdminRepository`.
 - FR-13-20: The encrypted backup shall carry and restore these fields (colour, network, last stated balance/limit, forex markup, debit-card link and merge target by `bank|last4` key) without changing JSON schema 1 ([Backup & Export](24_backup_export.md) FR-24-33).
+- FR-13-21: The Accounts screen (`/accounts`) lists accounts and cards in groups Bank accounts, Cash and wallets, Credit cards, filtered by the global Book (`bookProvider`; usage personal/business). Rows show a coloured icon, name with last digits, type and source (Synced, Manual or No balance yet), balance (credit cards: due amount and % of limit used) and a Personal/Business tag. A header card shows the total balance and total card dues. The Add button is in the app bar. Tapping a bank account opens `/accounts/<id>`; tapping a credit card opens `/cards/<id>`, falling back to `/cards` when that route is absent.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -476,6 +477,7 @@ Integration:
 - TC-13-18 (FR-13-01, FR-13-03): ingest a bank SMS then a PhonePe notification for the same payment: one account, notification adopts it.
 - TC-13-19 (FR-13-12): orphaned transactions re-attach through Restore missing accounts.
 - TC-13-20 (FR-13-19): Business account tile shows the badge; business book totals use only that account (`cash_basis_repository_test.dart`).
+- TC-13-21 (FR-13-21): accounts split into Bank accounts, Cash and wallets and Credit cards; switching the book to Business hides personal rows.
 
 Fixtures: SMS corpus lines (HDFC `A/c *1234`, ICICI `Acct XX123`, SBI Corporate `ending with 96`, debit-card withdrawal stating the bank balance) from [Dedup & Review](07_dedup_review.md) samples; gap scenario table above.
 
@@ -538,3 +540,4 @@ Pending: tabs and Book filter (Book provider owned by the transactions work), ma
 | 2026-10-27 | Audit: nickname, hide, delete, unlock details, balances confirmed done; Business marking UI, colour picker, network logo, debit link UI, merge and Unmerge UI, Restore missing, account detail charts and untracked-payment gaps confirmed not built | Kotlin parity audit |
 | 2026-10-27 | Business badge on account tiles; own-transfer form lives in Add (memory 08, FR-08-25) | Kotlin parity |
 | 2026-10-27 | Untracked gaps, merge/link suggestions, Merge/Unmerge, Restore missing, delete options, edit sheet personalisation, account chart, backup of account fields (FR-13-15, 08, 09, 11, 12, 17, 19, 20) | Kotlin parity |
+| 2026-10-31 | Accounts screen grouped (Bank accounts, Cash and wallets, Credit cards), header with balance and card dues, book filter, coloured icons, source and book tags (FR-13-21) | Approved More/Accounts/Profile mockups |

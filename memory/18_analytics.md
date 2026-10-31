@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-18 |
-| Status | In progress (Phase 4 UI plus Kotlin chart parity 2026-10-27: tap-select donut with sub-category drill, stacked 12-month bars with average, tappable heat grid, Sankey and fan chart painters, savings-rate line, diverging compare, filter bar with custom range and account/card scope, section order from the layout store; Book wiring through `usage`; month sheet, recurring plan wiring, cash-basis monthly bars deferred) |
+| Status | In progress (Phase 4 UI plus Kotlin chart parity 2026-10-27: tap-select donut with sub-category drill, stacked 12-month bars with average, tappable heat grid, Sankey and fan chart painters, savings-rate line, diverging compare, filter bar with custom range and account/card scope, section order from the layout store; Book wiring through `usage`; month sheet, recurring plan wiring, cash-basis monthly bars deferred) ; 2026-10-31 mockups applied: Spend/Trends/Cash flow/Forecast sub-tabs, Book tag |
 | Priority | P1 |
 | Phase | 4 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 
@@ -106,7 +106,7 @@ Inputs for rules: DEBIT, `!needsReview`, currency INR, amounts as raw `amountMin
 
 ## 5. Functional Requirements (FR-18-01 ...)
 
-1. FR-18-01: The Analysis tab shows title, Book/Period chips and four segments (Spending, Cash flow, Forecast, Compare); it opens on Spending every visit; switching cross-fades over 220 ms.
+1. FR-18-01: The Analysis tab shows the title (with a Book tag when the Book is not Personal), the filter bar and a pinned sub-tab strip: Spend (insights, KPIs, category donut, top merchants, budgets), Trends (12-month bars, when-you-spend heatmap, month comparison, subscriptions, card utilisation), Cash flow (income flow, income sources, savings rate) and Forecast (month-end fan, 30-day cash). It opens on Spend every visit; the section layout store orders and hides sections within their sub-tab. (Flutter, 2026-10-31; Kotlin 2.9.8 had Spending, Cash flow, Forecast, Compare segments.)
 2. FR-18-02: Spending cards follow the analytics section order and visibility from the layout store (`categories`, `monthly`, `merchants`, `budgets`, `when`; all visible by default).
 3. FR-18-03: Spend by category: KPIs (Spent, Income, Saved/Overspent, Per day = `spent / days`), donut over all spend categories, legend of 6 with an expander for the rest, tap = cross-filter toggle, long-press = open category (with month when a calendar month).
 4. FR-18-04: The cross-filter narrows Monthly, When, Merchants and Budgets cards to the chosen category and shows a removable pill.
@@ -525,3 +525,4 @@ Fold adoption 2026-10-26: `domain/insight_extras.dart` (pure), `presentation/ana
 | 2026-10-27 | Audit: donut, 12-month bars (single series), heat grid, merchants, budgets, 30-day cash line confirmed done or partial; cross-filter, stacked bars, Sankey, fan chart, diverging bars and tappable heat cells confirmed not built; chart status tracked in 37_charts_catalogue.md | Kotlin parity audit |
 | 2026-10-27 | Chart parity: FR-18-27 filter bar, FR-18-29 interactions (tap-select donut with drill, stacked bars, heat tap, Sankey, fan, savings line, diverging compare); TC-18-21, TC-18-22 | Kotlin parity |
 | 2026-10-27 | Headline Spent/Income/Net use the cash basis (`LedgerMath.spent/income` call `SpendCalc.totals`); category views keep card purchases; `LedgerMath.cardPurchases` for the card figure; Book and account scope providers added (memory 20) | Kotlin parity, ADR-0011 |
+| 2026-10-31 | Analysis sub-tab strip (Spend, Trends, Cash flow, Forecast; pinned under the filter bar) replaces the Spend/Cash/Forecast/Compare segments; every card sits in exactly one sub-tab (Spend: insights, KPIs, categories, merchants, budgets; Trends: monthly, when, compare, subscriptions, card utilisation; Cash flow: income flow, sources, savings rate; Forecast: fan, 30-day cash); layout-store order applies within each sub-tab; Book chips replaced by a Book tag beside the title (FR-18-01; tests: sub-tab switching, Book tag) | Approved Transactions/Analysis mockups |

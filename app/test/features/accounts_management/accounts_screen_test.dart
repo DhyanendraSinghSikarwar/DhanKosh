@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/scope_providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_detail_screen.dart';
 import 'package:hisaab/features/accounts_management/presentation/accounts_management_screen.dart';
+import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -181,6 +184,54 @@ void main() {
     await t.pumpAndSettle();
     expect(await t.runAsync(() => env.accounts.byId(1)), isNull);
     expect(find.text('No accounts yet'), findsOneWidget);
+    await teardownApp(t);
+  });
+
+  // FR-13-21
+  testWidgets('groups accounts and filters by the global book', (t) async {
+    await t.runAsync(() async {
+      await env.settings.write(SettingKeys.hideAmounts, false);
+      await env.accounts.create(
+        const NewAccount(
+          kind: AccountKind.account,
+          bankName: 'HDFC Bank',
+          last4: '1234',
+          accountType: AccountType.savings,
+          balanceMinor: 5000000,
+        ),
+      );
+      await env.accounts.create(
+        const NewAccount(
+          kind: AccountKind.account,
+          bankName: 'Paytm',
+          last4: '0001',
+          accountType: AccountType.wallet,
+          balanceMinor: 100000,
+          usage: AccountUsage.business,
+        ),
+      );
+      await env.accounts.create(
+        const NewAccount(
+          kind: AccountKind.card,
+          bankName: 'ICICI Bank',
+          last4: '9876',
+          accountType: AccountType.creditCard,
+        ),
+      );
+    });
+    await pumpApp(t, env, _routes);
+    expect(find.text('Bank accounts (1)'), findsOneWidget);
+    expect(find.text('Cash and wallets (1)'), findsOneWidget);
+    expect(find.text('Credit cards (1)'), findsOneWidget);
+    expect(find.text('Business'), findsOneWidget);
+    final container = ProviderScope.containerOf(
+      t.element(find.byType(AccountsManagementScreen)),
+    );
+    container.read(bookProvider.notifier).set(Book.business);
+    await settle(t);
+    expect(find.text('Bank accounts (1)'), findsNothing);
+    expect(find.text('Cash and wallets (1)'), findsOneWidget);
+    expect(find.text('Credit cards (1)'), findsNothing);
     await teardownApp(t);
   });
 }

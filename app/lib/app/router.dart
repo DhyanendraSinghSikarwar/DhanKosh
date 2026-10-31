@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
@@ -17,6 +16,8 @@ import 'package:hisaab/features/backup_export/presentation/backup_tile.dart';
 import 'package:hisaab/features/categorization/presentation/category_detail_screen.dart';
 import 'package:hisaab/features/categorization/presentation/rules_screen.dart';
 import 'package:hisaab/features/categorization/presentation/rules_tile.dart';
+import 'package:hisaab/features/credit_cards/presentation/bills_card_dues.dart';
+import 'package:hisaab/features/credit_cards/presentation/card_detail_screen.dart';
 import 'package:hisaab/features/credit_cards/presentation/cards_home_strip.dart';
 import 'package:hisaab/features/credit_cards/presentation/credit_cards_screen.dart';
 import 'package:hisaab/features/dashboard_home/presentation/dashboard_home_screen.dart';
@@ -66,6 +67,7 @@ import 'package:hisaab/features/theming_customisation/presentation/customise_til
 import 'package:hisaab/features/theming_customisation/presentation/section_layout_editor.dart';
 import 'package:hisaab/features/theming_customisation/presentation/theming_customisation_screen.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/add_transaction_screen.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
 
 Widget _sipSheet(BuildContext _) => const SipSetupSheet();
 
@@ -118,7 +120,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/rules', builder: (_, __) => const RulesScreen()),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/goals', builder: (_, __) => const GoalsScreen()),
-      GoRoute(path: '/cards', builder: (_, __) => const CreditCardsScreen()),
+      GoRoute(
+        path: '/cards',
+        builder: (_, __) => const CreditCardsScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (_, state) => CardDetailScreen(
+              cardId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
+          ),
+        ],
+      ),
       GoRoute(
         path: '/statements',
         builder: (_, state) => StatementsScreen(
@@ -136,7 +149,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/review', builder: (_, __) => const DedupReviewScreen()),
       GoRoute(
         path: '/bills',
-        builder: (_, __) => const RecurringTransactionsScreen(),
+        builder: (_, __) => RecurringTransactionsScreen(
+          extraSection: (month, day) => BillsCardDues(month: month, day: day),
+        ),
       ),
       GoRoute(
         path: '/loans',

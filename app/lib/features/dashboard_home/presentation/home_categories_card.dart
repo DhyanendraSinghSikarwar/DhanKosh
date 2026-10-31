@@ -20,6 +20,7 @@ class HomeCategoriesCard extends ConsumerStatefulWidget {
 
 class _HomeCategoriesCardState extends ConsumerState<HomeCategoriesCard> {
   Category? _drill;
+  bool _info = false;
 
   static Color _color(BuildContext c, int i) {
     final s = Theme.of(c).colorScheme;
@@ -66,17 +67,25 @@ class _HomeCategoriesCardState extends ConsumerState<HomeCategoriesCard> {
                   style: theme.textTheme.titleMedium,
                 ),
               ),
+              IconButton(
+                key: const Key('home_categories_info'),
+                tooltip: 'About this total',
+                icon: const Icon(Icons.info_outline, size: 20),
+                onPressed: () => setState(() => _info = !_info),
+              ),
               TextButton(
                 onPressed: () => context.go('/analysis'),
                 child: const Text('Trends'),
               ),
             ],
           ),
-          Text(
-            'Includes card purchases',
-            key: const Key('home_categories_note'),
-            style: theme.textTheme.bodySmall,
-          ),
+          if (_info)
+            Text(
+              'Includes card purchases, so it differs from Spent '
+              '(cash basis, ADR-0011).',
+              key: const Key('home_categories_note'),
+              style: theme.textTheme.bodySmall,
+            ),
           SizedBox(
             height: 150,
             child: PieChart(

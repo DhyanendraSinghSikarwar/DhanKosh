@@ -100,14 +100,14 @@ void main() {
     await teardownApp(t);
   });
 
-  // FR-16-29
-  testWidgets('allocation class filter lists that class holdings', (t) async {
+  // FR-16-29, FR-16-30
+  testWidgets('class chip filters the holdings list', (t) async {
     await seed(t);
     await pump(t);
     expect(find.text('Demo Equity Fund'), findsOneWidget);
-    await t.tap(find.byKey(const Key('alloc-filter-equity')));
+    await t.tap(find.byKey(const Key('class-chip-mutualFunds')));
     await settle(t);
-    expect(find.text('Demo Equity Fund'), findsNWidgets(2));
+    expect(find.text('Demo Equity Fund'), findsOneWidget);
     await teardownApp(t);
   });
 

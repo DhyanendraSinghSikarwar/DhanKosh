@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -173,5 +174,37 @@ void main() {
     expect(find.byKey(const Key('alt-name-A Demo')), findsNothing);
     expect(saveEnabled(t), isTrue);
     await teardownApp(t);
+  });
+
+  // FR-27-24
+  testWidgets('heart opens Support', (t) async {
+    await t.binding.setSurfaceSize(const Size(420, 1400));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, __) => const ProfileScreen()),
+        GoRoute(
+          path: '/settings/support',
+          builder: (_, __) => const Scaffold(body: Text('support-page')),
+        ),
+      ],
+    );
+    await t.pumpWidget(
+      ProviderScope(
+        overrides: [
+          accountRepositoryProvider.overrideWithValue(env.accounts),
+          settingsRepositoryProvider.overrideWithValue(env.settings),
+          profileRepositoryProvider.overrideWithValue(profile),
+          identityRepositoryProvider.overrideWithValue(identity),
+          bankIdentityRepositoryProvider
+              .overrideWithValue(BankIdentityStore(MemSecure())),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await settle(t);
+    await t.tap(find.byKey(const Key('profile-support')));
+    await t.pumpAndSettle();
+    expect(find.text('support-page'), findsOneWidget);
   });
 }

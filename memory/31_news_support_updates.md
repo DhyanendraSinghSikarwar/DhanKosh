@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-31 |
-| Status | In progress (news, Support, About, update check, release history, in-app download with SHA-256 check, installer hand-off, Home notice, update alert and What's new done in Dart with tests; Kotlin installer hand-off, FileProvider and manifest unverified on a device and not compiled; Profile cup entry, bundled changelog and `t()` pending) |
+| Status | In progress (More rows; news, Support, About, update check, release history, in-app download with SHA-256 check, installer hand-off, Home notice, update alert and What's new done in Dart with tests; Kotlin installer hand-off, FileProvider and manifest unverified on a device and not compiled; Profile cup entry, bundled changelog and `t()` pending) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 
@@ -186,6 +186,7 @@ App name, version with the WhatsNew button, Updates card (Check for updates; Che
 - FR-31-36: After the installed version changes, a one-time `What's new in x.y.z` sheet shows that release's cleaned notes (cache, else one fetch, else `DhanKosh updated to x.y.z.`); a fresh install only records the version; it never blocks start (setting `last_seen_version`).
 - FR-31-37: The update flow sends no user data or identifiers: anonymous GETs to GitHub only, User-Agent `DhanKosh`, no analytics.
 - FR-31-38: The log records counts and codes only for the update flow (no URLs, paths or versions beyond the app start line).
+- FR-31-39: The More tab rows for News, Support and Updates use coloured `IconBadge` rows: Market news ("Headlines for your holdings"), Support ("Optional UPI tip", hidden without a VPA) and Check for updates ("Version and release notes") under the About section.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -469,6 +470,7 @@ Integration:
 - TC-31-17 (FR-31-20, FR-31-22): fake GitHub server with one redirect serves an APK; progress reaches 1.0; hash verified; installer intent fired with the correct MIME.
 - TC-31-18 (FR-31-26): airplane mode: news error, support still opens, update check shows "Couldn't check for updates: no connection".
 - TC-31-19 (FR-31-09, FR-31-15): intercepted requests contain no custom headers beyond UA (news) and Accept (GitHub).
+- TC-31-29 (FR-31-39, FR-31-10): the Support row is hidden without a VPA and shown with one.
 
 Fixtures: RSS 2.0 sample with CDATA, entity and missing-date items; GitHub release JSON with `.apk` asset and `sha256:` line; a 1 MB dummy APK with known SHA-256.
 
@@ -525,3 +527,4 @@ Tests: `test/features/news_support_updates/` (`update_install_test.dart`, `updat
 | 2026-10-19 | Added FR-31-27 and dependency link to 32_release_pipeline.md as producer of the updater feed | Audit Gate gap, scan_N |
 | 2026-10-21 | Phase 5 widget + updates + release pipeline landed | Phase 5 |
 | 2026-10-27 | In-app update: check, release history, download+SHA-256 verify, install handoff, Home notice, alert, what's new | Update feature |
+| 2026-10-31 | News, Support and Updates More rows restyled as coloured icon rows under Market news and About (FR-31-39) | Approved More/Accounts/Profile mockups |

@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/scope_providers.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
 import 'package:hisaab/features/search_filters/domain/ledger_view_state.dart';
+
+import '../../support/fake_settings.dart';
 
 void main() {
   final now = DateTime(2026, 10, 27, 15);
@@ -22,7 +25,9 @@ void main() {
   });
 
   test('FR-20-22, FR-20-23: shared stores feed the ledger view', () {
-    final c = ProviderContainer();
+    final c = ProviderContainer(
+      overrides: [settingsRepositoryProvider.overrideWithValue(FakeSettings())],
+    );
     addTearDown(c.dispose);
     expect(c.read(bookProvider), Book.all);
     c.read(bookProvider.notifier).set(Book.business);

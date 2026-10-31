@@ -52,7 +52,9 @@ void main() {
   testWidgets('FR-08-03/04: calendar and merchant segments', (t) async {
     await pump(t, FakeTxRepo(rows));
     await t.pump();
-    await t.tap(find.text('Calendar'));
+    await t.tap(find.byKey(const Key('ledger_view_dropdown')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Calendar').last);
     await t.pumpAndSettle();
     expect(find.text('September 2026'), findsOneWidget);
     expect(find.byKey(const Key('cal_caption')), findsOneWidget);
@@ -65,7 +67,9 @@ void main() {
       t.widget<IconButton>(find.byKey(const Key('cal_prev'))).onPressed,
       isNull,
     );
-    await t.tap(find.text('Merchant'));
+    await t.tap(find.byKey(const Key('ledger_view_dropdown')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('By merchant').last);
     await t.pumpAndSettle();
     await t.tap(find.byKey(const Key('merchant_Swiggy')));
     await t.pumpAndSettle();

@@ -36,6 +36,47 @@ class BookChips extends ConsumerWidget {
   }
 }
 
+/// Small tag beside a tab title when the Book is not Personal (FR-20-23).
+class BookTag extends ConsumerWidget {
+  /// Creates the tag.
+  const BookTag({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final book = ref.watch(bookProvider);
+    if (book == Book.personal) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      key: const Key('book_tag'),
+      margin: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        _bookLabels[book]!,
+        style: Theme.of(context).textTheme.labelSmall,
+      ),
+    );
+  }
+}
+
+/// Tab title with the [BookTag] beside it.
+class TabTitle extends StatelessWidget {
+  /// Creates the title.
+  const TabTitle(this.title, {super.key});
+
+  /// Title text.
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [Text(title), const BookTag()],
+      );
+}
+
 /// Period chips (FR-20-22), wired to [periodProvider].
 class PeriodChips extends ConsumerWidget {
   /// Creates the chips; [kinds] limits the presets shown.

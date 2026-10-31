@@ -47,6 +47,9 @@ abstract final class AppIcons {
   static const news = AppIcon(Icons.newspaper_outlined, blue);
   static const budgets = AppIcon(Icons.account_balance_wallet_outlined, mint);
   static const cards = AppIcon(Icons.credit_card_outlined, violet);
+  static const insurance = AppIcon(Icons.shield_outlined, amber);
+  static const income = AppIcon(Icons.south_west, mint);
+  static const insight = AppIcon(Icons.lightbulb_outline, amber);
 
   // Alerts, appearance, privacy, data, about
   static const alerts = AppIcon(Icons.alarm_outlined, amber);

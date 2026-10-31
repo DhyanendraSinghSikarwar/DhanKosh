@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hisaab/app/di/scope_providers.dart';
 import 'package:hisaab/app/ledger_shell.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
+import 'package:hisaab/features/search_filters/presentation/ledger_view_notifier.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/add_transaction_screen.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -76,19 +80,16 @@ void main() {
       contains('400'),
     );
     expect(find.textContaining('· Card'), findsWidgets);
-    await t.tap(
-      find.descendant(
-        of: find.byKey(const Key('ledger_segments')),
-        matching: find.text('Category'),
-      ),
-    );
+    await t.tap(find.byKey(const Key('ledger_view_dropdown')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('By category').last);
     await t.pumpAndSettle();
     final split = t.widget<Text>(find.byKey(const Key('category_split_food')));
     expect(split.data, contains('Account'));
     expect(split.data, contains('Card'));
   });
 
-  testWidgets('FR-08-23: Cards chip and book chips update the filter',
+  testWidgets('FR-08-23: source dropdown filters, book tag follows Book',
       (t) async {
     await pumpLedgerApp(
       t,
@@ -96,24 +97,47 @@ void main() {
       home: const TransactionsTab(),
     );
     await t.pump();
-    await t.tap(find.byKey(const Key('acckind_card')));
-    await t.pump();
-    await t.tap(find.byKey(const Key('book_business')));
-    await t.pump();
+    expect(find.byKey(const Key('acckind_card')), findsNothing);
+    expect(find.byKey(const Key('book_business')), findsNothing);
+    // Default Book is All books: tag shown.
+    expect(find.text('All books'), findsOneWidget);
+    await t.tap(find.byKey(const Key('source_dropdown')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Cards').last);
+    await t.pumpAndSettle();
     expect(
-      t.widget<ChoiceChip>(find.byKey(const Key('acckind_card'))).selected,
-      isTrue,
+      find.descendant(
+        of: find.byKey(const Key('source_dropdown')),
+        matching: find.text('Cards'),
+      ),
+      findsOneWidget,
     );
-    expect(
-      t.widget<ChoiceChip>(find.byKey(const Key('book_business'))).selected,
-      isTrue,
-    );
+    final c =
+        ProviderScope.containerOf(t.element(find.byType(TransactionsTab)));
+    expect(c.read(ledgerViewProvider).accountKind, AccountKind.card);
     await t.tap(find.byKey(const Key('period_thisFy')));
     await t.pump();
     expect(
       t.widget<ChoiceChip>(find.byKey(const Key('period_thisFy'))).selected,
       isTrue,
     );
+  });
+
+  testWidgets('FR-20-23: no book tag for Personal', (t) async {
+    await pumpLedgerApp(
+      t,
+      txs: FakeTxRepo([fakeTx(1, 100, today)]),
+      home: const TransactionsTab(),
+    );
+    await t.pump();
+    final c =
+        ProviderScope.containerOf(t.element(find.byType(TransactionsTab)));
+    c.read(bookProvider.notifier).set(Book.personal);
+    await t.pump();
+    expect(find.byKey(const Key('book_tag')), findsNothing);
+    c.read(bookProvider.notifier).set(Book.business);
+    await t.pump();
+    expect(find.text('Business'), findsOneWidget);
   });
 
   testWidgets('FR-08-24: remember payee checkbox', (t) async {

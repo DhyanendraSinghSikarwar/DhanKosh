@@ -8,6 +8,7 @@ String holdingKindLabel(HoldingKind k) => switch (k) {
       HoldingKind.epf => 'EPF',
       HoldingKind.nps => 'NPS',
       HoldingKind.ppf => 'PPF',
+      HoldingKind.sukanya => 'Sukanya Samriddhi',
       HoldingKind.bond => 'Bonds',
       HoldingKind.gold => 'Gold',
       HoldingKind.fd => 'Deposits',

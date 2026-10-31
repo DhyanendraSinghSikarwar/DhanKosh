@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/analytics_providers.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
 
 /// Insights: notable changes and warnings as a swipeable carousel; dismissal
 /// lasts for the session only (FR-17-10, FR-17-21).
@@ -21,6 +22,12 @@ class _HomeInsightsCardState extends ConsumerState<HomeInsightsCard> {
         Tone.warn => 'Heads up',
         Tone.good => 'Good news',
         Tone.info => 'Pattern',
+      };
+
+  static AppIcon _icon(Tone t) => switch (t) {
+        Tone.warn => const AppIcon(Icons.warning_amber_rounded, AppIcons.amber),
+        Tone.good => const AppIcon(Icons.trending_up, AppIcons.mint),
+        Tone.info => AppIcons.insight,
       };
 
   @override
@@ -58,9 +65,15 @@ class _HomeInsightsCardState extends ConsumerState<HomeInsightsCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _tag(i.tone),
-                          style: theme.textTheme.labelSmall,
+                        Row(
+                          children: [
+                            IconBadge(_icon(i.tone), size: 22),
+                            const SizedBox(width: 6),
+                            Text(
+                              _tag(i.tone),
+                              style: theme.textTheme.labelSmall,
+                            ),
+                          ],
                         ),
                         Text(
                           i.title,

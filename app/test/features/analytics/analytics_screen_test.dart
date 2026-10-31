@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/app/di/analytics_providers.dart';
 import 'package:hisaab/app/di/layout_providers.dart';
+import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/theme/app_theme.dart';
 import 'package:hisaab/features/analytics/domain/analytics_math.dart';
 import 'package:hisaab/features/analytics/domain/analytics_models.dart';
@@ -16,6 +17,7 @@ import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:parser_core/parser_core.dart';
 
+import '../../support/fake_settings.dart';
 import '../../support/ui_harness.dart';
 
 var _n = 0;
@@ -112,6 +114,7 @@ void main() {
       ProviderScope(
         overrides: [
           hideAmountsProvider.overrideWith((ref) => Stream.value(false)),
+          settingsRepositoryProvider.overrideWithValue(FakeSettings()),
           analyticsAccountsProvider.overrideWith((ref) => Stream.value([])),
           visibleSectionsProvider.overrideWith(
             (ref, id) => SectionLayout.visibleIds(SectionLayout.defaults(id)),
@@ -137,6 +140,16 @@ void main() {
     await settle(t);
   }
 
+  Future<void> tab(WidgetTester t, String label) async {
+    await t.tap(
+      find.descendant(
+        of: find.byKey(const Key('analytics-view')),
+        matching: find.text(label),
+      ),
+    );
+    await settle(t);
+  }
+
   testWidgets('empty state (FR-18-01)', (t) async {
     await pump(t);
     expect(find.byKey(const Key('analytics-empty')), findsOneWidget);
@@ -150,28 +163,44 @@ void main() {
       await t.tap(find.text('Last month'));
       await settle(t);
       expect(find.byKey(const Key('analytics-donut')), findsOneWidget);
-      expect(find.byKey(const Key('analytics-trend')), findsOneWidget);
-      expect(find.byKey(const Key('analytics-heat')), findsOneWidget);
       expect(find.text('Fresh Mart (1)'), findsOneWidget);
       expect(find.text('₹15,000'), findsWidgets);
+      await tab(t, 'Trends');
+      expect(find.byKey(const Key('analytics-trend')), findsOneWidget);
+      expect(find.byKey(const Key('analytics-heat')), findsOneWidget);
       await teardownApp(t);
     });
   }
 
-  testWidgets('period change and views (FR-18-12, FR-18-16)', (t) async {
+  testWidgets('sub-tabs show their own cards (FR-18-01, FR-18-16)', (t) async {
     await pump(t, data: rows);
     await t.tap(find.text('Last month'));
     await settle(t);
-    expect(find.byKey(const Key('analytics-empty')), findsNothing);
-    await t.tap(find.text('Compare'));
-    await settle(t);
+    // Spend (default).
+    expect(find.byKey(const Key('analytics-donut')), findsOneWidget);
+    expect(find.byKey(const Key('analytics-trend')), findsNothing);
+    expect(find.byKey(const Key('analytics-flow')), findsNothing);
+    await tab(t, 'Trends');
+    expect(find.byKey(const Key('analytics-trend')), findsOneWidget);
+    expect(find.byKey(const Key('analytics-heat')), findsOneWidget);
     expect(find.byKey(const Key('analytics-compare')), findsOneWidget);
-    await t.tap(find.text('Cash'));
-    await settle(t);
+    expect(find.byKey(const Key('analytics-donut')), findsNothing);
+    await tab(t, 'Cash flow');
     expect(find.byKey(const Key('analytics-flow')), findsOneWidget);
-    await t.tap(find.text('Forecast'));
-    await settle(t);
+    expect(find.byKey(const Key('analytics-compare')), findsNothing);
+    await tab(t, 'Forecast');
     expect(find.text('Forecast is for the current month.'), findsOneWidget);
+    expect(find.byKey(const Key('analytics-fan')), findsNothing);
+    // Filter bar stays above the tabs.
+    expect(find.byKey(const Key('analytics-period')), findsOneWidget);
+    await teardownApp(t);
+  });
+
+  testWidgets('book tag beside title (FR-20-23)', (t) async {
+    await pump(t, data: rows);
+    expect(find.byKey(const Key('book_tag')), findsOneWidget);
+    expect(find.text('All books'), findsOneWidget);
+    expect(find.byKey(const Key('book_business')), findsNothing);
     await teardownApp(t);
   });
 
@@ -196,6 +225,7 @@ void main() {
     await pump(t, data: rows);
     await t.tap(find.text('Last month'));
     await settle(t);
+    await tab(t, 'Trends');
     final cell = ChartData.heatCell(rows[1])!;
     final key = Key('heat-${cell.$1}-${cell.$2}');
     await t.ensureVisible(find.byKey(key));

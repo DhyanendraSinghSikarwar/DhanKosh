@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,12 +7,15 @@ import 'package:hisaab/app/di/home_composition_providers.dart';
 import 'package:hisaab/app/di/home_sync_provider.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/scope_providers.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
+import 'package:hisaab/features/dashboard_home/presentation/home_refresh_sheet.dart';
+import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 
-/// Home header: avatar, greeting and name, sync button with progress pill,
-/// add, hide amounts, bell, accounts and edit (FR-17-02, FR-17-17,
-/// FR-17-18).
+/// Home header: avatar, greeting, name with Book tag, then eye, refresh and
+/// bell on top; add, accounts and edit below (FR-17-02, FR-17-17,
+/// FR-17-18, FR-17-32, FR-17-33).
 class HomeHeader extends ConsumerWidget {
   /// Creates the header.
   const HomeHeader({
@@ -42,6 +47,7 @@ class HomeHeader extends ConsumerWidget {
     final name = ref.watch(profileDataProvider).value?.name?.trim();
     final hasName = name != null && name.isNotEmpty;
     final sync = ref.watch(homeSyncProvider);
+    final book = ref.watch(bookProvider);
     return Column(
       children: [
         Row(
@@ -65,12 +71,22 @@ class HomeHeader extends ConsumerWidget {
                     key: const Key('home_greeting'),
                     style: theme.textTheme.bodyMedium,
                   ),
-                  Text(
-                    hasName ? name : 'Welcome',
-                    key: const Key('home_name'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleLarge,
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          hasName ? name : 'Welcome',
+                          key: const Key('home_name'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleLarge,
+                        ),
+                      ),
+                      if (book != Book.personal) ...[
+                        const SizedBox(width: 8),
+                        _BookTag(book),
+                      ],
+                    ],
                   ),
                   if (!hasName)
                     Text(
@@ -79,44 +95,6 @@ class HomeHeader extends ConsumerWidget {
                     ),
                 ],
               ),
-            ),
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            if (sync.running || sync.done != null)
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Chip(
-                  key: const Key('home_sync_pill'),
-                  visualDensity: VisualDensity.compact,
-                  label: Text(
-                    sync.running
-                        ? 'Reading ${sync.scanned} · ${sync.found} found'
-                        : sync.done!,
-                  ),
-                ),
-              ),
-            IconButton(
-              key: const Key('home_sync'),
-              tooltip: sync.running ? 'Syncing' : 'Sync everything',
-              icon: sync.running
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.sync),
-              onPressed: sync.running
-                  ? null
-                  : () => ref.read(homeSyncProvider.notifier).sync(),
-            ),
-            IconButton(
-              key: const Key('home_add'),
-              tooltip: 'Add transaction',
-              icon: const Icon(Icons.add),
-              onPressed: () => context.push('/transactions/add'),
             ),
             IconButton(
               key: const Key('home_eye'),
@@ -130,7 +108,30 @@ class HomeHeader extends ConsumerWidget {
                   .read(settingsRepositoryProvider)
                   .write(SettingKeys.hideAmounts, !masked),
             ),
+            IconButton(
+              key: const Key('home_sync'),
+              tooltip: sync.running ? 'Syncing' : 'Fetch new SMS and email',
+              icon: sync.running
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sync),
+              onPressed: () => _refresh(context, ref),
+            ),
             const _InboxBell(),
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            IconButton(
+              key: const Key('home_add'),
+              tooltip: 'Add transaction',
+              icon: const Icon(Icons.add),
+              onPressed: () => context.push('/transactions/add'),
+            ),
             IconButton(
               key: const Key('home_accounts_button'),
               tooltip: 'Accounts',
@@ -146,6 +147,44 @@ class HomeHeader extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Future<void> _refresh(BuildContext context, WidgetRef ref) {
+    final notifier = ref.read(homeSyncProvider.notifier);
+    if (!ref.read(homeSyncProvider).running) {
+      unawaited(notifier.sync());
+    }
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => const HomeRefreshSheet(),
+    );
+  }
+}
+
+/// Small tag next to the name while the shared Book is not Personal
+/// (FR-17-32).
+class _BookTag extends StatelessWidget {
+  const _BookTag(this.book);
+
+  final Book book;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      key: const Key('home_book_tag'),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        book == Book.business ? 'Business' : 'All books',
+        style: theme.textTheme.labelSmall
+            ?.copyWith(color: theme.colorScheme.onSecondaryContainer),
+      ),
     );
   }
 }

@@ -38,3 +38,9 @@ String dueLabel(int days) => days < 0
         : days == 1
             ? 'Due tomorrow'
             : 'Due in $days days';
+
+/// `5 Nov 2026` for an IST epoch day.
+String cardDateYear(int epochDay) {
+  final d = DateTime.utc(1970).add(Duration(days: epochDay));
+  return '${d.day} ${_months[d.month - 1]} ${d.year}';
+}

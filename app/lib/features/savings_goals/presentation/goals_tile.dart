@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/settings_row.dart';
 
 /// More-tab entry to Savings goals (route `/goals`).
 class GoalsTile extends StatelessWidget {
@@ -7,12 +9,11 @@ class GoalsTile extends StatelessWidget {
   const GoalsTile({super.key});
 
   @override
-  Widget build(BuildContext context) => ListTile(
+  Widget build(BuildContext context) => SettingsRow(
         key: const Key('goals-tile'),
-        contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.savings_outlined),
-        title: const Text('Goals & salary plan'),
-        trailing: const Icon(Icons.chevron_right),
+        badge: AppIcons.goals,
+        title: 'Goals',
+        subtitle: 'Savings goals and salary plan',
         onTap: () => context.push('/goals'),
       );
 }

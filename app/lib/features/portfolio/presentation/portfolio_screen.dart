@@ -3,23 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
 import 'package:hisaab/app/di/layout_providers.dart';
-import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
+import 'package:hisaab/app/scope_bar.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/features/portfolio/domain/asset_class.dart';
 import 'package:hisaab/features/portfolio/domain/holding.dart';
 import 'package:hisaab/features/portfolio/domain/maturity_items.dart';
-import 'package:hisaab/features/portfolio/domain/portfolio_charts.dart';
+import 'package:hisaab/features/portfolio/domain/portfolio_class.dart';
 import 'package:hisaab/features/portfolio/domain/portfolio_summary.dart';
 import 'package:hisaab/features/portfolio/presentation/allocation_card.dart';
 import 'package:hisaab/features/portfolio/presentation/exclusions_sheet.dart';
-import 'package:hisaab/features/portfolio/presentation/holding_labels.dart';
+import 'package:hisaab/features/portfolio/presentation/holding_class_card.dart';
 import 'package:hisaab/features/portfolio/presentation/holding_sheet.dart';
-import 'package:hisaab/features/portfolio/presentation/holding_spark.dart';
 import 'package:hisaab/features/portfolio/presentation/investment_tx_section.dart';
 import 'package:hisaab/features/portfolio/presentation/maturity_calendar.dart';
 import 'package:hisaab/features/portfolio/presentation/net_worth_chart.dart';
 import 'package:hisaab/features/portfolio/presentation/networth_split_section.dart';
+import 'package:hisaab/features/portfolio/presentation/portfolio_class_style.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_loans_section.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_settings_sheet.dart';
 import 'package:hisaab/features/theming_customisation/domain/section_layout.dart';
@@ -63,6 +63,7 @@ class PortfolioScreen extends ConsumerStatefulWidget {
 
 class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   int _range = 2;
+  PortfolioClass? _focus;
 
   void _sheet(Widget w) => showModalBottomSheet<void>(
         context: context,
@@ -74,7 +75,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   @override
   Widget build(BuildContext context) {
     final masked = ref.watch(hideAmountsProvider).value ?? true;
-    final nw = ref.watch(netWorthProvider).value;
+    final nw = ref.watch(bookNetWorthProvider).value;
     final holdings = ref.watch(holdingsProvider).value ?? const <Holding>[];
     final points = ref.watch(netWorthPointsProvider).value ?? const [];
     final maturities =
@@ -98,6 +99,8 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
             .where((p) => p.kind == PartKind.bank && !p.liability)
             .fold<int>(0, (a, p) => a + p.amountMinor);
     final summary = summarisePortfolio(holdings, cashMinor: cash);
+    final groups = groupByClass(holdings);
+    final focus = groups.any((g) => g.cls == _focus) ? _focus : null;
 
     final visible = ref.watch(visibleSectionsProvider(ScreenIds.portfolio));
     final loans = ref.watch(loansStateProvider).value?.loans ?? const [];
@@ -163,16 +166,26 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       ),
                   ],
                 ),
+                const Divider(height: 24),
+                _SummaryRow(
+                  investments: summary.valueMinor,
+                  bank: cash,
+                  loans: nw?.liabilitiesMinor ?? 0,
+                  money: money,
+                ),
               ],
             ),
           ),
         ],
       ),
-      'allocation': summary.byClass.isEmpty
+      'allocation': groups.isEmpty
           ? null
           : AllocationCard(
-              summary: summary,
-              holdings: holdings,
+              groups: groups,
+              focus: focus,
+              onFocus: (c) => setState(() => _focus = c),
+              investedMinor: summary.investedMinor,
+              gainMinor: summary.gainMinor,
               money: money,
               asOfLabel: asOfMs > 0 ? 'as of ${asOfLabel(asOfMs)}' : '',
             ),
@@ -203,15 +216,22 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                 hint: 'Add one or import a statement.',
               ),
             )
-          else
-            for (final k in HoldingKind.values)
-              if (holdings.any((h) => h.kind == k))
-                _Group(
-                  kind: k,
-                  items: holdings.where((h) => h.kind == k).toList(),
+          else ...[
+            _ClassChips(
+              classes: [for (final g in groups) g.cls],
+              focus: focus,
+              onFocus: (c) => setState(() => _focus = c),
+            ),
+            const SizedBox(height: 12),
+            for (final g in groups)
+              if (focus == null || focus == g.cls)
+                HoldingClassCard(
+                  group: g,
                   money: money,
+                  dateLabel: asOfLabel,
                   onTap: (h) => _sheet(HoldingSheet(holding: h)),
                 ),
+          ],
         ],
       ),
       'loans': loans.any((l) => !l.closed)
@@ -223,31 +243,51 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Portfolio'),
+        title: const TabTitle('Portfolio'),
         actions: [
-          if (widget.layoutEditor != null)
-            IconButton(
-              key: const Key('portfolio-sections'),
-              tooltip: 'Edit sections',
-              icon: const Icon(Icons.view_agenda_outlined),
-              onPressed: () => _sheet(
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: widget.layoutEditor,
-                ),
-              ),
+          IconButton(
+            key: const Key('portfolio-news'),
+            tooltip: 'Latest news',
+            icon: Badge(
+              smallSize: 8,
+              isLabelVisible: !ref.watch(newsSeenProvider),
+              child: const Icon(Icons.newspaper_outlined),
             ),
+            onPressed: () => context.push('/news'),
+          ),
           IconButton(
             key: const Key('portfolio-settings'),
             tooltip: 'Portfolio settings',
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => _sheet(const PortfolioSettingsSheet()),
           ),
-          IconButton(
-            key: const Key('nw-filter'),
-            tooltip: 'Include in net worth',
-            icon: const Icon(Icons.tune),
-            onPressed: () => _sheet(const ExclusionsSheet()),
+          PopupMenuButton<String>(
+            key: const Key('portfolio-more'),
+            onSelected: (v) {
+              if (v == 'sections') {
+                _sheet(
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: widget.layoutEditor,
+                  ),
+                );
+              } else {
+                _sheet(const ExclusionsSheet());
+              }
+            },
+            itemBuilder: (_) => [
+              if (widget.layoutEditor != null)
+                const PopupMenuItem(
+                  key: Key('portfolio-sections'),
+                  value: 'sections',
+                  child: Text('Edit sections'),
+                ),
+              const PopupMenuItem(
+                key: Key('nw-filter'),
+                value: 'filter',
+                child: Text('Include in net worth'),
+              ),
+            ],
           ),
         ],
       ),
@@ -345,76 +385,94 @@ String asOfLabel(int ms) {
   return '${d.day} ${m[d.month - 1]} ${d.year}';
 }
 
-class _Group extends StatelessWidget {
-  const _Group({
-    required this.kind,
-    required this.items,
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.investments,
+    required this.bank,
+    required this.loans,
     required this.money,
-    required this.onTap,
   });
 
-  final HoldingKind kind;
-  final List<Holding> items;
+  final int investments;
+  final int bank;
+  final int loans;
   final String Function(int) money;
-  final void Function(Holding) onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final sem = theme.extension<SemanticColors>()!;
-    final total = items.fold<int>(0, (a, h) => a + (h.valueMinor ?? 0));
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    Widget cell(String label, String value, {Color? color, Key? key}) =>
+        Expanded(
+          child: Column(
             children: [
-              Expanded(
-                child: Text(
-                  holdingKindLabel(kind),
-                  style: theme.textTheme.titleSmall,
+              Text(
+                label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              Text(money(total), style: theme.textTheme.titleSmall),
+              Text(
+                value,
+                key: key,
+                style: theme.textTheme.titleSmall?.copyWith(color: color),
+              ),
             ],
           ),
-          for (final h in items)
-            ListTile(
-              key: Key('holding-${h.id}'),
-              contentPadding: EdgeInsets.zero,
-              title: Text(h.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Text(
-                [
-                  if (h.investedMinor != null)
-                    'Invested ${money(h.investedMinor!)}',
-                  if (h.asOf != null) 'as of ${asOfLabel(h.asOf!)}',
-                ].join(' · '),
+        );
+    return Row(
+      key: const Key('nw-summary'),
+      children: [
+        cell('Investments', money(investments)),
+        cell('Bank', money(bank)),
+        cell(
+          'Loans',
+          loans > 0 ? '-${money(loans)}' : money(0),
+          color: loans > 0 ? sem.expense : null,
+        ),
+      ],
+    );
+  }
+}
+
+class _ClassChips extends StatelessWidget {
+  const _ClassChips({
+    required this.classes,
+    required this.focus,
+    required this.onFocus,
+  });
+
+  final List<PortfolioClass> classes;
+  final PortfolioClass? focus;
+  final ValueChanged<PortfolioClass?> onFocus;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      key: const Key('class-chips'),
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          ChoiceChip(
+            key: const Key('class-chip-all'),
+            label: const Text('All'),
+            selected: focus == null,
+            onSelected: (_) => onFocus(null),
+          ),
+          for (final c in classes) ...[
+            const SizedBox(width: 8),
+            ChoiceChip(
+              key: Key('class-chip-${c.name}'),
+              avatar: Icon(
+                portfolioClassIcon(c).icon,
+                size: 16,
+                color: portfolioClassColor(c),
               ),
-              leading: HoldingSpark(
-                key: Key('spark-${h.id}'),
-                values: holdingSpark(h),
-                color: (h.valueMinor ?? 0) >= (h.previousValueMinor ?? 0)
-                    ? sem.income
-                    : sem.expense,
-              ),
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(money(h.valueMinor ?? 0)),
-                  if (h.returnPct != null)
-                    Text(
-                      '${h.returnPct! >= 0 ? '+' : ''}'
-                      '${h.returnPct!.toStringAsFixed(1)}%',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: h.returnPct! >= 0 ? sem.income : sem.expense,
-                      ),
-                    ),
-                ],
-              ),
-              onTap: () => onTap(h),
+              label: Text(c.label),
+              selected: focus == c,
+              onSelected: (_) => onFocus(c),
             ),
+          ],
         ],
       ),
     );

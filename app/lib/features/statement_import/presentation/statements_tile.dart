@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/settings_row.dart';
 
 /// More-tab entry to the statements screen; composed in `app/router.dart`.
 class StatementsTile extends StatelessWidget {
@@ -7,12 +9,11 @@ class StatementsTile extends StatelessWidget {
   const StatementsTile({super.key});
 
   @override
-  Widget build(BuildContext context) => ListTile(
+  Widget build(BuildContext context) => SettingsRow(
         key: const Key('statements-tile'),
-        contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.description_outlined),
-        title: const Text('Statements'),
-        trailing: const Icon(Icons.chevron_right),
+        badge: AppIcons.statements,
+        title: 'Statements',
+        subtitle: 'PDF, Excel, CSV import',
         onTap: () => context.push('/statements'),
       );
 }

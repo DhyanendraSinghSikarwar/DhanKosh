@@ -1,8 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart'
+    show Notifier, NotifierProvider, Provider;
+
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/scope_providers.dart';
 import 'package:hisaab/core/utils/combine_latest.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/entities/identity.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/entities/user_profile.dart';
@@ -30,6 +34,34 @@ int epochDayIst(int ms) => (ms + 19800000) ~/ 86400000;
 @riverpod
 Stream<List<Holding>> holdings(Ref ref) =>
     ref.watch(holdingRepositoryProvider).watch();
+
+/// Net worth of one non-All book (FR-16-31).
+@riverpod
+Stream<NetWorth> netWorthForBook(Ref ref, Book book) =>
+    ref.watch(netWorthServiceProvider).watch(book: book);
+
+/// Net worth following the global book (FR-16-31).
+final Provider<AsyncValue<NetWorth>> bookNetWorthProvider =
+    Provider<AsyncValue<NetWorth>>((ref) {
+  final book = ref.watch(bookProvider);
+  return book == Book.all
+      ? ref.watch(netWorthProvider)
+      : ref.watch(netWorthForBookProvider(book));
+});
+
+/// True once the news screen was opened this session; drives the unread dot
+/// on the Portfolio news button (FR-31-09).
+class NewsSeenNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  /// Marks the headlines as seen.
+  void markSeen() => state = true;
+}
+
+/// Whether headlines were seen this session.
+final NotifierProvider<NewsSeenNotifier, bool> newsSeenProvider =
+    NotifierProvider<NewsSeenNotifier, bool>(NewsSeenNotifier.new);
 
 /// Recorded net worth points, oldest first (FR-16-05).
 @riverpod

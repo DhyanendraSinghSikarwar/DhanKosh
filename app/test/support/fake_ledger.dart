@@ -18,6 +18,8 @@ import 'package:hisaab/features/transactions_ledger/domain/transaction_repositor
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:parser_core/parser_core.dart';
 
+import 'fake_settings.dart';
+
 /// A row for widget tests; amount in paise.
 LedgerTx fakeTx(
   int id,
@@ -332,6 +334,7 @@ Future<void> pumpLedgerApp(
         categoryRepositoryProvider
             .overrideWithValue(categories ?? FakeCategoryRepo()),
         hideAmountsProvider.overrideWith((ref) => Stream.value(false)),
+        settingsRepositoryProvider.overrideWithValue(FakeSettings()),
       ],
       child: MaterialApp.router(
         routerConfig: router,

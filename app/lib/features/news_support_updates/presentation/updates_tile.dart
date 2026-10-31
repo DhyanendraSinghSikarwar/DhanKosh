@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/settings_row.dart';
 
 /// More-tab entry for "About and updates" (F-31), composed in `app/router.dart`.
 class UpdatesTile extends StatelessWidget {
@@ -7,12 +9,11 @@ class UpdatesTile extends StatelessWidget {
   const UpdatesTile({super.key});
 
   @override
-  Widget build(BuildContext context) => ListTile(
+  Widget build(BuildContext context) => SettingsRow(
         key: const Key('updates-tile'),
-        contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.info_outline),
-        title: const Text('About and updates'),
-        trailing: const Icon(Icons.chevron_right),
+        badge: AppIcons.updates,
+        title: 'Check for updates',
+        subtitle: 'Version and release notes',
         onTap: () => context.push('/settings/updates'),
       );
 }

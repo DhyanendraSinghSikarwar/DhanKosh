@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
 import 'package:hisaab/features/news_support_updates/domain/news.dart';
+import 'package:hisaab/features/portfolio/domain/portfolio_class.dart';
 
 /// Market news (F-31, FR-31-01 to FR-31-08).
 class NewsScreen extends ConsumerStatefulWidget {
@@ -15,9 +17,14 @@ class NewsScreen extends ConsumerStatefulWidget {
 }
 
 class _NewsScreenState extends ConsumerState<NewsScreen> {
+  bool _mine = false;
+
   @override
   void initState() {
     super.initState();
+    unawaited(
+      Future.microtask(() => ref.read(newsSeenProvider.notifier).markSeen()),
+    );
     unawaited(
       Future.microtask(
         () => ref.read(newsControllerProvider.notifier).load(NewsFeed.latest),
@@ -33,6 +40,18 @@ class _NewsScreenState extends ConsumerState<NewsScreen> {
       appBar: AppBar(title: const Text('Market news')),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: SegmentedButton<bool>(
+              key: const Key('news-scope'),
+              segments: const [
+                ButtonSegment(value: true, label: Text('My holdings')),
+                ButtonSegment(value: false, label: Text('Market')),
+              ],
+              selected: {_mine},
+              onSelectionChanged: (v) => setState(() => _mine = v.first),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: SegmentedButton<NewsFeed>(
@@ -79,14 +98,29 @@ class _NewsScreenState extends ConsumerState<NewsScreen> {
       );
     }
     final now = DateTime.now();
+    final keys = holdingNewsKeywords(
+      ref.watch(holdingsProvider).value ?? const [],
+    );
+    final items = _mine
+        ? [
+            for (final h in s.items)
+              if (keys.any(h.title.toLowerCase().contains)) h,
+          ]
+        : s.items;
+    if (items.isEmpty) {
+      return const Center(
+        key: Key('news-none'),
+        child: Text('No headlines for your holdings'),
+      );
+    }
     return RefreshIndicator(
       onRefresh: () => c.load(s.feed, force: true),
       child: ListView.builder(
         key: const Key('news-list'),
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: s.items.length,
+        itemCount: items.length,
         itemBuilder: (_, i) {
-          final h = s.items[i];
+          final h = items[i];
           final age = ageText(h.published, now);
           return ListTile(
             contentPadding: EdgeInsets.zero,

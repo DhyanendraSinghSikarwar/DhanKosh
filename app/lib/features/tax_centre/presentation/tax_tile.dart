@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/settings_row.dart';
 
 /// More-tab entry to the Tax Centre; composed in `app/router.dart`.
 class TaxTile extends StatelessWidget {
@@ -7,12 +9,11 @@ class TaxTile extends StatelessWidget {
   const TaxTile({super.key});
 
   @override
-  Widget build(BuildContext context) => ListTile(
+  Widget build(BuildContext context) => SettingsRow(
         key: const Key('tax-tile'),
-        contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.receipt_outlined),
-        title: const Text('Tax Centre'),
-        trailing: const Icon(Icons.chevron_right),
+        badge: AppIcons.tax,
+        title: 'Tax centre',
+        subtitle: 'Year summary and export',
         onTap: () => context.push('/tax'),
       );
 }

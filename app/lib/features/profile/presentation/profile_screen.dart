@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/profile_providers.dart';
@@ -14,6 +15,7 @@ import 'package:hisaab/features/profile/domain/profile_draft.dart';
 import 'package:hisaab/features/profile/presentation/bank_details_sheet.dart';
 import 'package:hisaab/features/profile/presentation/photo_crop_screen.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/profile_avatar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parser_core/parser_core.dart' show AccountKind;
@@ -29,7 +31,17 @@ class ProfileScreen extends ConsumerWidget {
     final p = ref.watch(profileDataProvider);
     final id = ref.watch(identityDataProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            key: const Key('profile-support'),
+            tooltip: 'Support DhanKosh',
+            icon: const Icon(Icons.favorite_outline, color: AppIcons.red),
+            onPressed: () => context.push('/settings/support'),
+          ),
+        ],
+      ),
       body: p.hasValue && id.hasValue
           ? _Form(profile: p.requireValue, identity: id.value)
           : const Center(child: CircularProgressIndicator()),

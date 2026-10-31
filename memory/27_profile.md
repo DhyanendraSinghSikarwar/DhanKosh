@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-27 |
-| Status | In progress (Phase 3: personal fields, occupation, photo with crop/zoom/rotate, several alternate names and mobiles, per-bank unlock details done; header tint and Support icon pending) |
+| Status | In progress (Support heart; Phase 3: personal fields, occupation, photo with crop/zoom/rotate, several alternate names and mobiles, per-bank unlock details done; header tint and Support icon pending) |
 | Priority | P1 |
 | Phase | 1 (first-run identity and Profile screen); statement-password use lands in Phase 3 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 
@@ -162,6 +162,7 @@ A collector keeps `transactions.phoneLast4s` = last 4 digits of the user's own n
 - FR-27-21: (parity addition) Photo picker uses `image_picker` (gallery, max 2048 px); `PhotoCropScreen` offers pinch zoom 1x to 6x, pan and 90-degree rotation and returns a 512 x 512 PNG rendered from the visible square (dart:ui, no extra package). Saved in app-private storage as `profile/photo_<timestamp>.png` (a new name each time so image caches never show the old one); the previous file is deleted; Remove deletes the file and stores an empty path; Erase all deletes it. Deviation from FR-27-10: PNG, not JPEG, since dart:ui has no JPEG encoder; double-tap zoom and reset are not built.
 - FR-27-22: (parity addition) The Personal card has an Occupation field stored in plain settings (`profile_occupation`).
 - FR-27-23: (parity addition) "Other names as per bank" and "Other mobiles as per bank" are lists (chips with add and remove) in the sealed identity; the first entry is `altName` / `altPhone`, the rest are `moreNames` / `morePhones` (JSON keys added to the sealed identity). Every entry feeds the statement-password guesses as an extra bank identity, so the cap stays 300.
+- FR-27-24: The Profile screen app bar has a heart button (key `profile-support`) at top right that opens Support (`/settings/support`). The More profile card carries no heart.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -398,6 +399,7 @@ Integration:
 
 - TC-27-14 (FR-27-09, FR-27-10): pick, crop with zoom 2x and rotate once, save; header updates and file exists.
 - TC-27-15 (FR-27-19): backup rules exclude profile files (manifest check shared with [Security and privacy](25_security_privacy.md)).
+- TC-27-16 (FR-27-24): tapping the heart on the Profile screen navigates to `/settings/support`.
 
 Fixtures: name `Rahul Sharma`, DOB `1990-05-01`, PAN `ABCDE1234F`, phone `9876543210`, alt name `Priya Sharma`, alt phone `9876543211`.
 
@@ -446,3 +448,4 @@ Tests: `profile_photo_test.dart` (use case, file store, avatar, crop screen outp
 | 2026-10-21 | Phase 3 Portfolio + Profile UI landed | Phase 3 |
 | 2026-10-27 | Audit: fields and bank unlock details confirmed done; occupation and photo with crop confirmed not built | Kotlin parity audit |
 | 2026-10-27 | Profile photo with crop, zoom and rotate (PNG, app-private), shared `ProfileAvatar` widget, occupation field, several alternate names and mobiles (FR-27-21..23) | Kotlin parity (D2) |
+| 2026-10-31 | Heart button in the Profile app bar opens Support; More profile card restyled with a coloured badge (FR-27-24) | Approved More/Accounts/Profile mockups |

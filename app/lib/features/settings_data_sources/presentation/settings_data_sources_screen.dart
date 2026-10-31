@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/scope_providers.dart';
+import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
 import 'package:hisaab/features/settings_data_sources/presentation/bank_sms_card.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/history_days_card.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/paste_sms_card.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_providers.dart';
+import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/app_dropdown.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/settings_row.dart';
+import 'package:hisaab/shared/widgets/settings_section.dart';
 
 /// More tab: data sources, privacy and developer tools (F-26).
 class SettingsDataSourcesScreen extends ConsumerWidget {
@@ -109,105 +116,179 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
     }
   }
 
+  static String _bookLabel(Book b) => switch (b) {
+        Book.personal => 'Personal',
+        Book.business => 'Business',
+        Book.all => 'All books',
+      };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
     final hide = ref.watch(hideAmountsProvider).value ?? true;
     final dev = ref.watch(developerToolsProvider).value ?? true;
     final status = ref.watch(developerActionsProvider);
-    Widget head(String t) => Padding(
-          padding: const EdgeInsets.only(top: 20, bottom: 8),
-          child: Text(t, style: text.titleSmall),
-        );
+    final book = ref.watch(bookProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('More')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          ListTile(
+          AppCard(
             key: const Key('profile-tile'),
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.person_outline),
-            title: const Text('Profile'),
-            trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/profile'),
-          ),
-          head('Data sources'),
-          const BankSmsCard(),
-          const SizedBox(height: 12),
-          const PasteSmsCard(),
-          const SizedBox(height: 12),
-          const HistoryDaysCard(),
-          ListTile(
-            key: const Key('senders-tile'),
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.rule_folder_outlined),
-            title: const Text('Bank senders'),
-            subtitle: const Text('SMS ids and mail domains'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/settings/senders'),
-          ),
-          ListTile(
-            key: const Key('email-tile'),
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.mail_outline),
-            title: const Text('Email'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/settings/email'),
-          ),
-          if (statementsTile != null) statementsTile!,
-          if (billsTile != null) billsTile!,
-          if (goalsTile != null) goalsTile!,
-          if (loansTile != null) loansTile!,
-          if (customiseTile != null) customiseTile!,
-          if (languageTile != null) languageTile!,
-          if (taxTile != null) taxTile!,
-          if (rulesTile != null) rulesTile!,
-          if (alertsTile != null) alertsTile!,
-          if (forexTile != null) forexTile!,
-          if (activityTile != null) activityTile!,
-          if (backupTile != null) backupTile!,
-          if (newsTile != null) newsTile!,
-          if (supportTile != null) supportTile!,
-          if (updatesTile != null) updatesTile!,
-          if (diagnosticLogTile != null) diagnosticLogTile!,
-          if (notificationCard != null) ...[
-            const SizedBox(height: 12),
-            notificationCard!,
-          ],
-          head('Privacy'),
-          if (securityTile != null) securityTile!,
-          SwitchListTile(
-            key: hideAmountsKey,
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Hide amounts'),
-            value: hide,
-            onChanged: (v) => setHideAmounts(ref, value: v),
-          ),
-          if (dev) ...[
-            head('Developer'),
-            Wrap(
-              spacing: 8,
+            child: const Row(
               children: [
-                OutlinedButton(
-                  key: const Key('add-sample'),
-                  onPressed: () => ref
-                      .read(developerActionsProvider.notifier)
-                      .addSampleData(),
-                  child: const Text('Add sample data'),
+                IconBadge(AppIcons.profile, size: 46),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Profile'),
+                      Text(
+                        'Photo, occupation, alternate names',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
-                OutlinedButton(
-                  key: const Key('clear-all'),
-                  onPressed: () => _confirmClear(context, ref),
-                  child: const Text('Clear all data'),
-                ),
+                Icon(Icons.chevron_right),
               ],
             ),
-            if (status != null) ...[
-              const SizedBox(height: 8),
-              Text(status, key: const Key('dev-status'), style: text.bodySmall),
+          ),
+          SettingsSection(
+            title: 'Book and accounts',
+            children: [
+              SettingsRow(
+                key: const Key('book-row'),
+                badge: AppIcons.book,
+                title: 'Book',
+                subtitle: 'Applies to every tab',
+                trailing: AppDropdown<Book>(
+                  key: const Key('book-dropdown'),
+                  value: book,
+                  options: Book.values,
+                  labelOf: _bookLabel,
+                  dense: true,
+                  onChanged: (b) => ref.read(bookProvider.notifier).set(b),
+                ),
+              ),
+              SettingsRow(
+                key: const Key('accounts-row'),
+                badge: AppIcons.accounts,
+                title: 'Accounts',
+                subtitle: 'Banks, wallets and cards',
+                onTap: () => context.push('/accounts'),
+              ),
             ],
+          ),
+          SettingsSection(
+            title: 'Capture',
+            leading: [
+              const BankSmsCard(),
+              const PasteSmsCard(),
+              const HistoryDaysCard(),
+              if (notificationCard != null) notificationCard!,
+            ],
+            children: [
+              SettingsRow(
+                key: const Key('senders-tile'),
+                badge: AppIcons.senders,
+                title: 'Bank senders',
+                subtitle: 'SMS ids and mail domains',
+                onTap: () => context.push('/settings/senders'),
+              ),
+              SettingsRow(
+                key: const Key('email-tile'),
+                badge: AppIcons.email,
+                title: 'Email',
+                subtitle: 'Mailboxes and app passwords',
+                onTap: () => context.push('/settings/email'),
+              ),
+              if (statementsTile != null) statementsTile!,
+            ],
+          ),
+          SettingsSection(
+            title: 'Money tools',
+            children: [
+              if (billsTile != null) billsTile!,
+              if (goalsTile != null) goalsTile!,
+              if (loansTile != null) loansTile!,
+              if (taxTile != null) taxTile!,
+              if (rulesTile != null) rulesTile!,
+              if (forexTile != null) forexTile!,
+              if (newsTile != null) newsTile!,
+            ],
+          ),
+          SettingsSection(
+            title: 'Alerts and activity',
+            children: [
+              if (alertsTile != null) alertsTile!,
+              if (activityTile != null) activityTile!,
+              if (diagnosticLogTile != null) diagnosticLogTile!,
+            ],
+          ),
+          SettingsSection(
+            title: 'Appearance',
+            children: [
+              if (customiseTile != null) customiseTile!,
+              if (languageTile != null) languageTile!,
+            ],
+          ),
+          SettingsSection(
+            title: 'Privacy and security',
+            children: [
+              if (securityTile != null) securityTile!,
+              SettingsRow(
+                badge: AppIcons.hideAmounts,
+                title: 'Hide amounts',
+                subtitle: 'Mask every number in the app',
+                onTap: () => setHideAmounts(ref, value: !hide),
+                trailing: Switch(
+                  key: hideAmountsKey,
+                  value: hide,
+                  onChanged: (v) => setHideAmounts(ref, value: v),
+                ),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: 'Data',
+            children: [
+              if (backupTile != null) backupTile!,
+              if (dev) ...[
+                SettingsRow(
+                  key: const Key('add-sample'),
+                  badge: AppIcons.sample,
+                  title: 'Add sample data',
+                  subtitle: 'Dummy rows to try the app',
+                  onTap: () => ref
+                      .read(developerActionsProvider.notifier)
+                      .addSampleData(),
+                ),
+                SettingsRow(
+                  key: const Key('clear-all'),
+                  badge: AppIcons.erase,
+                  title: 'Clear all data',
+                  subtitle: 'Deletes every transaction and account',
+                  destructive: true,
+                  onTap: () => _confirmClear(context, ref),
+                ),
+              ],
+            ],
+          ),
+          if (dev && status != null) ...[
+            const SizedBox(height: 8),
+            Text(status, key: const Key('dev-status'), style: text.bodySmall),
           ],
+          SettingsSection(
+            title: 'About',
+            children: [
+              if (supportTile != null) supportTile!,
+              if (updatesTile != null) updatesTile!,
+            ],
+          ),
         ],
       ),
     );

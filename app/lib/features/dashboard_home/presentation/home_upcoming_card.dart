@@ -5,18 +5,20 @@ import 'package:hisaab/app/di/home_composition_providers.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_charts.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
 
-/// Upcoming in 7 days: bills, EMIs, insurance, card dues (FR-17-09).
+/// Upcoming in 7 days: bills, EMIs, insurance, card dues (FR-17-09); More
+/// opens the month calendar (FR-17-35).
 class HomeUpcomingCard extends ConsumerWidget {
   /// Creates the card.
   const HomeUpcomingCard({super.key});
 
-  static IconData _icon(UpcomingKind k) => switch (k) {
-        UpcomingKind.bill => Icons.receipt_long_outlined,
-        UpcomingKind.emi => Icons.account_balance_outlined,
-        UpcomingKind.insurance => Icons.shield_outlined,
-        UpcomingKind.card => Icons.credit_card_outlined,
-        UpcomingKind.income => Icons.south_west,
+  static AppIcon _icon(UpcomingKind k) => switch (k) {
+        UpcomingKind.bill => AppIcons.bills,
+        UpcomingKind.emi => AppIcons.loans,
+        UpcomingKind.insurance => AppIcons.insurance,
+        UpcomingKind.card => AppIcons.cards,
+        UpcomingKind.income => AppIcons.income,
       };
 
   @override
@@ -26,7 +28,6 @@ class HomeUpcomingCard extends ConsumerWidget {
     final rows = upcomingRows(ref.watch(homeUpcomingProvider));
     return AppCard(
       key: const Key('home_upcoming'),
-      onTap: () => context.push('/bills'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -38,7 +39,11 @@ class HomeUpcomingCard extends ConsumerWidget {
                   style: theme.textTheme.titleMedium,
                 ),
               ),
-              const Text('Calendar'),
+              TextButton(
+                key: const Key('home_upcoming_more'),
+                onPressed: () => context.push('/bills'),
+                child: const Text('More ›'),
+              ),
             ],
           ),
           if (rows.isEmpty)
@@ -50,7 +55,7 @@ class HomeUpcomingCard extends ConsumerWidget {
             ListTile(
               contentPadding: EdgeInsets.zero,
               dense: true,
-              leading: Icon(_icon(r.kind)),
+              leading: IconBadge(_icon(r.kind), size: 36),
               title: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Text(upcomingWhen(r.days)),
               trailing: Text(formatAmount(r.amountMinor, masked: masked)),

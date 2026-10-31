@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/settings_row.dart';
 
 /// More-tab entry to the Language screen (F-29).
 class LanguageTile extends StatelessWidget {
@@ -8,12 +10,11 @@ class LanguageTile extends StatelessWidget {
   const LanguageTile({super.key});
 
   @override
-  Widget build(BuildContext context) => ListTile(
+  Widget build(BuildContext context) => SettingsRow(
         key: const Key('language-tile'),
-        contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.language),
-        title: Text(t('Language')),
-        trailing: const Icon(Icons.chevron_right),
+        badge: AppIcons.language,
+        title: t('Language'),
+        subtitle: 'App language and packs',
         onTap: () => context.push('/settings/language'),
       );
 }

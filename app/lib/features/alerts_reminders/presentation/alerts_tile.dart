@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/settings_row.dart';
 
 /// More-tab entry for the Alerts screen (F-21), composed in `app/router.dart`.
 class AlertsTile extends StatelessWidget {
@@ -7,12 +9,11 @@ class AlertsTile extends StatelessWidget {
   const AlertsTile({super.key});
 
   @override
-  Widget build(BuildContext context) => ListTile(
+  Widget build(BuildContext context) => SettingsRow(
         key: const Key('alerts-tile'),
-        contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.notifications_outlined),
-        title: const Text('Alerts'),
-        trailing: const Icon(Icons.chevron_right),
+        badge: AppIcons.alerts,
+        title: 'Alerts',
+        subtitle: 'Bill reminders, new transactions',
         onTap: () => context.push('/settings/alerts'),
       );
 }

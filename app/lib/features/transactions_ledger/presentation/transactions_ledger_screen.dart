@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/scope_bar.dart' show TabTitle;
 import 'package:hisaab/features/transactions_ledger/domain/day_groups.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
@@ -15,6 +16,8 @@ import 'package:hisaab/features/transactions_ledger/presentation/transaction_det
     show CategoryPicker;
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/app_dropdown.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
 
 /// Transactions tab: filter header, summary strip and day cards
@@ -47,6 +50,13 @@ class TransactionsLedgerScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<TransactionsLedgerScreen> createState() => _State();
 }
+
+String _segmentLabel(LedgerSegment s) => switch (s) {
+      LedgerSegment.list => 'List',
+      LedgerSegment.category => 'By category',
+      LedgerSegment.calendar => 'Calendar',
+      LedgerSegment.merchant => 'By merchant',
+    };
 
 bool _same(LedgerFilter a, LedgerFilter b) =>
     a.kind == b.kind &&
@@ -210,7 +220,7 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
       child: Scaffold(
         appBar: _selecting
             ? _selectionBar()
-            : AppBar(title: const Text('Transactions')),
+            : AppBar(title: const TabTitle('Transactions')),
         floatingActionButton: _selecting
             ? null
             : FloatingActionButton(
@@ -237,7 +247,7 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
                       onTap: () => context.push('/review'),
                       child: Row(
                         children: [
-                          const Icon(Icons.copy_all_outlined),
+                          const IconBadge(AppIcons.alerts, size: 32),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text('$reviewCount need review'),
@@ -261,30 +271,16 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
                     masked: masked,
                   ),
                   const SizedBox(height: 8),
-                  SegmentedButton<LedgerSegment>(
-                    key: const Key('ledger_segments'),
-                    showSelectedIcon: false,
-                    segments: const [
-                      ButtonSegment(
-                        value: LedgerSegment.list,
-                        label: Text('List'),
-                      ),
-                      ButtonSegment(
-                        value: LedgerSegment.category,
-                        label: Text('Category'),
-                      ),
-                      ButtonSegment(
-                        value: LedgerSegment.calendar,
-                        label: Text('Calendar'),
-                      ),
-                      ButtonSegment(
-                        value: LedgerSegment.merchant,
-                        label: Text('Merchant'),
-                      ),
-                    ],
-                    selected: {_segment},
-                    onSelectionChanged: (s) =>
-                        setState(() => _segment = s.first),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: AppDropdown<LedgerSegment>(
+                      key: const Key('ledger_view_dropdown'),
+                      icon: Icons.view_agenda_outlined,
+                      value: _segment,
+                      options: LedgerSegment.values,
+                      labelOf: _segmentLabel,
+                      onChanged: (v) => setState(() => _segment = v),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   if (rows.isEmpty)

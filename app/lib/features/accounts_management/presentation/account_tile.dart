@@ -3,6 +3,7 @@ import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/categorization/domain/brand_logos.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/brand_logo.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -19,14 +20,35 @@ String accountTypeLabel(AccountType t) => switch (t) {
       _ => '${t.name[0].toUpperCase()}${t.name.substring(1)}',
     };
 
+AppIcon _badge(Account a) => switch (a.accountType) {
+      AccountType.wallet || AccountType.prepaidCard => AppIcons.wallet,
+      AccountType.creditCard => AppIcons.cards,
+      _ => a.kind == AccountKind.card ? AppIcons.cards : AppIcons.accounts,
+    };
+
+String _source(Account a) =>
+    a.manualBalanceMinor != null && a.latestBalanceMinor == null
+        ? 'Manual'
+        : a.latestBalanceMinor != null || a.availableLimitMinor != null
+            ? 'Synced'
+            : 'No balance yet';
+
 /// One account row: label, type, balance (`~` when estimated, FR-13-07).
 class AccountTile extends StatelessWidget {
   const AccountTile({
     required this.item,
     required this.masked,
     this.onTap,
+    this.cardDueMinor,
+    this.usedPercent,
     super.key,
   });
+
+  /// Credit card due (paise); shown instead of the limit left.
+  final int? cardDueMinor;
+
+  /// Credit card limit used, 0..100.
+  final int? usedPercent;
 
   final AccountWithActivity item;
   final bool masked;
@@ -52,6 +74,12 @@ class AccountTile extends StatelessWidget {
               label: a.bankName,
               size: 32,
             )
+          else if (a.colorArgb == null && a.cardNetwork == null)
+            IconBadge(
+              _badge(a),
+              key: Key('account_avatar_${a.id}'),
+              size: 36,
+            )
           else
             CircleAvatar(
               key: Key('account_avatar_${a.id}'),
@@ -72,24 +100,47 @@ class AccountTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(a.label, style: theme.textTheme.titleMedium),
-                Text(
-                  a.accountType == null
-                      ? (isCard ? 'Card' : 'Account')
-                      : accountTypeLabel(a.accountType!),
-                  style: theme.textTheme.bodySmall,
-                ),
-                if (a.usage == AccountUsage.business)
-                  Container(
-                    key: Key('account_business_${a.id}'),
-                    margin: const EdgeInsets.only(top: 2),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.tertiaryContainer,
-                      borderRadius: BorderRadius.circular(8),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        a.accountType == null
+                            ? (isCard ? 'Card' : 'Account')
+                            : accountTypeLabel(a.accountType!),
+                        style: theme.textTheme.bodySmall,
+                      ),
                     ),
-                    child: Text('Business', style: theme.textTheme.labelSmall),
+                    Flexible(
+                      child: Text(
+                        ' · ${_source(a)}'
+                        '${usedPercent == null ? '' : ' · $usedPercent% used'}',
+                        key: Key('account_source_${a.id}'),
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  key: Key(
+                    a.usage == AccountUsage.business
+                        ? 'account_business_${a.id}'
+                        : 'account_personal_${a.id}',
                   ),
+                  margin: const EdgeInsets.only(top: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: a.usage == AccountUsage.business
+                        ? theme.colorScheme.tertiaryContainer
+                        : theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    a.usage == AccountUsage.business ? 'Business' : 'Personal',
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ),
               ],
             ),
           ),
@@ -97,14 +148,18 @@ class AccountTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                bal == null
-                    ? '-'
-                    : '${item.balanceIsEstimated ? '~' : ''}'
-                        '${formatAmount(bal, masked: masked)}',
+                cardDueMinor != null
+                    ? formatAmount(cardDueMinor!, masked: masked)
+                    : bal == null
+                        ? '-'
+                        : '${item.balanceIsEstimated ? '~' : ''}'
+                            '${formatAmount(bal, masked: masked)}',
                 key: Key('account_balance_${a.id}'),
                 style: theme.textTheme.titleMedium,
               ),
-              if (isCard && bal != null)
+              if (cardDueMinor != null)
+                Text('due', style: theme.textTheme.bodySmall)
+              else if (isCard && bal != null)
                 Text('limit left', style: theme.textTheme.bodySmall),
             ],
           ),

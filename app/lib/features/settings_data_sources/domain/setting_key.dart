@@ -32,6 +32,9 @@ abstract final class SettingKeys {
     false,
   );
   static const historyDays = SettingKey<int>('history_days', 90);
+
+  /// App-wide Book: all, personal or business (FR-26-31).
+  static const book = SettingKey<String>('book', 'all');
   static const hideAmounts = SettingKey<bool>('hide_amounts', true);
   static const appLock = SettingKey<bool>('app_lock', false);
   static const transactionNotifications = SettingKey<bool>(
