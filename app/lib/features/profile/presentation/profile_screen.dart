@@ -16,6 +16,7 @@ import 'package:hisaab/features/profile/presentation/bank_details_sheet.dart';
 import 'package:hisaab/features/profile/presentation/photo_crop_screen.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/phone_digits_formatter.dart';
 import 'package:hisaab/shared/widgets/profile_avatar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parser_core/parser_core.dart' show AccountKind;
@@ -277,6 +278,7 @@ class _FormState extends ConsumerState<_Form> {
                 key: const Key('profile-mobile'),
                 controller: _mobile,
                 keyboardType: TextInputType.phone,
+                inputFormatters: const [PhoneDigitsFormatter()],
                 decoration: InputDecoration(
                   labelText: 'Mobile',
                   prefixText: '+91 ',
@@ -400,6 +402,7 @@ class _FormState extends ConsumerState<_Form> {
                       key: const Key('profile-alt-phone'),
                       controller: _altPhone,
                       keyboardType: TextInputType.phone,
+                      inputFormatters: const [PhoneDigitsFormatter()],
                       decoration: const InputDecoration(
                         labelText: 'Add a mobile',
                         prefixText: '+91 ',

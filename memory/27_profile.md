@@ -449,3 +449,4 @@ Tests: `profile_photo_test.dart` (use case, file store, avatar, crop screen outp
 | 2026-10-27 | Audit: fields and bank unlock details confirmed done; occupation and photo with crop confirmed not built | Kotlin parity audit |
 | 2026-10-27 | Profile photo with crop, zoom and rotate (PNG, app-private), shared `ProfileAvatar` widget, occupation field, several alternate names and mobiles (FR-27-21..23) | Kotlin parity (D2) |
 | 2026-10-31 | Heart button in the Profile app bar opens Support; More profile card restyled with a coloured badge (FR-27-24) | Approved More/Accounts/Profile mockups |
+| 2026-10-31 | Mobile no longer loses its last two digits on reload: `phoneDigits` drops a leading 91 or 0 before capping at 10, and the mobile fields use `PhoneDigitsFormatter` so a pasted +91 number keeps all 10 digits | Bug: saved +91 number reloaded as 91 plus the first 8 digits |

@@ -52,7 +52,10 @@ void main() {
     expect(OnboardingValidators.isValidPanOrBlank('ABCDE1234F'), isTrue);
     expect(OnboardingValidators.isValidPanOrBlank(''), isTrue);
     expect(OnboardingValidators.isValidPanOrBlank('ABCD1234F'), isFalse);
-    expect(OnboardingValidators.phoneDigits('+91 98765-432109'), '9198765432');
+    expect(OnboardingValidators.phoneDigits('+91 98765-432109'), '9876543210');
+    expect(OnboardingValidators.phoneDigits('+91 9876543210'), '9876543210');
+    expect(OnboardingValidators.phoneDigits('09876543210'), '9876543210');
+    expect(OnboardingValidators.phoneDigits('9876543210'), '9876543210');
     expect(OnboardingValidators.formatPhone('9876543210'), '+91 9876543210');
     expect(OnboardingValidators.formatPhone('987654321'), isNull);
   });

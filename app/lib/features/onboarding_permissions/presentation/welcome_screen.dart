@@ -12,6 +12,7 @@ import 'package:hisaab/features/email_ingestion/domain/verification_code.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/usecases/onboarding_usecases.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/validators/onboarding_validators.dart';
 import 'package:hisaab/shared/widgets/app_password_guide.dart';
+import 'package:hisaab/shared/widgets/phone_digits_formatter.dart';
 import 'package:hisaab/shared/widgets/sms_permission_card.dart';
 
 enum _Step { phone, email, code, details, access }
@@ -369,10 +370,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               key: const Key('welcome-phone'),
               controller: _phone,
               keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(10),
-              ],
+              inputFormatters: const [PhoneDigitsFormatter()],
               decoration: const InputDecoration(
                 labelText: 'Mobile (as per bank)',
                 prefixText: '+91 ',
@@ -431,10 +429,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               key: const Key('welcome-alt-phone'),
               controller: _altPhone,
               keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(10),
-              ],
+              inputFormatters: const [PhoneDigitsFormatter()],
               decoration: const InputDecoration(
                 labelText: 'Alternate mobile',
                 prefixText: '+91 ',
