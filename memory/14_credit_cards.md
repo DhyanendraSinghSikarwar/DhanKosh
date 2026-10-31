@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-14 |
-| Status | In progress (data/domain, message parser, SMS/email notice ingest, `/cards` screen, Edit amounts sheet, Home strip, cycle spend, statement history, paid verification and late flag done; reminders worker and notification actions, forex markup field done; detail screen pending) |
+| Status | In progress (data/domain, message parser, SMS/email notice ingest, `/cards` screen, Edit amounts sheet, Home strip, cycle spend, statement history, paid verification and late flag done; reminders worker and notification actions, forex markup field done; card page with limit override done) |
 | Priority | P0 |
 | Phase | 3 (statements + portfolio); card due SMS/email recording can start in Phase 2; reminders in Phase 2 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 
@@ -183,6 +183,15 @@ Card insights (Fold adoption, [ADR-0010](../docs/adr/0010-fold-ideas-adoption-ru
 - FR-14-20: Each statement shall show a payment state: Paid when evidence >= total - Rs 1, Min paid when >= minimum due, else Unpaid. Evidence is the larger of card-side TRANSFER rows and payment notices between the day after the statement and due + 10 days, a matching bank debit, or Mark paid.
 - FR-14-21: A bank debit or transfer on another account dated after the statement day through due + 3 days whose amount equals the total (or minimum) due within Rs 1 shall verify the statement as paid (tick); Mark paid counts as paid but is not verified.
 - FR-14-22: A statement is a late-payment risk when its due date has passed, its total is above 0, it is Unpaid and no matching bank debit exists; the newest statement's flag shows as "Late payment risk" on the card.
+
+Card page and Home card (approved Home mockups, 2026-10-31):
+
+- FR-14-23: `/cards/:id` opens the card page (`CardDetailScreen`); `/cards` stays the list.
+- FR-14-24: The card page shows statement balance (billed, else outstanding), unbilled, minimum due, limit, available limit, upcoming payments (statement due, minimum due, Mark paid), the latest card transactions, statement history and the note "Filled from statement dated {date}" (the position's statement day; "No statement yet" without one, "Edited by you" after an edit). Values come from imported statements and notices automatically.
+- FR-14-25: Cards on Home and the Bills calendar follow the shared Book by the card account's usage (`bookProvider`; All shows every card, Personal and Business filter).
+- FR-14-26: Edit on the card page overrides statement balance, unbilled, minimum due (stored as FR-14-07 overrides) and the limit. The limit override is stored on-device in the settings key `card_limit_overrides` (`bank:last4=paise;...`, `CardLimitOverrides`); a value equal to the statement's limit clears it. Reset all clears every override. Available limit with an edited limit is `max(0, limit - billed - unbilled)`.
+- FR-14-27: Edited figures carry an "edited" tag on the card page and the hero; Edit has Cancel (discard) and Save.
+- FR-14-28: The Bills calendar page lists the month's (or the selected day's) card dues with Mark paid (`BillsCardDues`, composed by the router).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -448,6 +457,8 @@ Card insights (`test/features/credit_cards/card_insights_test.dart`, `card_insig
 - TC-14-20 (FR-14-20, FR-14-21): bank debit equal to total = paid and verified; equal to minimum = min paid; wrong amount or date ignored; 3 days of grace; card-side transfer and payment notices count; partial transfer = min paid.
 - TC-14-21 (FR-14-22): overdue, unpaid, no matching debit = late risk; not before the due date; Mark paid clears it and is not verified.
 - TC-14-22 (FR-14-22): widget: the Cards screen shows the late flag and statement rows; Mark paid shows Paid.
+- TC-14-23 (FR-14-24, FR-14-26, FR-14-27): widget: the card page shows figures and the statement note; Edit then Cancel keeps values; Save overrides balance and limit, shows the edited tag and stores `card_limit_overrides` (`card_detail_screen_test.dart`).
+- TC-14-24 (FR-14-25): widget: the Home cards card shows only Business cards for Business and Personal cards for Personal, with the total due of the visible ones.
 
 ## 16. Acceptance Criteria
 
@@ -513,3 +524,4 @@ FR-14-15 UI done in the account edit sheet (cards only): "Forex markup %" 0..20 
 | 2026-10-26 | Cards: cycle spend, statement history, paid auto-verification from bank debits, late-payment risk flag | Fold adoption |
 | 2026-10-27 | Audit: cards screen, Edit amounts, Mark paid confirmed done; reminders, Remind tomorrow and forex markup UI confirmed not built | Kotlin parity audit |
 | 2026-10-27 | Per-card forex markup field (FR-14-15) | Kotlin parity |
+| 2026-10-31 | Card page `/cards/:id`, limit override, Book-filtered Home Credit cards card, card dues on the Bills calendar (FR-14-23..28) | Approved Home mockups |

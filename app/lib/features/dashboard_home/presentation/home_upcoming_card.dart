@@ -8,7 +8,7 @@ import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 
 /// Upcoming in 7 days: bills, EMIs, insurance, card dues (FR-17-09); More
-/// opens the month calendar (FR-17-35).
+/// opens the month calendar (FR-17-43).
 class HomeUpcomingCard extends ConsumerWidget {
   /// Creates the card.
   const HomeUpcomingCard({super.key});

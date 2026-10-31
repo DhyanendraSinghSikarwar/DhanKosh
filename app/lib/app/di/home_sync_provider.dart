@@ -1,16 +1,14 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/alerts_providers.dart';
 import 'package:hisaab/app/di/email_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
 
-/// Stage of a Home sync (FR-17-34).
+/// Stage of a Home sync (FR-17-42).
 enum HomeSyncStage { idle, sms, email, matching, done }
 
 /// State of the Home sync button and refresh sheet (FR-17-17, FR-17-18,
-/// FR-17-34).
+/// FR-17-42).
 class HomeSyncState {
   /// Creates a state.
   const HomeSyncState({
@@ -32,7 +30,7 @@ class HomeSyncState {
   /// Messages parsed so far.
   final int found;
 
-  /// Result line, shown for 3 seconds after a sync.
+  /// Short result of the last sync (messages read).
   final String? done;
 
   /// Current step; [HomeSyncStage.done] stays until the next sync.
@@ -137,21 +135,9 @@ class HomeSyncNotifier extends Notifier<HomeSyncState> {
       newCount: added,
       reviewCount: flagged,
     );
-    unawaited(
-      Future<void>.delayed(const Duration(seconds: 3), () {
-        if (!state.running && state.done != null) {
-          state = HomeSyncState(
-            stage: state.stage,
-            scanned: state.scanned,
-            newCount: state.newCount,
-            reviewCount: state.reviewCount,
-          );
-        }
-      }),
-    );
   }
 }
 
-/// Home sync state and action (FR-17-17, FR-17-18, FR-17-34).
+/// Home sync state and action (FR-17-17, FR-17-18, FR-17-42).
 final homeSyncProvider =
     NotifierProvider<HomeSyncNotifier, HomeSyncState>(HomeSyncNotifier.new);

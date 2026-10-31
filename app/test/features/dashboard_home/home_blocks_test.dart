@@ -80,7 +80,7 @@ void main() {
         );
       });
 
-  // FR-17-26, FR-17-36: the card stays available but is not on Home.
+  // FR-17-26, FR-17-45: the card stays available but is not on Home.
   testWidgets('net worth card shows value, opens Portfolio', (t) async {
     await seed(t);
     final visited = <String>[];
@@ -105,7 +105,7 @@ void main() {
     await teardownApp(t);
   });
 
-  // FR-17-36
+  // FR-17-45
   testWidgets('Home no longer shows the net worth card', (t) async {
     await seed(t);
     await pumpApp(t, env, _routes([]));

@@ -197,7 +197,7 @@ void main() {
     await teardownApp(t);
   });
 
-  // FR-17-32
+  // FR-17-40
   testWidgets('Book tag shows next to the name unless Personal', (t) async {
     await seed(t);
     await pumpApp(t, env, _routes([]));
@@ -212,9 +212,8 @@ void main() {
     await teardownApp(t);
   });
 
-  // FR-17-19, FR-17-33: the eye masks every number and the setting sticks.
-  testWidgets('eye hides amounts everywhere and stores the setting',
-      (t) async {
+  // FR-17-19, FR-17-41: the eye masks every number and the setting sticks.
+  testWidgets('eye hides amounts everywhere and stores the setting', (t) async {
     await seed(t);
     await pumpApp(t, env, _routes([]));
     expect(find.textContaining('2,450'), findsWidgets);
@@ -228,7 +227,7 @@ void main() {
     await teardownApp(t);
   });
 
-  // FR-17-34
+  // FR-17-42
   testWidgets('refresh opens a sheet with steps, progress and a result',
       (t) async {
     t.view.physicalSize = const Size(800, 3000);
@@ -258,14 +257,15 @@ void main() {
       matches(RegExp(r'^\d+ new')),
     );
     await t.tap(find.byKey(const Key('home_refresh_done')));
-    await t.pump(const Duration(milliseconds: 400));
+    for (var i = 0; i < 4; i++) {
+      await t.pump(const Duration(milliseconds: 300));
+    }
     expect(find.byKey(const Key('home_refresh_sheet')), findsNothing);
     await teardownApp(t);
   });
 
-  // FR-17-37: category card at the end; slice tap drills down, back returns.
-  testWidgets('category donut drills into sub-categories and back',
-      (t) async {
+  // FR-17-46: category card at the end; slice tap drills down, back returns.
+  testWidgets('category donut drills into sub-categories and back', (t) async {
     t.view.physicalSize = const Size(800, 6000);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
@@ -282,7 +282,7 @@ void main() {
     await t.tap(find.byKey(const Key('home_categories_info')));
     await t.pump();
     expect(find.byKey(const Key('home_categories_note')), findsOneWidget);
-    await t.tap(find.byKey(const Key('home_cat_Food')));
+    await t.tap(find.byKey(const Key('home_cat_Food & Dining')));
     await t.pump();
     expect(find.byKey(const Key('home_categories_back')), findsOneWidget);
     await t.tap(find.byKey(const Key('home_categories_back')));

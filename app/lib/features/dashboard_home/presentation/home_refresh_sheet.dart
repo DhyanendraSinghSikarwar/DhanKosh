@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/home_sync_provider.dart';
 
 /// Bottom sheet shown while Home fetches new SMS and email: determinate
-/// progress, a row per source and the result line (FR-17-34).
+/// progress, a row per source and the result line (FR-17-42).
 class HomeRefreshSheet extends ConsumerWidget {
   /// Creates the sheet.
   const HomeRefreshSheet({super.key});

@@ -15,7 +15,7 @@ import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 
 /// Home header: avatar, greeting, name with Book tag, then eye, refresh and
 /// bell on top; add, accounts and edit below (FR-17-02, FR-17-17,
-/// FR-17-18, FR-17-32, FR-17-33).
+/// FR-17-18, FR-17-40, FR-17-41).
 class HomeHeader extends ConsumerWidget {
   /// Creates the header.
   const HomeHeader({
@@ -164,7 +164,7 @@ class HomeHeader extends ConsumerWidget {
 }
 
 /// Small tag next to the name while the shared Book is not Personal
-/// (FR-17-32).
+/// (FR-17-40).
 class _BookTag extends StatelessWidget {
   const _BookTag(this.book);
 

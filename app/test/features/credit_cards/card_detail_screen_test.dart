@@ -1,4 +1,4 @@
-// Card page, Home cards card and Book filter (FR-14-24..27, FR-17-33).
+// Card page, Home cards card and Book filter (FR-14-24..28, FR-17-44).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -104,8 +104,7 @@ void main() {
   }
 
   // FR-14-24
-  testWidgets('card page shows the figures and the statement note',
-      (t) async {
+  testWidgets('card page shows the figures and the statement note', (t) async {
     await pump(t, CardDetailScreen(cardId: cardId));
     expect(
       t.widget<Text>(find.byKey(const Key('card_detail_balance'))).data,

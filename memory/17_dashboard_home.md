@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1 core Home plus Fold adoption; layout-driven sections, greeting header, sync button and pill, Spent change and running line, category donut with drill, cash flow split bar, Upcoming, Insights, Mark paid done; notification bell sheet, collapsed header, permission prompts pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 
@@ -163,13 +163,13 @@ Safe-to-spend maths remains in `HomeViewModel.build` though no widget shows it: 
 23. FR-17-23: Home never shows a "Safe to spend" block; no `safe` section key exists in the rebuilt Home (see section 10; backlog: [34_planned_insights_backlog.md](34_planned_insights_backlog.md)).
 24. FR-17-24: The More hub per-entry subtitles and footer ("You're all caught up", "DhanKosh v{version}") are owned by [26_settings_data_sources.md](26_settings_data_sources.md) FR-26-23, not by Home.
 25. FR-17-25: A Needs attention card lists, in order and only when non-empty: duplicates to review (`/review`), bills due within 7 days (`/bills`, single bill by name, else "{n} bills due"), locked or unreadable statements (`/statements`), credit cards unpaid with a due date within 7 days (`/cards`). Rows show names and counts, never amounts; each row is tappable; the card is hidden when no row exists. Replaces the single "to review" notice.
-26. FR-17-26: A Net worth card sits above the other blocks. It shows `NetWorthService` net (assets minus liabilities, all books), the change against the newest recorded point before today (falling back to the only point; percent in tenths by integer math, omitted when the previous value is not positive), and opens `/portfolio`. Amounts are masked with hide-amounts. The value counts up once (600 ms) and is static when masked, when reduce-motion is on and under `flutter test`. With no accounts or holdings it shows "Add accounts to see net worth" with one action to `/accounts`.
+26. FR-17-26: A Net worth card (`HomeNetWorthCard`, no longer placed on Home, FR-17-45) shows the following. It shows `NetWorthService` net (assets minus liabilities, all books), the change against the newest recorded point before today (falling back to the only point; percent in tenths by integer math, omitted when the previous value is not positive), and opens `/portfolio`. Amounts are masked with hide-amounts. The value counts up once (600 ms) and is static when masked, when reduce-motion is on and under `flutter test`. With no accounts or holdings it shows "Add accounts to see net worth" with one action to `/accounts`.
 27. FR-17-27: Home shows a small "Data stays on this phone" badge under the header, and tapping the month spent figure opens Analysis (`/analysis`).
 28. FR-17-28: The empty Home keeps the header and privacy badge and offers one primary action "Scan SMS" (`/more`) plus "Import your first statement" (`/statements`).
 29. FR-17-29: The header bell opens the Inbox (`/activity`, [22_activity_log.md](22_activity_log.md)) and shows the unread count (hidden at 0, "99+" above 99); unread rules are FR-22-16.
 30. FR-17-30: Home shows the savings goals summary card ([36_goals_roundups_salary_plan.md](36_savings_goals.md) FR-36-09) below the cards and budgets blocks, embedded by the router like the cards strip; with no goals it renders nothing (no empty card).
-31. FR-17-31: The header shows an avatar with initials of the profile name (fallback "H"), the greeting, the profile name (fallback "Welcome"), a sync button with a progress pill, an add button (`/transactions/add`), hide-amounts, bell, accounts and an edit-sections button.
-32. FR-17-32: `homeSyncProvider` runs sync everything: 14-day SMS re-read with live scanned/found counts, email sync, alert checks; ignored while running; the pill shows live counts and then the number read for 3 s.
+31. FR-17-31: The header shows an avatar with initials of the profile name (fallback "H"), the greeting, the profile name (fallback "Welcome"), a refresh button (progress sheet, FR-17-42), an add button (`/transactions/add`), hide-amounts, bell, accounts and an edit-sections button.
+32. FR-17-32: `homeSyncProvider` runs sync everything: 14-day SMS re-read with live scanned/found counts, email sync, alert checks; ignored while running; progress and the result show in the refresh sheet (FR-17-42).
 33. FR-17-33: Home renders the visible sections in the stored order from the layout store ([28_theming_customisation.md](28_theming_customisation.md) FR-28-23); goals follow the last visible of cards or budgets; edit mode swaps the sections for the editor with presets.
 34. FR-17-34: The Spent card shows the headline, the percent change against the same elapsed days of the previous month, a running line chart (this month solid, last month dashed, cumulative per day through `SpendCalc`) and Income, Expenses, Saved tiles.
 35. FR-17-35: Spend by category is a donut of the top 7 categories plus Others with percent legend and the line "Includes card purchases" (ADR-0011); tapping a slice or row drills into that category's sub-categories, with a back button.
@@ -177,6 +177,14 @@ Safe-to-spend maths remains in `HomeViewModel.build` though no widget shows it: 
 37. FR-17-37: Upcoming lists up to 5 bills, EMIs, insurance renewals, income and card dues due in 0..7 days, soonest first, with "Due today", "Tomorrow" or "In n days"; tap opens Bills.
 38. FR-17-38: Insights is a swipeable carousel of the Analysis insights with a tone tag and Dismiss (session only); hidden when none.
 39. FR-17-39: The card dues block shows Mark paid for an unpaid billed card due within 7 days; the accounts block folds.
+40. FR-17-40: Home has no Book chips. The Book is chosen in More and applies app-wide through `bookProvider` ([20_search_filters.md](20_search_filters.md) FR-20-23); Home totals, month rows, Upcoming, category donut and cards follow it. While the Book is not Personal a small tag (`Business` or `All books`, key `home_book_tag`) shows next to the greeting name.
+41. FR-17-41: Header actions top-right are eye, refresh and the Inbox bell; add, accounts and edit-sections sit on a second row. The eye (`home_eye`) toggles the global hide-amounts setting (FR-17-19, [25_security_privacy.md](25_security_privacy.md)), which masks every number app-wide.
+42. FR-17-42: The refresh button (`home_sync`) starts `homeSyncProvider` and opens a bottom sheet (`HomeRefreshSheet`): a determinate progress bar (SMS 0-55%, email 55-85%, matching 85-100%; SMS has no known total so its share grows with messages read), step rows SMS, Email and Matching with spinner or check, and when finished a result line `{n} new, {m} need review` (new = inserted + flagged, from the SMS and email reports; the second part is omitted at 0) with Done. `HomeSyncState` carries `stage`, `newCount`, `reviewCount`; the ingestion pipelines are unchanged. The old progress pill and the 3 s reset are gone.
+43. FR-17-43: The Upcoming card has a `More ›` button (`home_upcoming_more`) opening `/bills`, the month calendar of bills and recurring items with colour dots, month stepper, tap-a-day filter, and card dues with Mark paid ([12_recurring_transactions.md](12_recurring_transactions.md), [14_credit_cards.md](14_credit_cards.md) FR-14-28). Rows carry a coloured `IconBadge` by kind.
+44. FR-17-44: The `cards` section is the Credit cards card ([14_credit_cards.md](14_credit_cards.md) FR-14-24, FR-14-25): header with the total due, one row per card of the shared Book with `IconBadge`, name and last digits, due amount, due date, limit and a limit-used bar; a row opens `/cards/:id`; Mark paid stays for bills due within 7 days.
+45. FR-17-45: Home no longer shows the Net worth card (supersedes the placement in FR-17-26); `HomeNetWorthCard` stays in the codebase for reuse and Net worth lives on Portfolio ([16_portfolio.md](16_portfolio.md)). The layout id `networth` is not a registered section, so Customise is unaffected.
+46. FR-17-46: Spend by category (FR-17-35) is always drawn last on Home, after the accounts strip, while the `categories` section is visible; an (i) button (`home_categories_info`) reveals the note that it includes card purchases and so differs from the cash-basis Spent figure (ADR-0011); tapping a slice or a legend row opens that category's sub-category donut and the back control returns.
+47. FR-17-47: Home rows use the shared coloured icon set (`AppIcons`, `IconBadge`): Upcoming rows, card rows, insights tags.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -519,6 +527,11 @@ Integration:
 14. TC-17-14 (FR-17-06, FR-17-11, FR-17-12): ingest 3 SMS fixtures (HDFC debit ₹2,450.50 Swiggy UPI, salary credit, card spend) -> Home spent, category donut and recent list update without manual refresh.
 15. TC-17-31 (FR-17-34, FR-17-35, FR-17-36, FR-17-37): chart builders with paise fixtures: cumulative spend, top 7 plus Others, sub-category drill, split bar sums to 1000, upcoming window and wording.
 16. TC-17-32 (FR-17-33): widget: default sections show and Budgets is hidden; the Minimal preset hides the rest; hiding Upcoming in the editor persists.
+17. TC-17-33 (FR-17-40): widget: the Book tag shows for Business and All books and not for Personal.
+18. TC-17-34 (FR-17-19, FR-17-41): widget: the eye masks every amount on Home and stores `hide_amounts`.
+19. TC-17-35 (FR-17-42): widget: refresh opens the sheet with progress, SMS/Email/Matching rows, then a `{n} new` result and Done closes it.
+20. TC-17-36 (FR-17-45): widget: Home has no net worth card; the card still renders on its own and masks (`home_blocks_test.dart`).
+21. TC-17-37 (FR-17-46): widget: the category card is below the accounts strip; (i) shows the note; a legend row drills in and back returns.
 
 Fixture messages (masked): `HDFC Bank: Rs 2450.50 debited from a/c XX1234 on 17-10-26 to VPA swiggy@icici (UPI Ref 6xxxxxxxx1). Avl bal Rs 45,210.00` ; `Salary credited Rs 85,000.00 to a/c XX1234 on 01-10-26 ... Avl Bal Rs 1,30,210.00`.
 
@@ -571,3 +584,4 @@ Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insight
 | 2026-10-27 | Audit: Home layout store, presets, greeting header, sync pill, Upcoming, Insights, category donut, running line and previous-period change confirmed not built | Kotlin parity audit |
 | 2026-10-27 | Layout-driven sections, header with name and sync pill, running line, category donut with drill, split bar, Upcoming, Insights, Mark paid (FR-17-31..39) | Kotlin parity |
 | 2026-10-27 | Home Spent is cash basis with a card purchases line (`home_card_purchases`); Home totals and month rows follow the app-wide Book (`bookProvider`, memory 20 FR-20-23) | Kotlin parity, ADR-0011 |
+| 2026-10-31 | Book chips removed from Home with a Book tag by the name; eye, refresh (progress sheet) and bell in the header; Upcoming More ›; Credit cards card replaces Net worth on Home; Spend by category last with (i) note; coloured icons (FR-17-40..47) | Approved Home mockups |
