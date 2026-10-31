@@ -6,7 +6,7 @@
 | Status | In progress (rules done; posting engine, native `alerts` channel, Alerts settings screen and launch-route handling landed but native Kotlin unverified on device; card reminders, untracked-change alerts, new-transaction/balance/statement notifications, action buttons and AlertsWorker scheduling pending; 2026-10-26: weekly summary (rule, engine check, toggle) added); 2026-10-27 parity: Card reminders, new-transaction alerts with category buttons and action routes (FR-21-22..25); untracked-change alerts still pending; Kotlin buttons uncompiled |
 | Priority | P1 |
 | Phase | 4 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 
@@ -147,7 +147,7 @@ Scaffold "Notifications & alerts" with cards:
 
 1. FR-21-01: Create three channels with the ids, names, importance and descriptions in section 2.1 before posting; reuse them if present.
 2. FR-21-02: Post a new-transaction notification only for newly inserted (not merged/duplicate/rescanned) non-transfer transactions from live SMS and payment-app notifications when `transaction_notifications` is on; title, text, id (10000 + txId) and tap link per section 2.2.
-3. FR-21-03: Add up to 3 category action buttons chosen by 90-day usage for the same type, then defaults, excluding the current category and OTHER; tapping one sets the category, learns the merchant rule, and shows "Saved as {category}" for 4 s without opening the app.
+3. FR-21-03: Title "Spent ₹X at <merchant>" (credit "Received ₹X from <merchant>"); body "What was this for? · <bank> ••<last4>" plus "Filed under <Category>". Buttons: up to 2 best-guess categories (earlier categories of the same merchant first, then 90-day usage for the same type, then defaults; excluding the current category and OTHER) followed by "More…" (route `/alert-action?a=more&txId=`). Tapping a guess sets the category, learns the merchant rule, and shows "Saved as {category}" for 4 s without opening the app.
 4. FR-21-04: Post one merged "balance updated" notification (id 9000) at most once per account per IST day when `transaction_notifications` is on, with the single and multi-account texts in section 2.3.
 5. FR-21-05: `checkBudgets` alerts at the highest reached level of {user percent, 100} once per (category, month, level) with the exact titles and texts; it runs after every transaction change, on sync, and daily.
 6. FR-21-06: `checkUpcoming` alerts for non-income recurring items due in 0-3 days whose paying bank account balance is known and lower than the amount, once per (name, due date), with the title/text variants in section 2.5.
@@ -170,6 +170,7 @@ Scaffold "Notifications & alerts" with cards:
 23. FR-21-23: Notification buttons (card Mark paid, Remind tomorrow, new-transaction category buttons) shall open the in-app route `/alert-action?a=<paid|snooze|category>&...`; `AlertActionHandler` runs the action once (mark paid, snooze to the next day, set category with a "Saved as" confirmation) and returns home. Kotlin only launches the route.
 24. FR-21-24: The engine shall post a new-transaction notification (with up to 3 category buttons) for non-transfer, non-review rows created in the last 30 minutes, once per row (key `tx:<id>`), when transaction notifications are on.
 25. FR-21-25: The weekly summary total shall use the cash-basis `SpendCalc.totals` (ADR-0011: card purchases excluded, card bill payments included).
+26. FR-21-26: "More…" opens the app on a "Change category" modal bottom sheet over the transaction (`ChangeCategoryScreen`, behind the app lock): lists every category of the type (spend or income side, current always shown) with a colour dot, a check on the current one; tapping one saves it like a guess (setCategory, merchant rule learned, "Saved as" confirmation) and closes to home; dismissing changes nothing. No tags field (not in the schema).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -427,8 +428,8 @@ Unit:
 4. TC-21-04 (FR-21-06): bill alert fires only for days 0..3, balance < amount, kind ACCOUNT, known balance; resolves merged and debit-card links; key stored; text variants for days 0, 1, 2.
 5. TC-21-05 (FR-21-07): renewal alert for yearly policies within 0..7 days; monthly policies skipped.
 6. TC-21-06 (FR-21-08): gaps: only `toTime` within 14 days, max 3, once each, four text variants, nothing when `transaction_notifications` off.
-7. TC-21-07 (FR-21-03): alternatives example gives [Shopping, Transport, Groceries]; credit defaults [Salary, Refund, Income, Transfer] minus current.
-8. TC-21-08 (FR-21-02): new-transaction title/text/id for DEBIT ₹250 Swiggy HDFC ••1234 ("₹250 at Swiggy" / "Food · ••1234 · expand to change"), CREDIT with currency USD, transfer skipped, MERGED outcome skipped.
+7. TC-21-07 (FR-21-03): guesses example gives [Shopping, Transport] then "More…"; merchant-learned category goes first; credit defaults [Refund, Income] for current Salary.
+8. TC-21-08 (FR-21-02): new-transaction title/text/id for DEBIT ₹250 Swiggy HDFC ••1234 ("Spent ₹250 at Swiggy" / "What was this for? · HDFC Bank ••1234" + "Filed under Food & Dining"), CREDIT with currency USD, transfer skipped, MERGED outcome skipped.
 9. TC-21-09 (FR-21-14): alerted key store caps at 300 newest and survives restart.
 10. TC-21-10 (FR-21-04): balance notices: second update of the same account on the same IST day is suppressed; two accounts merge into one notification with the inbox lines.
 
@@ -442,13 +443,14 @@ Integration:
 13. TC-21-13 (FR-21-10): simulate action "Mark paid": state stored, notification cancelled, next check sends nothing; "Remind tomorrow": nothing today, reminder tomorrow.
 14. TC-21-14 (FR-21-15): each alert's tap payload opens the correct route.
 15. TC-21-15 (FR-21-21): `AlertRules.weeklySummary`: week start for Monday, Friday and Sunday; text for less, more, same and no previous week; off by default; once per week; nothing when no spend; month-spanning label. Engine posts once with the totals and top category and not when the toggle is off (`weekly_summary_test.dart`); the Alerts screen switch persists (`alerts_forex_screens_test.dart`).
+16. TC-21-16 (FR-21-26): Change category sheet lists the spend-side categories, checks the current one; tapping saves and closes; `more` handler returns false and posts nothing.
 
 Fixture messages (masked): `HDFC Bank: Rs 250.00 debited from a/c XX1234 on 17-10-26 to VPA swiggy@icici (UPI Ref 6xxxxxxxx1)` (new-tx alert); card bill SMS `Your HDFC Bank Credit Card XX4321 statement: Total Due Rs 12,450.00, Min Due Rs 620.00, Due Date 25-Oct-26` (card reminder).
 
 ## 16. Acceptance Criteria
 
 1. AC-21-01: Channels, ids, importance, actions and texts match section 2.1 exactly. (FR-21-01, FR-21-02, FR-21-12; TC-21-08)
-2. AC-21-02: A newly inserted spend produces one notification with 3 category buttons; tapping one saves the category and shows the 4 s confirmation without opening the app. (FR-21-02, FR-21-03; TC-21-07, TC-21-08)
+2. AC-21-02: A newly inserted spend produces one notification with 2 category guesses and More…; tapping one saves the category and shows the 4 s confirmation without opening the app. (FR-21-02, FR-21-03; TC-21-07, TC-21-08)
 3. AC-21-03: Budget alerts fire at the highest reached level once per month and level. (FR-21-05, FR-21-14, FR-21-18; TC-21-03, TC-21-09)
 4. AC-21-04: Low-balance and renewal alerts fire in the stated windows once. (FR-21-06, FR-21-07; TC-21-04, TC-21-05)
 5. AC-21-05: Card reminders follow the staging table, honour Mark paid and snooze, and are cancelled when no longer billed. (FR-21-09, FR-21-10, FR-21-11; TC-21-01, TC-21-02, TC-21-13)
@@ -509,3 +511,4 @@ FR status additions: done FR-21-05, 06, 07 (posted), 14, 16, 17 (no resume re-ch
 | 2026-10-27 | 'Update available' notification and switch (default on), once per version, deep link to the updates screen; spec in [31](31_news_support_updates.md) FR-31-28..38 | Update feature |
 | 2026-10-27 | Audit: rules and weekly summary confirmed done; card reminders, budget and low-balance posting, action buttons and untracked alerts confirmed not wired | Kotlin parity audit |
 | 2026-10-27 | Alerts parity | Kotlin parity |
+| 2026-10-31 | Notification category quick-pick with More…: 2 guesses (merchant first) + More… opening the Change category sheet; text "Spent ₹X at …" | Notification category quick-pick with More… |
