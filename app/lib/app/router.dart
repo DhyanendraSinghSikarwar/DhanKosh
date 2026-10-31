@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
@@ -309,20 +310,31 @@ class _ScaffoldWithNavBar extends StatelessWidget {
         onDestinationSelected: (i) =>
             shell.goBranch(i, initialLocation: i == shell.currentIndex),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded, color: AppIcons.mint),
+            label: 'Home',
+          ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long, color: AppIcons.blue),
             label: 'Transactions',
           ),
           NavigationDestination(
             icon: Icon(Icons.pie_chart_outline),
+            selectedIcon: Icon(Icons.pie_chart, color: AppIcons.amber),
             label: 'Portfolio',
           ),
           NavigationDestination(
             icon: Icon(Icons.insights_outlined),
+            selectedIcon: Icon(Icons.insights, color: AppIcons.violet),
             label: 'Analysis',
           ),
-          NavigationDestination(icon: Icon(Icons.menu), label: 'More'),
+          NavigationDestination(
+            icon: Icon(Icons.menu),
+            selectedIcon: Icon(Icons.menu_open, color: AppIcons.teal),
+            label: 'More',
+          ),
         ],
       ),
     );
