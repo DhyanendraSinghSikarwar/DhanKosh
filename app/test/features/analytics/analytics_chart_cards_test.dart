@@ -76,7 +76,6 @@ void main() {
       ],
       isCurrentMonth: true,
       previousLabel: 'Sep 2026',
-      changes: const [],
     );
     await t.pumpWidget(
       MaterialApp(

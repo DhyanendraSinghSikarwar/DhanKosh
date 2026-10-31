@@ -141,8 +141,10 @@ void main() {
   }
 
   Future<void> lastMonth(WidgetTester t) async {
+    await t.ensureVisible(find.byKey(const Key('analytics-period')));
     await t.tap(find.byKey(const Key('analytics-period')));
-    await settle(t);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 500));
     await t.tap(find.text('Last month').last);
     await settle(t);
   }
@@ -289,7 +291,8 @@ void main() {
     await lastMonth(t);
     expect(find.text('Fresh Mart'), findsOneWidget);
     await t.tap(find.byKey(const Key('analytics-category')));
-    await settle(t);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 500));
     await t.tap(find.text('Food & Dining').last);
     await settle(t);
     expect(find.text('Fresh Mart'), findsNothing);
