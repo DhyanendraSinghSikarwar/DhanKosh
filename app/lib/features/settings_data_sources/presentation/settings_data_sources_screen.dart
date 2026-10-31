@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/scope_providers.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
-import 'package:hisaab/features/settings_data_sources/presentation/bank_sms_card.dart';
-import 'package:hisaab/features/settings_data_sources/presentation/history_days_card.dart';
-import 'package:hisaab/features/settings_data_sources/presentation/paste_sms_card.dart';
+import 'package:hisaab/features/settings_data_sources/presentation/capture_rows.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_providers.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_dropdown.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/profile_avatar.dart';
 import 'package:hisaab/shared/widgets/settings_row.dart';
 import 'package:hisaab/shared/widgets/settings_section.dart';
 
@@ -132,31 +132,10 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('More')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          AppCard(
-            key: const Key('profile-tile'),
-            onTap: () => context.push('/profile'),
-            child: const Row(
-              children: [
-                IconBadge(AppIcons.profile, size: 46),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Profile'),
-                      Text(
-                        'Photo, occupation, alternate names',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.chevron_right),
-              ],
-            ),
-          ),
+          _ProfileCard(onTap: () => context.push('/profile')),
+          const SmsAccessBanner(),
           SettingsSection(
             title: 'Book and accounts',
             children: [
@@ -185,13 +164,10 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
           ),
           SettingsSection(
             title: 'Capture',
-            leading: [
-              const BankSmsCard(),
-              const PasteSmsCard(),
-              const HistoryDaysCard(),
-              if (notificationCard != null) notificationCard!,
-            ],
             children: [
+              const BankSmsRow(),
+              const PasteSmsRow(),
+              const HistoryDaysRow(),
               SettingsRow(
                 key: const Key('senders-tile'),
                 badge: AppIcons.senders,
@@ -206,6 +182,8 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
                 subtitle: 'Mailboxes and app passwords',
                 onTap: () => context.push('/settings/email'),
               ),
+              if (notificationCard != null)
+                NotificationAccessRow(card: notificationCard!),
               if (statementsTile != null) statementsTile!,
             ],
           ),
@@ -289,6 +267,49 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
               if (updatesTile != null) updatesTile!,
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Profile card at the top of More: avatar, name and a one-line hint.
+class _ProfileCard extends ConsumerWidget {
+  const _ProfileCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final p = ref.watch(profileDataProvider).value;
+    final name = p?.name?.trim();
+    return AppCard(
+      key: const Key('profile-tile'),
+      onTap: onTap,
+      child: Row(
+        children: [
+          ProfileAvatar(name: name, photoPath: p?.photoPath, radius: 23),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name == null || name.isEmpty ? 'Profile' : name,
+                  style: theme.textTheme.bodyLarge
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  'Profile, photo, alternate names',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
         ],
       ),
     );

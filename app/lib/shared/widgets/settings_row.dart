@@ -39,7 +39,7 @@ class SettingsRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
             IconBadge(badge, size: 36),
@@ -54,7 +54,7 @@ class SettingsRow extends StatelessWidget {
                       color: destructive ? theme.colorScheme.error : null,
                     ),
                   ),
-                  if (subtitle != null)
+                  if (subtitle != null && subtitle!.isNotEmpty)
                     Text(
                       subtitle!,
                       maxLines: 1,

@@ -13,7 +13,7 @@ class BackupTile extends StatelessWidget {
         key: const Key('backup-tile'),
         badge: AppIcons.backup,
         title: 'Backup',
-        subtitle: 'Export and restore',
+        subtitle: 'Encrypted export and restore',
         onTap: () => context.push('/settings/backup'),
       );
 }

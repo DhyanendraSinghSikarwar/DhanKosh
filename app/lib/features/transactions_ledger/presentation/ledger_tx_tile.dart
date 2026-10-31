@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/core/money/money.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
-import 'package:hisaab/features/categorization/domain/brand_logos.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
-import 'package:hisaab/shared/widgets/brand_logo.dart';
+import 'package:hisaab/features/transactions_ledger/presentation/ledger_category_style.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:parser_core/parser_core.dart' hide Money;
 
 /// Signed amount text of [t] in the row's own currency (paise only).
@@ -21,8 +21,34 @@ String txAmountText(LedgerTx t, {required bool masked}) {
   };
 }
 
-/// One ledger row: merchant, category, bank, amount; opens the detail
-/// (FR-08-02).
+/// Small rounded Card / Account tag.
+class SourceTag extends StatelessWidget {
+  /// Creates the tag for [kind].
+  const SourceTag(this.kind, {super.key});
+
+  /// Account or card.
+  final AccountKind kind;
+
+  @override
+  Widget build(BuildContext context) {
+    final card = kind == AccountKind.card;
+    final color = card ? AppIcons.violet : AppIcons.mint;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Text(
+        card ? 'Card' : 'Account',
+        style: TextStyle(fontSize: 10, color: color, height: 1.2),
+      ),
+    );
+  }
+}
+
+/// One ledger row: round category badge, merchant, `Category · Account`,
+/// amount and a Card/Account tag; opens the detail (FR-08-02).
 class LedgerTxTile extends StatelessWidget {
   /// Creates a tile.
   const LedgerTxTile({
@@ -52,46 +78,108 @@ class LedgerTxTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final sem = theme.extension<SemanticColors>()!;
-    final color = switch (tx.type) {
-      TransactionType.credit => sem.income,
-      TransactionType.debit || TransactionType.investment => sem.expense,
-      TransactionType.transfer => theme.colorScheme.onSurfaceVariant,
-    };
+    final credit = tx.type == TransactionType.credit;
+    final style = categoryStyle(tx.category);
     final last4 = tx.accountLast4;
-    return ListTile(
+    var amount = txAmountText(tx, masked: masked);
+    if (amount.startsWith('-')) amount = amount.substring(1);
+    final bank = last4 != null ? '${tx.bankName} ••$last4' : tx.bankName;
+    return InkWell(
       key: Key('tx-${tx.id}'),
-      dense: true,
-      contentPadding: EdgeInsets.zero,
-      selected: selected,
-      selectedTileColor: theme.colorScheme.secondaryContainer,
-      leading: selecting
-          ? Icon(selected ? Icons.check_circle : Icons.circle_outlined)
-          : BrandLogo(
-              logoKey: BrandLogos.merchant(tx.merchant) ??
-                  BrandLogos.bank(tx.bankName),
-              label: tx.title,
-              size: 36,
-            ),
       onLongPress: onToggle,
       onTap: selecting && onToggle != null
           ? onToggle
           : () => context.push('/transaction/${tx.id}'),
-      title: Text(tx.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text(
-        [
-          tx.category.label,
-          if (last4 != null) '${tx.bankName} ••$last4' else tx.bankName,
-          if (tx.accountKind == AccountKind.card) 'Card' else 'Account',
-          if (tx.needsReview) 'Needs review',
-        ].join(' · '),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: Text(
-        txAmountText(tx, masked: masked),
-        style: theme.textTheme.titleSmall?.copyWith(color: color),
+      child: Container(
+        color: selected ? scheme.secondaryContainer : null,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: scheme.surfaceContainerHighest,
+              ),
+              child: selecting
+                  ? Icon(
+                      selected ? Icons.check_circle : Icons.circle_outlined,
+                      size: 20,
+                      color: scheme.primary,
+                    )
+                  : Icon(style.icon, size: 18, color: style.color),
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tx.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  Text(
+                    [
+                      tx.category.label,
+                      bank,
+                      if (tx.needsReview) 'Needs review',
+                    ].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  amount,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: credit ? sem.income : null,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                SourceTag(tx.accountKind),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+/// Thin separator between rows of one card.
+class TxDivider extends StatelessWidget {
+  /// Creates the divider.
+  const TxDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) => Divider(
+        height: 1,
+        thickness: 1,
+        color: Theme.of(context).colorScheme.outlineVariant.withValues(
+              alpha: 0.5,
+            ),
+      );
+}
+
+/// [rows] separated by [TxDivider]s.
+List<Widget> withDividers(Iterable<Widget> rows) {
+  final out = <Widget>[];
+  for (final r in rows) {
+    if (out.isNotEmpty) out.add(const TxDivider());
+    out.add(r);
+  }
+  return out;
 }

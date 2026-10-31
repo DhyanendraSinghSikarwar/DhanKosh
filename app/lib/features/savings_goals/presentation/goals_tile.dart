@@ -13,7 +13,7 @@ class GoalsTile extends StatelessWidget {
         key: const Key('goals-tile'),
         badge: AppIcons.goals,
         title: 'Goals',
-        subtitle: 'Savings goals and salary plan',
+        subtitle: 'Savings goals',
         onTap: () => context.push('/goals'),
       );
 }

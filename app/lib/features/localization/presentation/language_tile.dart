@@ -14,7 +14,7 @@ class LanguageTile extends StatelessWidget {
         key: const Key('language-tile'),
         badge: AppIcons.language,
         title: t('Language'),
-        subtitle: 'App language and packs',
+        subtitle: '',
         onTap: () => context.push('/settings/language'),
       );
 }

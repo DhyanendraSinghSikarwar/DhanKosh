@@ -27,11 +27,15 @@ class SettingsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
+          padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
           child: Text(
             title,
             key: Key('section-$title'),
-            style: theme.textTheme.titleSmall,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
         ),
         for (final w in leading)

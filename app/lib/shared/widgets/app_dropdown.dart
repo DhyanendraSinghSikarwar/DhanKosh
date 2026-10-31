@@ -10,6 +10,7 @@ class AppDropdown<T> extends StatelessWidget {
     required this.onChanged,
     this.icon,
     this.dense = false,
+    this.expanded = false,
     super.key,
   });
 
@@ -30,6 +31,9 @@ class AppDropdown<T> extends StatelessWidget {
 
   /// Smaller padding for title rows.
   final bool dense;
+
+  /// Fills the available width, label left and caret right.
+  final bool expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -61,13 +65,16 @@ class AppDropdown<T> extends StatelessWidget {
           border: Border.all(color: scheme.outlineVariant),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
           children: [
             if (icon != null) ...[
               Icon(icon, size: 16, color: scheme.onSurfaceVariant),
               const SizedBox(width: 6),
             ],
-            Text(labelOf(value), style: style),
+            if (expanded)
+              Expanded(child: Text(labelOf(value), style: style))
+            else
+              Text(labelOf(value), style: style),
             const SizedBox(width: 6),
             Icon(
               Icons.arrow_drop_down,
