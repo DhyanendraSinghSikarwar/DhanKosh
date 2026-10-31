@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/scope_providers.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
+import 'package:hisaab/features/settings_data_sources/presentation/bank_sms_card.dart'
+    show hideAmountsKey, setHideAmounts;
 import 'package:hisaab/features/settings_data_sources/presentation/capture_rows.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_providers.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
