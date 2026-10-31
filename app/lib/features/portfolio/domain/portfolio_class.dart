@@ -1,7 +1,7 @@
 import 'package:hisaab/features/portfolio/domain/asset_class.dart';
 import 'package:hisaab/features/portfolio/domain/holding.dart';
 
-/// Class a holding is shown under on the Portfolio tab (FR-16-30).
+/// Class a holding is shown under on the Portfolio tab (FR-16-41).
 enum PortfolioClass {
   stocks('Stocks'),
   mutualFunds('Mutual funds'),
@@ -45,7 +45,7 @@ HoldingKind holdingKindOfClass(PortfolioClass c) => switch (c) {
       PortfolioClass.other => HoldingKind.other,
     };
 
-/// Holdings of one class with totals (FR-16-30).
+/// Holdings of one class with totals (FR-16-41).
 class ClassGroup {
   /// Creates a group.
   const ClassGroup(this.cls, this.items);
@@ -82,7 +82,7 @@ List<ClassGroup> groupByClass(List<Holding> holdings) => [
     ];
 
 /// Lower-case words that mark a headline as relevant to [holdings]: class
-/// terms plus the first word of each holding name (FR-31-09).
+/// terms plus the first word of each holding name (FR-31-40).
 Set<String> holdingNewsKeywords(List<Holding> holdings) {
   const byClass = <PortfolioClass, List<String>>{
     PortfolioClass.stocks: ['stock', 'sensex', 'nifty', 'shares'],

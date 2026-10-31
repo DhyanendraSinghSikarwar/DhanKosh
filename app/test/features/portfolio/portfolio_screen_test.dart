@@ -92,7 +92,8 @@ void main() {
       await pump(t, dark: dark);
       expect(find.text('Demo Equity Fund'), findsOneWidget);
       expect(find.byKey(const Key('allocation')), findsOneWidget);
-      expect(find.text('+20.0%'), findsOneWidget);
+      // Class header and holding row.
+      expect(find.text('+20.0%'), findsNWidgets(2));
       expect(
         t.widget<Text>(find.byKey(const Key('nw-value'))).data,
         '₹1,20,000',

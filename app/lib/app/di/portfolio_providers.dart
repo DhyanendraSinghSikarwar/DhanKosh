@@ -35,12 +35,12 @@ int epochDayIst(int ms) => (ms + 19800000) ~/ 86400000;
 Stream<List<Holding>> holdings(Ref ref) =>
     ref.watch(holdingRepositoryProvider).watch();
 
-/// Net worth of one non-All book (FR-16-31).
+/// Net worth of one non-All book (FR-16-42).
 @riverpod
 Stream<NetWorth> netWorthForBook(Ref ref, Book book) =>
     ref.watch(netWorthServiceProvider).watch(book: book);
 
-/// Net worth following the global book (FR-16-31).
+/// Net worth following the global book (FR-16-42).
 final Provider<AsyncValue<NetWorth>> bookNetWorthProvider =
     Provider<AsyncValue<NetWorth>>((ref) {
   final book = ref.watch(bookProvider);
@@ -50,7 +50,7 @@ final Provider<AsyncValue<NetWorth>> bookNetWorthProvider =
 });
 
 /// True once the news screen was opened this session; drives the unread dot
-/// on the Portfolio news button (FR-31-09).
+/// on the Portfolio news button (FR-31-40).
 class NewsSeenNotifier extends Notifier<bool> {
   @override
   bool build() => false;

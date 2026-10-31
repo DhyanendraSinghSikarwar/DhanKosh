@@ -186,6 +186,7 @@ App name, version with the WhatsNew button, Updates card (Check for updates; Che
 - FR-31-36: After the installed version changes, a one-time `What's new in x.y.z` sheet shows that release's cleaned notes (cache, else one fetch, else `DhanKosh updated to x.y.z.`); a fresh install only records the version; it never blocks start (setting `last_seen_version`).
 - FR-31-37: The update flow sends no user data or identifiers: anonymous GETs to GitHub only, User-Agent `DhanKosh`, no analytics.
 - FR-31-38: The log records counts and codes only for the update flow (no URLs, paths or versions beyond the app start line).
+- FR-31-40: The news screen has a My holdings / Market toggle (default Market). My holdings keeps headlines whose title mentions a class term or the first word of a holding name (`holdingNewsKeywords`), matched on-device; with no match it shows "No headlines for your holdings". Opening the screen marks headlines seen (clears the Portfolio news button dot, FR-16-44).
 - FR-31-39: The More tab rows for News, Support and Updates use coloured `IconBadge` rows: Market news ("Headlines for your holdings"), Support ("Optional UPI tip", hidden without a VPA) and Check for updates ("Version and release notes") under the About section.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
@@ -451,6 +452,7 @@ Widget:
 - TC-31-13 (FR-31-06): news screen shows 6 skeleton cards, then list, then error state with the exact copy.
 - TC-31-14 (FR-31-10, FR-31-11): Support hidden when upiId empty; with a VPA the pills ₹100, ₹200, ₹500, Custom render; Custom field accepts only digits up to 6.
 - TC-31-15 (FR-31-19, FR-31-23): About updates card renders each `UpdateState`; What's new sheet shows cleaned notes, then bundled fallback, then the unavailable message.
+- TC-31-40 (FR-31-40): the Portfolio news button opens the screen (`portfolio_classes_test.dart`); toggle filtering covered by `holdingNewsKeywords` on-device matching (no dedicated widget test yet).
 - TC-31-16 (FR-31-08): tapping a headline calls the launcher with its link in external mode.
 
 Added with the in-app update (all in `test/features/news_support_updates/` unless noted):
@@ -526,5 +528,6 @@ Tests: `test/features/news_support_updates/` (`update_install_test.dart`, `updat
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Added FR-31-27 and dependency link to 32_release_pipeline.md as producer of the updater feed | Audit Gate gap, scan_N |
 | 2026-10-21 | Phase 5 widget + updates + release pipeline landed | Phase 5 |
+| 2026-10-31 | My holdings / Market toggle on the news screen; seen state for the Portfolio news dot | Approved Portfolio mockups |
 | 2026-10-27 | In-app update: check, release history, download+SHA-256 verify, install handoff, Home notice, alert, what's new | Update feature |
 | 2026-10-31 | News, Support and Updates More rows restyled as coloured icon rows under Market news and About (FR-31-39) | Approved More/Accounts/Profile mockups |

@@ -6,7 +6,7 @@
 | Status | In progress (Phase 3: data/domain layer and Portfolio tab UI done: net worth hero, history chart, split-by-account bar, allocation donut with class filter, holdings with sparklines, Loans section, maturity calendar, layout-driven sections, exclusions; shortcut row, SIP list, investment transactions, as-of dates and optional AMFI NAV refresh done; 36-month history estimate in the domain with providers; Portfolio chart use and statement link pending) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 
@@ -221,6 +221,10 @@ Fold adoption ([ADR-0010](../docs/adr/0010-fold-ideas-adoption-rules.md)). XIRR 
 - FR-16-30: Each holding row shows a sparkline from its previous to its current value when a previous value exists; no new storage (uses `previousValueMinor`).
 - FR-16-31: A Loans section lists open loans with outstanding and EMI and opens `/loans` ([15_loans.md](15_loans.md)); hidden without open loans.
 - FR-16-32: The maturity calendar groups deposits maturing in the next 12 months by month.
+- FR-16-41: The Portfolio tab shows holdings by display class: Stocks (stock, ETF), Mutual funds, NPS, EPFO (EPF), Sukanya Samriddhi, PPF, FD / RD (fd), Gold and Bonds & others (bond, other). The Allocation card is a donut with a legend row per class (value and %); tapping a slice or row focuses that class (donut centre shows its value), tapping again clears. A horizontally scrolling chip row (All plus each present class) filters the Holdings list, sharing the same focus. Each class has one card: coloured `AppIcons` badge, class value, return % over holdings with a cost, an optional note (Sukanya: yearly deposit limit ₹1,50,000; EPFO from messages: "From passbook SMS and mail") and a row per holding (name, subtitle, sparkline, value, return). Class colours: mint stocks, blue MF, violet NPS, amber EPFO, red Sukanya, teal PPF, olive FD/RD, gold. Allocation is investments only (cash is the Bank figure).
+- FR-16-42: The net worth card keeps the line and 1M/6M/1Y/3Y/All ranges and adds a summary row: Investments, Bank, Loans (negative). Net worth follows the global Book (`bookNetWorthProvider`: personal leaves out business accounts, business only business); holdings carry no book so they are not filtered. The title shows the book tag when Book is not Personal. Every amount respects hide-amounts.
+- FR-16-43: `HoldingKind.sukanya` is a new kind stored as text (no schema change). The Add/Edit holding sheet lists every kind, so every class can be created by hand; Sukanya is manual-entry only.
+- FR-16-44: A news button (newspaper icon, unread dot until the news screen was opened this session) in the app bar opens `/news` ([31_news_support_updates.md](31_news_support_updates.md)). Edit sections and Include in net worth moved into the overflow menu (`portfolio-more`).
 - FR-16-40: The net worth history shall be estimated for the last 36 month ends: each liquid account group's balance now minus its signed effects after that day, plus holdings stated by then; liabilities use the latest recorded point; a recorded point on the day wins; reconstructed points are flagged estimated.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
@@ -443,6 +447,7 @@ Fixtures: Part B 8 sample 21 (EPF, NPS, MF order), CAS excerpt (masked ISIN `INF
 
 Fold adoption (`test/features/portfolio/nav_refresh_test.dart`, `portfolio_fold_test.dart`, `test/features/savings_goals/goals_repository_test.dart`):
 
+- TC-16-41 (FR-16-41..44): widget `portfolio_classes_test.dart`: every class renders chip, legend row and card; chips filter the list and All restores it; legend row and donut slice focus a class and a second tap clears; hidden amounts mask the new rows; the news button navigates to `/news`. `portfolio_layout_test.dart`: chip filter.
 - TC-16-22 (FR-16-22): orders are stored once per claim, newest first.
 - TC-16-23 (FR-16-23): the fixture file parses both ISIN columns; `N.A.`, bad dates, headers and junk lines are skipped.
 - TC-16-24 (FR-16-23, FR-16-24): off by default (no download); on: updates the ISIN holding's value and `asOf` once a day, force bypasses the throttle, MF rows without an ISIN stay; failure and unreadable file change nothing; newer and manual rows are not overwritten.
@@ -505,6 +510,7 @@ FR-16-40 done in the domain: `estimateWorthHistory` (pure, `net_worth_estimate.d
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
+| 2026-10-31 | Class-based Allocation donut, class chips and class cards with coloured icons, Sukanya kind, net worth summary row, book-following net worth and tag, news button | Approved Portfolio mockups |
 | 2026-10-19 | Added 3.10 HoldingMatch, 3.11 record/dedupe/recordMfOrder, 3.12 NPS contributions; FR-16-17..21, TC-16-14..17. Corrected FR-16-09 ("upsert by identifier"), 2.2 step 1, 3.4 and 3.9 (MF orders also update holdings, not only transactions) | Audit Gate gap, scan_2 |
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |
 | 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |

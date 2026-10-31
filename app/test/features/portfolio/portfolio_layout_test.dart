@@ -100,7 +100,7 @@ void main() {
     await teardownApp(t);
   });
 
-  // FR-16-29, FR-16-30
+  // FR-16-29, FR-16-41
   testWidgets('class chip filters the holdings list', (t) async {
     await seed(t);
     await pump(t);

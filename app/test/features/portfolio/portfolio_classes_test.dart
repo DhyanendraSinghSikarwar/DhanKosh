@@ -84,7 +84,7 @@ void main() {
         }
       });
 
-  // FR-16-30
+  // FR-16-41
   testWidgets('every class renders chip, legend row and card', (t) async {
     await seedAll(t);
     await pump(t);
@@ -98,7 +98,7 @@ void main() {
     await teardownApp(t);
   });
 
-  // FR-16-30
+  // FR-16-41
   testWidgets('chips filter the holdings list', (t) async {
     await seedAll(t);
     await pump(t);
@@ -107,13 +107,14 @@ void main() {
     await settle(t);
     expect(find.byKey(const Key('class-card-gold')), findsOneWidget);
     expect(find.byKey(const Key('class-card-ppf')), findsNothing);
+    await t.ensureVisible(find.byKey(const Key('class-chip-all')));
     await t.tap(find.byKey(const Key('class-chip-all')));
     await settle(t);
     expect(find.byKey(const Key('class-card-ppf')), findsOneWidget);
     await teardownApp(t);
   });
 
-  // FR-16-30
+  // FR-16-41
   testWidgets('legend row and donut slice focus a class, tap again clears',
       (t) async {
     await seedAll(t);
@@ -126,10 +127,10 @@ void main() {
     await t.tap(find.byKey(const Key('alloc-row-nps')));
     await settle(t);
     expect(find.byKey(const Key('class-card-gold')), findsOneWidget);
-    // Donut: the largest slice (Bonds & others) starts at the top, right of
-    // twelve o'clock.
+    // Donut: the largest slice (Bonds & others) starts at three o'clock and
+    // runs clockwise, so its middle is about 25 degrees below the right edge.
     final c = t.getCenter(find.byKey(const Key('alloc-donut')));
-    await t.tapAt(c + const Offset(12, -41));
+    await t.tapAt(c + const Offset(61, 29));
     await settle(t);
     expect(find.byKey(const Key('class-card-other')), findsOneWidget);
     expect(find.byKey(const Key('class-card-gold')), findsNothing);
@@ -145,7 +146,7 @@ void main() {
     await teardownApp(t);
   });
 
-  // FR-31-09
+  // FR-31-40
   testWidgets('news button opens the news screen', (t) async {
     await seedAll(t);
     await pump(t);

@@ -53,7 +53,7 @@ class _HomeInsightsCardState extends ConsumerState<HomeInsightsCard> {
             ),
           ),
           SizedBox(
-            height: 124,
+            height: 132,
             child: PageView(
               padEnds: false,
               controller: PageController(viewportFraction: 0.86),

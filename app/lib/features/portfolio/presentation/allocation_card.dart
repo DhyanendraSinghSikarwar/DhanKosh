@@ -4,7 +4,7 @@ import 'package:hisaab/features/portfolio/domain/portfolio_class.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_class_style.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 
-/// Allocation donut with legend rows by asset class (FR-16-02, FR-16-30).
+/// Allocation donut with legend rows by asset class (FR-16-02, FR-16-41).
 /// Tapping a slice or row focuses that class; tapping it again clears.
 class AllocationCard extends StatelessWidget {
   /// Creates the card.

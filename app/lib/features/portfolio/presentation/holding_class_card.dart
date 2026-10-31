@@ -11,7 +11,7 @@ import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 
 /// One card per asset class: header with value and return, an optional
-/// note, and a row per holding (FR-16-30).
+/// note, and a row per holding (FR-16-41).
 class HoldingClassCard extends StatelessWidget {
   /// Creates the card.
   const HoldingClassCard({

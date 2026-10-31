@@ -243,7 +243,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const TabTitle('Portfolio'),
+        title: const Row(
+          children: [
+            Flexible(child: Text('Portfolio', overflow: TextOverflow.ellipsis)),
+            BookTag(),
+          ],
+        ),
         actions: [
           IconButton(
             key: const Key('portfolio-news'),
