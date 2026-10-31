@@ -4,6 +4,8 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
+## [0.0.6] - 2026-10-31
+
 ### Changed
 - Every tab and page now follows the approved design: DhanKosh Mint dark theme by default, filled rounded cards, floating pill navigation bar, compact grouped lists in More, Home cards in the approved order, Transactions with a compact filter row and a filter sheet, Analysis and Portfolio with the approved charts and cards.
 - Notifications keep only what needs action (new transaction with two category guesses and More…, card bill, statement password, low balance, insurance, budget used up); the rest is recorded in the Activity log.
