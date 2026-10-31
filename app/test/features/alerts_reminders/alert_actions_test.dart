@@ -95,6 +95,24 @@ void main() {
     expect(poster.posted.single.title, 'Saved as Shopping');
   });
 
+  test('more is handled by the sheet, not the handler (FR-21-22)', () async {
+    final h = AlertActionHandler(
+      cardState: CardReminderStateStoreImpl(env.db),
+      paid: _Paid(),
+      txs: env.txs,
+      poster: poster,
+      nowMs: () => t0,
+    );
+    expect(await h.handle({'a': 'more', 'txId': '1'}), isFalse);
+    expect(poster.posted, isEmpty);
+    final uri = Uri.parse(
+      alertActionRoute(
+        const AlertAction(id: 'more', label: 'More…', payload: {'txId': '5'}),
+      ),
+    );
+    expect(uri.queryParameters, {'a': 'more', 'txId': '5'});
+  });
+
   test('engine posts a card reminder once and a new-transaction alert',
       () async {
     final r = await env.ingest(parsed());

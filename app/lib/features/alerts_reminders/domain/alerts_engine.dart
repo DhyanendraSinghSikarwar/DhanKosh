@@ -13,6 +13,7 @@ import 'package:hisaab/features/credit_cards/domain/card_reminder_plan.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_repository.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_repository.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
 import 'package:hisaab/shared/log/app_logger.dart';
@@ -195,6 +196,19 @@ class AlertsEngine {
       return keys;
     }
 
+    // Categories filed for the same merchant on earlier rows, most used first
+    // (the merchant rule's learned category).
+    List<Category> merchantUsed(LedgerTx tx) {
+      if (tx.merchant == null) return const [];
+      final counts = <Category, int>{};
+      for (final r in rows) {
+        if (r.id == tx.id || r.merchant != tx.merchant) continue;
+        counts.update(r.category, (n) => n + 1, ifAbsent: () => 1);
+      }
+      return counts.keys.toList()
+        ..sort((a, b) => counts[b]!.compareTo(counts[a]!));
+    }
+
     final out = <AlertDecision>[];
     for (final r in rows) {
       final key = 'tx:${r.id}';
@@ -215,6 +229,8 @@ class AlertsEngine {
         settings: settings,
         last4: r.accountLast4,
         usedMostFirst: usedMost(credit: credit),
+        merchantFirst: merchantUsed(r),
+        bank: r.bankName,
       );
       if (d == null) continue;
       out.add(

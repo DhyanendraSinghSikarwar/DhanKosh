@@ -296,7 +296,9 @@ abstract final class AlertRules {
     required bool isTransfer,
     required AlertSettings settings,
     String? last4,
+    String bank = '',
     List<Category> usedMostFirst = const [],
+    List<Category> merchantFirst = const [],
   }) {
     if (!inserted || isTransfer || !settings.transactionNotifications) {
       return null;
@@ -310,6 +312,7 @@ abstract final class AlertRules {
       current: category,
       isCredit: isCredit,
       usedMostFirst: usedMostFirst,
+      merchantFirst: merchantFirst,
     );
     final id = newTransactionIdBase + txId;
     return AlertDecision(
@@ -317,10 +320,10 @@ abstract final class AlertRules {
       key: '',
       channel: AlertChannel.newTransactions,
       notificationId: id,
-      title: isCredit ? '$amount received from $who' : '$amount at $who',
-      body: '${category.label}'
-          '${(last4 != null && last4.isNotEmpty) ? ' · ••$last4' : ''}'
-          ' · expand to change',
+      title: isCredit ? 'Received $amount from $who' : 'Spent $amount at $who',
+      body: 'What was this for? · $bank'
+          '${(last4 != null && last4.isNotEmpty) ? ' ••$last4' : ''}\n'
+          'Filed under ${category.label}',
       link: 'hisaab://transaction/$txId',
       actions: [
         for (final c in alts)
@@ -329,6 +332,11 @@ abstract final class AlertRules {
             label: c.label,
             payload: {'txId': '$txId', 'category': c.name},
           ),
+        AlertAction(
+          id: 'more',
+          label: 'More…',
+          payload: {'txId': '$txId'},
+        ),
       ],
     );
   }
@@ -363,23 +371,56 @@ abstract final class AlertRules {
     Category.bills,
   ];
 
-  /// Up to 3 buttons: most-used categories first, then defaults; distinct,
-  /// excluding the current category and OTHER (FR-21-03).
+  /// Up to 2 best guesses (FR-21-03): this merchant's earlier categories
+  /// first, then the most-used for the type, then defaults; distinct,
+  /// excluding the current category and OTHER. "More…" follows them.
   static List<Category> alternativeCategories({
     required Category current,
     required bool isCredit,
     required List<Category> usedMostFirst,
+    List<Category> merchantFirst = const [],
+    int max = 2,
   }) {
     final out = <Category>[];
     for (final c in [
+      ...merchantFirst,
       ...usedMostFirst,
       ...(isCredit ? _creditDefaults : _debitDefaults),
     ]) {
       if (c == current || c == Category.other || out.contains(c)) continue;
       out.add(c);
-      if (out.length == 3) break;
+      if (out.length == max) break;
     }
     return out;
+  }
+
+  /// Every category offered by the "Change category" sheet (FR-21-22):
+  /// income-side for credits, the rest for spends; [current] always listed.
+  static List<Category> categoriesFor({
+    required bool isCredit,
+    required Category current,
+  }) {
+    const income = {
+      Category.salary,
+      Category.income,
+      Category.refund,
+      Category.gifts,
+      Category.investment,
+      Category.transfer,
+      Category.other,
+    };
+    return [
+      for (final c in Category.values)
+        if (c == current ||
+            (isCredit
+                ? income.contains(c)
+                : !const {
+                    Category.salary,
+                    Category.income,
+                    Category.refund,
+                  }.contains(c)))
+          c,
+    ];
   }
 
   /// One merged "balance updated" notification (FR-21-04), or null when

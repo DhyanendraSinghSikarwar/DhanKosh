@@ -394,6 +394,7 @@ void main() {
         Category.transport,
         Category.other,
       ],
+      List<Category> merchant = const [],
       AlertSettings s = s90,
     }) =>
         AlertRules.newTransactionAlert(
@@ -407,29 +408,36 @@ void main() {
           isTransfer: transfer,
           settings: s,
           last4: '1234',
+          bank: 'HDFC Bank',
           usedMostFirst: used,
+          merchantFirst: merchant,
         );
 
     test('title, text, id, link and buttons (worked example)', () {
       final d = tx()!;
-      expect(d.title, '₹250 at Swiggy');
-      expect(d.body, 'Food & Dining · ••1234 · expand to change');
+      expect(d.title, 'Spent ₹250 at Swiggy');
+      expect(
+        d.body,
+        'What was this for? · HDFC Bank ••1234\nFiled under Food & Dining',
+      );
       expect(d.notificationId, 10077);
       expect(d.link, 'hisaab://transaction/77');
       expect(d.channel, AlertChannel.newTransactions);
       expect(
         d.actions.map((a) => a.label),
-        ['Shopping', 'Transport', 'Groceries'],
+        ['Shopping', 'Transport', 'More…'],
       );
+      expect(d.actions.last.id, 'more');
+      expect(d.actions.last.payload, {'txId': '77'});
       expect(d.actions.first.payload, {'txId': '77', 'category': 'shopping'});
     });
 
     test('credit title, paise shown when non-zero, foreign symbol kept', () {
       expect(
         tx(credit: true, amount: 123450)!.title,
-        '₹1,234.50 received from Swiggy',
+        'Received ₹1,234.50 from Swiggy',
       );
-      expect(tx(cur: 'USD', amount: 1000)!.title, r'$10 at Swiggy');
+      expect(tx(cur: 'USD', amount: 1000)!.title, r'Spent $10 at Swiggy');
     });
 
     test('not sent for duplicates, transfers or when the switch is off', () {
@@ -441,14 +449,14 @@ void main() {
       );
     });
 
-    test('alternative categories: credit defaults, exclusions, cap of 3', () {
+    test('alternative categories: credit defaults, exclusions, cap of 2', () {
       expect(
         AlertRules.alternativeCategories(
           current: Category.salary,
           isCredit: true,
           usedMostFirst: const [],
         ),
-        [Category.refund, Category.income, Category.transfer],
+        [Category.refund, Category.income],
       );
       expect(
         AlertRules.alternativeCategories(
@@ -460,8 +468,39 @@ void main() {
             Category.food,
           ],
         ),
-        [Category.groceries, Category.shopping, Category.transport],
+        [Category.groceries, Category.shopping],
       );
+    });
+
+    test('merchant category first, then usage; max 2 guesses + More…', () {
+      final d = tx(
+        merchant: const [Category.groceries, Category.food],
+      )!;
+      expect(
+        d.actions.map((a) => a.label),
+        ['Groceries', 'Shopping', 'More…'],
+      );
+      expect(
+        AlertRules.alternativeCategories(
+          current: Category.food,
+          isCredit: false,
+          usedMostFirst: const [Category.shopping],
+          merchantFirst: const [Category.food, Category.other],
+        ),
+        [Category.shopping, Category.groceries],
+      );
+    });
+
+    test('change-category list: type split, current always present', () {
+      final debit =
+          AlertRules.categoriesFor(isCredit: false, current: Category.food);
+      expect(debit, contains(Category.shopping));
+      expect(debit, isNot(contains(Category.salary)));
+      final credit =
+          AlertRules.categoriesFor(isCredit: true, current: Category.food);
+      expect(credit, contains(Category.salary));
+      expect(credit, contains(Category.food));
+      expect(credit, isNot(contains(Category.shopping)));
     });
 
     test('saved confirmation times out in 4 s', () {

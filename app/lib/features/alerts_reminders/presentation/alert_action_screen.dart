@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/alerts_providers.dart';
+import 'package:hisaab/features/alerts_reminders/presentation/change_category_screen.dart';
 
 /// Opened by a notification button (`/alert-action?a=...`): runs the action
 /// once, then returns home (FR-21-03, FR-21-10).
@@ -20,7 +21,9 @@ class _AlertActionScreenState extends ConsumerState<AlertActionScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _run());
+    if (widget.query['a'] != 'more') {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _run());
+    }
   }
 
   Future<void> _run() async {
@@ -33,6 +36,12 @@ class _AlertActionScreenState extends ConsumerState<AlertActionScreen> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: CircularProgressIndicator()));
+  Widget build(BuildContext context) {
+    if (widget.query['a'] == 'more') {
+      return ChangeCategoryScreen(
+        txId: int.tryParse(widget.query['txId'] ?? '') ?? 0,
+      );
+    }
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  }
 }

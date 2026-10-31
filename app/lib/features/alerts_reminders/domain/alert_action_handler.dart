@@ -7,7 +7,8 @@ import 'package:hisaab/features/transactions_ledger/domain/transaction_repositor
 import 'package:parser_core/parser_core.dart';
 
 /// Runs a tapped notification button (FR-21-03, FR-21-10): card "Mark paid",
-/// card "Remind tomorrow" and a new-transaction category button.
+/// card "Remind tomorrow" and a new-transaction category button. `more` is
+/// handled by the Change category screen, which then sends `category`.
 class AlertActionHandler {
   /// Creates the handler. [nowMs] is epoch ms.
   AlertActionHandler({
@@ -58,6 +59,9 @@ class AlertActionHandler {
         final saved = AlertRules.categorySavedAlert(txId: id, category: cat);
         await _poster.post(saved);
         return true;
+      case 'more':
+        // Opens the Change category sheet; nothing to run here.
+        return false;
     }
     return false;
   }
