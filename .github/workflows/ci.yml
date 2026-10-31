@@ -45,7 +45,10 @@ jobs:
       - run: dart run build_runner build -d
       - run: dart format --output=none --set-exit-if-changed .
       - run: flutter analyze
+      # The app's month boundaries are Indian time; the runner is UTC.
       - run: flutter test
+        env:
+          TZ: Asia/Kolkata
       - name: parser_core
         working-directory: app/packages/parser_core
         run: |

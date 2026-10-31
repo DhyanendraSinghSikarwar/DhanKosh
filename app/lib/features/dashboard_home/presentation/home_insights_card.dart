@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/analytics_providers.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
+import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/mock_kit.dart';
@@ -20,6 +21,12 @@ class _HomeInsightsCardState extends ConsumerState<HomeInsightsCard> {
   final _dismissed = <String>{};
   String? _open;
 
+  static final _amount = RegExp(r'₹[\d,]+(\.\d+)?');
+
+  /// Hides any rupee figure in [text] while amounts are hidden (FR-17-19).
+  static String _mask(String text, {required bool masked}) =>
+      masked ? text.replaceAll(_amount, '₹••••') : text;
+
   static String _tag(Tone t) => switch (t) {
         Tone.warn => 'Heads up',
         Tone.good => 'Good news',
@@ -35,6 +42,7 @@ class _HomeInsightsCardState extends ConsumerState<HomeInsightsCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final masked = ref.watch(hideAmountsProvider).value ?? true;
     final all = ref.watch(analyticsViewProvider).value?.insights ?? const [];
     final shown = [
       for (final i in all)
@@ -77,7 +85,7 @@ class _HomeInsightsCardState extends ConsumerState<HomeInsightsCard> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
-                      i.title,
+                      _mask(i.title, masked: masked),
                       maxLines: 1,
                       style: const TextStyle(fontSize: 13),
                     ),
@@ -107,7 +115,10 @@ class _HomeInsightsCardState extends ConsumerState<HomeInsightsCard> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(open.detail, style: MockText.body(context)),
+                  Text(
+                    _mask(open.detail, masked: masked),
+                    style: MockText.body(context),
+                  ),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(

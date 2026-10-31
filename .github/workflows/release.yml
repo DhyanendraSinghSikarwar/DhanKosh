@@ -66,6 +66,8 @@ jobs:
           cache: true
 
       - name: Checks
+        env:
+          TZ: Asia/Kolkata
         run: |
           python3 tools/check_memory.py
           python3 tools/check_architecture.py

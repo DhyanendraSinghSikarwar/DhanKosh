@@ -5,13 +5,16 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 ## [Unreleased]
 
 ### Changed
+- Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
 - Every tab and page now follows the approved design: DhanKosh Mint dark theme by default, filled rounded cards, floating pill navigation bar, compact grouped lists in More, Home cards in the approved order, Transactions with a compact filter row and a filter sheet, Analysis and Portfolio with the approved charts and cards.
 - Notifications keep only what needs action (new transaction with two category guesses and More…, card bill, statement password, low balance, insurance, budget used up); the rest is recorded in the Activity log.
 
 ### Added
 - Change category sheet from the new-transaction notification (More…).
+- Calendar in Transactions shows the month total, a small amount in each day and the selected day's total.
 
 ### Fixed
+- Insights on Home and Analysis hide rupee figures when amounts are hidden.
 - Saved mobile number no longer loses its last two digits and gains 91 on reload; pasted +91 numbers keep all 10 digits.
 - Test for the scan log no longer fails when a timestamp happens to contain the amount digits.
 

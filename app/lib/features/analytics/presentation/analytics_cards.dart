@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/features/analytics/domain/analytics_math.dart';
 import 'package:hisaab/features/analytics/domain/analytics_models.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
+import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/charts/chart_card.dart';
 import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 import 'package:hisaab/shared/widgets/charts/line_chart_view.dart';
@@ -50,16 +52,20 @@ Widget labelRow(
 }
 
 /// Up to 5 insight cards (FR-18-17).
-class InsightsCard extends StatelessWidget {
+class InsightsCard extends ConsumerWidget {
   /// Creates the card.
   const InsightsCard({required this.insights, super.key});
 
   /// Insights to show.
   final List<Insight> insights;
 
+  static final _amount = RegExp(r'₹[\d,]+(\.\d+)?');
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (insights.isEmpty) return const SizedBox.shrink();
+    final masked = ref.watch(hideAmountsProvider).value ?? true;
+    String m(String t) => masked ? t.replaceAll(_amount, '₹••••') : t;
     final scheme = Theme.of(context).colorScheme;
     return titledCard(
       context,
@@ -89,9 +95,9 @@ class InsightsCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(i.title),
+                        Text(m(i.title)),
                         Text(
-                          i.detail,
+                          m(i.detail),
                           style: TextStyle(
                             color: scheme.onSurfaceVariant,
                             fontSize: 12,
