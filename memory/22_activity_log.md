@@ -6,7 +6,7 @@
 | Status | In progress (Fold adoption 2026-10-26: Inbox with unread bell badge, groups and problem entries; Phase 5: schema v5 table, repository with coalescing and 200 cap, ActivityLogger port wired into SMS scan, live SMS and email runs, Activity screen and More tile done; picked-statement imports and notifications recorded; native-only live runs not logged) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 
@@ -67,7 +67,7 @@ Source: `app/src/main/kotlin/com/hisaab/app/log/ActivityLog.kt` (154 lines), `ui
 | Field | Type | Meaning |
 |---|---|---|
 | `at` | Long (epoch ms) | Start time of the run (live entries: arrival time) |
-| `source` | `ActivitySource` | `SMS_SCAN` "SMS scan", `SMS_LIVE` "Live SMS", `GMAIL` "Gmail", `IMAP` "IMAP", `STATEMENTS` "Statements", `NOTIFICATIONS` "Notifications" |
+| `source` | `ActivitySource` | `SMS_SCAN` "SMS scan", `SMS_LIVE` "Live SMS", `GMAIL` "Gmail", `IMAP` "IMAP", `STATEMENTS` "Statements", `NOTIFICATIONS` "Notifications", `PROBLEMS` "Problems", `ALERTS` "Alerts" (FR-22-18) |
 | `read` | Int | Messages (SMS or notifications) looked at |
 | `relevant` | Int | Of `read`, those from banks or payment apps |
 | `added` | Int | Transactions inserted |
@@ -150,6 +150,8 @@ Clear dialog: AlertDialog "Clear log?" - "Removes every entry. Transactions are 
 15. FR-22-15: A bank-like sender whose message the parser rejected records a `PROBLEMS` entry (SMS scan: one per run with `read` = number rejected and `note` = the most frequent sender code; live SMS: one per message). The sender is stored only as a code (`AX-HDFCBK`, upper-case letters and digits, no run of 4+ digits); phone numbers and anything else become `OTHER`. Never body, subject, amount or reference (F-35 rules, [35_diagnostic_log.md](35_diagnostic_log.md)).
 16. FR-22-16: The Activity log is the Inbox. Unread = entries with `at` strictly newer than the setting `activity_last_seen` (epoch ms, default 0). Home's bell shows the unread count (hidden at 0) and opens `/activity`; opening the screen reads the old value for the unread dots, then writes now. Nothing is shown until both the log and the setting have loaded.
 17. FR-22-17: Entries group by type with chips above the source pills: Imports (email, statements, a scan with statements), Scans (SMS scan and live SMS), Alerts (payment-app notifications), Problems (`PROBLEMS` entries and any entry with an error). A chip toggles; tapping the active chip clears it; it combines with the source pill.
+
+18. FR-22-18: Alert events from [21_alerts_reminders.md](21_alerts_reminders.md) FR-21-27 are recorded as `ALERTS` entries: `read` = count, `note` = `sent:<kind>` (a notification was posted) or `log:<kind>` (informational, no notification); kinds `newTransaction`, `cardBill`, `statementLocked`, `lowBalanceBill`, `insuranceRenewal`, `untrackedChange`, `budget`, `budgetWarning`, `balanceUpdated`, `categorySaved`, `weeklySummary`, `updateAvailable`. Codes and counts only (no text, merchant, amount, account); one entry per kind per alerts run; not coalesced. Row shows "{Kind label} ×n · notified | no notification" under the Alerts group chip. Test: `activity_log/alert_entries_test.dart`.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -451,3 +453,4 @@ Phase 5 (2026-10-21). Code: `features/activity_log/{domain,data,presentation}`; 
 | 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |
 | 2026-10-26 | Inbox: unread bell badge, groups, `PROBLEMS` entries with sender code only (FR-22-15 to FR-22-17; TC-22-13 to TC-22-16) | Fold adoption |
 | 2026-10-27 | Statement imports record activity entries (counts and codes only) | Kotlin parity |
+| 2026-10-31 | `ALERTS` source and entry codes for notifications posted and informational events kept out of notifications (FR-22-18) | Action-only notifications, rest in the Activity log |

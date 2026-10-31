@@ -14,10 +14,11 @@ Alerts and Reminders is everything the app tells the user outside the app, plus 
 
 ## 2. What This Feature Will Do
 
-- Notifies on each new spend or credit, with up to 3 one-tap category buttons.
-- Saves the category the user taps, learns it for that merchant and confirms with a short message.
+- Notifies only where an action is needed (see the Action? column in 3.1); everything else goes to the Activity log ([22_activity_log.md](22_activity_log.md)).
+- Notifies on each new spend or credit with a one-line text and 2 one-tap category guesses plus More….
+- Saves the category the user taps and learns it for that merchant, with no confirmation notification (the pending one is removed; the event is logged).
 - Notifies when a bank balance changes by an amount no transaction explains, at most once per account per day.
-- Warns when a category budget reaches the chosen percentage and again when it is used up.
+- Notifies when a category budget is used up; reaching the chosen percentage is only written to the Activity log.
 - Warns when a bill due within 3 days is more than the paying account's known balance.
 - Reminds of insurance renewals due within 7 days.
 - Reminds of credit-card bills 5 days before, 2 days before, on the due date and once when overdue.
@@ -68,17 +69,21 @@ Source: `app/src/main/kotlin/com/hisaab/app/notify/` (`Alerts.kt` 219 lines, `Ne
 
 ### 3.1 Channels, ids and actions
 
-| Notification | Channel id (name, importance) | Notification id | Trigger | Tap target | Actions |
-|---|---|---|---|---|---|
-| New transaction | `new_transactions` ("New transactions", LOW) | `10000 + txId` | `NewTransactionNotifier.onIngested` | `hisaab://transaction/<id>` | Up to 3 category buttons (`CategoryActionReceiver`) |
-| Category saved confirmation | `new_transactions` | `10000 + txId` (replaces the above) | After a category button tap | none | none; auto-removed after 4 s |
-| Balance updated | `new_transactions` | `9000` | `BalanceNotifications.onBalancesUpdated` | opens the app (no deep link) | none |
-| Budget alert | `budgets_bills` ("Budgets & bills", DEFAULT) | `key.hashCode()` | `AlertsChecker.checkBudgets` | `hisaab://budgets` | none |
-| Upcoming payment (low balance) | `budgets_bills` | `key.hashCode()` | `checkUpcoming` | `hisaab://bills` | none |
-| Insurance renewal | `budgets_bills` | `key.hashCode()` | `checkUpcoming` | `hisaab://bills` | none |
-| Untracked change | `budgets_bills` | `key.hashCode()` (key `gap:<gapKey>`) | `checkGaps` | `hisaab://account/<accountId>` | none |
-| Card bill reminder | `budgets_bills` | `30000 + cardId * 3` | `CardDueReminderChecker.check` | `hisaab://account/<cardId>` | "Mark paid" (request id +1, action `com.hisaab.app.CARD_DUE_PAID`), "Remind tomorrow" (+2, `com.hisaab.app.CARD_DUE_SNOOZE`) via `CardDueActionReceiver` |
-| Statement needs password | `statements` ("Statements", DEFAULT) | `4000 + statementId` | `StatementNotifications.onLocked` | `hisaab://statements?unlock=<statementId>` | none |
+| Notification | Action? | Channel id (name, importance) | Notification id | Trigger | Tap target | Actions |
+|---|---|---|---|---|---|---|
+| New transaction | Yes: pick a category | `new_transactions` ("New transactions", LOW) | `10000 + txId` | `NewTransactionNotifier.onIngested` | `hisaab://transaction/<id>` | Up to 3 category buttons (`CategoryActionReceiver`) |
+| Category saved confirmation | No: never posted (2026-10-31); pending notification removed, Activity log entry | `new_transactions` | `10000 + txId` (replaces the above) | After a category button tap | none | none; auto-removed after 4 s |
+| Balance updated | No: Activity log only | `new_transactions` | `9000` | `BalanceNotifications.onBalancesUpdated` | opens the app (no deep link) | none |
+| Budget alert | Used up (100%): yes. Earlier user-percent level: no, Activity log only | `budgets_bills` ("Budgets & bills", DEFAULT) | `key.hashCode()` | `AlertsChecker.checkBudgets` | `hisaab://budgets` | none |
+| Upcoming payment (low balance) | Yes: add money | `budgets_bills` | `key.hashCode()` | `checkUpcoming` | `hisaab://bills` | none |
+| Insurance renewal | Yes: renew | `budgets_bills` | `key.hashCode()` | `checkUpcoming` | `hisaab://bills` | none |
+| Untracked change | Yes: assign it | `budgets_bills` | `key.hashCode()` (key `gap:<gapKey>`) | `checkGaps` | `hisaab://account/<accountId>` | none |
+| Card bill reminder | Yes: pay, Mark paid, Remind tomorrow | `budgets_bills` | `30000 + cardId * 3` | `CardDueReminderChecker.check` | `hisaab://account/<cardId>` | "Mark paid" (request id +1, action `com.hisaab.app.CARD_DUE_PAID`), "Remind tomorrow" (+2, `com.hisaab.app.CARD_DUE_SNOOZE`) via `CardDueActionReceiver` |
+| Statement needs password | Yes: unlock | `statements` ("Statements", DEFAULT) | `4000 + statementId` | `StatementNotifications.onLocked` | `hisaab://statements?unlock=<statementId>` | none |
+
+Opt-in or default-on single-purpose posts kept as they are (shorter text): weekly summary (opt-in), update available.
+
+Flutter 2026-10-31 (action-only): the table's Action? column is the rule. New transaction: title "Spent ₹X at <merchant>", one body line "<bank> ••1234 · <Category>". Card reminder body "₹X · pay by 22 Oct · min ₹Y". Statement: "<bank> statement needs a password" / "Tap to unlock it.". Low balance: "<account> ••1234 has ₹300, add ₹349.". Renewal body "Last premium ₹X on <date>.". Budget used up body "₹10,200 of ₹10,000 spent, ₹200 over.". No BigText or multi-line text anywhere.
 
 Channel descriptions: `new_transactions` "Each new transaction, with buttons to change its category"; `budgets_bills` "Budget limits, payments due from a low balance, and insurance renewals"; `statements` "A statement arrived that needs its password". Every post first checks `NotificationManagerCompat.areNotificationsEnabled()` and swallows `SecurityException`; small icon `ic_stat_statement`; every string goes through the translation function. Receivers `CategoryActionReceiver` and `CardDueActionReceiver` are not exported and use `goAsync()` with the app scope.
 
@@ -147,16 +152,16 @@ Scaffold "Notifications & alerts" with cards:
 
 1. FR-21-01: Create three channels with the ids, names, importance and descriptions in section 2.1 before posting; reuse them if present.
 2. FR-21-02: Post a new-transaction notification only for newly inserted (not merged/duplicate/rescanned) non-transfer transactions from live SMS and payment-app notifications when `transaction_notifications` is on; title, text, id (10000 + txId) and tap link per section 2.2.
-3. FR-21-03: Title "Spent ₹X at <merchant>" (credit "Received ₹X from <merchant>"); body "What was this for? · <bank> ••<last4>" plus "Filed under <Category>". Buttons: up to 2 best-guess categories (earlier categories of the same merchant first, then 90-day usage for the same type, then defaults; excluding the current category and OTHER) followed by "More…" (route `/alert-action?a=more&txId=`). Tapping a guess sets the category, learns the merchant rule, and shows "Saved as {category}" for 4 s without opening the app.
-4. FR-21-04: Post one merged "balance updated" notification (id 9000) at most once per account per IST day when `transaction_notifications` is on, with the single and multi-account texts in section 2.3.
-5. FR-21-05: `checkBudgets` alerts at the highest reached level of {user percent, 100} once per (category, month, level) with the exact titles and texts; it runs after every transaction change, on sync, and daily.
+3. FR-21-03: Title "Spent ₹X at <merchant>" (credit "Received ₹X from <merchant>"); one body line "<bank> ••<last4> · <Category>" (no multi-line text). Buttons: up to 2 best-guess categories (earlier categories of the same merchant first, then 90-day usage for the same type, then defaults; excluding the current category and OTHER) followed by "More…" (route `/alert-action?a=more&txId=`). Tapping a guess sets the category, learns the merchant rule and removes the notification; no confirmation is posted (FR-21-27).
+4. FR-21-04: A "balance updated" event (at most once per account per IST day when `transaction_notifications` is on) is informational: `AlertRules.balanceUpdatedAlert` returns a `logOnly` decision and nothing is posted (FR-21-27). Not yet wired to a caller.
+5. FR-21-05: `checkBudgets` finds the highest reached level of {user percent, 100} once per (category, month, level); level 100 ("used up") is posted, the user-percent level is `logOnly` (stored once, written to the Activity log, never posted); it runs after every transaction change, on sync, and daily.
 6. FR-21-06: `checkUpcoming` alerts for non-income recurring items due in 0-3 days whose paying bank account balance is known and lower than the amount, once per (name, due date), with the title/text variants in section 2.5.
 7. FR-21-07: `checkUpcoming` alerts for non-monthly insurance renewals due in 0-7 days once per (insurer, due date).
 8. FR-21-08: `checkGaps` announces at most 3 recent (last 14 days) untracked changes per run, once each, when `transaction_notifications` is on, with the four text variants.
 9. FR-21-09: Card reminders follow `CardDueReminderPlan` (stages 5, 2, 0, overdue; only the most urgent stage; none after 7 days overdue; none if paid or snoozed) and are cancelled when the bill is no longer billed or paid.
 10. FR-21-10: The reminder carries "Mark paid" and "Remind tomorrow" actions that persist `paid` or `snoozed` state without opening the app, and cancel the notification.
 11. FR-21-11: Reminder state (sent stages, paid, snoozed) is stored per card and due date and pruned 120 days after the due date.
-12. FR-21-12: A statement-locked notification (channel `statements`, id 4000 + id) shows only issuer and file name and opens the unlock dialog.
+12. FR-21-12: A statement-locked notification (channel `statements`, id 4000 + id) shows only issuer and file name (title "<bank> statement needs a password", body "Tap to unlock it.") and opens the unlock dialog.
 13. FR-21-13: `AlertsWorker` runs once a day (unique, keep-existing) and executes card reminders, upcoming/renewals, budgets and gaps, each isolated so one failure does not stop the rest; the app also runs card reminders at start.
 14. FR-21-14: Alert de-duplication keys (`budget:`, `bill:`, `renewal:`, `gap:`) are persisted (cap 300 most recent) and checked before sending.
 15. FR-21-15: Tapping any alert deep-links to the matching screen (`hisaab://transaction/<id>`, `budgets`, `bills`, `account/<id>`, `statements?unlock=<id>`).
@@ -167,10 +172,12 @@ Scaffold "Notifications & alerts" with cards:
 20. FR-21-20: All amounts in alert text use Indian grouping; amounts without paise except in the new-transaction title (`Money.format` default).
 21. FR-21-21: Weekly summary (new; setting `weekly_summary_alert`, bool, default false, switch "Weekly summary" on the Alerts screen). On any alerts run the engine looks at the last completed Monday-to-Sunday IST week and the week before it (debits that are not transfers or review rows, INR). If the toggle is on, something was spent in either week and the key `weekly:<monday yyyy-MM-dd>` is not in the alerted keys, it posts once: title "Week 14-20 Sep: ₹4,200 spent", body "₹1,100 less than the week before. Top: Food & Dining ₹1,800." ("more", "Same as the week before." or "Nothing was spent the week before."). The key is stored after a successful post, so a week is announced once; opening the app later in the week still sends it. Link `hisaab://home`, id `AlertText.stableId(key)`.
 22. FR-21-22: The engine shall post card bill reminders (stages 5 days, 2 days, due day, overdue) from `CardDueService` cards, honouring paid, snoozed and already-sent state kept in `CardReminderStateStore`, and mark the stage sent only after a successful post.
-23. FR-21-23: Notification buttons (card Mark paid, Remind tomorrow, new-transaction category buttons) shall open the in-app route `/alert-action?a=<paid|snooze|category>&...`; `AlertActionHandler` runs the action once (mark paid, snooze to the next day, set category with a "Saved as" confirmation) and returns home. Kotlin only launches the route.
+23. FR-21-23: Notification buttons (card Mark paid, Remind tomorrow, new-transaction category buttons) shall open the in-app route `/alert-action?a=<paid|snooze|category>&...`; `AlertActionHandler` runs the action once (mark paid, snooze to the next day, set category and remove the pending notification) and returns home. Kotlin only launches the route.
 24. FR-21-24: The engine shall post a new-transaction notification (with up to 3 category buttons) for non-transfer, non-review rows created in the last 30 minutes, once per row (key `tx:<id>`), when transaction notifications are on.
 25. FR-21-25: The weekly summary total shall use the cash-basis `SpendCalc.totals` (ADR-0011: card purchases excluded, card bill payments included).
-26. FR-21-26: "More…" opens the app on a "Change category" modal bottom sheet over the transaction (`ChangeCategoryScreen`, behind the app lock): lists every category of the type (spend or income side, current always shown) with a colour dot, a check on the current one; tapping one saves it like a guess (setCategory, merchant rule learned, "Saved as" confirmation) and closes to home; dismissing changes nothing. No tags field (not in the schema).
+26. FR-21-26: "More…" opens the app on a "Change category" modal bottom sheet over the transaction (`ChangeCategoryScreen`, behind the app lock): lists every category of the type (spend or income side, current always shown) with a colour dot, a check on the current one; tapping one saves it like a guess (setCategory, merchant rule learned, pending notification removed) and closes to home; dismissing changes nothing. No tags field (not in the schema).
+27. FR-21-27: Action-only notifications. Only events that need the user to act are posted (new transaction category, card bill, statement password, low-balance payment, insurance renewal, untracked change, budget used up); opt-in weekly summary and update-available stay. Informational events (balance updated, budget at the user percent, category saved) post nothing: `AlertDecision.logOnly` decisions store their dedupe key and are written to the Activity log, also when OS notifications are blocked. Every posted notification and every informational event leaves an `ALERTS` Activity-log entry (one per kind per engine run, code `sent:<kind>` or `log:<kind>`, count; codes and counts only, [22_activity_log.md](22_activity_log.md) FR-22-18, [35_diagnostic_log.md](35_diagnostic_log.md) privacy rules). Notification text is one title line and at most one short body line.
+28. FR-21-28: The Alerts screen says which notifications need action ("Only alerts that need action notify. The rest go to the Activity log."), each switch has a one-line subtitle, and the budget control notes that only "used up" notifies.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -188,7 +195,7 @@ Scaffold "Notifications & alerts" with cards:
 |---|---|---|
 | Notifications & alerts screen | `AlertsScreen.kt:35` | Banner, 2 switches, budget segmented |
 | New transaction notification (expanded with buttons) | `NewTransactionNotifier.kt:64-83` | Up to 3 category buttons |
-| Category saved confirmation | `NewTransactionNotifier.kt:133` | 4 s |
+| Category saved confirmation | No: never posted (2026-10-31); pending notification removed, Activity log entry | `NewTransactionNotifier.kt:133` | 4 s |
 | Balance updated notification | `BalanceNotifications.kt:64` | Single and inbox styles |
 | Budget alert notification | `Alerts.kt:73` | Two levels |
 | Upcoming payment / renewal notification | `Alerts.kt:101,118` | Low balance, insurance |
@@ -424,14 +431,14 @@ Unit:
 
 1. TC-21-01 (FR-21-09): `nextDueStage` table: days 10 -> null, 5 -> days5, 3 -> days5, 2 -> days2, 1 -> days2, 0 -> dueDay, -1 -> overdue, -7 -> overdue, -8 -> null; already sent stage -> null; paid -> null; snoozed until tomorrow -> null today and allowed tomorrow.
 2. TC-21-02 (FR-21-11): `markSent(days2)` also records days5; a stage sent for one due date does not block the next due date; rows older than 120 days pruned.
-3. TC-21-03 (FR-21-05): budget algorithm worked example: 9,000 -> 90% alert; 10,200 -> used-up alert; repeat -> none; percent 80 and used 8,000 -> 80% alert; month change creates new keys.
+3. TC-21-03 (FR-21-05, FR-21-27): budget algorithm worked example: 9,000 -> 90% `logOnly` (no post, log entry `log:budgetWarning`); 10,200 -> used-up post (`sent:budget`); repeat -> none; percent 80 and used 8,000 -> 80% alert; month change creates new keys.
 4. TC-21-04 (FR-21-06): bill alert fires only for days 0..3, balance < amount, kind ACCOUNT, known balance; resolves merged and debit-card links; key stored; text variants for days 0, 1, 2.
 5. TC-21-05 (FR-21-07): renewal alert for yearly policies within 0..7 days; monthly policies skipped.
 6. TC-21-06 (FR-21-08): gaps: only `toTime` within 14 days, max 3, once each, four text variants, nothing when `transaction_notifications` off.
 7. TC-21-07 (FR-21-03): guesses example gives [Shopping, Transport] then "More…"; merchant-learned category goes first; credit defaults [Refund, Income] for current Salary.
-8. TC-21-08 (FR-21-02): new-transaction title/text/id for DEBIT ₹250 Swiggy HDFC ••1234 ("Spent ₹250 at Swiggy" / "What was this for? · HDFC Bank ••1234" + "Filed under Food & Dining"), CREDIT with currency USD, transfer skipped, MERGED outcome skipped.
+8. TC-21-08 (FR-21-02): new-transaction title/text/id for DEBIT ₹250 Swiggy HDFC ••1234 ("Spent ₹250 at Swiggy" / "HDFC Bank ••1234 · Food & Dining", one line), CREDIT with currency USD, transfer skipped, MERGED outcome skipped.
 9. TC-21-09 (FR-21-14): alerted key store caps at 300 newest and survives restart.
-10. TC-21-10 (FR-21-04): balance notices: second update of the same account on the same IST day is suppressed; two accounts merge into one notification with the inbox lines.
+10. TC-21-10 (FR-21-04, FR-21-27): balance updated is `logOnly` (single and multi-account texts kept for the log), nothing posted.
 
 Widget:
 
@@ -444,17 +451,18 @@ Integration:
 14. TC-21-14 (FR-21-15): each alert's tap payload opens the correct route.
 15. TC-21-15 (FR-21-21): `AlertRules.weeklySummary`: week start for Monday, Friday and Sunday; text for less, more, same and no previous week; off by default; once per week; nothing when no spend; month-spanning label. Engine posts once with the totals and top category and not when the toggle is off (`weekly_summary_test.dart`); the Alerts screen switch persists (`alerts_forex_screens_test.dart`).
 16. TC-21-16 (FR-21-26): Change category sheet lists the spend-side categories, checks the current one; tapping saves and closes; `more` handler returns false and posts nothing.
+17. TC-21-17 (FR-21-27, FR-21-28): informational events post nothing and write one `ALERTS` log entry (also with OS notifications blocked); action notifications (new transaction, card bill, budget used up) are one-line, keep their buttons and log `sent:<kind>`; category button posts nothing, cancels the pending notification and logs `log:categorySaved`; Alerts screen shows the action-only copy (`alerts_engine_test.dart`, `alert_actions_test.dart`, `alert_rules_test.dart`, `alerts_forex_screens_test.dart`, `activity_log/alert_entries_test.dart`).
 
 Fixture messages (masked): `HDFC Bank: Rs 250.00 debited from a/c XX1234 on 17-10-26 to VPA swiggy@icici (UPI Ref 6xxxxxxxx1)` (new-tx alert); card bill SMS `Your HDFC Bank Credit Card XX4321 statement: Total Due Rs 12,450.00, Min Due Rs 620.00, Due Date 25-Oct-26` (card reminder).
 
 ## 16. Acceptance Criteria
 
 1. AC-21-01: Channels, ids, importance, actions and texts match section 2.1 exactly. (FR-21-01, FR-21-02, FR-21-12; TC-21-08)
-2. AC-21-02: A newly inserted spend produces one notification with 2 category guesses and More…; tapping one saves the category and shows the 4 s confirmation without opening the app. (FR-21-02, FR-21-03; TC-21-07, TC-21-08)
-3. AC-21-03: Budget alerts fire at the highest reached level once per month and level. (FR-21-05, FR-21-14, FR-21-18; TC-21-03, TC-21-09)
+2. AC-21-02: A newly inserted spend produces one one-line notification with 2 category guesses and More…; tapping one saves the category and removes the notification (no confirmation post). (FR-21-02, FR-21-03; TC-21-07, TC-21-08)
+3. AC-21-03: Budget used-up notifies once per month; the user-percent level is only logged. (FR-21-05, FR-21-14, FR-21-18; TC-21-03, TC-21-09)
 4. AC-21-04: Low-balance and renewal alerts fire in the stated windows once. (FR-21-06, FR-21-07; TC-21-04, TC-21-05)
 5. AC-21-05: Card reminders follow the staging table, honour Mark paid and snooze, and are cancelled when no longer billed. (FR-21-09, FR-21-10, FR-21-11; TC-21-01, TC-21-02, TC-21-13)
-6. AC-21-06: Untracked-change and balance-updated notifications respect their caps and the transaction-alerts setting. (FR-21-04, FR-21-08; TC-21-06, TC-21-10)
+6. AC-21-06: Untracked-change notifications respect their cap and the transaction-alerts setting; balance updates never notify. (FR-21-04, FR-21-08; TC-21-06, TC-21-10)
 7. AC-21-07: The daily worker runs all checks, isolates failures, and does not double-send. (FR-21-13, FR-21-19; TC-21-12)
 8. AC-21-08: The Alerts screen reflects the OS notification state and persists the three settings. (FR-21-17, FR-21-18; TC-21-11)
 9. AC-21-09: Every alert deep-links to the right screen. (FR-21-15; TC-21-14)
@@ -498,6 +506,8 @@ FR status additions: done FR-21-05, 06, 07 (posted), 14, 16, 17 (no resume re-ch
 
 - 2026-10-27: Alerts parity. Domain: `AlertsEngine` gains `_cardDecisions` and `_newTxDecisions` (optional `cards` and `cardState` inputs); `AlertActionHandler` and `alertActionRoute(AlertAction)` added; `AlertActionScreen` at `/alert-action`. Kotlin contract: `AlertsBridge.post` now also takes `actions` (list of `{label, route}`, at most 3, each an `addAction` PendingIntent that launches the main activity with extra `hisaab_route`) and `timeoutMs` (`setTimeoutAfter`, SDK 26+); no receiver and no headless call, so a button tap briefly opens the app. Not compiled here; CI compiles it. Deferred: untracked-change alert wiring (needs the gaps function), statement notices, balance-updated notice.
 
+- 2026-10-31: Action-only notifications. `AlertDecision.logOnly` and `logCode`; `AlertsEngine` takes an optional `ActivityLogger` (`activity`) and writes one `ALERTS` entry per kind per run, and runs informational decisions even when the OS blocks notifications; `AlertActionHandler` cancels the pending notification instead of posting "Saved as" and logs `categorySaved` (`categorySavedAlert` removed); `AlertStatementLockedNotifier` logs `statementLocked`. Texts shortened in `AlertRules`. Kotlin untouched (title/body/actions contract unchanged).
+
 ## 19. Change Log (date | change | reason)
 
 | Date | Change | Reason |
@@ -512,3 +522,4 @@ FR status additions: done FR-21-05, 06, 07 (posted), 14, 16, 17 (no resume re-ch
 | 2026-10-27 | Audit: rules and weekly summary confirmed done; card reminders, budget and low-balance posting, action buttons and untracked alerts confirmed not wired | Kotlin parity audit |
 | 2026-10-27 | Alerts parity | Kotlin parity |
 | 2026-10-31 | Notification category quick-pick with More…: 2 guesses (merchant first) + More… opening the Change category sheet; text "Spent ₹X at …" | Notification category quick-pick with More… |
+| 2026-10-31 | Notifications reduced to actionable ones (new tx, card bill, statement password, low balance, renewal, untracked, budget used up); balance updated, category saved and budget-percent warning go to the Activity log; one-line texts; FR-21-27, FR-21-28, TC-21-17 | Action-only notifications, rest in the Activity log |
