@@ -56,8 +56,10 @@ ImportStatement importStatement(Ref ref) => ImportStatement(
       accounts: ref.watch(applyStatementAccountsProvider),
       outcomes: ref.watch(statementOutcomeStoreProvider),
       activity: ref.watch(activityLoggerProvider),
-      lockedNotifier:
-          AlertStatementLockedNotifier(ref.watch(alertPosterProvider)),
+      lockedNotifier: AlertStatementLockedNotifier(
+        ref.watch(alertPosterProvider),
+        ref.watch(activityLoggerProvider),
+      ),
       passwordSource: () async => assemblePasswordSource(
         identity: await ref.read(identityRepositoryProvider).read(),
         profile: await ref.read(profileRepositoryProvider).read(),

@@ -59,24 +59,29 @@ abstract final class AlertRules {
       if (hit == null) continue;
       final left = b.monthlyLimitMinor - used;
       final label = b.category.label;
+      final usedUp = hit.level >= 100;
       out.add(
         AlertDecision(
           kind: AlertKind.budget,
           key: hit.key,
           channel: AlertChannel.budgetsBills,
           notificationId: AlertText.stableId(hit.key),
-          title: hit.level >= 100
+          title: usedUp
               ? '$label: budget used up'
               : '$label: ${hit.level}% of budget used',
           body: left > 0
               ? '${AlertText.money(used)} of '
-                  '${AlertText.money(b.monthlyLimitMinor)} spent. '
-                  '${AlertText.money(left)} left for '
-                  '${AlertText.monthYear(year, month)}.'
-              : '${AlertText.money(used)} spent against '
-                  '${AlertText.money(b.monthlyLimitMinor)}, '
-                  '${AlertText.money(-left)} over.',
+                  '${AlertText.money(b.monthlyLimitMinor)} spent, '
+                  '${AlertText.money(left)} left.'
+              : left == 0
+                  ? '${AlertText.money(used)} of '
+                      '${AlertText.money(b.monthlyLimitMinor)} spent.'
+                  : '${AlertText.money(used)} of '
+                      '${AlertText.money(b.monthlyLimitMinor)} spent, '
+                      '${AlertText.money(-left)} over.',
           link: 'hisaab://budgets',
+          // Only "used up" needs action; the earlier level goes to the log.
+          logOnly: !usedUp,
         ),
       );
     }
@@ -117,9 +122,8 @@ abstract final class AlertRules {
             1 => '${r.name} $amount due tomorrow',
             _ => '${r.name} $amount due in $days days',
           },
-          body: '$label ••${r.accountLast4} has ${AlertText.money(balance)}. '
-              "Add ${AlertText.money(r.amountMinor - balance)} so it doesn't "
-              'bounce.',
+          body: '$label ••${r.accountLast4} has ${AlertText.money(balance)}, '
+              'add ${AlertText.money(r.amountMinor - balance)}.',
           link: 'hisaab://bills',
         ),
       );
@@ -151,9 +155,8 @@ abstract final class AlertRules {
               ? '${p.kindLabel} insurance renews today'
               : '${p.kindLabel} insurance renews in $days '
                   '${days == 1 ? 'day' : 'days'}',
-          body: '${p.insurer}: last premium '
-              '${AlertText.money(p.premiumMinor)} on ${_date(p.lastPaid)}. '
-              'Renew in time to stay covered.',
+          body: 'Last premium ${AlertText.money(p.premiumMinor)} on '
+              '${_date(p.lastPaid)}.',
           link: 'hisaab://bills',
         ),
       );
@@ -254,8 +257,8 @@ abstract final class AlertRules {
                   : days == 1
                       ? '${c.name} bill due tomorrow'
                       : '${c.name} bill due in $days days',
-          body: '${c.estimated ? 'About $amount' : amount} · pay by $payBy.'
-              '${min != null ? ' Minimum ${AlertText.money(min)}.' : ''}',
+          body: '${c.estimated ? 'About $amount' : amount} · pay by $payBy'
+              '${min != null ? ' · min ${AlertText.money(min)}' : ''}',
           link: 'hisaab://account/${c.cardId}',
           stage: stage,
           actions: [
@@ -321,9 +324,12 @@ abstract final class AlertRules {
       channel: AlertChannel.newTransactions,
       notificationId: id,
       title: isCredit ? 'Received $amount from $who' : 'Spent $amount at $who',
-      body: 'What was this for? · $bank'
-          '${(last4 != null && last4.isNotEmpty) ? ' ••$last4' : ''}\n'
-          'Filed under ${category.label}',
+      body: [
+        if (bank.isNotEmpty || (last4 != null && last4.isNotEmpty))
+          '$bank${(last4 != null && last4.isNotEmpty) ? ' ••$last4' : ''}'
+              .trim(),
+        category.label,
+      ].join(' · '),
       link: 'hisaab://transaction/$txId',
       actions: [
         for (final c in alts)
@@ -340,22 +346,6 @@ abstract final class AlertRules {
       ],
     );
   }
-
-  /// Confirmation that replaces the notification after a button tap (FR-21-03).
-  static AlertDecision categorySavedAlert({
-    required int txId,
-    required Category category,
-  }) =>
-      AlertDecision(
-        kind: AlertKind.newTransaction,
-        key: '',
-        channel: AlertChannel.newTransactions,
-        notificationId: newTransactionIdBase + txId,
-        title: 'Saved as ${category.label}',
-        body: 'DhanKosh will use it for this merchant from now on.',
-        link: '',
-        timeoutMs: 4000,
-      );
 
   static const List<Category> _creditDefaults = [
     Category.salary,
@@ -423,9 +413,10 @@ abstract final class AlertRules {
     ];
   }
 
-  /// One merged "balance updated" notification (FR-21-04), or null when
-  /// [gaps] is empty or transaction notifications are off. The once-per-IST-
-  /// day-per-account filtering is the caller's.
+  /// The "balance updated" event (FR-21-04), or null when [gaps] is empty or
+  /// transaction notifications are off. Informational: [AlertDecision.logOnly],
+  /// never posted (FR-21-27). The once-per-IST-day-per-account filtering is
+  /// the caller's.
   static AlertDecision? balanceUpdatedAlert({
     required List<BalanceGapInput> gaps,
     required AlertSettings settings,
@@ -449,6 +440,7 @@ abstract final class AlertRules {
               'explained · transactions may be missing'
           : lines.join(' · '),
       link: '',
+      logOnly: true,
     );
   }
 
@@ -463,10 +455,9 @@ abstract final class AlertRules {
         channel: AlertChannel.statements,
         notificationId: statementIdBase + statementId,
         title: (bank == null || bank.isEmpty)
-            ? 'A statement detected'
-            : '$bank statement detected',
-        body: "It's password protected. Tap to enter the password so DhanKosh "
-            'can read it.',
+            ? 'Statement needs a password'
+            : '$bank statement needs a password',
+        body: 'Tap to unlock it.',
         link: 'hisaab://statements?unlock=$statementId',
       );
 
@@ -506,7 +497,7 @@ abstract final class AlertRules {
     final diff = week.spentMinor - previous.spentMinor;
     final String cmp;
     if (previous.spentMinor <= 0) {
-      cmp = 'Nothing was spent the week before.';
+      cmp = 'Nothing spent the week before.';
     } else if (diff == 0) {
       cmp = 'Same as the week before.';
     } else {

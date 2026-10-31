@@ -27,7 +27,9 @@ abstract final class InboxLogic {
       ActivitySource.imap ||
       ActivitySource.statements =>
         InboxGroup.imports,
-      ActivitySource.notifications => InboxGroup.alerts,
+      ActivitySource.notifications ||
+      ActivitySource.alerts =>
+        InboxGroup.alerts,
       ActivitySource.smsScan ||
       ActivitySource.smsLive =>
         e.statements > 0 ? InboxGroup.imports : InboxGroup.scans,

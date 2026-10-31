@@ -99,8 +99,34 @@ abstract final class ActivityStats {
   static String title(ActivityEntry e) =>
       e.runs > 1 ? '${e.source.label} · ×${e.runs}' : e.source.label;
 
+  /// Display names of alert event codes (FR-22-18).
+  static const alertLabels = {
+    'newTransaction': 'New transaction',
+    'cardBill': 'Card bill reminder',
+    'statementLocked': 'Statement needs password',
+    'lowBalanceBill': 'Payment may bounce',
+    'insuranceRenewal': 'Insurance renewal',
+    'untrackedChange': 'Untracked change',
+    'budget': 'Budget used up',
+    'budgetWarning': 'Budget warning',
+    'balanceUpdated': 'Balance updated',
+    'categorySaved': 'Category saved',
+    'weeklySummary': 'Weekly summary',
+    'updateAvailable': 'Update available',
+  };
+
+  static String _alertSubtitle(ActivityEntry e) {
+    final note = e.note ?? '';
+    final sent = note.startsWith('sent:');
+    final code = note.contains(':') ? note.split(':').last : note;
+    final label = alertLabels[code] ?? 'Alert';
+    return '$label${e.read > 1 ? ' ×${e.read}' : ''} · '
+        '${sent ? 'notified' : 'no notification'}';
+  }
+
   /// Row subtitle (FR-22-10).
   static String subtitle(ActivityEntry e) {
+    if (e.source == ActivitySource.alerts) return _alertSubtitle(e);
     if (e.source == ActivitySource.problems) {
       return '${e.read} unreadable${e.note == null ? '' : ' from ${e.note}'}';
     }

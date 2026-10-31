@@ -40,7 +40,10 @@ void main() {
       final d = run(r(9000)).single;
       expect(d.key, 'budget:FOOD:2026-10:90');
       expect(d.title, 'Food & Dining: 90% of budget used');
-      expect(d.body, '₹9,000 of ₹10,000 spent. ₹1,000 left for October 2026.');
+      expect(d.body, '₹9,000 of ₹10,000 spent, ₹1,000 left.');
+      // The earlier level is informational: logged, never notified.
+      expect(d.logOnly, isTrue);
+      expect(d.logCode, 'budgetWarning');
       expect(d.link, 'hisaab://budgets');
       expect(d.channel, AlertChannel.budgetsBills);
       expect(run(r(9000) - 1), isEmpty);
@@ -53,13 +56,16 @@ void main() {
       final d = run(r(10000), alerted: a).single;
       expect(d.key, 'budget:FOOD:2026-10:100');
       expect(d.title, 'Food & Dining: budget used up');
-      expect(d.body, '₹10,000 spent against ₹10,000, ₹0 over.');
+      expect(d.body, '₹10,000 of ₹10,000 spent.');
+      expect(d.logOnly, isFalse);
+      expect(d.logCode, 'budget');
     });
 
     test('worked example: 10,200 against 10,000 is 200 over, then silent', () {
       final d = run(r(10200)).single;
       expect(d.key.endsWith(':100'), isTrue);
-      expect(d.body, '₹10,200 spent against ₹10,000, ₹200 over.');
+      expect(d.body, '₹10,200 of ₹10,000 spent, ₹200 over.');
+      expect(d.logOnly, isFalse);
       expect(run(r(10200), alerted: {d.key}), isEmpty);
     });
 
@@ -144,10 +150,7 @@ void main() {
     test('worked example: Netflix 649 in 2 days, balance 300', () {
       final d = run([bill()]).single;
       expect(d.title, 'Netflix ₹649 due in 2 days');
-      expect(
-        d.body,
-        "HDFC Bank ••1234 has ₹300. Add ₹349 so it doesn't bounce.",
-      );
+      expect(d.body, 'HDFC Bank ••1234 has ₹300, add ₹349.');
       expect(d.key, 'bill:Netflix:2026-10-19');
       expect(d.link, 'hisaab://bills');
     });
@@ -197,10 +200,7 @@ void main() {
       expect(run(8), isEmpty);
       expect(run(-1), isEmpty);
       final d = run(5).single;
-      expect(
-        d.body,
-        'HDFC Ergo: last premium ₹18,500 on 2025-10-22. Renew in time to stay covered.',
-      );
+      expect(d.body, 'Last premium ₹18,500 on 2025-10-22.');
       expect(d.key, 'renewal:HDFC Ergo:2026-10-22');
     });
 
@@ -332,7 +332,7 @@ void main() {
     test('titles, body, id, actions and deep link', () {
       final d = run(card(min: 61725)).single;
       expect(d.title, 'HDFC Regalia bill due in 5 days');
-      expect(d.body, '₹12,345 · pay by 22 Oct. Minimum ₹617.');
+      expect(d.body, '₹12,345 · pay by 22 Oct · min ₹617');
       expect(d.notificationId, 30000 + 4 * 3);
       expect(d.channel, AlertChannel.budgetsBills);
       expect(d.link, 'hisaab://account/4');
@@ -343,7 +343,7 @@ void main() {
       expect(run(card(days: -2)).single.title, 'HDFC Regalia bill overdue');
       expect(
         run(card(estimated: true)).single.body,
-        'About ₹12,345 · pay by 22 Oct.',
+        'About ₹12,345 · pay by 22 Oct',
       );
     });
 
@@ -416,10 +416,9 @@ void main() {
     test('title, text, id, link and buttons (worked example)', () {
       final d = tx()!;
       expect(d.title, 'Spent ₹250 at Swiggy');
-      expect(
-        d.body,
-        'What was this for? · HDFC Bank ••1234\nFiled under Food & Dining',
-      );
+      // One line, no expanded text (FR-21-03, FR-21-27).
+      expect(d.body, 'HDFC Bank ••1234 · Food & Dining');
+      expect(d.body, isNot(contains('\n')));
       expect(d.notificationId, 10077);
       expect(d.link, 'hisaab://transaction/77');
       expect(d.channel, AlertChannel.newTransactions);
@@ -503,15 +502,7 @@ void main() {
       expect(credit, isNot(contains(Category.shopping)));
     });
 
-    test('saved confirmation times out in 4 s', () {
-      final d =
-          AlertRules.categorySavedAlert(txId: 77, category: Category.shopping);
-      expect(d.title, 'Saved as Shopping');
-      expect(d.timeoutMs, 4000);
-      expect(d.notificationId, 10077);
-    });
-
-    test('balance updated: single, several and gating', () {
+    test('balance updated is informational: log only (FR-21-27)', () {
       const one = BalanceGapInput(
         key: 'a',
         label: 'HDFC ••1234',
@@ -519,7 +510,8 @@ void main() {
       );
       final single =
           AlertRules.balanceUpdatedAlert(gaps: [one], settings: s90)!;
-      expect(single.notificationId, 9000);
+      expect(single.logOnly, isTrue);
+      expect(single.logCode, 'balanceUpdated');
       expect(single.title, 'HDFC ••1234 updated');
       expect(single.body, '₹5,000 not explained · transactions may be missing');
       const two =
@@ -547,13 +539,15 @@ void main() {
     test('statement locked shows no figures', () {
       final d =
           AlertRules.statementLockedAlert(statementId: 9, bank: 'HDFC Bank');
-      expect(d.title, 'HDFC Bank statement detected');
+      expect(d.title, 'HDFC Bank statement needs a password');
+      expect(d.body, 'Tap to unlock it.');
+      expect(d.logOnly, isFalse);
       expect(d.notificationId, 4009);
       expect(d.link, 'hisaab://statements?unlock=9');
       expect(d.channel, AlertChannel.statements);
       expect(
         AlertRules.statementLockedAlert(statementId: 1).title,
-        'A statement detected',
+        'Statement needs a password',
       );
     });
 

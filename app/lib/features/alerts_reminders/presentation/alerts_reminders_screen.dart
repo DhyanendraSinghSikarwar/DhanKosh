@@ -87,6 +87,12 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
                 ),
               ),
             ),
+          Text(
+            'Only alerts that need action notify. The rest go to the '
+            'Activity log.',
+            key: const Key('alerts-copy'),
+            style: text.bodySmall,
+          ),
           ListTile(
             key: const Key('alerts-status'),
             contentPadding: EdgeInsets.zero,
@@ -103,6 +109,7 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
             key: const Key('alerts-transactions'),
             contentPadding: EdgeInsets.zero,
             title: const Text('Transaction alerts'),
+            subtitle: const Text('New spends, to pick a category'),
             value: s.transactionNotifications,
             onChanged: (v) =>
                 unawaited(repo.setTransactionNotifications(value: v)),
@@ -111,6 +118,7 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
             key: const Key('alerts-cards'),
             contentPadding: EdgeInsets.zero,
             title: const Text('Card bill reminders'),
+            subtitle: const Text('Mark paid or snooze'),
             value: s.cardDueReminders,
             onChanged: (v) => unawaited(repo.setCardDueReminders(value: v)),
           ),
@@ -132,6 +140,12 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
           ),
           const SizedBox(height: 12),
           Text('Budget alert at', style: text.titleSmall),
+          Text(
+            'Notified when a budget is used up. Earlier levels go to the '
+            'Activity log.',
+            key: const Key('alerts-percent-help'),
+            style: text.bodySmall,
+          ),
           const SizedBox(height: 8),
           SegmentedButton<int>(
             key: const Key('alerts-percent'),

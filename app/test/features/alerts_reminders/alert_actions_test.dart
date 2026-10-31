@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_state_stores_impl.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_action_handler.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_models.dart';
@@ -14,7 +15,7 @@ import 'package:parser_core/parser_core.dart';
 
 import '../../support/parsed.dart';
 import '../../support/test_env.dart';
-import 'alerts_engine_test.dart' show FakePoster, FakeSettings;
+import 'alerts_engine_test.dart' show FakeActivity, FakePoster, FakeSettings;
 
 class _Paid implements CardPaidStore {
   final marked = <String>[];
@@ -30,10 +31,12 @@ class _Paid implements CardPaidStore {
 void main() {
   late TestEnv env;
   late FakePoster poster;
+  late FakeActivity activity;
 
   setUp(() {
     env = TestEnv();
     poster = FakePoster();
+    activity = FakeActivity();
   });
   tearDown(() => env.close());
 
@@ -77,7 +80,8 @@ void main() {
     expect(await h.handle({'a': 'bogus'}), isFalse);
   });
 
-  test('category button recategorises and confirms (FR-21-03)', () async {
+  test('category button recategorises, posts nothing, logs (FR-21-27)',
+      () async {
     final r = await env.ingest(parsed());
     final id = r.transactionId!;
     final h = AlertActionHandler(
@@ -85,6 +89,7 @@ void main() {
       paid: _Paid(),
       txs: env.txs,
       poster: poster,
+      activity: activity,
       nowMs: () => t0,
     );
     expect(
@@ -92,7 +97,12 @@ void main() {
       isTrue,
     );
     expect((await env.txs.byId(id))?.category, Category.shopping);
-    expect(poster.posted.single.title, 'Saved as Shopping');
+    // FR-21-27: no confirmation notification; the pending one is removed and
+    // the event goes to the Activity log.
+    expect(poster.posted, isEmpty);
+    expect(poster.cancelled, [AlertRules.newTransactionIdBase + id]);
+    expect(activity.notes, ['log:categorySaved']);
+    expect(activity.entries.single.source, ActivitySource.alerts);
   });
 
   test('more is handled by the sheet, not the handler (FR-21-22)', () async {
@@ -129,6 +139,7 @@ void main() {
       alerted: AlertedKeyStoreImpl(env.db),
       poster: poster,
       settings: FakeSettings(),
+      activity: activity,
       txs: env.txs,
       cardState: state,
       cards: () async => [
@@ -155,6 +166,17 @@ void main() {
       AlertRules.newTransactionIdBase + r.transactionId!,
     );
     expect(tx.actions, isNotEmpty);
+    // One-line notification: short title, one short body line (FR-21-27).
+    expect(tx.title, 'Spent ₹250 at Swiggy');
+    expect(tx.body, 'HDFC Bank ••1234 · Food & Dining');
+    expect(tx.body, isNot(contains('\n')));
+    expect(card.body, isNot(contains('\n')));
+    // Both posted action notifications leave a log entry.
+    expect(
+      activity.notes,
+      unorderedEquals(['sent:cardBill', 'sent:newTransaction']),
+    );
     expect(await engine.run(), 0);
+    expect(activity.entries, hasLength(2));
   });
 }

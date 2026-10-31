@@ -1,6 +1,7 @@
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_poster_impl.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_settings_store.dart';
@@ -37,6 +38,7 @@ AlertActionHandler alertActionHandler(Ref ref) => AlertActionHandler(
       paid: ref.watch(cardPaidStoreProvider),
       txs: ref.watch(transactionRepositoryProvider),
       poster: ref.watch(alertPosterProvider),
+      activity: ref.watch(activityLoggerProvider),
     );
 
 /// Runs all alert checks and posts the results.
@@ -49,6 +51,7 @@ AlertsEngine alertsEngine(Ref ref) => AlertsEngine(
       poster: ref.watch(alertPosterProvider),
       settings: ref.watch(alertSettingsRepositoryProvider),
       txs: ref.watch(transactionRepositoryProvider),
+      activity: ref.watch(activityLoggerProvider),
       cards: () => ref.read(cardDueServiceProvider).watchCards().first,
       cardState: ref.watch(cardReminderStateStoreProvider),
       installedVersion: appVersion,

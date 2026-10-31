@@ -99,7 +99,7 @@ void main() {
               .body;
       expect(body(20000, 10000), '₹100 more than the week before.');
       expect(body(20000, 20000), 'Same as the week before.');
-      expect(body(20000, 0), 'Nothing was spent the week before.');
+      expect(body(20000, 0), 'Nothing spent the week before.');
     });
 
     test('off by default, once per week, silent when nothing spent', () {

@@ -19,7 +19,11 @@ enum ActivitySource {
   notifications('NOTIFICATIONS', 'Notifications'),
 
   /// Messages from bank-like senders that could not be read (FR-22-15).
-  problems('PROBLEMS', 'Problems');
+  problems('PROBLEMS', 'Problems'),
+
+  /// Notifications the app posted, and events kept out of notifications
+  /// because they need no action (FR-22-18).
+  alerts('ALERTS', 'Alerts');
 
   const ActivitySource(this.code, this.label);
 
@@ -59,6 +63,22 @@ class ActivityEntry {
     this.runs = 1,
     this.note,
   });
+
+  /// An alert event (FR-22-18): [kind] is a closed code such as
+  /// `newTransaction`, [count] how many happened in the run and [notified]
+  /// whether a notification was posted (false: logged only). Codes and counts
+  /// only, never text or amounts.
+  const ActivityEntry.alert({
+    required DateTime at,
+    required String kind,
+    int count = 1,
+    bool notified = true,
+  }) : this(
+          at: at,
+          source: ActivitySource.alerts,
+          read: count,
+          note: '${notified ? 'sent' : 'log'}:$kind',
+        );
 
   /// Run start.
   final DateTime at;

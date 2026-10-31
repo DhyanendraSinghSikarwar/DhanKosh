@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hisaab/features/activity_log/domain/activity_logger.dart';
+import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_poster_impl.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_state_stores_impl.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_models.dart';
@@ -33,6 +35,16 @@ class FakePoster implements AlertPoster {
 
   @override
   Future<String?> takeLaunchRoute() async => null;
+}
+
+class FakeActivity implements ActivityLogger {
+  final entries = <ActivityEntry>[];
+
+  /// Alert log notes, e.g. `sent:budget`, `log:budgetWarning`.
+  List<String> get notes => [for (final e in entries) e.note ?? ''];
+
+  @override
+  Future<void> record(ActivityEntry entry) async => entries.add(entry);
 }
 
 class FakeSettings implements AlertSettingsRepository {
@@ -70,11 +82,13 @@ void main() {
   late BudgetRepositoryImpl budgets;
   late RecurringRepositoryImpl recurring;
   late AlertsEngine engine;
+  late FakeActivity activity;
 
   setUp(() {
     env = TestEnv();
     poster = FakePoster();
     settings = FakeSettings();
+    activity = FakeActivity();
     keys = AlertedKeyStoreImpl(env.db);
     budgets = BudgetRepositoryImpl(env.db);
     recurring = RecurringRepositoryImpl(env.db);
@@ -85,6 +99,7 @@ void main() {
       alerted: keys,
       poster: poster,
       settings: settings,
+      activity: activity,
       nowMs: () => t0,
     );
   });
@@ -101,8 +116,10 @@ void main() {
     expect(await engine.run(), 1);
     expect(poster.posted.single.title, 'Food & Dining: budget used up');
     expect(await keys.all(), {poster.posted.single.key});
+    expect(activity.notes, ['sent:budget']);
     expect(await engine.run(), 0);
     expect(poster.posted, hasLength(1));
+    expect(activity.entries, hasLength(1));
   });
 
   test('failed post does not store the key (FR-21-14)', () async {
@@ -122,6 +139,35 @@ void main() {
     expect(await engine.run(), 0);
     expect(poster.posted, isEmpty);
     expect(await keys.all(), isEmpty);
+    expect(activity.entries, isEmpty);
+  });
+
+  test('FR-21-27 budget at the user percent only logs; used up notifies',
+      () async {
+    await spendAgainstBudget(9500);
+    // Level 90 reached: informational, nothing posted, one log entry.
+    expect(await engine.run(), 0);
+    expect(poster.posted, isEmpty);
+    expect(activity.notes, ['log:budgetWarning']);
+    expect(activity.entries.single.source, ActivitySource.alerts);
+    expect(await keys.all(), hasLength(1));
+    // Once only.
+    expect(await engine.run(), 0);
+    expect(activity.entries, hasLength(1));
+    // Used up: a real notification, also logged.
+    await env.ingest(parsed(amountMinor: 1000, ref: 'second'));
+    expect(await engine.run(), 1);
+    expect(poster.posted.single.title, 'Food & Dining: budget used up');
+    expect(activity.notes, ['log:budgetWarning', 'sent:budget']);
+  });
+
+  test('FR-21-27 informational events still log with notifications blocked',
+      () async {
+    await spendAgainstBudget(9500);
+    poster.enabled = false;
+    expect(await engine.run(), 0);
+    expect(poster.posted, isEmpty);
+    expect(activity.notes, ['log:budgetWarning']);
   });
 
   test('budget percent setting is honoured (FR-21-18)', () async {
@@ -129,8 +175,10 @@ void main() {
     settings.value = const AlertSettings(budgetAlertPercent: 95);
     expect(await engine.run(), 0);
     settings.value = const AlertSettings(budgetAlertPercent: 80);
-    expect(await engine.run(), 1);
-    expect(poster.posted.single.title, 'Food & Dining: 80% of budget used');
+    // 80% is informational: nothing posted, one log entry.
+    expect(await engine.run(), 0);
+    expect(poster.posted, isEmpty);
+    expect(activity.notes, ['log:budgetWarning']);
   });
 
   test('low-balance bill due tomorrow alerts once (FR-21-06)', () async {

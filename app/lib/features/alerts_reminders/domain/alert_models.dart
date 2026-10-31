@@ -58,6 +58,7 @@ class AlertDecision {
     this.actions = const [],
     this.stage,
     this.timeoutMs,
+    this.logOnly = false,
   }) : cancel = false;
 
   /// Cancel the notification with [notificationId].
@@ -72,6 +73,7 @@ class AlertDecision {
         actions = const [],
         stage = null,
         timeoutMs = null,
+        logOnly = false,
         cancel = true;
 
   final AlertKind kind;
@@ -91,6 +93,14 @@ class AlertDecision {
   final DueStage? stage;
   final int? timeoutMs;
   final bool cancel;
+
+  /// Informational event that needs no action (FR-21-27): never posted, only
+  /// written to the Activity log, and its [key] is stored so it happens once.
+  final bool logOnly;
+
+  /// Closed Activity-log code of this event (FR-21-27); no text or amounts.
+  String get logCode =>
+      logOnly && kind == AlertKind.budget ? 'budgetWarning' : kind.name;
 }
 
 /// Alert settings (FR-21-18).

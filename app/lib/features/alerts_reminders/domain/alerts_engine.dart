@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/accounts_management/domain/account_repository.dart';
+import 'package:hisaab/features/activity_log/domain/activity_logger.dart';
+import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_models.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_poster.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_rules.dart';
@@ -23,6 +25,9 @@ import 'package:parser_core/parser_core.dart';
 /// Gathers inputs, runs [AlertRules] and posts the decisions (FR-21-05,
 /// FR-21-06, FR-21-07, FR-21-13, FR-21-14, FR-21-16, FR-21-19).
 ///
+/// Only decisions that need action are posted; informational ones
+/// ([AlertDecision.logOnly]) go to the Activity log (FR-21-27).
+///
 /// Card reminders (FR-21-09, with `cards` and `cardState`) and new-transaction
 /// notifications (FR-21-02, with `txs`) are wired; untracked-change alerts
 /// (FR-21-08) are not yet.
@@ -36,6 +41,7 @@ class AlertsEngine {
     required AlertPoster poster,
     required AlertSettingsRepository settings,
     TransactionRepository? txs,
+    ActivityLogger? activity,
     Future<List<CardLimit>> Function()? cards,
     CardReminderStateStore? cardState,
     Future<String?> Function()? updateVersion,
@@ -48,6 +54,7 @@ class AlertsEngine {
         _poster = poster,
         _settings = settings,
         _txs = txs,
+        _activity = activity,
         _cards = cards,
         _cardState = cardState,
         _updateVersion = updateVersion,
@@ -61,6 +68,7 @@ class AlertsEngine {
   final AlertPoster _poster;
   final AlertSettingsRepository _settings;
   final TransactionRepository? _txs;
+  final ActivityLogger? _activity;
   final Future<List<CardLimit>> Function()? _cards;
   final CardReminderStateStore? _cardState;
 
@@ -95,8 +103,12 @@ class AlertsEngine {
 
   Future<int> _runLocked() async {
     var posted = 0;
+    // Activity-log events of this run: code -> (count, notified) (FR-21-27).
+    final events = <String, (int, bool)>{};
     try {
-      if (!await _poster.areEnabled()) return 0;
+      // With notifications blocked nothing is posted, but informational
+      // events still reach the log.
+      final enabled = await _poster.areEnabled();
       final settings = await _settings.read();
       final ist = DateTime.fromMillisecondsSinceEpoch(
         _nowMs() + _istOffsetMs,
@@ -114,7 +126,9 @@ class AlertsEngine {
       ]) {
         try {
           for (final d in await check()) {
-            if (await _deliver(d)) posted++;
+            if (await _deliver(d, enabled: enabled, events: events)) {
+              posted++;
+            }
           }
         } on Object catch (e) {
           // One failing check must not stop the others.
@@ -133,6 +147,7 @@ class AlertsEngine {
         fields: errorFields(e),
       );
     }
+    await _recordEvents(events);
     AppLog.instance.info(
       LogCategory.background,
       'alerts.done',
@@ -249,7 +264,41 @@ class AlertsEngine {
     return out;
   }
 
-  Future<bool> _deliver(AlertDecision d) async {
+  /// One Activity-log entry per event code of the run (FR-21-27); counts and
+  /// codes only.
+  Future<void> _recordEvents(Map<String, (int, bool)> events) async {
+    final log = _activity;
+    if (log == null) return;
+    final at = DateTime.fromMillisecondsSinceEpoch(_nowMs());
+    for (final e in events.entries) {
+      await log.record(
+        ActivityEntry.alert(
+          at: at,
+          kind: e.key,
+          count: e.value.$1,
+          notified: e.value.$2,
+        ),
+      );
+    }
+  }
+
+  void _count(Map<String, (int, bool)> events, AlertDecision d) {
+    final key = d.logCode;
+    events[key] = ((events[key]?.$1 ?? 0) + 1, !d.logOnly);
+  }
+
+  Future<bool> _deliver(
+    AlertDecision d, {
+    required bool enabled,
+    required Map<String, (int, bool)> events,
+  }) async {
+    if (d.logOnly) {
+      // Informational: no notification; the key keeps it to once.
+      if (d.key.isNotEmpty) await _alerted.add(d.key, _nowMs());
+      _count(events, d);
+      return false;
+    }
+    if (!enabled) return false;
     if (d.cancel) {
       await _poster.cancel(d.notificationId);
       return false;
@@ -264,6 +313,7 @@ class AlertsEngine {
     }
     // Key stored only after a successful post (memory 21 Open Question 1).
     if (ok && d.key.isNotEmpty) await _alerted.add(d.key, _nowMs());
+    if (ok) _count(events, d);
     final stage = d.stage;
     final state = _cardState;
     if (ok && stage != null && state != null && d.actions.isNotEmpty) {

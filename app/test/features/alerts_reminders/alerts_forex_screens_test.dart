@@ -32,6 +32,13 @@ void main() {
     expect(find.byKey(const Key('alerts-howto')), findsOneWidget);
     await t.tap(find.byKey(const Key('alerts-transactions')));
     await settle(t);
+    // FR-21-27: copy says which notifications need action.
+    expect(find.byKey(const Key('alerts-copy')), findsOneWidget);
+    await t.scrollUntilVisible(
+      find.byKey(const Key('alerts-percent-help')),
+      200,
+    );
+    expect(find.byKey(const Key('alerts-percent-help')), findsOneWidget);
     await t.tap(find.text('95%'));
     await settle(t);
     // FR-21-21: weekly summary is off until the user turns it on.

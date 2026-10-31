@@ -346,6 +346,7 @@ class _EntryRow extends StatelessWidget {
             ActivitySource.gmail || ActivitySource.imap => Icons.mail,
             ActivitySource.statements => Icons.description,
             ActivitySource.notifications => Icons.notifications,
+            ActivitySource.alerts => Icons.notifications_active_outlined,
             ActivitySource.problems => Icons.error_outline,
           },
           size: 18,

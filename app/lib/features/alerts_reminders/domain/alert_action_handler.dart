@@ -1,3 +1,5 @@
+import 'package:hisaab/features/activity_log/domain/activity_logger.dart';
+import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_poster.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_rules.dart';
 import 'package:hisaab/features/alerts_reminders/domain/card_reminder_state_store.dart';
@@ -6,7 +8,7 @@ import 'package:hisaab/features/credit_cards/domain/card_due_repository.dart';
 import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
 import 'package:parser_core/parser_core.dart';
 
-/// Runs a tapped notification button (FR-21-03, FR-21-10): card "Mark paid",
+/// Runs a tapped notification button (FR-21-03, FR-21-10, FR-21-27): card "Mark paid",
 /// card "Remind tomorrow" and a new-transaction category button. `more` is
 /// handled by the Change category screen, which then sends `category`.
 class AlertActionHandler {
@@ -16,17 +18,20 @@ class AlertActionHandler {
     required CardPaidStore paid,
     required TransactionRepository txs,
     required AlertPoster poster,
+    ActivityLogger? activity,
     int Function()? nowMs,
   })  : _state = cardState,
         _paid = paid,
         _txs = txs,
         _poster = poster,
+        _activity = activity,
         _nowMs = nowMs ?? (() => DateTime.now().millisecondsSinceEpoch);
 
   final CardReminderStateStore _state;
   final CardPaidStore _paid;
   final TransactionRepository _txs;
   final AlertPoster _poster;
+  final ActivityLogger? _activity;
   final int Function() _nowMs;
 
   /// Applies the action in [query] (the `/alert-action` query parameters).
@@ -56,8 +61,16 @@ class AlertActionHandler {
             .firstOrNull;
         if (id == null || cat == null) return false;
         await _txs.setCategory([id], cat);
-        final saved = AlertRules.categorySavedAlert(txId: id, category: cat);
-        await _poster.post(saved);
+        // No confirmation notification (FR-21-27): remove the pending one and
+        // leave a log entry.
+        await _poster.cancel(AlertRules.newTransactionIdBase + id);
+        await _activity?.record(
+          ActivityEntry.alert(
+            at: DateTime.fromMillisecondsSinceEpoch(_nowMs()),
+            kind: 'categorySaved',
+            notified: false,
+          ),
+        );
         return true;
       case 'more':
         // Opens the Change category sheet; nothing to run here.
