@@ -525,3 +525,4 @@ FR-14-15 UI done in the account edit sheet (cards only): "Forex markup %" 0..20 
 | 2026-10-27 | Audit: cards screen, Edit amounts, Mark paid confirmed done; reminders, Remind tomorrow and forex markup UI confirmed not built | Kotlin parity audit |
 | 2026-10-27 | Per-card forex markup field (FR-14-15) | Kotlin parity |
 | 2026-10-31 | Card page `/cards/:id`, limit override, Book-filtered Home Credit cards card, card dues on the Bills calendar (FR-14-23..28) | Approved Home mockups |
+| 2026-10-31 | Home matched to approved mock: Credit cards card rows (IconBadge, name and last digits, due and compact limit, whole-rupee amount, limit-used bar, (i) note); card page with gradient header, Auto tag, Overview rows, upcoming, transactions, history and Back bar; Bills calendar shows violet card-due dots (`cardDueDatesProvider`) and card dues as rows with Mark paid chip | Home matched to approved mock |

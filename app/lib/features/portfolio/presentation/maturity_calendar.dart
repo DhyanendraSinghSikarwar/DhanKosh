@@ -3,6 +3,7 @@ import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/features/portfolio/domain/maturity_items.dart';
 import 'package:hisaab/features/portfolio/domain/portfolio_charts.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/section_label.dart';
 
 /// Deposits maturing in the next 12 months, grouped by month (FR-16-12).
 class MaturityCalendar extends StatelessWidget {
@@ -21,7 +22,7 @@ class MaturityCalendar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Upcoming maturities', style: theme.textTheme.titleSmall),
+          const SectionLabel('Upcoming maturities'),
           if (groups.isEmpty)
             const Padding(
               padding: EdgeInsets.only(top: 8),

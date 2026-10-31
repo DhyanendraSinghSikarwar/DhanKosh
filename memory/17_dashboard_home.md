@@ -15,7 +15,7 @@ Home is the first screen of the app. It answers "how is my money doing this peri
 ## 2. What This Feature Will Do
 
 - Shows a header with the user's avatar, a time-of-day greeting and name, a hide-amounts toggle, an Accounts shortcut and a notification bell with a count.
-- Shows the widgets the user has turned on, in the user's saved order: Spent this month, Credit card dues, Cash flow, Upcoming, Insights, Spend by category, Recent transactions and Budgets (hidden by default).
+- Shows the widgets the user has turned on, in the user's saved order (default: Spent this month, Cash flow, Budgets, Upcoming, Credit card dues, Insights, Spend by category, Recent transactions).
 - Calculates every widget figure for the chosen Book and Period.
 - Compares this period's spending with the previous period and shows the change as a percent.
 - Shows credit-card dues with a status per card and a Mark paid button for bills due within 7 days.
@@ -142,7 +142,7 @@ Safe-to-spend maths remains in `HomeViewModel.build` though no widget shows it: 
 2. FR-17-02: The header shows avatar (photo else initials of the first two name words, fallback "H"), greeting, name (single line, ellipsis), the hint "Tap to set up your profile" when no name, an eye toggle, a bank icon (opens Accounts) and a bell with badge = notice count (hidden at 0). Tapping avatar/name opens Profile.
 3. FR-17-03: Greeting by local hour: 5-11 morning, 12-16 afternoon, 17-21 evening, otherwise night. Name falls back to "Welcome".
 4. FR-17-04: When the first list item scrolls off, a compact floating header (no greeting) appears with fade + slide; an opaque status-bar-height cover keeps content from showing behind the status bar.
-5. FR-17-05: Widget set, order and visibility come from the tab-layout store (`order_home`, `hidden` entries `home:<key>`); defaults are the 8 keys in section 2 with `budgets` hidden; unknown saved keys are ignored, new keys appended.
+5. FR-17-05: Widget set, order and visibility come from the tab-layout store (`order_home`, `hidden` entries `home:<key>`); defaults are the 8 keys in the default order (Spent, Cash flow, Budgets, Upcoming, Credit cards, Insights, Spend by category, Recent), all visible; unknown saved keys are ignored, new keys appended.
 6. FR-17-06: `spent` widget renders per section 2: scope-dependent title, animated amount, previous-period line, percent pill (hidden without a previous same-elapsed-days figure), two-line cumulative chart, Income/Expenses/Saved tiles, folded by-account list with "Other" remainder so rows sum to the total.
 7. FR-17-07: `cards` widget lists credit cards (folded by default) with total billed, per-card status text per section 2, `~` for estimated amounts, and a Mark-paid button when billed, unpaid and due within 7 days.
 8. FR-17-08: `cashflow` widget shows Income/Spent/Invested/Saved, the split bar, savings rate and "best in {n} months" only for a calendar-month period whose rate exceeds every other income month and at least 2 such months exist.
@@ -503,7 +503,7 @@ Unit:
 4. TC-17-04 (FR-17-08): `bestRateOf` returns 4 when the current rate 40% beats 3 earlier income months (30, 25, 35), null when only 1 other month, null when the period is not a calendar month.
 5. TC-17-05 (FR-17-09): upcoming includes days 0..7 only, max 5, tone mapping (card red, EMI amber, SIP accent, income green) and `short` flag.
 6. TC-17-06 (FR-17-13): budget fraction 0.79 green, 0.8 amber, 1.0 red; budgets sorted by fraction desc, top 3.
-7. TC-17-07 (FR-17-05, FR-17-22): layout visible(home) with defaults excludes `budgets`; unknown saved keys dropped; new keys appended; migration hides budgets once.
+7. TC-17-07 (FR-17-05, FR-17-22): layout visible(home) with defaults includes all eight keys; unknown saved keys dropped; new keys appended; migration hides budgets once.
 8. TC-17-08 (FR-17-10, FR-17-21): dismissing an insight removes it by title for the session and it returns after provider reset.
 9. TC-17-09 (FR-17-18): sync-pill state machine: SMS active -> "Reading messages · 120"; both done -> "412 messages · 3 emails read" for 3 s then null; SMS only -> "412 messages read".
 
@@ -526,7 +526,7 @@ Integration:
 13. TC-17-13 (FR-17-17): tap sync with a fake SMS repo and connected email: scan and email start, pill appears, FAB ignores a second tap, alert checks run once, done text appears for 3 s.
 14. TC-17-14 (FR-17-06, FR-17-11, FR-17-12): ingest 3 SMS fixtures (HDFC debit ₹2,450.50 Swiggy UPI, salary credit, card spend) -> Home spent, category donut and recent list update without manual refresh.
 15. TC-17-31 (FR-17-34, FR-17-35, FR-17-36, FR-17-37): chart builders with paise fixtures: cumulative spend, top 7 plus Others, sub-category drill, split bar sums to 1000, upcoming window and wording.
-16. TC-17-32 (FR-17-33): widget: default sections show and Budgets is hidden; the Minimal preset hides the rest; hiding Upcoming in the editor persists.
+16. TC-17-32 (FR-17-33): widget: all default sections show, Budgets included; the Minimal preset hides the rest; hiding Upcoming in the editor persists.
 17. TC-17-33 (FR-17-40): widget: the Book tag shows for Business and All books and not for Personal.
 18. TC-17-34 (FR-17-19, FR-17-41): widget: the eye masks every amount on Home and stores `hide_amounts`.
 19. TC-17-35 (FR-17-42): widget: refresh opens the sheet with progress, SMS/Email/Matching rows, then a `{n} new` result and Done closes it.
@@ -537,7 +537,7 @@ Fixture messages (masked): `HDFC Bank: Rs 2450.50 debited from a/c XX1234 on 17-
 
 ## 16. Acceptance Criteria
 
-1. AC-17-01: Given a fresh install after sign-in, Home opens with header, chips, SMS card, and 7 widgets (budgets hidden) in the default order. (FR-17-01, FR-17-05, FR-17-15; TC-17-07, TC-17-11)
+1. AC-17-01: Given a fresh install after sign-in, Home opens with header, SMS card, and 8 widgets in the default order. (FR-17-01, FR-17-05, FR-17-15; TC-17-07, TC-17-11)
 2. AC-17-02: Spent widget matches the `MonthSpend` rules including refund netting and "Other" remainder. (FR-17-06, FR-17-19; TC-17-02, TC-17-03)
 3. AC-17-03: Cash flow savings rate and "best in n months" appear only under the stated conditions. (FR-17-08; TC-17-04)
 4. AC-17-04: Upcoming, categories, recent and budgets widgets show exact empty texts and thresholds from section 2. (FR-17-09 to FR-17-13, FR-17-20; TC-17-05, TC-17-06)
@@ -585,3 +585,4 @@ Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insight
 | 2026-10-27 | Layout-driven sections, header with name and sync pill, running line, category donut with drill, split bar, Upcoming, Insights, Mark paid (FR-17-31..39) | Kotlin parity |
 | 2026-10-27 | Home Spent is cash basis with a card purchases line (`home_card_purchases`); Home totals and month rows follow the app-wide Book (`bookProvider`, memory 20 FR-20-23) | Kotlin parity, ADR-0011 |
 | 2026-10-31 | Book chips removed from Home with a Book tag by the name; eye, refresh (progress sheet) and bell in the header; Upcoming More ›; Credit cards card replaces Net worth on Home; Spend by category last with (i) note; coloured icons (FR-17-40..47) | Approved Home mockups |
+| 2026-10-31 | Home matched to approved mock: single-row header (name and Book tag left; eye, refresh, bell and overflow menu with Add, Accounts, Edit right; Done check while editing); compact dismissible Read bank SMS row; default order Spent, Cash flow, Budgets (visible), Upcoming, Credit cards, Insights, Spend by category, then Needs attention, Goals, Recent, Accounts; every card is a filled radius-20 card with SectionLabel header and 12 px gaps; whole-rupee hero figures; spent chart with axis labels and legend; cash flow Income/Saved with split bar and legend; budget rings; Insights as chips with tap-to-open detail and Dismiss; donut with centre total and percentage rows; refresh sheet with gradient bar and step rows; shared `mock_kit.dart` | User review: tabs not as approved |

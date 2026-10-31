@@ -5,19 +5,19 @@ List<String> ids(List<SectionSlot> l) => [for (final s in l) s.id];
 
 void main() {
   // TC-28-05 (FR-28-16)
-  test('defaults: eight home sections, budgets hidden', () {
+  test('defaults: eight home sections in mock order, all visible', () {
     final d = SectionLayout.defaults('home');
     expect(ids(d), [
       'spent',
-      'cards',
       'cashflow',
+      'budgets',
       'upcoming',
+      'cards',
       'insights',
       'categories',
       'recent',
-      'budgets',
     ]);
-    expect(SectionLayout.visibleIds(d), isNot(contains('budgets')));
+    expect(SectionLayout.visibleIds(d), contains('budgets'));
     expect(ids(SectionLayout.defaults('analytics')).length, 5);
     expect(
       SectionLayout.visibleIds(SectionLayout.defaults('portfolio')).length,
@@ -36,14 +36,14 @@ void main() {
     expect(ids(l), [
       'recent',
       'spent',
-      'cards',
       'cashflow',
+      'budgets',
       'upcoming',
+      'cards',
       'insights',
       'categories',
-      'budgets',
     ]);
-    expect(l.last.visible, isFalse);
+    expect(l.last.visible, isTrue);
     expect(l.map((s) => s.order), [for (var i = 0; i < 8; i++) i]);
   });
 
@@ -56,7 +56,7 @@ void main() {
   // TC-28-07 (FR-28-15)
   test('reorder moves a section and renumbers', () {
     final l = SectionLayout.reorder(SectionLayout.defaults('home'), 0, 2);
-    expect(ids(l).take(3), ['cards', 'cashflow', 'spent']);
+    expect(ids(l).take(3), ['cashflow', 'budgets', 'spent']);
     expect(l.map((s) => s.order), [for (var i = 0; i < 8; i++) i]);
   });
 
@@ -64,9 +64,9 @@ void main() {
     final l = SectionLayout.setVisible(
       SectionLayout.defaults('home'),
       'budgets',
-      visible: true,
+      visible: false,
     );
-    expect(SectionLayout.visibleIds(l), contains('budgets'));
+    expect(SectionLayout.visibleIds(l), isNot(contains('budgets')));
   });
 
   // TC-28-08 (FR-28-19)

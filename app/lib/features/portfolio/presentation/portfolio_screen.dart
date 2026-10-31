@@ -188,14 +188,6 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                   onTap: (h) => _sheet(HoldingSheet(holding: h)),
                 ),
           ],
-          if (widget.sipSection != null) ...[
-            widget.sipSection!,
-            const SizedBox(height: 12),
-          ],
-          if (holdings.isNotEmpty || invTxs.isNotEmpty) ...[
-            InvestmentTxSection(items: invTxs, money: money),
-            const SizedBox(height: 12),
-          ],
         ],
       ),
       'loans': loans.any((l) => !l.closed)
@@ -302,6 +294,14 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               w,
               const SizedBox(height: 12),
             ],
+          if (widget.sipSection != null) ...[
+            widget.sipSection!,
+            const SizedBox(height: 12),
+          ],
+          if (holdings.isNotEmpty || invTxs.isNotEmpty) ...[
+            InvestmentTxSection(items: invTxs, money: money),
+            const SizedBox(height: 12),
+          ],
         ],
       ),
     );

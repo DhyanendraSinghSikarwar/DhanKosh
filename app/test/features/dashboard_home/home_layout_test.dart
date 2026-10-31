@@ -54,15 +54,21 @@ void main() {
       });
 
   // FR-17-05, TC-28-16
-  testWidgets('default sections show, budgets hidden', (t) async {
+  testWidgets('default sections show, budgets included', (t) async {
     tall(t);
     await seed(t);
     await pumpApp(t, env, _routes());
     expect(find.byKey(const Key('home_spent')), findsOneWidget);
     expect(find.byKey(const Key('home_upcoming')), findsOneWidget);
-    expect(find.byKey(const Key('home_budgets')), findsNothing);
+    expect(find.byKey(const Key('home_budgets')), findsOneWidget);
     expect(find.byKey(const Key('home_sync')), findsOneWidget);
+    await t.tap(find.byKey(const Key('home_menu')));
+    await settle(t);
     expect(find.byKey(const Key('home_add')), findsOneWidget);
+    expect(find.byKey(const Key('home_accounts_button')), findsOneWidget);
+    await t.tap(find.byKey(const Key('home_edit')));
+    await settle(t);
+    expect(find.byKey(const Key('home_edit_done')), findsOneWidget);
     await teardownApp(t);
   });
 
@@ -71,6 +77,8 @@ void main() {
     tall(t);
     await seed(t);
     await pumpApp(t, env, _routes());
+    await t.tap(find.byKey(const Key('home_menu')));
+    await settle(t);
     await t.tap(find.byKey(const Key('home_edit')));
     await settle(t);
     expect(find.byKey(const Key('home_edit_card')), findsOneWidget);
@@ -83,7 +91,7 @@ void main() {
       SectionLayout.visibleIds(SectionLayout.resolve('home', saved)),
       ['spent', 'cashflow', 'upcoming'],
     );
-    await t.tap(find.byKey(const Key('home_edit')));
+    await t.tap(find.byKey(const Key('home_edit_done')));
     await settle(t);
     expect(find.byKey(const Key('home_upcoming')), findsOneWidget);
     expect(find.byKey(const Key('home_tx_1')), findsNothing);
@@ -94,11 +102,13 @@ void main() {
     tall(t);
     await seed(t);
     await pumpApp(t, env, _routes());
+    await t.tap(find.byKey(const Key('home_menu')));
+    await settle(t);
     await t.tap(find.byKey(const Key('home_edit')));
     await settle(t);
     await t.tap(find.byKey(const Key('section-upcoming')));
     await settle(t);
-    await t.tap(find.byKey(const Key('home_edit')));
+    await t.tap(find.byKey(const Key('home_edit_done')));
     await settle(t);
     expect(find.byKey(const Key('home_upcoming')), findsNothing);
     await teardownApp(t);

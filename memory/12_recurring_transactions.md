@@ -499,3 +499,4 @@ abstract interface class RecurringRepository {
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
 | 2026-10-26 | SIP tracker: detection (weekly, monthly, quarterly), stepped add/edit, list on Bills and Portfolio, schema v6 `sips` | Fold adoption |
+| 2026-10-31 | Bills calendar restyled to the approved mock: month stepper above a Monday-first grid of rounded day tiles with coloured dots (EMI amber, card due violet, Bill red, Income mint, Insurance teal), "All of <month>" list of the month's occurrences with day badge and Total, Show all for a day | Home matched to approved mock |

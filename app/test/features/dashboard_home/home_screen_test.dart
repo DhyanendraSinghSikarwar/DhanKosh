@@ -95,11 +95,11 @@ void main() {
       expect(find.byKey(const Key('home_spent')), findsOneWidget);
       expect(
         t.widget<Text>(find.byKey(const Key('home_spent'))).data,
-        '₹2,450.50',
+        '₹2,450',
       );
       expect(
         t.widget<Text>(find.byKey(const Key('home_income'))).data,
-        '₹85,000.00',
+        '₹85,000',
       );
       await t.scrollUntilVisible(
         find.text('Swiggy'),
@@ -168,13 +168,13 @@ void main() {
     await settle(t);
     expect(
       t.widget<Text>(find.byKey(const Key('home_spent'))).data,
-      '₹0.00',
+      '₹0',
     );
     await t.tap(find.byKey(const Key('home_month_next')));
     await settle(t);
     expect(
       t.widget<Text>(find.byKey(const Key('home_spent'))).data,
-      '₹2,450.50',
+      '₹2,450',
     );
     await teardownApp(t);
   });
@@ -192,7 +192,7 @@ void main() {
     await settle(t);
     expect(
       t.widget<Text>(find.byKey(const Key('home_spent'))).data,
-      '₹2,450.50',
+      '₹2,450',
     );
     await teardownApp(t);
   });
