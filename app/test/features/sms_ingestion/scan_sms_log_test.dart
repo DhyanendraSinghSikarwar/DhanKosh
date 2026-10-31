@@ -35,7 +35,9 @@ void main() {
       log: SinkAppLogger(sink),
     )(const SmsScanRequest.recent(14));
     expect(r.inserted, 1);
-    final out = sink.lines.join('\n');
+    // Drop each line's timestamp: its digits can contain '500' by chance.
+    final out =
+        sink.lines.map((l) => l.split(' | ').skip(1).join(' | ')).join('\n');
     expect(out, contains('scan.start'));
     expect(out, contains('scan.done'));
     expect(out, contains('added=1'));
