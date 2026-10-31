@@ -4,8 +4,6 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
-## [0.0.4] - 2026-10-27
-
 ### Changed
 - New look across the tabs: coloured icons, mint accent, pill-style bottom bar.
 - Book (Personal, Business, All books) is chosen once in More and applies to every tab; a small tag shows when it is not Personal.
@@ -14,6 +12,18 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Analysis: sub-tabs Spend, Trends, Cash flow, Forecast.
 - Portfolio: news button, asset classes (Stocks, Mutual funds, NPS, EPFO, Sukanya Samriddhi, PPF, FD/RD, Gold) with allocation and class filter.
 - More: options grouped into sections; Accounts lists all accounts, wallets and cards; heart for Support on Profile.
+
+## [0.0.4] - 2026-10-27
+
+### Changed
+- Total expense is now on a cash basis: account spends plus credit-card bill payments, never card purchases (ADR-0011). Transactions, categories and budgets still list card purchases, tagged Card or Account, with All/Accounts/Cards filters.
+
+### Added
+- Book and period scope bars, untracked-payment gaps, split and compare, account merge and personalisation, per-account charts.
+- Charts: category donut drill-down, stacked 12-month bars, forecast fan, Sankey, savings-rate series, compare bars, heatmap; Category detail screen.
+- Home sections with edit mode and presets, greeting header, spent trend, upcoming, insights; Portfolio split, allocation and loans sections.
+- Email: code verification, multiple mailboxes, history window, sender lists, Welcome email sign-in; profile photo crop; occupation and alternate names.
+- Alert actions (paid, snooze, category), screenshot OCR add, loan merge and EMI bars, tax share as PNG/PDF, brand logos and category icons, reduce-motion and backdrop settings.
 
 ## [0.0.3] - 2026-10-26
 
