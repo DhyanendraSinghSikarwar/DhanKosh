@@ -7,9 +7,6 @@ import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/features/dashboard_home/presentation/dashboard_home_screen.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
-import 'package:hisaab/features/savings_goals/data/goal_repository_impl.dart';
-import 'package:hisaab/features/savings_goals/domain/goal.dart';
-import 'package:hisaab/features/savings_goals/presentation/goals_summary_card.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -17,12 +14,10 @@ import '../../support/parsed.dart';
 import '../../support/test_env.dart';
 import '../../support/ui_harness.dart';
 
-List<RouteBase> _routes(List<String> visited, {bool goals = false}) => [
+List<RouteBase> _routes(List<String> visited) => [
       GoRoute(
         path: '/',
-        builder: (_, __) => DashboardHomeScreen(
-          goalsSection: goals ? const GoalsSummaryCard() : null,
-        ),
+        builder: (_, __) => const DashboardHomeScreen(),
       ),
       GoRoute(path: '/goals', builder: (_, __) => const SizedBox()),
       for (final p in [
@@ -97,26 +92,14 @@ void main() {
         t.widget<Text>(find.byKey(const Key('home_spent'))).data,
         '₹2,450',
       );
-      expect(
-        t.widget<Text>(find.byKey(const Key('home_income'))).data,
-        '₹85,000',
-      );
+      expect(find.byKey(const Key('home_income')), findsNothing);
       await t.scrollUntilVisible(
         find.text('Swiggy'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('Swiggy'), findsOneWidget);
-      await t.scrollUntilVisible(
-        find.text('HDFC Bank ••1234'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.text('HDFC Bank ••1234'), findsOneWidget);
-      expect(
-        t.widget<Text>(find.byKey(const Key('home_balance'))).data,
-        '₹1,32,549',
-      );
+      expect(find.byKey(const Key('home_balance')), findsNothing);
       await t.scrollUntilVisible(
         find.text('Swiggy'),
         -200,
@@ -125,35 +108,6 @@ void main() {
       await t.tap(find.text('Swiggy'));
       await settle(t);
       expect(visited, ['/transaction/1']);
-      await teardownApp(t);
-    });
-  }
-
-  // FR-17-30
-  for (final withGoal in [true, false]) {
-    testWidgets('goals card on home only when goals exist ($withGoal)',
-        (t) async {
-      t.view.physicalSize = const Size(800, 6000);
-      t.view.devicePixelRatio = 1;
-      addTearDown(t.view.reset);
-      await seed(t);
-      if (withGoal) {
-        await t.runAsync(
-          () => GoalRepositoryImpl(env.db).addGoal(
-            const GoalDraft(name: 'Trip', targetMinor: 9000000),
-          ),
-        );
-      }
-      await pumpApp(t, env, _routes([], goals: true));
-      await t.scrollUntilVisible(
-        find.text('Swiggy'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(
-        find.byKey(const Key('goals-summary'), skipOffstage: false),
-        withGoal ? findsOneWidget : findsNothing,
-      );
       await teardownApp(t);
     });
   }
@@ -274,11 +228,6 @@ void main() {
     final card = find.byKey(const Key('home_categories'));
     expect(card, findsOneWidget);
     expect(find.text('SPEND BY CATEGORY'), findsOneWidget);
-    // The accounts strip follows the mock's cards.
-    expect(
-      t.getTopLeft(card).dy,
-      lessThan(t.getTopLeft(find.byKey(const Key('home_balance'))).dy),
-    );
     await t.tap(find.byKey(const Key('home_categories_info')));
     await t.pump();
     expect(find.byKey(const Key('home_categories_note')), findsOneWidget);

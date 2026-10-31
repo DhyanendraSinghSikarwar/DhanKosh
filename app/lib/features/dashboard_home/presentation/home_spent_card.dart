@@ -143,45 +143,6 @@ class _HomeSpentCardState extends ConsumerState<HomeSpentCard> {
             ),
             LegendItem('Last month', muted),
           ]),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _Tile(
-                  label: 'Income',
-                  value: formatAmount(
-                    totals?.incomeMinor ?? 0,
-                    masked: masked,
-                    paise: false,
-                  ),
-                  color: colors?.income,
-                  valueKey: const Key('home_income'),
-                ),
-              ),
-              Expanded(
-                child: _Tile(
-                  label: 'Expenses',
-                  value: formatAmount(
-                    totals?.outMinor ?? 0,
-                    masked: masked,
-                    paise: false,
-                  ),
-                  valueKey: const Key('home_expenses'),
-                ),
-              ),
-              Expanded(
-                child: _Tile(
-                  label: 'Saved',
-                  value: formatAmount(
-                    (totals?.incomeMinor ?? 0) - (totals?.outMinor ?? 0),
-                    masked: masked,
-                    paise: false,
-                  ),
-                  valueKey: const Key('home_saved'),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -206,34 +167,4 @@ class _Step extends StatelessWidget {
               : Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       );
-}
-
-class _Tile extends StatelessWidget {
-  const _Tile({
-    required this.label,
-    required this.value,
-    required this.valueKey,
-    this.color,
-  });
-
-  final String label;
-  final String value;
-  final Key valueKey;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: MockText.small(context)),
-        Text(
-          value,
-          key: valueKey,
-          style: MockText.body(context, color: color)
-              .copyWith(fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
 }

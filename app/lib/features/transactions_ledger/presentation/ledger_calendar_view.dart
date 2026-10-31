@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
+import 'package:hisaab/core/money/money.dart';
+import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_views.dart';
@@ -109,6 +111,9 @@ class _State extends State<LedgerCalendarView> {
         _cell(theme, color, DateTime(m.year, m.month, d), values, peak),
     ];
     final selected = _day;
+    final monthTotal = values.entries
+        .where((e) => e.key.year == m.year && e.key.month == m.month)
+        .fold<int>(0, (a, e) => a + e.value);
     final dayRows = selected == null
         ? const <LedgerTx>[]
         : [
@@ -161,6 +166,17 @@ class _State extends State<LedgerCalendarView> {
                 calendarCaption(widget.kind),
                 key: const Key('cal_caption'),
               ),
+              const SizedBox(height: 4),
+              Text(
+                formatMoney(
+                  Money(monthTotal),
+                  masked: widget.masked,
+                  showPaise: false,
+                ),
+                key: const Key('cal_month_total'),
+                style: theme.textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -176,13 +192,36 @@ class _State extends State<LedgerCalendarView> {
                 crossAxisCount: 7,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 1.15,
+                childAspectRatio: 0.9,
                 children: cells,
               ),
             ],
           ),
         ),
         const SizedBox(height: 8),
+        if (selected != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${selected.day} ${_months[selected.month - 1]}',
+                  style: theme.textTheme.titleSmall,
+                ),
+                Text(
+                  formatMoney(
+                    Money(values[selected] ?? 0),
+                    masked: widget.masked,
+                    showPaise: false,
+                  ),
+                  key: const Key('cal_day_total'),
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ),
         if (selected != null)
           AppCard(
             key: const Key('cal_day_rows'),
@@ -200,6 +239,14 @@ class _State extends State<LedgerCalendarView> {
           ),
       ],
     );
+  }
+
+  /// Whole-rupee amount in K / L for a day cell.
+  String _compact(int minor) {
+    final r = minor / 100;
+    if (r >= 100000) return '${(r / 100000).toStringAsFixed(1)}L';
+    if (r >= 1000) return '${(r / 1000).toStringAsFixed(r >= 10000 ? 0 : 1)}K';
+    return r.round().toString();
   }
 
   bool _sameDay(DateTime a, DateTime b) =>
@@ -228,10 +275,23 @@ class _State extends State<LedgerCalendarView> {
           borderRadius: BorderRadius.circular(8),
           border: sel ? Border.all(color: color, width: 1.5) : null,
         ),
-        child: Text(
-          '${day.day}',
-          key: v == null ? null : Key('cal_val_${day.day}'),
-          style: const TextStyle(fontSize: 11),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '${day.day}',
+              key: v == null ? null : Key('cal_val_${day.day}'),
+              style: const TextStyle(fontSize: 11),
+            ),
+            if (v != null)
+              Text(
+                widget.masked ? '••' : _compact(v),
+                style: TextStyle(
+                  fontSize: 8,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
         ),
       ),
     );

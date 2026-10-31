@@ -205,8 +205,8 @@ void main() {
 
   testWidgets('book tag beside title (FR-20-23)', (t) async {
     await pump(t, data: rows);
-    expect(find.byKey(const Key('book_tag')), findsOneWidget);
-    expect(find.text('All books'), findsOneWidget);
+    expect(find.byKey(const Key('book_tag')), findsNothing);
+    expect(find.text('All books'), findsNothing);
     expect(find.byKey(const Key('book_business')), findsNothing);
     await teardownApp(t);
   });

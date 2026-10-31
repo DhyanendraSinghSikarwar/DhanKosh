@@ -44,7 +44,7 @@ class BookTag extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final book = ref.watch(bookProvider);
-    if (book == Book.personal) return const SizedBox.shrink();
+    if (book != Book.business) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
     return Container(
       key: const Key('book_tag'),

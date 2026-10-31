@@ -104,8 +104,8 @@ void main() {
     await t.pump();
     expect(find.byKey(const Key('acckind_card')), findsNothing);
     expect(find.byKey(const Key('book_business')), findsNothing);
-    // Default Book is All books: tag shown.
-    expect(find.text('All books'), findsOneWidget);
+    // The tag shows only for Business, so the default All books has none.
+    expect(find.text('All books'), findsNothing);
     await t.tap(find.byKey(const Key('source_dropdown')));
     await t.pumpAndSettle();
     await t.tap(find.text('Cards').last);

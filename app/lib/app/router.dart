@@ -52,7 +52,6 @@ import 'package:hisaab/features/recurring_transactions/presentation/recurring_tr
 import 'package:hisaab/features/recurring_transactions/presentation/sip_section.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/sip_setup_sheet.dart';
 import 'package:hisaab/features/savings_goals/presentation/goals_screen.dart';
-import 'package:hisaab/features/savings_goals/presentation/goals_summary_card.dart';
 import 'package:hisaab/features/savings_goals/presentation/goals_tile.dart';
 import 'package:hisaab/features/security_privacy/presentation/security_privacy_screen.dart';
 import 'package:hisaab/features/security_privacy/presentation/security_tile.dart';
@@ -245,7 +244,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/home',
                 builder: (_, __) => const DashboardHomeScreen(
                   cardsSection: CardsHomeStrip(),
-                  goalsSection: GoalsSummaryCard(),
                   layoutEditor: SectionLayoutEditor(screenId: ScreenIds.home),
                 ),
               ),

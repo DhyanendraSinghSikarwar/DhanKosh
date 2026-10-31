@@ -77,7 +77,7 @@ class HomeHeader extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    if (book != Book.personal) ...[
+                    if (book == Book.business) ...[
                       const SizedBox(width: 8),
                       _BookTag(book),
                     ],

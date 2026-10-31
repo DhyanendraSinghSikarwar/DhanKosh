@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/layout_providers.dart';
-import 'package:hisaab/features/dashboard_home/presentation/home_accounts_strip.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_attention_card.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_budget_widgets.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_categories_card.dart';
@@ -26,17 +25,12 @@ import 'package:hisaab/shared/widgets/empty_state.dart';
 class DashboardHomeScreen extends ConsumerStatefulWidget {
   const DashboardHomeScreen({
     this.cardsSection,
-    this.goalsSection,
     this.layoutEditor,
     super.key,
   });
 
   /// Optional cards strip embedded by the app composition (F-14).
   final Widget? cardsSection;
-
-  /// Optional goals summary embedded by the app composition (FR-17-30). It
-  /// renders nothing when there are no goals.
-  final Widget? goalsSection;
 
   /// Section editor shown in edit mode, composed by the router from
   /// Customise (FR-28-15). Without it the edit button opens Customise.
@@ -115,7 +109,6 @@ class _DashboardHomeScreenState extends ConsumerState<DashboardHomeScreen> {
                           if (_section(id, recent, masked) case final w?) w,
                         ],
                         if (tail == null) ..._attentionAndGoals(),
-                        HomeAccountsStrip(accounts: accounts, masked: masked),
                         const SizedBox(height: 12),
                         const _PrivacyBadge(),
                       ],
@@ -125,10 +118,7 @@ class _DashboardHomeScreenState extends ConsumerState<DashboardHomeScreen> {
     );
   }
 
-  List<Widget> _attentionAndGoals() => [
-        const HomeAttentionCard(),
-        if (widget.goalsSection != null) widget.goalsSection!,
-      ];
+  List<Widget> _attentionAndGoals() => [const HomeAttentionCard()];
 }
 
 class _PrivacyBadge extends StatelessWidget {
