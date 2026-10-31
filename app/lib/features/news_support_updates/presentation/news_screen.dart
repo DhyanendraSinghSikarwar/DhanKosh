@@ -6,6 +6,8 @@ import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
 import 'package:hisaab/features/news_support_updates/domain/news.dart';
 import 'package:hisaab/features/portfolio/domain/portfolio_class.dart';
+import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/pill_tabs.dart';
 
 /// Market news (F-31, FR-31-01 to FR-31-08).
 class NewsScreen extends ConsumerStatefulWidget {
@@ -17,7 +19,7 @@ class NewsScreen extends ConsumerStatefulWidget {
 }
 
 class _NewsScreenState extends ConsumerState<NewsScreen> {
-  bool _mine = false;
+  bool _mine = true;
 
   @override
   void initState() {
@@ -37,31 +39,31 @@ class _NewsScreenState extends ConsumerState<NewsScreen> {
     final s = ref.watch(newsControllerProvider);
     final c = ref.read(newsControllerProvider.notifier);
     return Scaffold(
-      appBar: AppBar(title: const Text('Market news')),
+      appBar: AppBar(title: const Text('Latest news')),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: SegmentedButton<bool>(
-              key: const Key('news-scope'),
-              segments: const [
-                ButtonSegment(value: true, label: Text('My holdings')),
-                ButtonSegment(value: false, label: Text('Market')),
-              ],
-              selected: {_mine},
-              onSelectionChanged: (v) => setState(() => _mine = v.first),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: PillTabs(
+                keyPrefix: 'news-scope',
+                labels: const ['My holdings', 'Market'],
+                selected: _mine ? 0 : 1,
+                onChanged: (i) => setState(() => _mine = i == 0),
+              ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: SegmentedButton<NewsFeed>(
-              key: const Key('news-tabs'),
-              segments: [
-                for (final f in NewsFeed.values)
-                  ButtonSegment(value: f, label: Text(f.label)),
-              ],
-              selected: {s.feed},
-              onSelectionChanged: (v) => c.load(v.first),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: PillTabs(
+                keyPrefix: 'news-tab',
+                labels: [for (final f in NewsFeed.values) f.label],
+                selected: NewsFeed.values.indexOf(s.feed),
+                onChanged: (i) => c.load(NewsFeed.values[i]),
+              ),
             ),
           ),
           Expanded(child: _body(s, c)),
@@ -113,38 +115,77 @@ class _NewsScreenState extends ConsumerState<NewsScreen> {
         child: Text('No headlines for your holdings'),
       );
     }
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     return RefreshIndicator(
       onRefresh: () => c.load(s.feed, force: true),
-      child: ListView.builder(
+      child: ListView(
         key: const Key('news-list'),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: items.length,
-        itemBuilder: (_, i) {
-          final h = items[i];
-          final age = ageText(h.published, now);
-          return ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              h.title,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: i == 0 ? 17 : 15,
-                fontWeight: i == 0 ? FontWeight.bold : FontWeight.w600,
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        children: [
+          AppCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Column(
+              children: [
+                for (final h in items)
+                  _row(h, ageText(h.published, now), muted),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+            child: Text(
+              'Only headlines are fetched. Your holdings never leave the '
+              'phone.',
+              style: TextStyle(fontSize: 12, color: muted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(Headline h, String age, Color muted) {
+    final tag = headlineClassLabel(h.title);
+    return InkWell(
+      // FR-31-08: failures are ignored silently.
+      onTap: () async {
+        try {
+          await ref.read(widgetChannelProvider).openUrl(h.link);
+        } on Object {
+          // ignore
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(h.title, maxLines: 3, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 3),
+                  Text(
+                    age.isEmpty ? h.source : '${h.source} · $age',
+                    style: TextStyle(fontSize: 12, color: muted),
+                  ),
+                ],
               ),
             ),
-            subtitle: Text(age.isEmpty ? h.source : '${h.source} · $age'),
-            trailing: const Icon(Icons.open_in_new, size: 18),
-            // FR-31-08: failures are ignored silently.
-            onTap: () async {
-              try {
-                await ref.read(widgetChannelProvider).openUrl(h.link);
-              } on Object {
-                // ignore
-              }
-            },
-          );
-        },
+            if (tag != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Text(tag, style: TextStyle(fontSize: 10, color: muted)),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

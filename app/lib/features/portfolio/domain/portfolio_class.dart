@@ -81,22 +81,33 @@ List<ClassGroup> groupByClass(List<Holding> holdings) => [
           ),
     ];
 
+const _newsTerms = <PortfolioClass, List<String>>{
+  PortfolioClass.stocks: ['stock', 'sensex', 'nifty', 'shares'],
+  PortfolioClass.mutualFunds: ['mutual fund', 'sip', 'amfi'],
+  PortfolioClass.nps: ['nps', 'pension'],
+  PortfolioClass.epfo: ['epfo', 'epf', 'provident fund'],
+  PortfolioClass.sukanya: ['sukanya', 'small savings'],
+  PortfolioClass.ppf: ['ppf', 'small savings'],
+  PortfolioClass.fixedDeposit: ['fixed deposit', 'fd rate', 'deposit rate'],
+  PortfolioClass.gold: ['gold'],
+};
+
+/// Class label a headline relates to, null when it names none (the tag on a
+/// news row).
+String? headlineClassLabel(String title) {
+  final t = title.toLowerCase();
+  for (final e in _newsTerms.entries) {
+    if (e.value.any(t.contains)) return e.key.label;
+  }
+  return null;
+}
+
 /// Lower-case words that mark a headline as relevant to [holdings]: class
 /// terms plus the first word of each holding name (FR-31-40).
 Set<String> holdingNewsKeywords(List<Holding> holdings) {
-  const byClass = <PortfolioClass, List<String>>{
-    PortfolioClass.stocks: ['stock', 'sensex', 'nifty', 'shares'],
-    PortfolioClass.mutualFunds: ['mutual fund', 'sip', 'amfi'],
-    PortfolioClass.nps: ['nps', 'pension'],
-    PortfolioClass.epfo: ['epfo', 'epf', 'provident fund'],
-    PortfolioClass.sukanya: ['sukanya', 'small savings'],
-    PortfolioClass.ppf: ['ppf', 'small savings'],
-    PortfolioClass.fixedDeposit: ['fixed deposit', 'fd rate', 'deposit rate'],
-    PortfolioClass.gold: ['gold'],
-  };
   final out = <String>{};
   for (final h in holdings) {
-    out.addAll(byClass[portfolioClassOf(h.kind)] ?? const []);
+    out.addAll(_newsTerms[portfolioClassOf(h.kind)] ?? const []);
     final first = h.name.trim().split(RegExp(r'\s+')).first.toLowerCase();
     if (first.length >= 4) out.add(first);
   }
