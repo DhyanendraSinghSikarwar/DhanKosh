@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/home_card_marks_provider.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/ledger_shell.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_detail_screen.dart';
@@ -151,6 +152,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/bills',
         builder: (_, __) => RecurringTransactionsScreen(
           extraSection: (month, day) => BillsCardDues(month: month, day: day),
+          cardDays: cardDueDatesProvider,
         ),
       ),
       GoRoute(

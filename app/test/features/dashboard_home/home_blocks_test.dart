@@ -115,18 +115,24 @@ void main() {
 
   // FR-17-27
   testWidgets('privacy badge and spent opens Analysis', (t) async {
+    t.view.physicalSize = const Size(800, 6000);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
     await seed(t);
     final visited = <String>[];
     await pumpApp(t, env, _routes(visited));
-    expect(find.text('Data stays on this phone'), findsOneWidget);
     await t.tap(find.byKey(const Key('home_spent_tap')));
     await settle(t);
     expect(visited, ['/analysis']);
+    expect(find.text('Data stays on this phone'), findsOneWidget);
     await teardownApp(t);
   });
 
   // FR-17-25: hidden when empty, locked statement row opens Statements
   testWidgets('needs attention hidden, then shows locked statement', (t) async {
+    t.view.physicalSize = const Size(800, 6000);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
     await seed(t);
     final visited = <String>[];
     await pumpApp(t, env, _routes(visited));

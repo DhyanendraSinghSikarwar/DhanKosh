@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
-import 'package:hisaab/app/di/home_card_marks_provider.dart';
 import 'package:hisaab/app/di/sip_providers.dart';
 import 'package:hisaab/core/utils/ist.dart';
 import 'package:hisaab/features/recurring_transactions/domain/bills_view.dart';
@@ -21,11 +21,19 @@ import 'package:hisaab/shared/widgets/mock_kit.dart';
 /// payments (FR-12-03, 04, 06, 09, 10). Route `/bills`.
 class RecurringTransactionsScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
-  const RecurringTransactionsScreen({this.extraSection, super.key});
+  const RecurringTransactionsScreen({
+    this.extraSection,
+    this.cardDays,
+    super.key,
+  });
 
   /// Optional section composed by the router under the calendar, for the
   /// shown month and selected day (card dues with Mark paid, FR-12-09).
   final Widget Function(DateTime month, DateTime? day)? extraSection;
+
+  /// Days (UTC) a credit-card bill is due, composed by the router; drawn as
+  /// violet dots on the calendar (FR-12-09).
+  final ProviderListenable<Set<DateTime>>? cardDays;
 
   @override
   ConsumerState<RecurringTransactionsScreen> createState() => _State();
@@ -52,7 +60,9 @@ class _State extends ConsumerState<RecurringTransactionsScreen> {
   Widget build(BuildContext context) {
     final bills = ref.watch(billsProvider);
     final masked = ref.watch(hideAmountsProvider).value ?? true;
-    final cardDays = ref.watch(cardDueDatesProvider);
+    final cardDays = widget.cardDays == null
+        ? const <DateTime>{}
+        : ref.watch(widget.cardDays!);
     return Scaffold(
       appBar: AppBar(
         leadingWidth: 76,

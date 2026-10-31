@@ -115,7 +115,7 @@ void main() {
       expect(find.text('HDFC Bank ••1234'), findsOneWidget);
       expect(
         t.widget<Text>(find.byKey(const Key('home_balance'))).data,
-        '₹1,32,549.50',
+        '₹1,32,549',
       );
       await t.scrollUntilVisible(
         find.text('Swiggy'),
@@ -273,11 +273,11 @@ void main() {
     await pumpApp(t, env, _routes([]));
     final card = find.byKey(const Key('home_categories'));
     expect(card, findsOneWidget);
-    expect(find.text('Spend by category'), findsOneWidget);
-    // It is the last card: the accounts strip sits above it.
+    expect(find.text('SPEND BY CATEGORY'), findsOneWidget);
+    // The accounts strip follows the mock's cards.
     expect(
-      t.getTopLeft(find.byKey(const Key('home_balance'))).dy,
-      lessThan(t.getTopLeft(card).dy),
+      t.getTopLeft(card).dy,
+      lessThan(t.getTopLeft(find.byKey(const Key('home_balance'))).dy),
     );
     await t.tap(find.byKey(const Key('home_categories_info')));
     await t.pump();
@@ -288,12 +288,15 @@ void main() {
     await t.tap(find.byKey(const Key('home_categories_back')));
     await t.pump();
     expect(find.byKey(const Key('home_categories_back')), findsNothing);
-    expect(find.text('Spend by category'), findsOneWidget);
+    expect(find.text('SPEND BY CATEGORY'), findsOneWidget);
     await teardownApp(t);
   });
 
   // FR-17-14: review notice routes to /review
   testWidgets('review notice shown and opens review', (t) async {
+    t.view.physicalSize = const Size(800, 6000);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
     await seed(t);
     await t.runAsync(
       () => env.ingest(

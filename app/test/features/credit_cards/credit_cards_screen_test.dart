@@ -168,7 +168,7 @@ void main() {
       (t) async {
     await pump(t, const Scaffold(body: CardsHomeStrip()));
     expect(find.byKey(const Key('home_cards_total')), findsOneWidget);
-    expect(find.text('₹12,345.00'), findsOneWidget);
+    expect(find.text('₹12,345'), findsOneWidget);
     expect(find.textContaining('••5678'), findsOneWidget);
     await teardownApp(t);
   });

@@ -22,6 +22,15 @@ List<RouteBase> _routes() => [
       GoRoute(path: '/accounts', builder: (_, __) => const SizedBox()),
     ];
 
+/// Picks a Home overflow-menu entry (the popup's hit testing is awkward
+/// under the test clock).
+Future<void> _menu(WidgetTester t, String value) async {
+  t
+      .widget<PopupMenuButton<String>>(find.byKey(const Key('home_menu')))
+      .onSelected!(value);
+  await settle(t);
+}
+
 void main() {
   late TestEnv env;
   setUp(() => env = TestEnv());
@@ -63,11 +72,10 @@ void main() {
     expect(find.byKey(const Key('home_budgets')), findsOneWidget);
     expect(find.byKey(const Key('home_sync')), findsOneWidget);
     await t.tap(find.byKey(const Key('home_menu')));
-    await settle(t);
+    await t.pump(const Duration(milliseconds: 400));
     expect(find.byKey(const Key('home_add')), findsOneWidget);
     expect(find.byKey(const Key('home_accounts_button')), findsOneWidget);
-    await t.tap(find.byKey(const Key('home_edit')));
-    await settle(t);
+    await _menu(t, 'edit');
     expect(find.byKey(const Key('home_edit_done')), findsOneWidget);
     await teardownApp(t);
   });
@@ -77,10 +85,7 @@ void main() {
     tall(t);
     await seed(t);
     await pumpApp(t, env, _routes());
-    await t.tap(find.byKey(const Key('home_menu')));
-    await settle(t);
-    await t.tap(find.byKey(const Key('home_edit')));
-    await settle(t);
+    await _menu(t, 'edit');
     expect(find.byKey(const Key('home_edit_card')), findsOneWidget);
     await t.tap(find.byKey(const Key('preset-Minimal')));
     await settle(t);
@@ -102,10 +107,7 @@ void main() {
     tall(t);
     await seed(t);
     await pumpApp(t, env, _routes());
-    await t.tap(find.byKey(const Key('home_menu')));
-    await settle(t);
-    await t.tap(find.byKey(const Key('home_edit')));
-    await settle(t);
+    await _menu(t, 'edit');
     await t.tap(find.byKey(const Key('section-upcoming')));
     await settle(t);
     await t.tap(find.byKey(const Key('home_edit_done')));

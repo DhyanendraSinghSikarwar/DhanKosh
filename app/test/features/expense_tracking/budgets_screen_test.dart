@@ -133,7 +133,7 @@ void main() {
     await pumpApp(t, env, _routes(), initial: '/home');
     expect(find.byKey(const Key('home_budgets')), findsOneWidget);
     expect(find.byKey(const Key('home_ring_food')), findsOneWidget);
-    expect(find.text('Budgets'), findsOneWidget);
+    expect(find.text('BUDGETS'), findsOneWidget);
     await teardownApp(t);
   });
 

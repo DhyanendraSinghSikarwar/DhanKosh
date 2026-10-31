@@ -108,11 +108,11 @@ void main() {
     await pump(t, CardDetailScreen(cardId: cardId));
     expect(
       t.widget<Text>(find.byKey(const Key('card_detail_balance'))).data,
-      '₹12,345.00',
+      '₹12,345',
     );
     expect(
       t.widget<Text>(find.byKey(const Key('card_ov_min'))).data,
-      '₹620.00',
+      '₹620',
     );
     expect(
       t.widget<Text>(find.byKey(const Key('card_detail_note'))).data,
@@ -138,7 +138,7 @@ void main() {
     expect(find.byKey(const Key('card_detail_edited')), findsNothing);
     expect(
       t.widget<Text>(find.byKey(const Key('card_detail_balance'))).data,
-      '₹12,345.00',
+      '₹12,345',
     );
 
     await t.tap(find.byKey(const Key('card_detail_edit')));
@@ -151,11 +151,11 @@ void main() {
     expect(find.byKey(const Key('card_detail_edited')), findsOneWidget);
     expect(
       t.widget<Text>(find.byKey(const Key('card_detail_balance'))).data,
-      '₹20,000.00',
+      '₹20,000',
     );
     expect(
       t.widget<Text>(find.byKey(const Key('card_ov_limit'))).data,
-      '₹1,00,000.00',
+      '₹1,00,000',
     );
     final stored = await t.runAsync(
       () => env.settings.read(cardLimitOverridesKey),
@@ -178,8 +178,11 @@ void main() {
     expect(find.byKey(Key('home_card_$cardId')), findsOneWidget);
     expect(find.byKey(Key('home_card_$bizId')), findsNothing);
     expect(
-      t.widget<Text>(find.byKey(const Key('home_cards_total'))).data,
-      'Total due ₹12,345.00',
+      t
+          .widget<Text>(find.byKey(const Key('home_cards_total')))
+          .textSpan!
+          .toPlainText(),
+      'Total due ₹12,345',
     );
     await teardownApp(t);
   });

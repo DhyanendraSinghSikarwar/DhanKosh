@@ -75,7 +75,11 @@ void main() {
     await seed(t);
     await pumpApp(t, env, _routes(), initial: '/home');
     expect(find.byKey(const Key('home_cashflow')), findsOneWidget);
-    expect(find.textContaining('Saved ₹40,000 · 80%'), findsOneWidget);
+    expect(find.text('Saved · 80%'), findsOneWidget);
+    expect(
+      t.widget<Text>(find.byKey(const Key('home_cashflow_saved'))).data,
+      '₹40,000',
+    );
     await teardownApp(t);
   });
 }
