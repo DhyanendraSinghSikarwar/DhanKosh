@@ -206,5 +206,6 @@ void main() {
     await t.tap(find.byKey(const Key('profile-support')));
     await t.pumpAndSettle();
     expect(find.text('support-page'), findsOneWidget);
+    await teardownApp(t);
   });
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
@@ -6,9 +7,11 @@ import 'package:hisaab/features/activity_log/data/activity_log_repository_impl.d
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/activity_log/presentation/activity_log_screen.dart';
 import 'package:hisaab/features/dashboard_home/presentation/dashboard_home_screen.dart';
+import 'package:hisaab/features/dashboard_home/presentation/home_net_worth_card.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/features/statement_import/data/statement_repository_impl.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
+import 'package:hisaab/shared/providers/amount_masking.dart';
 
 import 'package:parser_core/parser_core.dart';
 
@@ -16,8 +19,19 @@ import '../../support/parsed.dart';
 import '../../support/test_env.dart';
 import '../../support/ui_harness.dart';
 
-List<RouteBase> _routes(List<String> visited) => [
-      GoRoute(path: '/', builder: (_, __) => const DashboardHomeScreen()),
+List<RouteBase> _routes(List<String> visited, {bool nw = false}) => [
+      GoRoute(
+        path: '/',
+        builder: (_, __) => nw
+            ? Consumer(
+                builder: (_, ref, __) => Scaffold(
+                  body: HomeNetWorthCard(
+                    masked: ref.watch(hideAmountsProvider).value ?? true,
+                  ),
+                ),
+              )
+            : const DashboardHomeScreen(),
+      ),
       GoRoute(path: '/activity', builder: (_, __) => const ActivityLogScreen()),
       for (final p in [
         '/accounts',
@@ -66,11 +80,11 @@ void main() {
         );
       });
 
-  // FR-17-26
+  // FR-17-26, FR-17-36: the card stays available but is not on Home.
   testWidgets('net worth card shows value, opens Portfolio', (t) async {
     await seed(t);
     final visited = <String>[];
-    await pumpApp(t, env, _routes(visited));
+    await pumpApp(t, env, _routes(visited, nw: true));
     final v = t.widget<Text>(_value);
     expect(v.data, startsWith('₹'));
     expect(v.data, isNot(contains('•')));
@@ -83,11 +97,19 @@ void main() {
   // FR-17-26, FR-17-19
   testWidgets('net worth masked with hide-amounts', (t) async {
     await seed(t, hide: true);
-    await pumpApp(t, env, _routes([]));
+    await pumpApp(t, env, _routes([], nw: true));
     expect(
       t.widget<Text>(_value).data,
       '₹••••',
     );
+    await teardownApp(t);
+  });
+
+  // FR-17-36
+  testWidgets('Home no longer shows the net worth card', (t) async {
+    await seed(t);
+    await pumpApp(t, env, _routes([]));
+    expect(find.byKey(const Key('home_networth')), findsNothing);
     await teardownApp(t);
   });
 
