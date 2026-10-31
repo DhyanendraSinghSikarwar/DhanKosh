@@ -153,11 +153,11 @@ App name, version with the WhatsNew button, Updates card (Check for updates; Che
 - FR-31-04: Merged items are sorted newest first (null date last), de-duplicated first by link then by normalised title (lower-case letters and digits only), and capped at 200.
 - FR-31-05: Each tab's result is cached in memory for 10 minutes; pull-to-refresh and "Try again" bypass the cache.
 - FR-31-06: News shows skeleton cards (6) while loading with no items, the headline list when items exist, and the error state ("Couldn't load headlines", "Check your connection and try again.", "Try again") when loading failed with no items.
-- FR-31-07: A headline card shows an accent rule, title (3 lines max), `source · age` and an open-in-browser icon; the first item is larger; age strings are "just now", "{n}m ago", "{n}h ago", "{n}d ago".
+- FR-31-07: Headlines sit in one card as rows: title (3 lines max), `source · age` and a class tag when the title names an asset class; scope (My holdings default, Market) and tab pills sit above, and the note "Only headlines are fetched. Your holdings never leave the phone." below; age strings are "just now", "{n}m ago", "{n}h ago", "{n}d ago".
 - FR-31-08: Tapping a headline opens its link in the external browser; failures are ignored silently.
 - FR-31-09: The news request carries no user identifiers or app data.
 - FR-31-10: The Support page is available only when a UPI id (or QR) is configured; otherwise the entry point (Profile cup icon) is hidden.
-- FR-31-11: The Support page shows the intro card, amount pills ₹100, ₹200, ₹500 and Custom (digits only, max 6), the "Pay with a UPI app" button and the thank-you footer.
+- FR-31-11: The Support page (title Support) shows one hero card: heart, "Support DhanKosh", "Free, offline, no ads. A tip is optional.", amount chips ₹49, ₹99 (preselected), ₹199 and Other (digits only, max 6), the "Pay with UPI" button and "Opens your UPI app. DhanKosh sends nothing."
 - FR-31-12: The pay action opens a chooser with the link `upi://pay?pa=<VPA>&pn=DhanKosh&cu=INR[&am=<rupees>]` (VPA percent-encoded except `@` and `.`); with no UPI handler it shows "No UPI app found".
 - FR-31-13: The VPA is loaded from configuration (not hard-coded in source) and is never displayed in the UI.
 - FR-31-14: The app stores nothing about donations.
@@ -187,7 +187,7 @@ App name, version with the WhatsNew button, Updates card (Check for updates; Che
 - FR-31-37: The update flow sends no user data or identifiers: anonymous GETs to GitHub only, User-Agent `DhanKosh`, no analytics.
 - FR-31-38: The log records counts and codes only for the update flow (no URLs, paths or versions beyond the app start line).
 - FR-31-40: The news screen has a My holdings / Market toggle (default Market). My holdings keeps headlines whose title mentions a class term or the first word of a holding name (`holdingNewsKeywords`), matched on-device; with no match it shows "No headlines for your holdings". Opening the screen marks headlines seen (clears the Portfolio news button dot, FR-16-44).
-- FR-31-39: The More tab rows for News, Support and Updates use coloured `IconBadge` rows: Market news ("Headlines for your holdings"), Support ("Optional UPI tip", hidden without a VPA) and Check for updates ("Version and release notes") under the About section.
+- FR-31-39: The More tab rows for News, Support and Updates use coloured `IconBadge` rows: Market news ("Headlines for your holdings"), Support ("Optional UPI tip", hidden without a VPA) and Check for updates (subtitle `v<version>`) under the About section.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -444,13 +444,13 @@ Unit:
 - TC-31-08 (FR-31-04): two items with the same link merge to one; two with titles `RBI holds rates!` and `rbi holds rates` merge; 250 items cap to 200; order newest first with null dates last.
 - TC-31-09 (FR-31-05): second `load` within 10 minutes makes no network call; with `force` it does; at 10 min 1 s it does.
 - TC-31-10 (FR-31-07): age formatter boundaries: 30 s just now; 59 m `59m ago`; 60 m `1h ago`; 23 h `23h ago`; 24 h `1d ago`.
-- TC-31-11 (FR-31-12): `upiLink(vpa:'abc@ybl', amount:null)` equals `upi://pay?pa=abc@ybl&pn=DhanKosh&cu=INR`; with 200 appends `&am=200`; amount 0 appends nothing.
+- TC-31-11 (FR-31-12): `upiLink(vpa:'abc@ybl', amount:null)` equals `upi://pay?pa=abc@ybl&pn=DhanKosh&cu=INR`; with 199 appends `&am=199`; amount 0 appends nothing.
 - TC-31-12 (FR-31-02): one of four feeds throws; the result contains items from the other three; all four throwing raises the error.
 
 Widget:
 
 - TC-31-13 (FR-31-06): news screen shows 6 skeleton cards, then list, then error state with the exact copy.
-- TC-31-14 (FR-31-10, FR-31-11): Support hidden when upiId empty; with a VPA the pills ₹100, ₹200, ₹500, Custom render; Custom field accepts only digits up to 6.
+- TC-31-14 (FR-31-10, FR-31-11): Support hidden when upiId empty; with a VPA the chips ₹49, ₹99, ₹199, Other render; Custom field accepts only digits up to 6.
 - TC-31-15 (FR-31-19, FR-31-23): About updates card renders each `UpdateState`; What's new sheet shows cleaned notes, then bundled fallback, then the unavailable message.
 - TC-31-40 (FR-31-40): the Portfolio news button opens the screen (`portfolio_classes_test.dart`); toggle filtering covered by `holdingNewsKeywords` on-device matching (no dedicated widget test yet).
 - TC-31-16 (FR-31-08): tapping a headline calls the launcher with its link in external mode.
@@ -531,3 +531,5 @@ Tests: `test/features/news_support_updates/` (`update_install_test.dart`, `updat
 | 2026-10-31 | My holdings / Market toggle on the news screen; seen state for the Portfolio news dot | Approved Portfolio mockups |
 | 2026-10-27 | In-app update: check, release history, download+SHA-256 verify, install handoff, Home notice, alert, what's new | Update feature |
 | 2026-10-31 | News, Support and Updates More rows restyled as coloured icon rows under Market news and About (FR-31-39) | Approved More/Accounts/Profile mockups |
+| 2026-10-31 | Support page is one hero card with chips 49/99/199/Other and Pay with UPI; update row shows version (FR-31-11, FR-31-39) | More/Accounts/Profile matched to approved mock |
+| 2026-10-31 | News screen matched to approved mock: "Latest news" title, pill scope and tab tabs, one card of rows with class tags, privacy note (Portfolio matched to approved mock) | Approved mock review |

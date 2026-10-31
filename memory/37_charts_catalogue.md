@@ -6,7 +6,7 @@
 | Status | In Progress (Analysis charts C1, C3, C4, C5, C9, C10, C11, C13 built 2026-10-27; Home, Portfolio, Account, Loan charts pending) |
 | Priority | P1 |
 | Phase | 5 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-10-31 |
 
 ## 1. Description
 The Kotlin app draws about twenty charts across Home, Analysis, Portfolio, Account detail and Loan detail. Their data and rules live in the owning feature files; this file is the one place that lists every chart, where it appears, how it behaves and whether the Flutter app has it. It exists so chart work is planned once and the shared chart components are built once.
@@ -48,7 +48,7 @@ Usage by screen (callers confirmed by search):
 | C9 | `IncomeFlowCard` Sankey `CustomPainter` (`SankeyPainter`) with figures below | Done |
 | C10 | `SavingsRateCard` monthly line with average | Done |
 | C11 | `ForecastCard` fan `CustomPainter` (`FanPainter`: actual, expected, band, budget line) | Done |
-| C12 | 30-day cash balance sparkline | `analytics/AnalyticsSegments.kt:162` |
+| C12 | 30-day cash balance sparkline | `analytics/AnalyticsSegments.kt:162`; Flutter `CashProjectionCard` line, Done |
 | C13 | `CompareCard` diverging bars | Done |
 | C14 | Net worth history line with 1M, 6M, 1Y, 3Y, All | `home/HomeWidgets.kt:204`, `invest/PortfolioSections.kt:305` |
 | C15 | Net worth split bar by account and class with legend | `invest/WorthBreakdown` (`PortfolioSections.kt`) |
@@ -166,3 +166,4 @@ Analysis charts built 2026-10-27 in `features/analytics/presentation/analytics_c
 |---|---|---|
 | 2026-10-27 | Created from the Kotlin chart audit | Kotlin parity audit |
 | 2026-10-27 | C1, C3, C4, C5, C9, C10, C11, C13 built (FR-37-02..06); status table updated | Kotlin parity |
+| 2026-10-31 | Analysis charts restyled to the approved mock (mint, blue, amber, violet palette, dashed grid, y and x labels, end dots, legends): shared `LineChartView`, `BarsChart`, `DonutChart`, `ChartLegend`, `ChartCard` in `shared/widgets/charts`; `StackedBarsChart`, `PairBarsChart`, `SankeyChart`, `FanChart`, `DivergeBar` under analytics; new Daily spend line/bars, Income against spend bars, 30-day cash line (C12) | Analysis matched to approved mock |

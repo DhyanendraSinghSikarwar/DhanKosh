@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
+import 'package:hisaab/app/di/net_worth_estimate_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -45,6 +46,7 @@ void main() {
           transactionRepositoryProvider.overrideWithValue(env.txs),
           settingsRepositoryProvider.overrideWithValue(env.settings),
           holdingRepositoryProvider.overrideWithValue(holdings),
+          netWorthEstimateProvider.overrideWith((ref) async => []),
           netWorthRepositoryProvider
               .overrideWithValue(NetWorthRepositoryImpl(env.db)),
           netWorthProvider.overrideWith(
@@ -127,12 +129,12 @@ void main() {
     await t.tap(find.byKey(const Key('alloc-row-nps')));
     await settle(t);
     expect(find.byKey(const Key('class-card-gold')), findsOneWidget);
-    // Donut: the largest slice (Bonds & others) starts at three o'clock and
-    // runs clockwise, so its middle is about 25 degrees below the right edge.
+    // Donut: the first slice (Stocks, 8%) starts at three o'clock and runs
+    // clockwise, so its middle is about 14 degrees below the right edge.
     final c = t.getCenter(find.byKey(const Key('alloc-donut')));
-    await t.tapAt(c + const Offset(61, 29));
+    await t.tapAt(c + const Offset(52, 13));
     await settle(t);
-    expect(find.byKey(const Key('class-card-other')), findsOneWidget);
+    expect(find.byKey(const Key('class-card-stocks')), findsOneWidget);
     expect(find.byKey(const Key('class-card-gold')), findsNothing);
     await teardownApp(t);
   });

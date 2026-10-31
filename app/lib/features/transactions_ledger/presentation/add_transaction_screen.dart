@@ -9,6 +9,9 @@ import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
 import 'package:hisaab/features/transactions_ledger/domain/screenshot_fill.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ocr_fill_card.dart';
+import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/section_label.dart';
 import 'package:parser_core/parser_core.dart';
 
 final _accountsProvider = StreamProvider.autoDispose<List<Account>>(
@@ -149,111 +152,140 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Add transaction')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         children: [
           OcrFillCard(accounts: accounts, onFill: _applyFill),
-          const SizedBox(height: 12),
-          SegmentedButton<TransactionType>(
-            key: const Key('add_type'),
-            segments: const [
-              ButtonSegment(
-                value: TransactionType.debit,
-                label: Text('Spent'),
-              ),
-              ButtonSegment(
-                value: TransactionType.credit,
-                label: Text('Received'),
-              ),
-              ButtonSegment(
-                value: TransactionType.transfer,
-                label: Text('Transfer'),
-              ),
-            ],
-            selected: {_type},
-            onSelectionChanged: (s) => setState(() => _type = s.first),
+          const SectionLabel(
+            'Amount',
+            padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
           ),
-          const SizedBox(height: 16),
-          TextField(
-            key: const Key('add_amount'),
-            controller: _amount,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: 'Amount',
-              prefixText: '₹ ',
-              errorText: _error,
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (_type != TransactionType.transfer) ...[
-            TextField(
-              key: const Key('add_payee'),
-              controller: _payee,
-              decoration: const InputDecoration(labelText: 'Payee'),
-            ),
-            const SizedBox(height: 12),
-          ],
-          DropdownButtonFormField<int?>(
-            key: const Key('add_account'),
-            initialValue: _accountId,
-            decoration: InputDecoration(
-              labelText: _type == TransactionType.transfer ? 'From' : 'Account',
-            ),
-            items: [
-              const DropdownMenuItem<int?>(child: Text('None')),
-              for (final a in accounts)
-                DropdownMenuItem<int?>(value: a.id, child: Text(a.label)),
-            ],
-            onChanged: (v) => setState(() => _accountId = v),
-          ),
-          if (_type == TransactionType.transfer) ...[
-            const SizedBox(height: 12),
-            DropdownButtonFormField<int?>(
-              key: const Key('add_to_account'),
-              initialValue: _toAccountId,
-              decoration: const InputDecoration(labelText: 'To'),
-              items: [
-                const DropdownMenuItem<int?>(child: Text('None')),
-                for (final a in accounts)
-                  DropdownMenuItem<int?>(value: a.id, child: Text(a.label)),
+          AppCard(
+            child: Column(
+              children: [
+                SegmentedButton<TransactionType>(
+                  key: const Key('add_type'),
+                  segments: const [
+                    ButtonSegment(
+                      value: TransactionType.debit,
+                      label: Text('Spent'),
+                    ),
+                    ButtonSegment(
+                      value: TransactionType.credit,
+                      label: Text('Received'),
+                    ),
+                    ButtonSegment(
+                      value: TransactionType.transfer,
+                      label: Text('Transfer'),
+                    ),
+                  ],
+                  selected: {_type},
+                  onSelectionChanged: (s) => setState(() => _type = s.first),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  key: const Key('add_amount'),
+                  controller: _amount,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Amount',
+                    prefixText: '₹ ',
+                    errorText: _error,
+                  ),
+                ),
               ],
-              onChanged: (v) => setState(() => _toAccountId = v),
             ),
-          ],
-          if (_type != TransactionType.transfer) ...[
-            const SizedBox(height: 12),
-            DropdownButtonFormField<Category>(
-              key: const Key('add_category'),
-              initialValue: _category,
-              decoration: const InputDecoration(labelText: 'Category'),
-              items: [
-                for (final c in Category.values)
-                  DropdownMenuItem(value: c, child: Text(c.label)),
+          ),
+          const SectionLabel(
+            'Details',
+            padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
+          ),
+          AppCard(
+            child: Column(
+              children: [
+                if (_type != TransactionType.transfer) ...[
+                  TextField(
+                    key: const Key('add_payee'),
+                    controller: _payee,
+                    decoration: const InputDecoration(labelText: 'Payee'),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                DropdownButtonFormField<int?>(
+                  key: const Key('add_account'),
+                  initialValue: _accountId,
+                  decoration: InputDecoration(
+                    labelText:
+                        _type == TransactionType.transfer ? 'From' : 'Account',
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(child: Text('None')),
+                    for (final a in accounts)
+                      DropdownMenuItem<int?>(value: a.id, child: Text(a.label)),
+                  ],
+                  onChanged: (v) => setState(() => _accountId = v),
+                ),
+                if (_type == TransactionType.transfer) ...[
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int?>(
+                    key: const Key('add_to_account'),
+                    initialValue: _toAccountId,
+                    decoration: const InputDecoration(labelText: 'To'),
+                    items: [
+                      const DropdownMenuItem<int?>(child: Text('None')),
+                      for (final a in accounts)
+                        DropdownMenuItem<int?>(
+                          value: a.id,
+                          child: Text(a.label),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() => _toAccountId = v),
+                  ),
+                ],
+                if (_type != TransactionType.transfer) ...[
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<Category>(
+                    key: const Key('add_category'),
+                    initialValue: _category,
+                    decoration: const InputDecoration(labelText: 'Category'),
+                    items: [
+                      for (final c in Category.values)
+                        DropdownMenuItem(value: c, child: Text(c.label)),
+                    ],
+                    onChanged: (v) =>
+                        setState(() => _category = v ?? Category.other),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                ListTile(
+                  key: const Key('add_date'),
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Date'),
+                  trailing: Text('${_when.day}/${_when.month}/${_when.year}'),
+                  onTap: _pickDate,
+                ),
+                TextField(
+                  key: const Key('add_reference'),
+                  controller: _ref,
+                  decoration: const InputDecoration(labelText: 'Reference'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('add_note'),
+                  controller: _note,
+                  decoration: const InputDecoration(labelText: 'Note'),
+                ),
               ],
-              onChanged: (v) => setState(() => _category = v ?? Category.other),
             ),
-          ],
-          const SizedBox(height: 12),
-          ListTile(
-            key: const Key('add_date'),
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Date'),
-            trailing: Text('${_when.day}/${_when.month}/${_when.year}'),
-            onTap: _pickDate,
           ),
-          TextField(
-            key: const Key('add_reference'),
-            controller: _ref,
-            decoration: const InputDecoration(labelText: 'Reference'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            key: const Key('add_note'),
-            controller: _note,
-            decoration: const InputDecoration(labelText: 'Note'),
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           FilledButton(
             key: const Key('add_save'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppIcons.mint,
+              foregroundColor: const Color(0xFF06220F),
+              minimumSize: const Size.fromHeight(48),
+            ),
             onPressed: _saving ? null : _save,
             child: const Text('Save'),
           ),

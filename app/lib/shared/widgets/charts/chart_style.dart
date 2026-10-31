@@ -29,7 +29,16 @@ abstract final class ChartColors {
   static const grey = Color(0xFF8C9893);
 
   /// Category and legend order.
-  static const palette = [mint, blue, amber, violet, red, teal, olive, grey];
+  static const List<Color> palette = [
+    mint,
+    blue,
+    amber,
+    violet,
+    red,
+    teal,
+    olive,
+    grey,
+  ];
 }
 
 /// Theme colours shared by every analysis chart.
@@ -40,6 +49,7 @@ class ChartStyle {
     required this.label,
     required this.fg,
     required this.track,
+    this.base,
   });
 
   /// Reads the style from the ambient theme.
@@ -50,6 +60,7 @@ class ChartStyle {
       label: s.onSurfaceVariant,
       fg: s.onSurface,
       track: s.surfaceContainerHighest,
+      base: Theme.of(context).textTheme.bodyMedium,
     );
   }
 
@@ -64,6 +75,9 @@ class ChartStyle {
 
   /// Empty bar and ring background.
   final Color track;
+
+  /// Theme text style the labels inherit the font from.
+  final TextStyle? base;
 }
 
 /// Compact rupee label for an axis: 0, 500, 47K, 1.2L, 2L. Masked: `••`.
@@ -140,11 +154,13 @@ void paintText(
   TextAlign align = TextAlign.left,
   FontWeight? weight,
   double? maxWidth,
+  TextStyle? base,
 }) {
   final tp = TextPainter(
     text: TextSpan(
       text: text,
-      style: TextStyle(color: color, fontSize: size, fontWeight: weight),
+      style: (base ?? const TextStyle())
+          .copyWith(color: color, fontSize: size, fontWeight: weight),
     ),
     textDirection: TextDirection.ltr,
     maxLines: 1,
@@ -201,6 +217,7 @@ void paintGrid(
       label(v),
       Offset(p.left - 4, y),
       color: s.label,
+      base: s.base,
       align: TextAlign.right,
     );
   }

@@ -8,10 +8,12 @@ import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/categorization/domain/category_choice.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:hisaab/features/transactions_ledger/presentation/ledger_category_style.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_tx_tile.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
+import 'package:hisaab/shared/widgets/section_label.dart';
 import 'package:intl/intl.dart';
 
 /// Opens the category picker for a row (supplied by the app shell, which
@@ -268,28 +270,63 @@ class _Body extends ConsumerWidget {
       t.hasExplicitTime ? 'd MMM yyyy, h:mm a' : 'd MMM yyyy',
     ).format(DateTime.fromMillisecondsSinceEpoch(t.timestamp));
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       children: [
-        Text(t.title, style: theme.textTheme.titleLarge),
-        const SizedBox(height: 4),
-        Text(
-          txAmountText(t, masked: masked),
-          key: const Key('detail_amount'),
-          style: theme.textTheme.headlineMedium,
-        ),
-        if (t.needsReview)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              t.reviewReason ?? 'Needs review',
-              style: theme.textTheme.bodyMedium,
-            ),
-          ),
-        const SizedBox(height: 16),
         AppCard(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Column(
+          child: Row(
             children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: theme.colorScheme.surfaceContainerHighest,
+                ),
+                child: Icon(
+                  categoryStyle(t.category).icon,
+                  color: categoryStyle(t.category).color,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      txAmountText(t, masked: masked),
+                      key: const Key('detail_amount'),
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (t.needsReview)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          t.reviewReason ?? 'Needs review',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              SourceTag(t.accountKind),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        AppCard(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          child: Column(
+            children: withDividers([
               _Row(
                 'Category',
                 t.category.label,
@@ -327,12 +364,13 @@ class _Body extends ConsumerWidget {
                 tag: 'detail_note',
                 onTap: () => _editNote(context, ref),
               ),
-            ],
+            ]),
           ),
         ),
-        const SizedBox(height: 16),
-        Text('Messages', style: theme.textTheme.titleSmall),
-        const SizedBox(height: 8),
+        const SectionLabel(
+          'Messages',
+          padding: EdgeInsets.fromLTRB(4, 18, 4, 8),
+        ),
         if (sources.isEmpty)
           const Text('No source messages')
         else

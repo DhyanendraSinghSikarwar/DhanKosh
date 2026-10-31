@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
+import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 
 /// Month-end forecast fan: actual line, dashed expected path, low-high band
 /// and the budget line (FR-18-13). Lists are paise; [actual] runs from day 1
@@ -111,6 +111,7 @@ class _FanPainter extends CustomPainter {
         Offset(p.x(i, n), size.height - 6),
         color: style.label,
         align: TextAlign.center,
+        base: style.base,
       );
     }
     if (c.high.length > 1 && c.low.length == c.high.length) {
@@ -178,6 +179,7 @@ class _FanPainter extends CustomPainter {
         Offset(p.right - 2, y - 7),
         color: ChartColors.red,
         align: TextAlign.right,
+        base: style.base,
       );
     }
   }

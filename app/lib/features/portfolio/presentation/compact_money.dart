@@ -3,7 +3,7 @@
 String compactMoney(int minor) {
   final r = minor.abs() / 100;
   final sign = minor < 0 ? '-' : '';
-  String f(double v) => v >= 10 || v == v.roundToDouble()
+  String f(double v) => v >= 100 || v == v.roundToDouble()
       ? v.round().toString()
       : v.toStringAsFixed(1);
   if (r >= 1e7) return '$sign${f(r / 1e7)}Cr';

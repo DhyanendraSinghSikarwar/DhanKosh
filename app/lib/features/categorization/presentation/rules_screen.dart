@@ -91,6 +91,7 @@ class RulesScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Rules')),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         key: const Key('rule_add'),
         onPressed: () => showRuleEditor(context),
         icon: const Icon(Icons.add),

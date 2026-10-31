@@ -6,6 +6,7 @@ import 'package:hisaab/features/credit_cards/presentation/card_due_format.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/mock_kit.dart';
 
 /// Card dues of the month (or one day) shown on the Bills calendar page,
 /// with Mark paid (FR-14-28). [month] is the first day of the month (UTC);
@@ -41,45 +42,44 @@ class BillsCardDues extends ConsumerWidget {
     }).toList()
       ..sort((a, b) => a.date.compareTo(b.date));
     if (rows.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: AppCard(
-        key: const Key('bills_card_dues'),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Column(
-          children: [
-            for (final r in rows)
-              ListTile(
-                key: Key('bills_card_due_${r.id}'),
-                contentPadding: EdgeInsets.zero,
-                leading: const IconBadge(AppIcons.cards, size: 36),
-                title: Text('${r.name} card bill'),
-                subtitle: Text(
-                  '${r.paid ? 'Paid' : 'Due'} · '
+    return AppCard(
+      key: const Key('bills_card_dues'),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      child: Column(
+        children: [
+          for (final (i, r) in rows.indexed)
+            IconAmountRow(
+              key: Key('bills_card_due_${r.id}'),
+              icon: AppIcons.cards,
+              divider: i < rows.length - 1,
+              title: '${r.name} card bill',
+              subtitle: '${r.paid ? 'Paid' : 'Due'} · '
                   '${cardDate(r.date.difference(DateTime.utc(1970)).inDays)}',
-                ),
-                trailing: r.paid
-                    ? const Icon(Icons.check_circle_outline)
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(cardMoney(r.owed, masked: masked)),
-                          TextButton(
-                            key: Key('bills_card_paid_${r.id}'),
-                            onPressed: () =>
-                                ref.read(cardDueActionsProvider).markPaid(
-                                      ref
-                                          .read(homeCardsProvider)
-                                          .firstWhere((v) => v.card.id == r.id)
-                                          .card,
-                                    ),
-                            child: const Text('Mark paid'),
-                          ),
-                        ],
+              amount: cardWhole(r.owed, masked: masked),
+              trailing: r.paid
+                  ? const Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: Icon(Icons.check_circle_outline, size: 18),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: ActionChip(
+                        key: Key('bills_card_paid_${r.id}'),
+                        label: const Text('Mark paid'),
+                        labelStyle: const TextStyle(fontSize: 11),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () =>
+                            ref.read(cardDueActionsProvider).markPaid(
+                                  ref
+                                      .read(homeCardsProvider)
+                                      .firstWhere((v) => v.card.id == r.id)
+                                      .card,
+                                ),
                       ),
-              ),
-          ],
-        ),
+                    ),
+            ),
+        ],
       ),
     );
   }

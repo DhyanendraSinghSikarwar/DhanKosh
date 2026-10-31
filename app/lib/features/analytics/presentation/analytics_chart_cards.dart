@@ -5,18 +5,18 @@ import 'package:hisaab/features/analytics/domain/analytics_math.dart';
 import 'package:hisaab/features/analytics/domain/analytics_models.dart';
 import 'package:hisaab/features/analytics/domain/chart_data.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
-import 'package:hisaab/features/analytics/presentation/analytics_card.dart';
 import 'package:hisaab/features/analytics/presentation/analytics_cards.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_legend.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
 import 'package:hisaab/features/analytics/presentation/charts/diverge_bar.dart';
-import 'package:hisaab/features/analytics/presentation/charts/donut_chart.dart';
 import 'package:hisaab/features/analytics/presentation/charts/fan_chart.dart';
-import 'package:hisaab/features/analytics/presentation/charts/line_chart_view.dart';
 import 'package:hisaab/features/analytics/presentation/charts/pair_bars_chart.dart';
 import 'package:hisaab/features/analytics/presentation/charts/sankey_chart.dart';
 import 'package:hisaab/features/analytics/presentation/charts/stacked_bars_chart.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:hisaab/shared/widgets/charts/chart_card.dart';
+import 'package:hisaab/shared/widgets/charts/chart_legend.dart';
+import 'package:hisaab/shared/widgets/charts/chart_style.dart';
+import 'package:hisaab/shared/widgets/charts/donut_chart.dart';
+import 'package:hisaab/shared/widgets/charts/line_chart_view.dart';
 import 'package:parser_core/parser_core.dart';
 
 String _letter(DateTime m) => AnalyticsMath.monthLabel(m).substring(0, 1);
@@ -85,7 +85,7 @@ class _CategoryDonutCardState extends State<CategoryDonutCard> {
     final scheme = Theme.of(context).colorScheme;
     final title = cat == null ? 'By category' : cat.label;
     if (rows.isEmpty) {
-      return AnalyticsCard(
+      return ChartCard(
         label: title,
         tip: _tip,
         child: Column(
@@ -125,7 +125,7 @@ class _CategoryDonutCardState extends State<CategoryDonutCard> {
     final centre = selIdx >= 0 ? rows[selIdx] : null;
     String pct(int v) => '${total == 0 ? 0 : v * 100 ~/ total}%';
     final legend = rows.take(5).toList();
-    return AnalyticsCard(
+    return ChartCard(
       label: title,
       tip: _tip,
       child: Column(
@@ -223,7 +223,11 @@ class _CategoryDonutCardState extends State<CategoryDonutCard> {
               child: TextButton(
                 key: const Key('donut-all'),
                 onPressed: () => setState(() => _all = !_all),
-                child: Text(_all ? 'Show fewer' : 'All ${rows.length} rows'),
+                child: Text(
+                  _all
+                      ? 'Show fewer'
+                      : 'All ${rows.length} ${cat == null ? 'categories' : 'rows'}',
+                ),
               ),
             ),
           if (_all)
@@ -296,7 +300,7 @@ class _MonthlyTrendCardState extends State<MonthlyTrendCard> {
     final avg = ChartData.averageExcludingLast(bars);
     final picked =
         _picked != null && _picked! < bars.length ? bars[_picked!] : null;
-    return AnalyticsCard(
+    return ChartCard(
       label: 'Last 12 months',
       tip: 'Essentials, lifestyle, other. Dashed line is the 11-month '
           'average (current month excluded).',
@@ -378,7 +382,7 @@ class HeatmapCard extends StatelessWidget {
     final d = selection.heatDay;
     final s = selection.heatSlot;
     final muted = TextStyle(color: style.label, fontSize: 12);
-    return AnalyticsCard(
+    return ChartCard(
       label: 'When you spend',
       tip: 'Darker = more spent. Tap a cell to read its total.',
       child: Column(
@@ -391,8 +395,10 @@ class HeatmapCard extends StatelessWidget {
               for (final t in _slotText)
                 Expanded(
                   child: Center(
-                    child: Text(t,
-                        style: TextStyle(color: style.label, fontSize: 10)),
+                    child: Text(
+                      t,
+                      style: TextStyle(color: style.label, fontSize: 10),
+                    ),
                   ),
                 ),
             ],
@@ -490,7 +496,7 @@ class IncomeFlowCard extends StatelessWidget {
     ];
     final income = s.inputs.fold(0, (a, n) => a + n.value);
     final muted = TextStyle(color: scheme.onSurfaceVariant, fontSize: 13);
-    return AnalyticsCard(
+    return ChartCard(
       label: 'Income flow',
       child: Column(
         key: const Key('analytics-flow'),
@@ -544,7 +550,7 @@ class IncomeVsSpendCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final m = months.length > 6 ? months.sublist(months.length - 6) : months;
-    return AnalyticsCard(
+    return ChartCard(
       label: 'Income against spend',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,7 +604,7 @@ class SavingsRateCard extends StatelessWidget {
     final s = AnalyticsMath.savingsSummary(data.savingsRates);
     final scheme = Theme.of(context).colorScheme;
     if (s == null) {
-      return AnalyticsCard(
+      return ChartCard(
         label: 'Savings rate',
         child: Text(
           'Needs at least two months with income in the last 12.',
@@ -611,7 +617,7 @@ class SavingsRateCard extends StatelessWidget {
     final hi = pts.fold<double>(0, (a, p) => math.max(a, p.$2));
     final top = hi <= 0 ? 24.0 : niceMax(hi);
     final bottom = lo < 0 ? -niceMax(-lo) : 0.0;
-    return AnalyticsCard(
+    return ChartCard(
       label: 'Savings rate',
       child: Column(
         key: const Key('analytics-savings'),
@@ -717,7 +723,7 @@ class ForecastCard extends StatelessWidget {
             ],
           ),
         );
-    return AnalyticsCard(
+    return ChartCard(
       label: 'Month-end forecast',
       tip: 'Shaded band is the likely range from past months. Dashed line '
           'is the expected path.',
@@ -769,7 +775,7 @@ class CompareCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final rows = data.changes.take(8).toList();
     final fr = ChartData.divergence(rows);
-    return AnalyticsCard(
+    return ChartCard(
       label: data.isCurrentMonth
           ? 'This month vs last'
           : 'Vs ${data.previousLabel}',
@@ -791,7 +797,7 @@ class CompareCard extends StatelessWidget {
               child: Row(
                 children: [
                   SizedBox(
-                    width: 80,
+                    width: 96,
                     child: Text(
                       c.category.label,
                       overflow: TextOverflow.ellipsis,

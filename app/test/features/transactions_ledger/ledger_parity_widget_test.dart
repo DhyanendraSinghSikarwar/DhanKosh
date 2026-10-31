@@ -73,6 +73,8 @@ void main() {
     await t.pump();
     await t.pump();
     // Headline leaves the card purchase out and says so.
+    await t.tap(find.byKey(const Key('sum_info')));
+    await t.pump();
     expect(find.byKey(const Key('sum_card')), findsOneWidget);
     expect(find.byKey(const Key('sum_basis')), findsOneWidget);
     expect(
@@ -83,6 +85,9 @@ void main() {
     await t.tap(find.byKey(const Key('ledger_view_dropdown')));
     await t.pumpAndSettle();
     await t.tap(find.text('By category').last);
+    await t.pumpAndSettle();
+    expect(find.byKey(const Key('category_bar_food')), findsOneWidget);
+    await t.tap(find.byKey(const Key('category_food')));
     await t.pumpAndSettle();
     final split = t.widget<Text>(find.byKey(const Key('category_split_food')));
     expect(split.data, contains('Account'));

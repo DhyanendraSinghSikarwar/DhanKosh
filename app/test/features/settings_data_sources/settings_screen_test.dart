@@ -79,8 +79,8 @@ void main() {
         ),
       ],
     );
-    expect(find.text('Allowed'), findsOneWidget);
     await openRow(t, 'bank-sms-row');
+    expect(find.text('Allowed'), findsOneWidget);
     await tapAsync(t, const Key('scan-now'));
     for (var i = 0;
         i < 50 && find.byKey(const Key('scan-result')).evaluate().isEmpty;

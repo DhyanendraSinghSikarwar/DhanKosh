@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
+import 'package:hisaab/app/di/net_worth_estimate_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -71,6 +72,7 @@ void main() {
           transactionRepositoryProvider.overrideWithValue(env.txs),
           settingsRepositoryProvider.overrideWithValue(env.settings),
           holdingRepositoryProvider.overrideWithValue(holdings),
+          netWorthEstimateProvider.overrideWith((ref) async => []),
           netWorthRepositoryProvider
               .overrideWithValue(NetWorthRepositoryImpl(env.db)),
           netWorthProvider.overrideWith(
@@ -103,27 +105,35 @@ void main() {
     await settle(t);
   }
 
-  testWidgets('shortcut row: Import statement, Add holding, Add SIP (FR-16-26)',
+  /// Opens the title-row overflow menu and picks [key].
+  Future<void> menu(WidgetTester t, String key) async {
+    await t.tap(find.byKey(const Key('portfolio-more')));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    await t.tap(find.byKey(Key(key)));
+  }
+
+  testWidgets(
+      'overflow menu: Import statement, Add holding, Add SIP (FR-16-26)',
       (t) async {
     await t.runAsync(() => env.settings.write(SettingKeys.hideAmounts, false));
     await pump(t);
-    expect(find.byKey(const Key('portfolio-shortcuts')), findsOneWidget);
     expect(find.byKey(const Key('sip-slot')), findsOneWidget);
-    await t.tap(find.byKey(const Key('shortcut-sip')));
+    await menu(t, 'shortcut-sip');
     await t.pump();
     await t.pump(const Duration(seconds: 1));
     expect(find.byKey(const Key('sip-sheet')), findsOneWidget);
     await t.tapAt(const Offset(10, 10));
     await t.pump();
     await t.pump(const Duration(seconds: 1));
-    await t.tap(find.byKey(const Key('shortcut-holding')));
+    await menu(t, 'shortcut-holding');
     await t.pump();
     await t.pump(const Duration(seconds: 1));
     expect(find.byType(BottomSheet), findsOneWidget);
     await t.tapAt(const Offset(10, 10));
     await t.pump();
     await t.pump(const Duration(seconds: 1));
-    await t.tap(find.byKey(const Key('shortcut-import')));
+    await menu(t, 'shortcut-import');
     await t.pump();
     await t.pump(const Duration(seconds: 1));
     expect(find.text('statements-page'), findsOneWidget);
@@ -144,10 +154,11 @@ void main() {
     await pump(t);
     expect(find.byKey(const Key('nw-as-of')), findsOneWidget);
     expect(find.byKey(const Key('allocation-as-of')), findsOneWidget);
-    expect(find.text('as of 23 Oct 2026'), findsOneWidget);
+    // Allocation card and the newest-date note on each class card.
+    expect(find.text('as of 23 Oct 2026'), findsNWidgets(2));
     expect(
-      find.textContaining('Invested ₹1,00,000 · as of 23 Oct 2026'),
-      findsOneWidget,
+      find.textContaining('Invested ₹1,00,000'),
+      findsWidgets,
     );
     await teardownApp(t);
   });
@@ -232,7 +243,7 @@ void main() {
       (t) async {
     await t.runAsync(() => env.settings.write(SettingKeys.hideAmounts, false));
     await pump(t);
-    await t.tap(find.byKey(const Key('portfolio-settings')));
+    await menu(t, 'portfolio-settings');
     await t.pump();
     await t.pump(const Duration(seconds: 1));
     await settle(t);

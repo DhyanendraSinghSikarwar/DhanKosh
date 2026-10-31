@@ -146,7 +146,7 @@ void main() {
       await shot('transactions_by_category');
       for (final v in const ['Calendar', 'Merchant']) {
         await tester.tap(find.byKey(const Key('ledger_view_dropdown')));
-        await settle(2);
+        await settle(4);
         await tester.tap(find.text(v).last);
         await settle();
         await shot('transactions_${v.toLowerCase()}');

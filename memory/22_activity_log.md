@@ -454,3 +454,4 @@ Phase 5 (2026-10-21). Code: `features/activity_log/{domain,data,presentation}`; 
 | 2026-10-26 | Inbox: unread bell badge, groups, `PROBLEMS` entries with sender code only (FR-22-15 to FR-22-17; TC-22-13 to TC-22-16) | Fold adoption |
 | 2026-10-27 | Statement imports record activity entries (counts and codes only) | Kotlin parity |
 | 2026-10-31 | `ALERTS` source and entry codes for notifications posted and informational events kept out of notifications (FR-22-18) | Action-only notifications, rest in the Activity log |
+| 2026-10-31 | Activity log cards use the shared filled AppCard (radius 20, no border) | More/Accounts/Profile matched to approved mock |

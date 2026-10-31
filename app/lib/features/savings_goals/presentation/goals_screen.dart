@@ -42,6 +42,7 @@ class GoalsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Goals & salary plan')),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         key: const Key('goal-add'),
         onPressed: () => _sheet(context, const GoalSheet()),
         icon: const Icon(Icons.add),

@@ -94,6 +94,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     final all = _history(
       points,
       ref.watch(netWorthEstimateProvider).value ?? const [],
+      nw,
     );
     final latest = all.isEmpty ? null : all.last.day;
     var inRange = [
@@ -382,11 +383,18 @@ class _ClassChips extends StatelessWidget {
 List<WorthPoint> _history(
   List<WorthPoint> recorded,
   List<EstimatedPoint> estimate,
+  NetWorth? now,
 ) {
   final firstRecorded = recorded.isEmpty ? null : recorded.first.day;
-  return [
+  final out = [
     for (final e in estimate)
       if (firstRecorded == null || e.point.day < firstRecorded) e.point,
     ...recorded,
   ];
+  // Without a recorded point for today the line ends at the figure shown.
+  if (now != null && out.isNotEmpty && recorded.isEmpty) {
+    final last = out.removeLast();
+    out.add(WorthPoint(last.day, now.assetsMinor, now.liabilitiesMinor));
+  }
+  return out;
 }

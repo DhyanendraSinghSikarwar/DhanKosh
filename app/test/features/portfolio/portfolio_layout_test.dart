@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
+import 'package:hisaab/app/di/net_worth_estimate_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -36,6 +37,7 @@ void main() {
           transactionRepositoryProvider.overrideWithValue(env.txs),
           settingsRepositoryProvider.overrideWithValue(env.settings),
           holdingRepositoryProvider.overrideWithValue(holdings),
+          netWorthEstimateProvider.overrideWith((ref) async => []),
           netWorthRepositoryProvider
               .overrideWithValue(NetWorthRepositoryImpl(env.db)),
           netWorthProvider.overrideWith(

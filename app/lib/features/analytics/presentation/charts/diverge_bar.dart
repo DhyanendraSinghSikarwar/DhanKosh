@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
+import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 
 /// Bar growing left (mint, fell) or right (red, rose) from a centre tick;
 /// [fraction] is -1..1 of the half width (FR-18-16).

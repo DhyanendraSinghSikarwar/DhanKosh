@@ -58,7 +58,7 @@ class SmsPermissionCard extends StatelessWidget {
                     Text(
                       body,
                       key: const Key('sms-card-body'),
-                      maxLines: blocked ? 4 : 2,
+                      maxLines: blocked ? 4 : 3,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,

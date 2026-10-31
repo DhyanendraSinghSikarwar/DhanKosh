@@ -48,8 +48,8 @@ class LedgerSearchOpen extends Notifier<bool> {
   @override
   bool build() => false;
 
-  /// Opens or closes the field.
-  set open(bool value) => state = value;
+  /// Opens the field if closed, closes it if open.
+  void toggle() => state = !state;
 }
 
 /// Provider of [LedgerSearchOpen].
@@ -75,7 +75,7 @@ class LedgerTitleActions extends ConsumerWidget {
           tooltip: 'Search',
           icon: Icon(open ? Icons.search_off : Icons.search),
           onPressed: () {
-            ref.read(ledgerSearchOpenProvider.notifier).open = !open;
+            ref.read(ledgerSearchOpenProvider.notifier).toggle();
             if (open) ref.read(ledgerViewProvider.notifier).setQuery('');
           },
         ),

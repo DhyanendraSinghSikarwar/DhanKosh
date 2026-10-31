@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
+import 'package:hisaab/app/di/home_card_marks_provider.dart';
 import 'package:hisaab/app/di/sip_providers.dart';
 import 'package:hisaab/core/utils/ist.dart';
 import 'package:hisaab/features/recurring_transactions/domain/bills_view.dart';
@@ -14,6 +15,7 @@ import 'package:hisaab/features/recurring_transactions/presentation/sip_setup_sh
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
+import 'package:hisaab/shared/widgets/mock_kit.dart';
 
 /// Bills & insurance: summary, month calendar and the list of regular
 /// payments (FR-12-03, 04, 06, 09, 10). Route `/bills`.
@@ -50,9 +52,23 @@ class _State extends ConsumerState<RecurringTransactionsScreen> {
   Widget build(BuildContext context) {
     final bills = ref.watch(billsProvider);
     final masked = ref.watch(hideAmountsProvider).value ?? true;
+    final cardDays = ref.watch(cardDueDatesProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bills & insurance'),
+        leadingWidth: 76,
+        leading: Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            key: const Key('bills-back'),
+            onPressed: () => context.pop(),
+            child: const Text('‹ Back'),
+          ),
+        ),
+        centerTitle: true,
+        title: const Text(
+          'Bills and recurring',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
         actions: [
           TextButton(
             key: const Key('sip-add'),
@@ -68,6 +84,7 @@ class _State extends ConsumerState<RecurringTransactionsScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         key: const Key('bills-add'),
+        heroTag: null,
         tooltip: 'Add regular payment',
         onPressed: _sheet,
         child: const Icon(Icons.add),
@@ -84,54 +101,123 @@ class _State extends ConsumerState<RecurringTransactionsScreen> {
             );
           }
           final today = Ist.dateOf(DateTime.now().millisecondsSinceEpoch);
-          final shown = _day == null
-              ? items
-              : BillsView.onDay(items, _day!, RecurringDetector.occursOn);
+          final events = _events(items);
+          final total = events
+              .where((e) => !e.r.income)
+              .fold<int>(0, (s, e) => s + e.r.amountMinor);
+          final day = _day;
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 96),
             children: [
-              _Summary(items: items, today: today, masked: masked),
-              const SizedBox(height: 12),
-              AppCard(
-                child: BillsCalendar(
-                  items: items,
-                  month: _month,
-                  selected: _day,
-                  onMonth: (d) => setState(() {
-                    _month = DateTime.utc(_month.year, _month.month + d);
-                    _day = null;
-                  }),
-                  onSelect: (d) => setState(() => _day = _day == d ? null : d),
+              BillsCalendar(
+                items: items,
+                month: _month,
+                selected: _day,
+                cardDays: cardDays,
+                onMonth: (d) => setState(() {
+                  _month = DateTime.utc(_month.year, _month.month + d);
+                  _day = null;
+                }),
+                onSelect: (d) => setState(() => _day = _day == d ? null : d),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
+                child: Row(
+                  children: [
+                    Text(
+                      day == null
+                          ? 'All of ${monthName(_month.month)}'
+                          : '${day.day} ${monthName(day.month).substring(0, 3)}',
+                      key: const Key('bills-list-title'),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (day == null)
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(text: 'Total '),
+                            TextSpan(
+                              text: formatAmount(
+                                total,
+                                masked: masked,
+                                paise: false,
+                              ),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        style: MockText.small(context),
+                      )
+                    else
+                      MoreLink(
+                        'Show all',
+                        key: const Key('bills-show-all'),
+                        onTap: () => setState(() => _day = null),
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
               if (widget.extraSection != null)
                 widget.extraSection!(_month, _day),
-              if (shown.isEmpty)
+              if (events.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(16),
                   child:
                       Text('Nothing on this day', key: Key('bills-day-empty')),
+                )
+              else
+                AppCard(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  child: Column(
+                    children: [
+                      for (final (i, e) in events.indexed)
+                        _Row(
+                          r: e.r,
+                          date: e.date,
+                          today: today,
+                          masked: masked,
+                          divider: i < events.length - 1,
+                          onTap: () => e.r.loanKey != null
+                              ? context.push(
+                                  '/loans/${Uri.encodeComponent(e.r.loanKey!)}',
+                                )
+                              : _sheet(e.r),
+                        ),
+                    ],
+                  ),
                 ),
-              if (_day == null) ...[
-                const SipSection(),
-                const SizedBox(height: 12),
-              ],
-              for (final r in shown)
-                _Row(
-                  r: r,
-                  today: today,
-                  masked: masked,
-                  onTap: () => r.loanKey != null
-                      ? context
-                          .push('/loans/${Uri.encodeComponent(r.loanKey!)}')
-                      : _sheet(r),
-                ),
+              const SizedBox(height: 12),
+              if (_day == null) const SipSection(),
+              if (_day == null) const SizedBox(height: 12),
+              _Summary(items: items, today: today, masked: masked),
             ],
           );
         },
       ),
     );
+  }
+
+  /// Recurring items falling in the shown month (or on the selected day),
+  /// by date.
+  List<({DateTime date, Recurring r})> _events(List<Recurring> items) {
+    final len = DateTime.utc(_month.year, _month.month + 1, 0).day;
+    final out = <({DateTime date, Recurring r})>[];
+    for (var d = 1; d <= len; d++) {
+      final date = DateTime.utc(_month.year, _month.month, d);
+      if (_day != null && _day != date) continue;
+      for (final r in items) {
+        if (RecurringDetector.occursOn(r, date)) out.add((date: date, r: r));
+      }
+    }
+    return out;
   }
 }
 
@@ -148,16 +234,15 @@ class _Summary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     Widget cell(String label, int minor, Key k) => Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: text.labelMedium),
+              Text(label, style: MockText.small(context)),
               Text(
                 formatAmount(minor, masked: masked, paise: false),
                 key: k,
-                style: text.titleLarge,
+                style: MockText.mid(context),
               ),
             ],
           ),
@@ -184,25 +269,27 @@ class _Summary extends StatelessWidget {
 class _Row extends StatelessWidget {
   const _Row({
     required this.r,
+    required this.date,
     required this.today,
     required this.masked,
+    required this.divider,
     required this.onTap,
   });
 
   final Recurring r;
+  final DateTime date;
   final DateTime today;
   final bool masked;
+  final bool divider;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final days = r.nextDue.difference(today).inDays;
-    final due = days == 0
-        ? 'Due today'
-        : days == 1
-            ? 'Due tomorrow'
-            : 'Due in $days days';
-    final paid = BillsView.paid(r, today);
+    final scheme = Theme.of(context).colorScheme;
+    final days = date.difference(today).inDays;
+    final paid = date == r.nextDue
+        ? BillsView.paid(r, today)
+        : days < 0 && r.lastPaid != null && !r.lastPaid!.isBefore(date);
     final tag = r.loanKey != null
         ? 'EMI'
         : r.manualId == null
@@ -210,27 +297,43 @@ class _Row extends StatelessWidget {
             : r.yearly
                 ? 'Yearly'
                 : null;
-    return ListTile(
+    final when = '${monthName(date.month).substring(0, 3)} ${date.day}';
+    return InkWell(
       key: Key('bill-${r.name}'),
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(
-        Icons.circle,
-        size: 12,
-        color: BillsCalendar.markColor(context, r),
-      ),
-      title: Text(r.name),
-      subtitle: Text(
-        [
-          if (paid) 'Paid' else due,
-          '${r.nextDue.day}/${r.nextDue.month}/${r.nextDue.year}',
+      onTap: onTap,
+      child: IconAmountRow(
+        divider: divider,
+        leading: Container(
+          width: 38,
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            '${date.day}',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: BillsCalendar.markColor(context, r),
+            ),
+          ),
+        ),
+        title: r.name,
+        subtitle: [
+          if (paid) 'Paid' else 'Due',
+          when,
           if (tag != null) tag,
         ].join(' · '),
+        amount: formatAmount(r.amountMinor, masked: masked, paise: false),
+        trailing: paid
+            ? Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Icon(Icons.check, size: 16, color: scheme.primary),
+              )
+            : null,
       ),
-      trailing: Text(
-        formatAmount(r.amountMinor, masked: masked, paise: false),
-        style: Theme.of(context).textTheme.titleSmall,
-      ),
-      onTap: onTap,
     );
   }
 }

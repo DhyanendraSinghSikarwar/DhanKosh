@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
+import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 
 /// Income node on the left, ribbons to the spend groups on the right
 /// (FR-18-09). Outputs are (label, paise, colour).
@@ -59,12 +59,12 @@ class _SankeyPainter extends CustomPainter {
     final xr = size.width * 0.606;
     final n = outputs.length;
     final usable = size.height - 2 * pad - gap * (n - 1);
-    final hs = [
-      for (final o in outputs) math.max(usable * o.$2 / total, 3.0),
+    final hs = <double>[
+      for (final o in outputs) math.max<double>(usable * o.$2 / total, 3),
     ];
-    final stack = hs.fold(0.0, (a, h) => a + h) + gap * (n - 1);
+    final leftH = hs.fold<double>(0, (a, h) => a + h);
+    final stack = leftH + gap * (n - 1);
     var y = pad + (size.height - 2 * pad - stack) / 2;
-    final leftH = hs.fold(0.0, (a, h) => a + h);
     final leftTop = (size.height - leftH) / 2;
     var ly = leftTop;
     final mid = (xl + nodeW + xr) / 2;
@@ -77,14 +77,15 @@ class _SankeyPainter extends CustomPainter {
         ..lineTo(xr, y + h)
         ..cubicTo(mid, y + h, mid, ly + h, xl + nodeW, ly + h)
         ..close();
-      canvas.drawPath(path, Paint()..color = o.$3.withValues(alpha: 0.35));
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(xr, y, nodeW, h),
-          const Radius.circular(3),
-        ),
-        Paint()..color = o.$3,
-      );
+      canvas
+        ..drawPath(path, Paint()..color = o.$3.withValues(alpha: 0.35))
+        ..drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(xr, y, nodeW, h),
+            const Radius.circular(3),
+          ),
+          Paint()..color = o.$3,
+        );
       labelY.add(y + h / 2);
       ly += h;
       y += h + gap;
@@ -102,6 +103,7 @@ class _SankeyPainter extends CustomPainter {
       Offset(0, leftTop + 12),
       color: style.label,
       maxWidth: xl - 4,
+      base: style.base,
     );
     paintText(
       canvas,
@@ -110,6 +112,7 @@ class _SankeyPainter extends CustomPainter {
       color: style.fg,
       weight: FontWeight.w600,
       maxWidth: xl - 4,
+      base: style.base,
     );
     // Keep right labels at least 13 px apart.
     for (var i = 1; i < labelY.length; i++) {
@@ -122,6 +125,7 @@ class _SankeyPainter extends CustomPainter {
         Offset(xr + nodeW + 8, labelY[i]),
         color: style.label,
         maxWidth: size.width - xr - nodeW - 8,
+        base: style.base,
       );
     }
   }

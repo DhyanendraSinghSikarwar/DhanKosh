@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_detector.dart';
+import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/mock_kit.dart';
 import 'package:parser_core/parser_core.dart';
 
 const _names = [
@@ -19,7 +21,12 @@ const _names = [
   'December',
 ];
 
-/// Month grid with a dot per mark and per-day selection (FR-12-09, 10).
+/// Month name, e.g. `November`.
+String monthName(int month) => _names[month - 1];
+
+/// Month stepper, then a card with the Monday-first month grid (rounded
+/// day tiles with coloured dots) and a legend; per-day selection
+/// (FR-12-09, 10).
 class BillsCalendar extends StatelessWidget {
   /// Creates the calendar.
   const BillsCalendar({
@@ -28,6 +35,7 @@ class BillsCalendar extends StatelessWidget {
     required this.selected,
     required this.onMonth,
     required this.onSelect,
+    this.cardDays = const {},
     super.key,
   });
 
@@ -46,68 +54,85 @@ class BillsCalendar extends StatelessWidget {
   /// A day tapped.
   final ValueChanged<DateTime> onSelect;
 
-  /// Dot colour of [r].
+  /// Days (UTC) a card bill is due.
+  final Set<DateTime> cardDays;
+
+  /// Colour of a card-due dot.
+  static const Color cardColor = AppIcons.violet;
+
+  /// Dot colour of [r]: EMI amber, income mint, insurance teal, else red.
   static Color markColor(BuildContext context, Recurring r) {
-    final c = Theme.of(context).extension<SemanticColors>();
-    final scheme = Theme.of(context).colorScheme;
-    if (r.income) return c?.income ?? Colors.green;
-    if (r.loanKey != null) return scheme.primary;
-    if (r.category == Category.insurance) return c?.warning ?? Colors.orange;
-    return c?.expense ?? Colors.red;
+    if (r.income) return AppIcons.mint;
+    if (r.loanKey != null) return AppIcons.amber;
+    if (r.category == Category.insurance) return AppIcons.teal;
+    return AppIcons.red;
   }
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     final len = DateTime.utc(month.year, month.month + 1, 0).day;
-    final lead = month.weekday % 7; // Sunday first
+    final lead = (month.weekday + 6) % 7; // Monday first
     final cells = <Widget>[
-      for (final d in const ['S', 'M', 'T', 'W', 'T', 'F', 'S'])
-        Center(child: Text(d, style: text.labelSmall)),
+      for (final d in const ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
+        Center(child: Text(d, style: MockText.small(context))),
       for (var i = 0; i < lead; i++) const SizedBox.shrink(),
       for (var d = 1; d <= len; d++)
         _day(context, DateTime.utc(month.year, month.month, d)),
     ];
     return Column(
       children: [
-        Row(
-          children: [
-            IconButton(
-              key: const Key('cal-prev'),
-              icon: const Icon(Icons.chevron_left),
-              onPressed: () => onMonth(-1),
-            ),
-            Expanded(
-              child: Text(
-                '${_names[month.month - 1]} ${month.year}',
-                key: const Key('cal-title'),
-                textAlign: TextAlign.center,
-                style: text.titleSmall,
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(
+            children: [
+              IconButton(
+                key: const Key('cal-prev'),
+                icon: const Icon(Icons.chevron_left),
+                onPressed: () => onMonth(-1),
               ),
-            ),
-            IconButton(
-              key: const Key('cal-next'),
-              icon: const Icon(Icons.chevron_right),
-              onPressed: () => onMonth(1),
-            ),
-          ],
+              Expanded(
+                child: Text(
+                  '${monthName(month.month)} ${month.year}',
+                  key: const Key('cal-title'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              IconButton(
+                key: const Key('cal-next'),
+                icon: const Icon(Icons.chevron_right),
+                onPressed: () => onMonth(1),
+              ),
+            ],
+          ),
         ),
-        GridView.count(
-          crossAxisCount: 7,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.3,
-          children: cells,
-        ),
-        const SizedBox(height: 8),
-        const Wrap(
-          spacing: 12,
-          children: [
-            _Legend('Payment', Icons.circle),
-            _Legend('EMI', Icons.circle, emi: true),
-            _Legend('Income', Icons.circle, income: true),
-            _Legend('Insurance', Icons.circle, insurance: true),
-          ],
+        AppCard(
+          child: Column(
+            children: [
+              GridView.count(
+                crossAxisCount: 7,
+                shrinkWrap: true,
+                mainAxisSpacing: 4,
+                crossAxisSpacing: 4,
+                physics: const NeverScrollableScrollPhysics(),
+                children: cells,
+              ),
+              const SizedBox(height: 12),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: LegendRow([
+                  LegendItem('EMI', AppIcons.amber),
+                  LegendItem('Card due', cardColor),
+                  LegendItem('Bill', AppIcons.red),
+                  LegendItem('Income', AppIcons.mint),
+                  LegendItem('Insurance', AppIcons.teal),
+                ]),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -118,30 +143,33 @@ class BillsCalendar extends StatelessWidget {
       for (final r in items)
         if (RecurringDetector.occursOn(r, date)) r,
     ];
+    final colors = <Color>{
+      for (final r in on) markColor(context, r),
+      if (cardDays.contains(date)) cardColor,
+    };
     final scheme = Theme.of(context).colorScheme;
     final sel = selected == date;
     return InkWell(
       key: Key('cal-day-${date.day}'),
+      borderRadius: BorderRadius.circular(10),
       onTap: () => onSelect(date),
       child: Container(
-        decoration: sel
-            ? BoxDecoration(
-                color: scheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              )
-            : null,
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
+          border: sel ? Border.all(color: scheme.primary, width: 2) : null,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('${date.day}'),
+            Text('${date.day}', style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: 3),
             SizedBox(
-              height: 8,
+              height: 5,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  for (final c in {
-                    for (final r in on) markColor(context, r),
-                  }.take(3))
+                  for (final c in colors.take(3))
                     Container(
                       width: 5,
                       height: 5,
@@ -155,44 +183,6 @@ class BillsCalendar extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _Legend extends StatelessWidget {
-  const _Legend(
-    this.label,
-    this.icon, {
-    this.emi = false,
-    this.income = false,
-    this.insurance = false,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool emi;
-  final bool income;
-  final bool insurance;
-
-  @override
-  Widget build(BuildContext context) {
-    final probe = Recurring(
-      name: '',
-      amountMinor: 0,
-      dayOfMonth: 1,
-      category: insurance ? Category.insurance : Category.bills,
-      nextDue: DateTime.utc(2000),
-      occurrences: 0,
-      income: income,
-      loanKey: emi ? 'x' : null,
-    );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 8, color: BillsCalendar.markColor(context, probe)),
-        const SizedBox(width: 4),
-        Text(label, style: Theme.of(context).textTheme.labelSmall),
-      ],
     );
   }
 }

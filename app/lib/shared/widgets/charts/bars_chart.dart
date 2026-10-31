@@ -1,5 +1,7 @@
+// Painters take plain constructor arguments.
+// ignore_for_file: avoid_positional_boolean_parameters
 import 'package:flutter/material.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
+import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 
 /// Single-series bars (daily spend, category by month); paise.
 class BarsChart extends StatelessWidget {
@@ -105,6 +107,7 @@ class _BarsPainter extends CustomPainter {
         Offset(p.left + slot * i + slot / 2, size.height - 6),
         color: style.label,
         align: TextAlign.center,
+        base: style.base,
       );
     }
   }

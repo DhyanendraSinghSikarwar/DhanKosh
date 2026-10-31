@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hisaab/features/analytics/domain/analytics_math.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
-import 'package:hisaab/features/analytics/presentation/analytics_card.dart';
 import 'package:hisaab/features/analytics/presentation/analytics_cards.dart';
-import 'package:hisaab/features/analytics/presentation/charts/bars_chart.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
-import 'package:hisaab/features/analytics/presentation/charts/line_chart_view.dart';
-import 'package:hisaab/features/analytics/presentation/pill_segment.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:hisaab/shared/widgets/charts/bars_chart.dart';
+import 'package:hisaab/shared/widgets/charts/chart_card.dart';
+import 'package:hisaab/shared/widgets/charts/chart_style.dart';
+import 'package:hisaab/shared/widgets/charts/line_chart_view.dart';
+import 'package:hisaab/shared/widgets/charts/pill_segment.dart';
 import 'package:hisaab/shared/widgets/section_label.dart';
 
 /// Total spent: big figure, transaction count, daily average and the
@@ -49,7 +49,7 @@ class TotalSpentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return AnalyticsCard(
+    return ChartCard(
       label: 'Total spent',
       tip: tip,
       tipKey: const Key('analytics-basis-note'),
@@ -189,7 +189,7 @@ class _DailySpendCardState extends State<DailySpendCard> {
     final byDay = LedgerMath.daily(widget.txs);
     final last = widget.upto == null
         ? days - 1
-        : (widget.upto!.difference(widget.from).inDays).clamp(0, days - 1);
+        : widget.upto!.difference(widget.from).inDays.clamp(0, days - 1);
     final perDay = [
       for (var i = 0; i < days; i++)
         byDay[widget.from.add(Duration(days: i))] ?? 0,
@@ -206,7 +206,7 @@ class _DailySpendCardState extends State<DailySpendCard> {
       if (days > 6) (i2, '${widget.from.add(Duration(days: i2)).day}'),
       (days - 1, '${widget.to.day}'),
     ];
-    return AnalyticsCard(
+    return ChartCard(
       label: 'Daily spend',
       trailing: PillSegment(
         options: const ['Line', 'Bars'],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
+import 'package:hisaab/app/di/net_worth_estimate_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -10,6 +11,9 @@ import 'package:hisaab/features/portfolio/data/holding_repository_impl.dart';
 import 'package:hisaab/features/portfolio/data/net_worth_repository_impl.dart';
 import 'package:hisaab/features/portfolio/domain/asset_class.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart';
+import 'package:hisaab/features/portfolio/domain/net_worth_estimate.dart';
+import 'package:hisaab/features/portfolio/presentation/compact_money.dart';
+import 'package:hisaab/features/portfolio/presentation/net_worth_chart.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_screen.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 
@@ -25,7 +29,11 @@ void main() {
   });
   tearDown(() => env.close());
 
-  Future<void> pump(WidgetTester t, {bool dark = false}) async {
+  Future<void> pump(
+    WidgetTester t, {
+    bool dark = false,
+    List<EstimatedPoint> estimate = const [],
+  }) async {
     await t.binding.setSurfaceSize(const Size(420, 1400));
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(
@@ -35,6 +43,7 @@ void main() {
           transactionRepositoryProvider.overrideWithValue(env.txs),
           settingsRepositoryProvider.overrideWithValue(env.settings),
           holdingRepositoryProvider.overrideWithValue(holdings),
+          netWorthEstimateProvider.overrideWith((ref) async => estimate),
           netWorthRepositoryProvider
               .overrideWithValue(NetWorthRepositoryImpl(env.db)),
           netWorthProvider.overrideWith(
@@ -76,12 +85,44 @@ void main() {
         );
       });
 
+  // FR-16-05: the line is drawn from the estimate, never blank with data.
+  testWidgets('net worth chart uses the estimate and range pills', (t) async {
+    await t.runAsync(() => env.settings.write(SettingKeys.hideAmounts, false));
+    final day = DateTime.now().millisecondsSinceEpoch ~/ 86400000;
+    await pump(
+      t,
+      estimate: [
+        for (var i = 5; i >= 0; i--)
+          EstimatedPoint(
+            WorthPoint(day - i * 30, 1000000 + (5 - i) * 100000, 0),
+            estimated: true,
+          ),
+      ],
+    );
+    expect(find.byType(NetWorthChart), findsOneWidget);
+    expect(find.text('History builds up day by day'), findsNothing);
+    expect(find.byKey(const Key('nw-summary')), findsOneWidget);
+    expect(find.text('this year'), findsNothing);
+    await t.tap(find.byKey(const Key('range-6M')));
+    await t.pump();
+    expect(find.textContaining('in 6 months'), findsOneWidget);
+    await teardownApp(t);
+  });
+
+  test('compactMoney', () {
+    expect(compactMoney(196000000), '19.6L');
+    expect(compactMoney(1960000), '19.6K');
+    expect(compactMoney(1840000000), '1.8Cr');
+    expect(compactMoney(5000000), '50K');
+    expect(compactMoney(-250000000), '-25L');
+  });
+
   // TC-16-empty (FR-16-01)
   testWidgets('empty state', (t) async {
     await t.runAsync(() => env.settings.write(SettingKeys.hideAmounts, false));
     await pump(t);
     expect(find.byKey(const Key('portfolio_empty')), findsOneWidget);
-    expect(find.text('Net worth'), findsOneWidget);
+    expect(find.text('NET WORTH'), findsOneWidget);
     await teardownApp(t);
   });
 

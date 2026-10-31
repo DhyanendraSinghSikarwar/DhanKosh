@@ -68,6 +68,7 @@ class ForexRatesScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Forex rates')),
       floatingActionButton: FloatingActionButton(
+        heroTag: null,
         key: const Key('forex-add'),
         onPressed: () => unawaited(_edit(context, ref)),
         child: const Icon(Icons.add),

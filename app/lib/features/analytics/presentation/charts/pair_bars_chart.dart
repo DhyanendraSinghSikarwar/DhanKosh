@@ -1,5 +1,7 @@
+// Painters take plain constructor arguments.
+// ignore_for_file: avoid_positional_boolean_parameters
 import 'package:flutter/material.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
+import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 
 /// Income and spend bars side by side per month (mock "Income against
 /// spend"); values in paise.
@@ -89,6 +91,7 @@ class _PairPainter extends CustomPainter {
         Offset(x0 + bw, size.height - 6),
         color: style.label,
         align: TextAlign.center,
+        base: style.base,
       );
     }
   }

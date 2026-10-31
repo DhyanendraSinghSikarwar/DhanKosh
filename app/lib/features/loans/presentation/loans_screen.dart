@@ -22,6 +22,7 @@ class LoansScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Loans')),
       floatingActionButton: FloatingActionButton(
+        heroTag: null,
         key: const Key('loans-add'),
         tooltip: 'Add loan',
         onPressed: () => showModalBottomSheet<void>(

@@ -46,6 +46,7 @@ class ExpenseTrackingScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Budgets')),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         key: const Key('budget_add'),
         icon: const Icon(Icons.add),
         label: const Text('Budget'),

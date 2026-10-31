@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/section_label.dart';
 
-/// Analysis card: filled [AppCard] with a `SectionLabel` header, an optional
+/// Chart card: filled [AppCard] with a `SectionLabel` header, an optional
 /// (i) tip that opens a small note, and an optional trailing widget.
-class AnalyticsCard extends StatefulWidget {
+class ChartCard extends StatefulWidget {
   /// Creates the card.
-  const AnalyticsCard({
+  const ChartCard({
     required this.label,
     required this.child,
     this.tip,
@@ -35,10 +35,10 @@ class AnalyticsCard extends StatefulWidget {
   final Key? cardKey;
 
   @override
-  State<AnalyticsCard> createState() => _AnalyticsCardState();
+  State<ChartCard> createState() => _ChartCardState();
 }
 
-class _AnalyticsCardState extends State<AnalyticsCard> {
+class _ChartCardState extends State<ChartCard> {
   bool _open = false;
 
   @override

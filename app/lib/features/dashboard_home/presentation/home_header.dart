@@ -165,7 +165,10 @@ class HomeHeader extends ConsumerWidget {
     }
     return showModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (_) => const HomeRefreshSheet(),
     );
   }

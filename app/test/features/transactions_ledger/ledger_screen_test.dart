@@ -77,9 +77,11 @@ void main() {
       expect(income.data, '₹1,000');
       expect(t.widget<Text>(find.byKey(const Key('sum_spent'))).data, '₹700');
       expect(t.widget<Text>(find.byKey(const Key('sum_net'))).data, '₹300');
+      await t.tap(find.byKey(const Key('sum_info')));
+      await t.pump();
       expect(find.text('3 transactions · This month'), findsOneWidget);
-      expect(find.text('-₹500.00'), findsOneWidget);
-      expect(find.text('+₹1,000.00'), findsOneWidget);
+      expect(find.text('₹500'), findsOneWidget);
+      expect(find.text('+₹1,000'), findsOneWidget);
 
       await t.tap(find.byKey(const Key('tx-1')));
       await t.pumpAndSettle();

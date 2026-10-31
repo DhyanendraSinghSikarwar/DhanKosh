@@ -81,7 +81,7 @@ void main() {
   // TC-27-08 (FR-27-07, FR-27-08)
   testWidgets('validation gates Save', (t) async {
     await pump(t);
-    expect(find.text('Asha Demo'), findsOneWidget);
+    expect(find.text('Asha Demo'), findsWidgets);
     expect(saveEnabled(t), isFalse);
     await t.enterText(find.byKey(const Key('profile-pan')), 'abcd1');
     await t.pump();

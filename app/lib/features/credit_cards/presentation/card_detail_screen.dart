@@ -13,6 +13,8 @@ import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
+import 'package:hisaab/shared/widgets/mock_kit.dart';
+import 'package:hisaab/shared/widgets/section_label.dart';
 
 /// Card page `/cards/:id`: statement balance, unbilled, minimum due, limit,
 /// available limit, upcoming payments, card transactions and statement
@@ -119,7 +121,20 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     final now = DateTime.now().millisecondsSinceEpoch;
     return Scaffold(
       appBar: AppBar(
-        title: Text(card.name),
+        leadingWidth: 76,
+        leading: Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            key: const Key('card_detail_back'),
+            onPressed: () => context.pop(),
+            child: const Text('‹ Back'),
+          ),
+        ),
+        centerTitle: true,
+        title: Text(
+          card.name,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
         actions: [
           TextButton(
             key: const Key('card_detail_edit'),
@@ -132,7 +147,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
       ),
       body: ListView(
         key: const Key('card_detail'),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
         children: [
           _Hero(view: v, masked: masked, nowMs: now),
           _AutoNote(view: v),
@@ -227,8 +242,11 @@ class _Heading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-        child: Text(text, style: Theme.of(context).textTheme.titleSmall),
+        padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
+        child: Text(
+          text,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
       );
 }
 
@@ -246,63 +264,78 @@ class _Hero extends StatelessWidget {
     final due = c.dueDay;
     final owed = view.dueMinor;
     final used = view.usedFraction;
+    final scheme = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const IconBadge(AppIcons.cards, size: 36),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    '${c.name} ••${c.last4}',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ),
-                if (view.edited)
-                  const _EditedTag(key: Key('card_detail_edited')),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              cardMoney(owed, masked: masked),
-              key: const Key('card_detail_balance'),
-              style: theme.textTheme.headlineMedium,
-            ),
-            Text(
-              owed > 0 && due != null
-                  ? 'Statement balance · due ${cardDate(due)}'
-                  : 'No dues',
-              style: theme.textTheme.bodySmall,
-            ),
-            if (used != null) ...[
-              const SizedBox(height: 12),
-              LinearProgressIndicator(
-                value: used,
-                minHeight: 7,
-                borderRadius: BorderRadius.circular(4),
-                color: used > 0.4 ? AppIcons.amber : AppIcons.mint,
-              ),
-              const SizedBox(height: 6),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppIcons.violet.withValues(alpha: 0.22),
+              scheme.surfaceContainer,
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
                 children: [
-                  Expanded(
-                    child: Text(
-                      '${(used * 100).round()}% used',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ),
-                  Text(
-                    'Limit ${cardMoney(view.limitMinor!, masked: masked)}',
-                    style: theme.textTheme.bodySmall,
-                  ),
+                  SectionLabel(c.name),
+                  if (view.edited) ...[
+                    const SizedBox(width: 6),
+                    const _EditedTag(key: Key('card_detail_edited')),
+                  ],
+                  const Spacer(),
+                  Text('••${c.last4}', style: MockText.small(context)),
                 ],
               ),
+              const SizedBox(height: 12),
+              Text(
+                cardWhole(owed, masked: masked),
+                key: const Key('card_detail_balance'),
+                style: MockText.big(context),
+              ),
+              Text(
+                owed > 0 && due != null
+                    ? 'Statement balance · due ${cardDate(due)}'
+                    : 'No dues',
+                style: MockText.small(context),
+              ),
+              if (used != null) ...[
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: used,
+                    minHeight: 7,
+                    backgroundColor: scheme.surfaceContainerHighest,
+                    color: AppIcons.mint,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${(used * 100).round()}% used',
+                        style: MockText.small(context),
+                      ),
+                    ),
+                    Text(
+                      'Limit ${cardWhole(view.limitMinor!, masked: masked)}',
+                      style: MockText.small(context),
+                    ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -324,21 +357,28 @@ class _AutoNote extends StatelessWidget {
             ? 'No statement yet. Figures come from your transactions.'
             : 'Filled from statement dated ${cardDateYear(day)}. '
                 'Edit to override.';
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
       child: Row(
         children: [
-          Icon(
-            manual ? Icons.edit_outlined : Icons.auto_awesome_outlined,
-            size: 14,
-            color: Theme.of(context).colorScheme.outline,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Text(
+              manual ? 'Edited' : 'Auto',
+              style: TextStyle(fontSize: 10, color: scheme.primary),
+            ),
           ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               text,
               key: const Key('card_detail_note'),
-              style: Theme.of(context).textTheme.bodySmall,
+              style: MockText.small(context),
             ),
           ),
         ],
@@ -356,23 +396,31 @@ class _Overview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = view.card.position;
-    Widget row(String k, int? v, {required bool edited, Key? key}) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+    final line = Theme.of(context).colorScheme.outlineVariant;
+    Widget row(String k, int? v, {required bool edited, Key? key}) => Container(
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: line)),
+          ),
           child: Row(
             children: [
-              Text(k, style: Theme.of(context).textTheme.bodyMedium),
+              Text(k, style: MockText.small(context).copyWith(fontSize: 14)),
               if (edited) const _EditedTag(),
               const Spacer(),
               Text(
-                v == null ? '–' : cardMoney(v, masked: masked),
+                v == null ? '–' : cardWhole(v, masked: masked),
                 key: key,
-                style: Theme.of(context).textTheme.titleSmall,
+                style: MockText.body(context)
+                    .copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),
         );
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SectionLabel('Overview'),
+        const SizedBox(height: 2),
         row(
           'Statement balance',
           view.card.billedMinor ?? view.card.outstandingMinor,
@@ -428,23 +476,22 @@ class _Upcoming extends ConsumerWidget {
       );
     }
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: Column(
         children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const IconBadge(AppIcons.bills, size: 36),
-            title: const Text('Statement due'),
-            subtitle: Text(cardDate(due)),
-            trailing: Text(cardMoney(owed, masked: masked)),
+          IconAmountRow(
+            icon: AppIcons.bills,
+            title: 'Statement due',
+            subtitle: cardDate(due),
+            amount: cardWhole(owed, masked: masked),
+            divider: c.minDueMinor != null,
           ),
           if (c.minDueMinor != null)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const IconBadge(AppIcons.alerts, size: 36),
-              title: const Text('Minimum due'),
-              subtitle: Text(cardDate(due)),
-              trailing: Text(cardMoney(c.minDueMinor!, masked: masked)),
+            IconAmountRow(
+              icon: AppIcons.alerts,
+              title: 'Minimum due',
+              subtitle: cardDate(due),
+              amount: cardWhole(c.minDueMinor!, masked: masked),
             ),
           Align(
             alignment: Alignment.centerRight,
@@ -471,7 +518,7 @@ class _Txs extends ConsumerWidget {
     final txs =
         ref.watch(cardTransactionsProvider(cardId)).value ?? const <LedgerTx>[];
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: Column(
         children: [
           if (txs.isEmpty)
@@ -479,16 +526,22 @@ class _Txs extends ConsumerWidget {
               padding: EdgeInsets.all(12),
               child: Text('No card transactions yet'),
             ),
-          for (final t in txs)
-            ListTile(
+          for (final (i, t) in txs.indexed)
+            InkWell(
               key: Key('card_tx_${t.id}'),
-              contentPadding: EdgeInsets.zero,
-              title: Text(t.merchant ?? t.bankName),
-              subtitle: Text(
-                cardDate(CardDay.ofMs(t.timestamp)),
-              ),
-              trailing: Text(cardMoney(t.amountMinor, masked: masked)),
               onTap: () => context.push('/transaction/${t.id}'),
+              child: IconAmountRow(
+                icon: AppIcon(
+                  Icons.shopping_bag_outlined,
+                  i.isEven ? AppIcons.blue : AppIcons.amber,
+                ),
+                title: t.merchant ?? t.bankName,
+                subtitle: '${t.category.label} · '
+                    '${cardDate(CardDay.ofMs(t.timestamp))}',
+                amount: cardWhole(t.amountMinor, masked: masked),
+                amountSize: 15,
+                divider: true,
+              ),
             ),
           Center(
             child: TextButton(
@@ -514,7 +567,7 @@ class _History extends ConsumerWidget {
     final hist =
         ref.watch(cardInsightsProvider(cardId)).value?.history ?? const [];
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: Column(
         children: [
           if (hist.isEmpty)
@@ -523,21 +576,19 @@ class _History extends ConsumerWidget {
               child: Text('No statements yet'),
             ),
           for (var i = 0; i < hist.length; i++)
-            ListTile(
+            KeyedSubtree(
               key: Key('card_hist_$i'),
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                hist[i].statementDay == null
+              child: IconAmountRow(
+                divider: i < hist.length - 1,
+                title: hist[i].statementDay == null
                     ? 'Statement'
                     : cardDateYear(hist[i].statementDay!),
-              ),
-              subtitle: Text(
-                hist[i].lateRisk ? 'Late risk' : hist[i].payment.label,
-              ),
-              trailing: Text(
-                hist[i].totalDueMinor == null
+                subtitle:
+                    hist[i].lateRisk ? 'Late risk' : hist[i].payment.label,
+                amount: hist[i].totalDueMinor == null
                     ? '–'
-                    : cardMoney(hist[i].totalDueMinor!, masked: masked),
+                    : cardWhole(hist[i].totalDueMinor!, masked: masked),
+                amountSize: 15,
               ),
             ),
         ],

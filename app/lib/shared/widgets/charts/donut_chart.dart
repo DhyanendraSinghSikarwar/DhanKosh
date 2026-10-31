@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
+import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 
 /// One donut slice.
 class DonutPart {
@@ -146,6 +146,7 @@ class _DonutPainter extends CustomPainter {
       size: 11,
       align: TextAlign.center,
       maxWidth: r * 1.4,
+      base: style.base,
     );
     paintText(
       canvas,
@@ -156,6 +157,7 @@ class _DonutPainter extends CustomPainter {
       weight: FontWeight.w600,
       align: TextAlign.center,
       maxWidth: r * 1.4,
+      base: style.base,
     );
   }
 

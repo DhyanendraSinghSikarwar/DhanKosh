@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
+import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 
 /// One line of a [LineChartView].
 class LineSeries {
@@ -76,15 +76,29 @@ class LineChartView extends StatelessWidget {
       width: double.infinity,
       child: CustomPaint(
         painter: _LinePainter(
-            series, yLabel, xLabels, maxY, minY, pointCount, style),
+          series,
+          yLabel,
+          xLabels,
+          maxY,
+          minY,
+          pointCount,
+          style,
+        ),
       ),
     );
   }
 }
 
 class _LinePainter extends CustomPainter {
-  _LinePainter(this.series, this.yLabel, this.xLabels, this.maxY, this.minY,
-      this.pointCount, this.style);
+  _LinePainter(
+    this.series,
+    this.yLabel,
+    this.xLabels,
+    this.maxY,
+    this.minY,
+    this.pointCount,
+    this.style,
+  );
 
   final List<LineSeries> series;
   final String Function(double) yLabel;
@@ -100,7 +114,9 @@ class _LinePainter extends CustomPainter {
     final p = Plot(size);
     final n = pointCount ??
         series.fold<int>(
-            0, (a, s) => s.values.length > a ? s.values.length : a);
+          0,
+          (a, s) => s.values.length > a ? s.values.length : a,
+        );
     final all = [for (final s in series) ...s.values];
     final top = all.fold<double>(0, (a, v) => v > a ? v : a);
     final max = maxY ?? niceMax(top);
@@ -112,6 +128,7 @@ class _LinePainter extends CustomPainter {
         Offset(p.x(i, n), size.height - 6),
         color: style.label,
         align: TextAlign.center,
+        base: style.base,
       );
     }
     for (final s in series) {
@@ -137,8 +154,10 @@ class _LinePainter extends CustomPainter {
       );
       if (s.endDot) {
         canvas.drawCircle(
-          Offset(p.x(s.values.length - 1, n),
-              p.y(s.values.last.clamp(minY, max), max, minY)),
+          Offset(
+            p.x(s.values.length - 1, n),
+            p.y(s.values.last.clamp(minY, max), max, minY),
+          ),
           4,
           Paint()..color = s.color,
         );

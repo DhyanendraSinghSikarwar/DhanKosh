@@ -69,7 +69,7 @@ void main() {
     );
     await t.tap(find.byKey(const Key('ledger_view_dropdown')));
     await t.pumpAndSettle();
-    await t.tap(find.text('By merchant').last);
+    await t.tap(find.text('Merchant').last);
     await t.pumpAndSettle();
     await t.tap(find.byKey(const Key('merchant_Swiggy')));
     await t.pumpAndSettle();

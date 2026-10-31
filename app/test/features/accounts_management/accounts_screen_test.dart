@@ -221,8 +221,8 @@ void main() {
     });
     await pumpApp(t, env, _routes);
     expect(find.text('Bank accounts'), findsOneWidget);
-    expect(find.text('Cash and wallets (1)'), findsOneWidget);
-    expect(find.text('Credit cards (1)'), findsOneWidget);
+    expect(find.text('Cash and wallets'), findsOneWidget);
+    expect(find.text('Credit cards'), findsOneWidget);
     expect(find.text('Business'), findsOneWidget);
     final container = ProviderScope.containerOf(
       t.element(find.byType(AccountsManagementScreen)),
@@ -230,8 +230,8 @@ void main() {
     container.read(bookProvider.notifier).set(Book.business);
     await settle(t);
     expect(find.text('Bank accounts'), findsNothing);
-    expect(find.text('Cash and wallets (1)'), findsOneWidget);
-    expect(find.text('Credit cards (1)'), findsNothing);
+    expect(find.text('Cash and wallets'), findsOneWidget);
+    expect(find.text('Credit cards'), findsNothing);
     await teardownApp(t);
   });
 }

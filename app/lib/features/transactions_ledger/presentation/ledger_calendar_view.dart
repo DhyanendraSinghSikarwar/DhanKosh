@@ -157,8 +157,10 @@ class _State extends State<LedgerCalendarView> {
                   ),
                 ],
               ),
-              SectionLabel(calendarCaption(widget.kind),
-                  key: const Key('cal_caption')),
+              SectionLabel(
+                calendarCaption(widget.kind),
+                key: const Key('cal_caption'),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [

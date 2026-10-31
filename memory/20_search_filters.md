@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-20 |
-| Status | In progress (Phase 1: search and filters done; Fold adoption 2026-10-26: Source filter and amount range on the Transactions tab; Calendar and By-merchant honour the filters; global Book/Period store pending) ; 2026-10-27 shared Book and Period stores added (not persisted) ; 2026-10-31 mockups applied: source dropdown replaces Accounts/Cards chips, Book chips removed from the filter bar (Book set in More), BookTag widget |
+| Status | In progress (Phase 1: search and filters done; Fold adoption 2026-10-26: Source filter and amount range on the Transactions tab; Calendar and By-merchant honour the filters; global Book/Period store pending) ; 2026-10-27 shared Book and Period stores added (not persisted) ; 2026-10-31 mockups applied: source dropdown replaces Accounts/Cards chips, Book chips removed from the filter bar (Book set in More), BookTag widget ; 2026-10-31 Transactions tab matched to approved mock |
 | Priority | P0 |
 | Phase | 1 |
 | Last Updated | 2026-10-31 |
@@ -466,3 +466,4 @@ Deferred: FR-20-01/02 (global Book store, persistence), FR-20-03 This week / FY 
 | 2026-10-27 | Audit: search and type, bank, source, category filters confirmed done; app-wide Book store, Book chip, shared Period store and custom range confirmed not built | Kotlin parity audit |
 | 2026-10-27 | Shared Period store (7 presets + custom), Book store and chips, account/card scope provider, Accounts/Cards chips (FR-20-22..24; persistence of Book/Period across launches still open) | Kotlin parity |
 | 2026-10-31 | Source dropdown (key source_dropdown) replaces the Accounts/Cards chips in the filter bar; Book chips removed from the filter bar (Book is chosen in More); BookTag and TabTitle added to scope_bar.dart (FR-08-23, FR-20-23; tests: source dropdown filters, view dropdown switches, Book tag) | Approved Transactions/Analysis mockups |
+| 2026-10-31 | Transactions matched to approved mock: advanced filters (type, account, category, source, amount range, Clear) moved into a bottom sheet opened by the title-row filter button with an active-filter count badge (ledger_filter_button, ledger_filter_badge); search behind the title-row search icon (ledger_search_toggle); filter bar is now period chips plus the optional search field; source dropdown is expanded half-width with option 'All' (FR-20-03, FR-20-11..16, FR-20-21; tests updated) | Transactions matched to approved mock |

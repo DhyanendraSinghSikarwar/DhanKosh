@@ -63,6 +63,8 @@ void main() {
       expect(find.byKey(const Key('tx-1')), findsOneWidget);
       expect(find.byKey(const Key('tx-2')), findsOneWidget);
       expect(find.byKey(const Key('tx-3')), findsNothing);
+      await t.tap(find.byKey(const Key('ledger_filter_button')));
+      await t.pumpAndSettle();
       await t.tap(find.byKey(const Key('kind_income')));
       await t.pump();
       await t.pump();
@@ -72,6 +74,7 @@ void main() {
       await t.pump();
       await t.pump();
       expect(find.byKey(const Key('tx-1')), findsOneWidget);
+      expect(find.byKey(const Key('ledger_filter_badge')), findsOneWidget);
     });
 
     testWidgets('FR-20-03: period chips', (t) async {
@@ -81,12 +84,17 @@ void main() {
       await t.pump();
       expect(find.byKey(const Key('tx-3')), findsOneWidget);
       expect(find.byKey(const Key('tx-1')), findsNothing);
+      await t.tap(find.byKey(const Key('sum_info')));
+      await t.pump();
       expect(find.text('1 transactions · Last month'), findsOneWidget);
     });
 
     testWidgets('FR-20-11, FR-20-19: debounced search, badge, clear',
         (t) async {
       await pumpLedgerApp(t, txs: repo(), home: const TransactionsTab());
+      await t.pump();
+      expect(find.byKey(const Key('ledger_search')), findsNothing);
+      await t.tap(find.byKey(const Key('ledger_search_toggle')));
       await t.pump();
       await t.enterText(find.byKey(const Key('ledger_search')), 'swig');
       await t.pump(const Duration(milliseconds: 50));
@@ -121,6 +129,8 @@ void main() {
 
     testWidgets('FR-08-07: category filter menu', (t) async {
       await pumpLedgerApp(t, txs: repo(), home: const TransactionsTab());
+      await t.tap(find.byKey(const Key('ledger_filter_button')));
+      await t.pumpAndSettle();
       await t.tap(find.byKey(const Key('category_filter')));
       await t.pumpAndSettle();
       await t.tap(find.text('Food & Dining').last);

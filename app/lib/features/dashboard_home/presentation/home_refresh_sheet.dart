@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/home_sync_provider.dart';
+import 'package:hisaab/shared/widgets/mock_kit.dart';
 
 /// Bottom sheet shown while Home fetches new SMS and email: determinate
 /// progress, a row per source and the result line (FR-17-42).
@@ -14,24 +15,54 @@ class HomeRefreshSheet extends ConsumerWidget {
     final theme = Theme.of(context);
     final finished = s.stage == HomeSyncStage.done;
     final pct = (s.progress * 100).round();
+    final scheme = theme.colorScheme;
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
         child: Column(
           key: const Key('home_refresh_sheet'),
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              finished ? 'Up to date' : 'Fetching new transactions',
-              style: theme.textTheme.titleMedium,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    finished ? 'Up to date' : 'Fetching new transactions',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  key: const Key('home_refresh_close'),
+                  tooltip: 'Close',
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            LinearProgressIndicator(
-              key: const Key('home_refresh_progress'),
-              value: s.progress,
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(4),
+            const SizedBox(height: 4),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                key: const Key('home_refresh_progress'),
+                height: 10,
+                color: scheme.surfaceContainerHighest,
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: s.progress.clamp(0, 1).toDouble(),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      gradient: LinearGradient(
+                        colors: [scheme.primaryContainer, scheme.primary],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 6),
             Row(
@@ -39,17 +70,21 @@ class HomeRefreshSheet extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     finished ? 'Finished' : 'Reading SMS and email',
-                    style: theme.textTheme.bodySmall,
+                    style: MockText.small(context),
                   ),
                 ),
-                Text('$pct%', style: theme.textTheme.labelLarge),
+                Text(
+                  '$pct%',
+                  style: MockText.small(context, color: scheme.onSurface)
+                      .copyWith(fontWeight: FontWeight.w600),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             _Step(
               key: const Key('home_refresh_sms'),
               label: 'SMS',
-              detail: s.scanned > 0 ? 'Read ${s.scanned} messages' : 'Inbox',
+              detail: s.scanned > 0 ? 'Reading ${s.scanned} messages' : 'Inbox',
               fraction: s.smsFraction,
               done: s.stage.index > HomeSyncStage.sms.index,
             ),
@@ -69,18 +104,20 @@ class HomeRefreshSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             if (finished) ...[
-              DecoratedBox(
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
+                  color: scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    s.resultLine,
-                    key: const Key('home_refresh_result'),
-                    style: theme.textTheme.titleSmall,
-                  ),
+                child: Text(
+                  s.resultLine,
+                  key: const Key('home_refresh_result'),
+                  style: const TextStyle(fontSize: 13),
                 ),
               ),
               const SizedBox(height: 12),
@@ -94,8 +131,8 @@ class HomeRefreshSheet extends ConsumerWidget {
               ),
             ] else
               Text(
-                'Read on this phone. Nothing is uploaded.',
-                style: theme.textTheme.bodySmall,
+                'Everything is read on this phone. Nothing is uploaded.',
+                style: MockText.small(context),
               ),
           ],
         ),
@@ -120,42 +157,51 @@ class _Step extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final scheme = Theme.of(context).colorScheme;
     final running = !done && fraction > 0;
-    return Padding(
+    return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: scheme.outlineVariant)),
+      ),
       child: Row(
         children: [
           SizedBox(
             width: 22,
             height: 22,
             child: done
-                ? Icon(
-                    Icons.check_circle,
-                    size: 22,
-                    color: theme.colorScheme.primary,
+                ? DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: scheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.check, size: 14, color: scheme.onPrimary),
                   )
                 : running
                     ? const CircularProgressIndicator(strokeWidth: 2)
-                    : Icon(
-                        Icons.radio_button_unchecked,
-                        size: 22,
-                        color: theme.colorScheme.outline,
+                    : DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: scheme.outlineVariant,
+                            width: 2,
+                          ),
+                        ),
                       ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: theme.textTheme.bodyLarge),
-                Text(detail, style: theme.textTheme.bodySmall),
+                Text(label, style: MockText.body(context)),
+                Text(detail, style: MockText.small(context)),
               ],
             ),
           ),
           Text(
             '${(fraction * 100).round()}%',
-            style: theme.textTheme.bodySmall,
+            style: MockText.small(context),
           ),
         ],
       ),

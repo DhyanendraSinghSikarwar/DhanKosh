@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:hisaab/features/analytics/domain/analytics_math.dart';
 import 'package:hisaab/features/analytics/domain/analytics_models.dart';
-import 'package:hisaab/features/analytics/presentation/analytics_card.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
-import 'package:hisaab/features/analytics/presentation/charts/line_chart_view.dart';
+import 'package:hisaab/features/analytics/domain/ledger_math.dart';
+import 'package:hisaab/shared/widgets/charts/chart_card.dart';
+import 'package:hisaab/shared/widgets/charts/chart_style.dart';
+import 'package:hisaab/shared/widgets/charts/line_chart_view.dart';
 
 /// Formats paise for display.
 typedef MoneyText = String Function(int minor);
 
 /// Series colours (mint, blue, amber, violet, red, teal, olive, grey).
-const chartPalette = ChartColors.palette;
+const List<Color> chartPalette = ChartColors.palette;
 
 /// Titled card shell.
 Widget titledCard(BuildContext context, String title, Widget child) =>
-    AnalyticsCard(label: title, child: child);
+    ChartCard(label: title, child: child);
 
 /// Label and value row.
 Widget labelRow(
@@ -323,6 +324,7 @@ class CashProjectionCard extends StatelessWidget {
         children: [
           LineChartView(
             height: 130,
+            minY: c.lowest < 0 ? -niceMax(-c.lowest.toDouble()) : 0,
             series: [
               LineSeries(
                 [for (final v in c.series) v.toDouble()],

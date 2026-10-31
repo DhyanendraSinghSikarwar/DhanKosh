@@ -140,6 +140,13 @@ void main() {
     await settle(t);
   }
 
+  Future<void> lastMonth(WidgetTester t) async {
+    await t.tap(find.byKey(const Key('analytics-period')));
+    await settle(t);
+    await t.tap(find.text('Last month').last);
+    await settle(t);
+  }
+
   Future<void> tab(WidgetTester t, String label) async {
     await t.tap(
       find.descendant(
@@ -160,10 +167,9 @@ void main() {
     testWidgets('populated ${dark ? 'dark' : 'light'} (FR-18-03..07)',
         (t) async {
       await pump(t, data: rows, dark: dark);
-      await t.tap(find.text('Last month'));
-      await settle(t);
+      await lastMonth(t);
       expect(find.byKey(const Key('analytics-donut')), findsOneWidget);
-      expect(find.text('Fresh Mart (1)'), findsOneWidget);
+      expect(find.text('Fresh Mart'), findsOneWidget);
       expect(find.text('₹15,000'), findsWidgets);
       await tab(t, 'Trends');
       expect(find.byKey(const Key('analytics-trend')), findsOneWidget);
@@ -174,8 +180,7 @@ void main() {
 
   testWidgets('sub-tabs show their own cards (FR-18-01, FR-18-16)', (t) async {
     await pump(t, data: rows);
-    await t.tap(find.text('Last month'));
-    await settle(t);
+    await lastMonth(t);
     // Spend (default).
     expect(find.byKey(const Key('analytics-donut')), findsOneWidget);
     expect(find.byKey(const Key('analytics-trend')), findsNothing);
@@ -206,25 +211,23 @@ void main() {
 
   testWidgets('donut selection cross-filters and drills (FR-18-29)', (t) async {
     await pump(t, data: rows);
-    await t.tap(find.text('Last month'));
-    await settle(t);
-    expect(find.text('Fresh Mart (1)'), findsOneWidget);
-    expect(find.text('Cafe One (1)'), findsOneWidget);
+    await lastMonth(t);
+    expect(find.text('Fresh Mart'), findsOneWidget);
+    expect(find.text('Cafe One'), findsOneWidget);
     await t.tap(find.byKey(const Key('donut-row-1')));
     await settle(t);
     expect(find.byKey(const Key('donut-back')), findsOneWidget);
-    expect(find.text('Cafe One (1)'), findsOneWidget);
-    expect(find.text('Fresh Mart (1)'), findsNothing);
+    expect(find.text('Cafe One'), findsOneWidget);
+    expect(find.text('Fresh Mart'), findsNothing);
     await t.tap(find.byKey(const Key('donut-back')));
     await settle(t);
-    expect(find.text('Fresh Mart (1)'), findsOneWidget);
+    expect(find.text('Fresh Mart'), findsOneWidget);
     await teardownApp(t);
   });
 
   testWidgets('heat cell tap reads and filters (FR-18-29)', (t) async {
     await pump(t, data: rows);
-    await t.tap(find.text('Last month'));
-    await settle(t);
+    await lastMonth(t);
     await tab(t, 'Trends');
     final cell = ChartData.heatCell(rows[1])!;
     final key = Key('heat-${cell.$1}-${cell.$2}');
@@ -240,13 +243,73 @@ void main() {
 
   testWidgets('basis note shows card purchases (ADR-0011)', (t) async {
     await pump(t, data: rows);
-    await t.tap(find.text('Last month'));
+    await lastMonth(t);
+    await t.tap(find.byKey(const Key('info-Total spent')));
     await settle(t);
     expect(find.byKey(const Key('analytics-basis-note')), findsOneWidget);
     expect(
       find.textContaining('Expenses exclude card purchases'),
       findsOneWidget,
     );
+    await teardownApp(t);
+  });
+
+  testWidgets('pill tab strip and mock card order (FR-18-01)', (t) async {
+    await pump(t, data: rows);
+    await lastMonth(t);
+    expect(find.byType(SegmentedButton<Object>), findsNothing);
+    for (var i = 0; i < 4; i++) {
+      expect(find.byKey(Key('analytics-tab-$i')), findsOneWidget);
+    }
+    expect(find.text('TOTAL SPENT'), findsOneWidget);
+    expect(find.text('DAILY SPEND'), findsOneWidget);
+    expect(find.text('BY CATEGORY'), findsOneWidget);
+    expect(find.text('TOP MERCHANTS'), findsOneWidget);
+    final y = [
+      for (final l in ['TOTAL SPENT', 'DAILY SPEND', 'BY CATEGORY'])
+        t.getTopLeft(find.text(l)).dy,
+    ];
+    expect(y, [...y]..sort());
+    await teardownApp(t);
+  });
+
+  testWidgets('daily spend toggles Line and Bars (FR-18-03)', (t) async {
+    await pump(t, data: rows);
+    await lastMonth(t);
+    expect(find.byKey(const Key('analytics-daily-line')), findsOneWidget);
+    await t.tap(find.byKey(const Key('segment-Bars')));
+    await settle(t);
+    expect(find.byKey(const Key('analytics-daily-bars')), findsOneWidget);
+    expect(find.byKey(const Key('analytics-daily-line')), findsNothing);
+    await teardownApp(t);
+  });
+
+  testWidgets('category chip cross-filters merchants (FR-18-04)', (t) async {
+    await pump(t, data: rows);
+    await lastMonth(t);
+    expect(find.text('Fresh Mart'), findsOneWidget);
+    await t.tap(find.byKey(const Key('analytics-category')));
+    await settle(t);
+    await t.tap(find.text('Food & Dining').last);
+    await settle(t);
+    expect(find.text('Fresh Mart'), findsNothing);
+    expect(find.text('Cafe One'), findsOneWidget);
+    await teardownApp(t);
+  });
+
+  testWidgets('trends and cash flow follow the mock (FR-18-01)', (t) async {
+    await pump(t, data: rows);
+    await lastMonth(t);
+    await tab(t, 'Trends');
+    expect(find.text('LAST 12 MONTHS'), findsOneWidget);
+    expect(find.text('VS AUG 2026'), findsOneWidget);
+    expect(find.text('WHEN YOU SPEND'), findsOneWidget);
+    expect(find.text('Tap a cell'), findsOneWidget);
+    await tab(t, 'Cash flow');
+    expect(find.text('INCOME FLOW'), findsOneWidget);
+    expect(find.text('INCOME AGAINST SPEND'), findsOneWidget);
+    expect(find.text('SAVINGS RATE'), findsOneWidget);
+    expect(find.byKey(const Key('analytics-income-spend')), findsOneWidget);
     await teardownApp(t);
   });
 }

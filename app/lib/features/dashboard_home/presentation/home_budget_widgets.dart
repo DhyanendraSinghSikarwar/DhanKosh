@@ -237,6 +237,7 @@ class _SplitBar extends StatelessWidget {
       child: SizedBox(
         height: 9,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             seg(bar.spent, AppIcons.mint),
             seg(bar.invested, AppIcons.amber),

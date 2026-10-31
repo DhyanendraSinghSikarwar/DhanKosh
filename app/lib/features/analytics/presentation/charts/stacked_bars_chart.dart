@@ -1,6 +1,8 @@
+// Painters take plain constructor arguments.
+// ignore_for_file: avoid_positional_boolean_parameters
 import 'package:flutter/material.dart';
 import 'package:hisaab/features/analytics/domain/chart_data.dart';
-import 'package:hisaab/features/analytics/presentation/charts/chart_style.dart';
+import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 
 /// Twelve stacked month bars (Essentials, Lifestyle, Other) with a dashed
 /// average line and tap-to-pick (FR-18-05, FR-18-29).
@@ -141,6 +143,7 @@ class _StackedPainter extends CustomPainter {
           Offset(x + bw / 2, size.height - 6),
           color: style.label,
           align: TextAlign.center,
+          base: style.base,
         );
       }
     }
@@ -152,7 +155,6 @@ class _StackedPainter extends CustomPainter {
             ..moveTo(p.left, y)
             ..lineTo(p.right, y),
           dash: 5,
-          gap: 4,
         ),
         Paint()
           ..color = style.fg.withValues(alpha: 0.7)
@@ -164,6 +166,7 @@ class _StackedPainter extends CustomPainter {
         Offset(p.right - 2, y - 8),
         color: style.fg,
         align: TextAlign.right,
+        base: style.base,
       );
     }
   }
