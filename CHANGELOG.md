@@ -4,6 +4,8 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
+## [0.0.5] - 2026-10-31
+
 ### Changed
 - New look across the tabs: coloured icons, mint accent, pill-style bottom bar.
 - Book (Personal, Business, All books) is chosen once in More and applies to every tab; a small tag shows when it is not Personal.
