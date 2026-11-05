@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hisaab/features/notification_ingestion/domain/entities/payment_app.dart';
 import 'package:hisaab/features/notification_ingestion/domain/usecases/notification_engine.dart';
 import 'package:hisaab/features/notification_ingestion/presentation/notification_providers.dart';
@@ -99,19 +100,17 @@ class _State extends ConsumerState<NotificationAccessCard>
             ),
           ],
           const SizedBox(height: 8),
-          Text('Watched apps', style: text.labelMedium),
-          const SizedBox(height: 4),
-          Wrap(
+          ListTile(
             key: const Key('notif-apps'),
-            spacing: 6,
-            runSpacing: 4,
-            children: [
-              for (final a in PaymentApps.displayNames)
-                Chip(
-                  label: Text(a),
-                  visualDensity: VisualDensity.compact,
-                ),
-            ],
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Watched apps'),
+            subtitle: Text(
+              '${PaymentApps.all.length} payment and bank apps. '
+              'Add any other app that notifies you.',
+              style: text.bodySmall,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/settings/watched-apps'),
           ),
         ],
       ),

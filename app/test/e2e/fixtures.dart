@@ -17,6 +17,7 @@ import 'package:hisaab/features/email_ingestion/domain/statement_attachments.dar
 import 'package:hisaab/features/email_ingestion/domain/usecases/manage_email_account.dart';
 import 'package:hisaab/features/email_ingestion/domain/usecases/sync_email.dart';
 import 'package:hisaab/features/notification_ingestion/data/notification_settings_store.dart';
+import 'package:hisaab/features/notification_ingestion/data/watched_apps_store.dart';
 import 'package:hisaab/features/notification_ingestion/domain/usecases/handle_app_notification.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/entities/user_profile.dart';
 import 'package:hisaab/features/portfolio/data/holding_repository_impl.dart';
@@ -136,6 +137,7 @@ class Pipeline {
     );
     notifications = HandleAppNotification(
       settings: NotificationSettingsStore(SettingsKeyValueStore(env.settings)),
+      watched: WatchedAppsStore(SettingsKeyValueStore(env.settings)),
       ingest: ingest,
     );
   }

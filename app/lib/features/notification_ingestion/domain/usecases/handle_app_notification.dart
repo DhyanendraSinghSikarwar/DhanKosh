@@ -36,10 +36,13 @@ class HandleAppNotification {
   const HandleAppNotification({
     required NotificationSettingsRepository settings,
     required IngestMessage ingest,
+    required WatchedAppsRepository watched,
   })  : _settings = settings,
+        _watched = watched,
         _ingest = ingest;
 
   final NotificationSettingsRepository _settings;
+  final WatchedAppsRepository _watched;
   final IngestMessage _ingest;
 
   static final _chatPayment = RegExp(
@@ -60,7 +63,7 @@ class HandleAppNotification {
 
   /// Handles [n].
   Future<NotificationResult> call(AppNotification n) async {
-    final app = PaymentApps.byPackage(n.packageName);
+    final app = PaymentApps.resolve(n.packageName, await _watched.load());
     if (app == null) {
       return const NotificationResult.skipped(NotificationSkip.notWatched);
     }

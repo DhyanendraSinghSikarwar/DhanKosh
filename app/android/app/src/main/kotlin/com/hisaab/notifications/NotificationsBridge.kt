@@ -56,6 +56,11 @@ class NotificationsBridge(private val activity: Activity) {
                 result.success(null)
             }
             "drainPending" -> result.success(NotificationStore.drain(activity))
+            "seenPackages" -> result.success(NotificationStore.seen(activity))
+            "forgetSeen" -> {
+                NotificationStore.forgetSeen(activity)
+                result.success(null)
+            }
             "configure" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: false
                 val packages = call.argument<List<String>>("packages") ?: emptyList()

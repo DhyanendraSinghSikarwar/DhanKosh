@@ -4,6 +4,7 @@ import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/core/platform_channels/notifications_channel.dart';
 import 'package:hisaab/features/notification_ingestion/data/notification_settings_store.dart';
 import 'package:hisaab/features/notification_ingestion/data/notification_source_impl.dart';
+import 'package:hisaab/features/notification_ingestion/data/watched_apps_store.dart';
 import 'package:hisaab/features/notification_ingestion/domain/notification_ports.dart';
 import 'package:hisaab/features/notification_ingestion/domain/usecases/handle_app_notification.dart';
 import 'package:hisaab/features/notification_ingestion/domain/usecases/notification_engine.dart';
@@ -30,14 +31,21 @@ NotificationSource notificationSource(Ref ref) => NotificationSourceImpl(
 NotificationSettingsRepository notificationSettings(Ref ref) =>
     NotificationSettingsStore(ref.watch(keyValueStoreProvider));
 
+/// The user's watched-app choices (FR-04-19, FR-04-20).
+@Riverpod(keepAlive: true)
+WatchedAppsRepository watchedApps(Ref ref) =>
+    WatchedAppsStore(ref.watch(keyValueStoreProvider));
+
 /// Live notification lifecycle.
 @Riverpod(keepAlive: true)
 NotificationEngine notificationEngine(Ref ref) {
   final engine = NotificationEngine(
     source: ref.watch(notificationSourceProvider),
     settings: ref.watch(notificationSettingsProvider),
+    watched: ref.watch(watchedAppsProvider),
     handle: HandleAppNotification(
       settings: ref.watch(notificationSettingsProvider),
+      watched: ref.watch(watchedAppsProvider),
       ingest: ref.watch(ingestMessageProvider),
     ),
     activity: ref.watch(activityLoggerProvider),

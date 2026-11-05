@@ -43,6 +43,7 @@ import 'package:hisaab/features/news_support_updates/presentation/support_tile.d
 import 'package:hisaab/features/news_support_updates/presentation/updates_screen.dart';
 import 'package:hisaab/features/news_support_updates/presentation/updates_tile.dart';
 import 'package:hisaab/features/notification_ingestion/presentation/notification_access_card.dart';
+import 'package:hisaab/features/notification_ingestion/presentation/watched_apps_screen.dart';
 import 'package:hisaab/features/onboarding_permissions/presentation/welcome_screen.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_screen.dart';
 import 'package:hisaab/features/profile/presentation/bank_details_sheet.dart';
@@ -187,6 +188,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/logs',
         builder: (_, __) => const DiagnosticLogScreen(),
+      ),
+      GoRoute(
+        path: '/settings/watched-apps',
+        builder: (_, __) => const WatchedAppsScreen(),
       ),
       GoRoute(path: '/news', builder: (_, __) => const NewsScreen()),
       GoRoute(

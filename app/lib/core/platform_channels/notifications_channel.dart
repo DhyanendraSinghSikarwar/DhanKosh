@@ -61,6 +61,41 @@ class RawNotification {
   final String? channelId;
 }
 
+/// An app that posted notifications while it was not watched (FR-04-20).
+/// Package name, label and times only; its notification text is never read.
+class SeenApp {
+  /// Creates a [SeenApp].
+  const SeenApp({
+    required this.packageName,
+    required this.label,
+    this.lastSeen = 0,
+    this.count = 0,
+  });
+
+  /// Parses a native map.
+  factory SeenApp.fromMap(Map<Object?, Object?> m) {
+    final pkg = (m['packageName'] ?? '').toString();
+    return SeenApp(
+      packageName: pkg,
+      label: (m['label'] ?? pkg).toString(),
+      lastSeen: (m['lastSeen'] as num?)?.toInt() ?? 0,
+      count: (m['count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  /// Android package.
+  final String packageName;
+
+  /// The app's name as the launcher shows it; the package when unknown.
+  final String label;
+
+  /// Latest post time, epoch ms.
+  final int lastSeen;
+
+  /// How many notifications it posted since the switch went on.
+  final int count;
+}
+
 /// Typed wrapper for the `notifications` platform channel (+ live events).
 class NotificationsChannel extends ChannelBase {
   /// Creates the wrapper over the `notifications` channel.
@@ -97,6 +132,19 @@ class NotificationsChannel extends ChannelBase {
     required List<String> packages,
   }) =>
       invoke<void>('configure', {'enabled': enabled, 'packages': packages});
+
+  /// Apps that posted notifications but are not watched, newest first
+  /// (FR-04-20).
+  Future<List<SeenApp>> seenPackages() async {
+    final list = await invoke<List<Object?>>('seenPackages');
+    return [
+      for (final e in list ?? const <Object?>[])
+        SeenApp.fromMap(e! as Map<Object?, Object?>),
+    ];
+  }
+
+  /// Clears the seen-apps list (FR-04-20).
+  Future<void> forgetSeen() => invoke<void>('forgetSeen');
 
   /// Notifications while the engine is running.
   Stream<RawNotification> liveNotifications() =>

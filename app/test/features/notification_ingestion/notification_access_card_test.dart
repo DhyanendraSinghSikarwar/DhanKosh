@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/app/di/notification_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/notification_ingestion/data/notification_settings_store.dart';
+import 'package:hisaab/features/notification_ingestion/data/watched_apps_store.dart';
+import 'package:hisaab/features/notification_ingestion/domain/entities/payment_app.dart';
 import 'package:hisaab/features/notification_ingestion/domain/usecases/handle_app_notification.dart';
 import 'package:hisaab/features/notification_ingestion/domain/usecases/notification_engine.dart';
 import 'package:hisaab/features/notification_ingestion/presentation/notification_access_card.dart';
@@ -22,11 +24,14 @@ void main() {
     source = FakeNotificationSource()..access = access;
     final store =
         NotificationSettingsStore(SettingsKeyValueStore(env.settings));
+    final watched = WatchedAppsStore(SettingsKeyValueStore(env.settings));
     final engine = NotificationEngine(
       source: source,
       settings: store,
+      watched: watched,
       handle: HandleAppNotification(
         settings: store,
+        watched: watched,
         ingest: IngestMessage(ledger: env.txs),
       ),
     );
@@ -67,8 +72,14 @@ void main() {
     await pump(t);
     expect(find.text('Off'), findsOneWidget);
     expect(find.byKey(const Key('notif-off-warning')), findsOneWidget);
-    expect(find.text('PhonePe'), findsOneWidget);
-    expect(find.text('WhatsApp Pay'), findsOneWidget);
+    // The app list moved to its own screen (FR-04-19, FR-04-20); the card
+    // links to it and says how many apps are built in.
+    expect(find.byKey(const Key('notif-apps')), findsOneWidget);
+    expect(find.text('Watched apps'), findsOneWidget);
+    expect(
+      find.textContaining('${PaymentApps.all.length} payment and bank apps'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('enabling without access opens settings (FR-04-16)', (t) async {

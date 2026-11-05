@@ -22,7 +22,10 @@ class PaymentNotificationListener : NotificationListenerService() {
     }
 
     private fun handle(sbn: StatusBarNotification) {
-        if (!NotificationStore.accepts(applicationContext, sbn.packageName)) return
+        if (!NotificationStore.accepts(applicationContext, sbn.packageName)) {
+            noteUnwatched(sbn)
+            return
+        }
         val n = sbn.notification ?: return
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
         if (n.flags and Notification.FLAG_ONGOING_EVENT != 0) return
@@ -57,6 +60,34 @@ class PaymentNotificationListener : NotificationListenerService() {
                 "channelId" to channel,
             ),
         )
+    }
+
+    /**
+     * Records that an app the allow-list does not know posted something, so the user can add it
+     * on the Watched apps screen (FR-04-20). Only its package name, launcher label and post time
+     * are kept: the notification's extras are never read here, and nothing is noted while the
+     * in-app switch is off.
+     */
+    private fun noteUnwatched(sbn: StatusBarNotification) {
+        if (sbn.packageName == packageName) return
+        if (!NotificationStore.enabled(applicationContext)) return
+        val n = sbn.notification ?: return
+        if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
+        if (n.flags and Notification.FLAG_ONGOING_EVENT != 0) return
+        NotificationStore.noteSeen(
+            applicationContext,
+            sbn.packageName,
+            labelOf(sbn.packageName),
+            sbn.postTime,
+        )
+    }
+
+    /** The app's own name as the launcher shows it; null when it cannot be read. */
+    private fun labelOf(pkg: String): String? = try {
+        val pm = applicationContext.packageManager
+        pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
+    } catch (e: Exception) {
+        null
     }
 
     /** Ask the system to rebind after the process was killed (reliability, memory 04 section 6). */

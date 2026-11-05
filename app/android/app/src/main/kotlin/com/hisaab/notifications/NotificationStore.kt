@@ -15,7 +15,9 @@ object NotificationStore {
     private const val KEY_QUEUE = "pending"
     private const val KEY_ENABLED = "enabled"
     private const val KEY_PACKAGES = "packages"
+    private const val KEY_SEEN = "seen"
     private const val MAX_QUEUE = 200
+    private const val MAX_SEEN = 60
 
     /** Set by the EventChannel stream handler (main thread). */
     @Volatile
@@ -32,12 +34,66 @@ object NotificationStore {
             .apply()
     }
 
+    /** The in-app switch; nothing is read or noted while it is off. */
+    fun enabled(context: Context): Boolean = prefs(context).getBoolean(KEY_ENABLED, false)
+
     /** False when the setting is off, not yet configured, or the package is not allow-listed. */
     fun accepts(context: Context, packageName: String): Boolean {
         val p = prefs(context)
         if (!p.getBoolean(KEY_ENABLED, false)) return false
         val set = p.getStringSet(KEY_PACKAGES, null) ?: return false
         return packageName in set
+    }
+
+    /**
+     * Remembers that [packageName] posted a notification, so the user can add an app the
+     * allow-list does not know yet (FR-04-20). Package name, label and time only: the
+     * notification's own extras are never touched for an app that is not watched.
+     */
+    @Synchronized
+    fun noteSeen(context: Context, packageName: String, label: String?, postTime: Long) {
+        val p = prefs(context)
+        val o = JSONObject(p.getString(KEY_SEEN, "{}"))
+        val row = o.optJSONObject(packageName) ?: JSONObject()
+        row.put("label", label ?: row.optString("label", packageName))
+        row.put("lastSeen", postTime)
+        row.put("count", row.optInt("count", 0) + 1)
+        o.put(packageName, row)
+        // Keep the most recent apps when the list grows past the cap.
+        if (o.length() > MAX_SEEN) {
+            val oldest = o.keys().asSequence()
+                .sortedBy { o.getJSONObject(it).optLong("lastSeen", 0L) }
+                .take(o.length() - MAX_SEEN)
+                .toList()
+            for (k in oldest) o.remove(k)
+        }
+        p.edit().putString(KEY_SEEN, o.toString()).apply()
+    }
+
+    /** Apps that posted notifications and are not watched; newest first. */
+    @Synchronized
+    fun seen(context: Context): List<Map<String, Any?>> {
+        val o = JSONObject(prefs(context).getString(KEY_SEEN, "{}"))
+        val watched = prefs(context).getStringSet(KEY_PACKAGES, null) ?: emptySet()
+        return o.keys().asSequence()
+            .filter { it !in watched }
+            .map {
+                val row = o.getJSONObject(it)
+                mapOf(
+                    "packageName" to it,
+                    "label" to row.optString("label", it),
+                    "lastSeen" to row.optLong("lastSeen", 0L),
+                    "count" to row.optInt("count", 0),
+                )
+            }
+            .sortedByDescending { it["lastSeen"] as Long }
+            .toList()
+    }
+
+    /** Clears the seen-apps list. */
+    @Synchronized
+    fun forgetSeen(context: Context) {
+        prefs(context).edit().remove(KEY_SEEN).apply()
     }
 
     fun deliver(context: Context, message: Map<String, Any?>) {

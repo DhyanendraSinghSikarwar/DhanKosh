@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/features/notification_ingestion/data/notification_settings_store.dart';
+import 'package:hisaab/features/notification_ingestion/data/watched_apps_store.dart';
 import 'package:hisaab/features/notification_ingestion/domain/entities/app_notification.dart';
 import 'package:hisaab/features/notification_ingestion/domain/entities/payment_app.dart';
 import 'package:hisaab/features/notification_ingestion/domain/notification_ids.dart';
@@ -23,6 +24,8 @@ class FakeNotificationSource implements NotificationSource {
   bool? enabled;
   List<String>? packages;
   bool unavailable = false;
+  List<UnwatchedApp> seen = const [];
+  int forgot = 0;
 
   @override
   Stream<AppNotification> get live => controller.stream;
@@ -49,12 +52,25 @@ class FakeNotificationSource implements NotificationSource {
     this.enabled = enabled;
     this.packages = packages;
   }
+
+  @override
+  Future<List<UnwatchedApp>> seenApps() async {
+    if (unavailable) throw StateError('no native');
+    return seen;
+  }
+
+  @override
+  Future<void> forgetSeen() async {
+    if (unavailable) throw StateError('no native');
+    forgot++;
+  }
 }
 
 void main() {
   late TestEnv env;
   late FakeNotificationSource source;
   late NotificationSettingsStore settings;
+  late WatchedAppsStore watched;
   late NotificationEngine engine;
   late HandleAppNotification handle;
   final results = <NotificationResult>[];
@@ -90,13 +106,16 @@ void main() {
     env = TestEnv();
     source = FakeNotificationSource();
     settings = NotificationSettingsStore(SettingsKeyValueStore(env.settings));
+    watched = WatchedAppsStore(SettingsKeyValueStore(env.settings));
     handle = HandleAppNotification(
       settings: settings,
+      watched: watched,
       ingest: IngestMessage(ledger: env.txs),
     );
     engine = NotificationEngine(
       source: source,
       settings: settings,
+      watched: watched,
       handle: handle,
       onResult: results.add,
     );
@@ -106,10 +125,11 @@ void main() {
     await env.close();
   });
 
-  test('start pushes switch and 20 packages (FR-04-01, FR-04-02)', () async {
+  test('start pushes the switch and every package (FR-04-01, FR-04-02)',
+      () async {
     await engine.start();
     expect(source.enabled, isFalse);
-    expect(source.packages, hasLength(20));
+    expect(source.packages, hasLength(PaymentApps.all.length));
     expect(source.packages, contains('com.phonepe.app'));
     expect(engine.running, isTrue);
   });
@@ -242,8 +262,82 @@ void main() {
     expect(await settings.isEnabled(), isTrue);
   });
 
-  test('allow-list has 20 packages, 19 apps (FR-04-01)', () {
-    expect(PaymentApps.all, hasLength(20));
-    expect(PaymentApps.displayNames, hasLength(19));
+  test('allow-list packages are unique and non-empty (FR-04-01)', () {
+    expect(PaymentApps.all.length, greaterThanOrEqualTo(20));
+    expect(
+      PaymentApps.packages.toSet(),
+      hasLength(PaymentApps.all.length),
+      reason: 'a package may be listed once',
+    );
+    for (final a in PaymentApps.all) {
+      expect(a.packageName, isNotEmpty);
+      expect(a.displayName, isNotEmpty);
+    }
+    // WhatsApp is one product under two packages.
+    expect(PaymentApps.displayNames, hasLength(PaymentApps.all.length - 1));
+  });
+
+  test('a built-in app switched off is no longer read (FR-04-19)', () async {
+    await engine.setEnabled(enabled: true);
+    await engine.setBuiltIn('com.phonepe.app', watched: false);
+    expect(source.packages, isNot(contains('com.phonepe.app')));
+    expect((await handle(pay())).skip, NotificationSkip.notWatched);
+    expect(await env.count('transactions'), 0);
+
+    await engine.setBuiltIn('com.phonepe.app', watched: true);
+    expect(source.packages, contains('com.phonepe.app'));
+    expect((await handle(pay())).outcome, IngestOutcome.inserted);
+  });
+
+  test('an app the user adds is read as a UPI app (FR-04-20)', () async {
+    await engine.setEnabled(enabled: true);
+    const pkg = 'com.example.newpay';
+    expect((await handle(pay(pkg: pkg))).skip, NotificationSkip.notWatched);
+
+    await engine.addApp(pkg, 'NewPay');
+    expect(source.packages, contains(pkg));
+    final r = await handle(pay(pkg: pkg));
+    expect(r.outcome, IngestOutcome.inserted);
+    final row = await env.db
+        .customSelect('SELECT bank_name, amount_minor FROM transactions')
+        .getSingle();
+    expect(row.read<String>('bank_name'), 'NewPay');
+    expect(row.read<int>('amount_minor'), 25000);
+
+    await engine.removeApp(pkg);
+    expect(source.packages, isNot(contains(pkg)));
+    expect(
+      (await handle(pay(pkg: pkg, key: 'k9'))).skip,
+      NotificationSkip.notWatched,
+    );
+  });
+
+  test('added apps survive a restart of the engine (FR-04-20)', () async {
+    await engine.addApp('com.example.newpay', 'NewPay');
+    final fresh = WatchedAppsStore(SettingsKeyValueStore(env.settings));
+    final w = await fresh.load();
+    expect(w.extra['com.example.newpay'], 'NewPay');
+    expect(
+      PaymentApps.effectivePackages(w),
+      contains('com.example.newpay'),
+    );
+  });
+
+  test('seen apps are listed and cleared; native missing is empty (FR-04-20)',
+      () async {
+    source.seen = const [
+      UnwatchedApp(
+        packageName: 'com.example.newpay',
+        label: 'NewPay',
+        count: 3,
+      ),
+    ];
+    expect((await engine.seenApps()).single.label, 'NewPay');
+    await engine.forgetSeen();
+    expect(source.forgot, 1);
+
+    source.unavailable = true;
+    expect(await engine.seenApps(), isEmpty);
+    await engine.forgetSeen();
   });
 }

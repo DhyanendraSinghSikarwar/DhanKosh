@@ -58,17 +58,20 @@ class NotificationEngine {
   NotificationEngine({
     required NotificationSource source,
     required NotificationSettingsRepository settings,
+    required WatchedAppsRepository watched,
     required HandleAppNotification handle,
     void Function(NotificationResult result)? onResult,
     ActivityLogger? activity,
   })  : _activity = activity,
         _source = source,
         _settings = settings,
+        _watched = watched,
         _handle = handle,
         _onResult = onResult;
 
   final NotificationSource _source;
   final NotificationSettingsRepository _settings;
+  final WatchedAppsRepository _watched;
   final HandleAppNotification _handle;
   final void Function(NotificationResult)? _onResult;
   final ActivityLogger? _activity;
@@ -98,11 +101,59 @@ class NotificationEngine {
     }
   }
 
-  /// Pushes switch and allow-list to native.
+  /// Pushes the switch and the effective allow-list to native (FR-04-19).
   Future<void> configure() async => await _source.configure(
         enabled: await _settings.isEnabled(),
-        packages: PaymentApps.packages,
+        packages: PaymentApps.effectivePackages(await _watched.load()),
       );
+
+  /// The user's own watched-app choices (FR-04-19).
+  Future<WatchedApps> watchedApps() => _watched.load();
+
+  /// Apps that posted notifications but are not watched; empty when the
+  /// native side is missing (FR-04-20).
+  Future<List<UnwatchedApp>> seenApps() async {
+    try {
+      return await _source.seenApps();
+    } on Object {
+      return const [];
+    }
+  }
+
+  /// Switches a built-in app on or off and reconfigures native (FR-04-19).
+  Future<void> setBuiltIn(String packageName, {required bool watched}) async {
+    await _watched.setBuiltIn(packageName, watched: watched);
+    await _reconfigure();
+  }
+
+  /// Starts reading an app the built-in list does not know (FR-04-20).
+  Future<void> addApp(String packageName, String label) async {
+    await _watched.addExtra(packageName, label);
+    await _reconfigure();
+  }
+
+  /// Stops reading an app the user added (FR-04-20).
+  Future<void> removeApp(String packageName) async {
+    await _watched.removeExtra(packageName);
+    await _reconfigure();
+  }
+
+  /// Clears the seen-apps list (FR-04-20).
+  Future<void> forgetSeen() async {
+    try {
+      await _source.forgetSeen();
+    } on Object {
+      // Native side missing.
+    }
+  }
+
+  Future<void> _reconfigure() async {
+    try {
+      await configure();
+    } on Object {
+      // Native side missing.
+    }
+  }
 
   /// Ingests notifications queued natively. Never throws.
   Future<void> drain() async {
@@ -118,11 +169,7 @@ class NotificationEngine {
   /// Persists the switch and reconfigures native (FR-04-02).
   Future<void> setEnabled({required bool enabled}) async {
     await _settings.setEnabled(enabled: enabled);
-    try {
-      await configure();
-    } on Object {
-      // Native side missing.
-    }
+    await _reconfigure();
   }
 
   /// Current switch and access; never throws.

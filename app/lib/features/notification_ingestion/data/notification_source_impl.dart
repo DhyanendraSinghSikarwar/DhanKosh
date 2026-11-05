@@ -55,4 +55,18 @@ class NotificationSourceImpl implements NotificationSource {
     required List<String> packages,
   }) =>
       _channel.configure(enabled: enabled, packages: packages);
+
+  @override
+  Future<List<UnwatchedApp>> seenApps() async => [
+        for (final a in await _channel.seenPackages())
+          UnwatchedApp(
+            packageName: a.packageName,
+            label: a.label,
+            lastSeen: a.lastSeen,
+            count: a.count,
+          ),
+      ];
+
+  @override
+  Future<void> forgetSeen() => _channel.forgetSeen();
 }

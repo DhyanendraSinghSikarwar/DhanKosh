@@ -3,18 +3,22 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-04 |
-| Status | In progress (Phase 2: Kotlin listener, channel, Dart engine, Data sources card and tests done; native code uncompiled and untested on device; payee-account memory, repair job, activity entries, app-lock skip pending) |
+| Status | In progress (Phase 2: Kotlin listener, channel, Dart engine, Data sources card and tests done; 32-app built-in list and user-managed Watched apps done; native code uncompiled and untested on device; payee-account memory, repair job, activity entries, app-lock skip pending) |
 | Priority | P1 |
 | Phase | 2 |
-| Last Updated | 2026-10-21 |
+| Last Updated | 2026-11-05 |
 
 ## 1. Description
 
-Notification ingestion reads payment notifications from a fixed list of 19 known payment and bank apps and turns them into transactions, only after the user opts in. Many small UPI payments get no bank SMS, but the payment app always shows a notification, so this fills that gap. Notifications from every other app are ignored, and WhatsApp chats are never read.
+Notification ingestion reads payment notifications from a list of known payment and bank apps and turns them into transactions, only after the user opts in. Many small UPI payments get no bank SMS, but the payment app always shows a notification, so this fills that gap. Notifications from every other app are ignored, and WhatsApp chats are never read.
+
+The built-in list cannot keep up with every UPI and bank app in India on its own, so it is a default rather than a ceiling: the user can switch any built-in app off, and can add any other app that notifies their phone (FR-04-19, FR-04-20). While reading is on, an app that is not watched contributes its package name, launcher label and post time to a "seen" list and nothing else — its notification text is never touched until the user adds it.
 
 ## 2. What This Feature Will Do
 
-- Reads notifications only from the 19 known payment and bank apps and ignores all others without reading them.
+- Reads notifications only from the watched apps and ignores all others without reading them.
+- Ships 32 built-in payment and bank apps; the user can switch any of them off.
+- Lets the user add any other app that notified the phone, so a UPI payment with no bank SMS is still recorded.
 - Works only when the user grants notification access and turns on the in-app setting (off by default).
 - Ignores group summaries and ongoing notifications.
 - Reads WhatsApp only for payment notifications, never chat messages.
@@ -32,11 +36,11 @@ Notification ingestion reads payment notifications from a fixed list of 19 known
 ### 2.1 Inputs
 
 - Each notification posted by an allowed app, as it appears on the phone.
-- User actions: grant system notification access, toggle the in-app setting, choose an account for a payee.
+- User actions: grant system notification access, toggle the in-app setting, switch a built-in app off, add or remove an app of their own, choose an account for a payee.
 
 ### 2.2 Processing
 
-1. Check the app is on the allow-list and that access and the setting are both on.
+1. Check the app is watched (built-in and not switched off, or added by the user) and that access and the setting are both on. An unwatched app's package name, label and post time are noted for the Watched apps screen and nothing else is read.
 2. Skip summaries, ongoing notifications and WhatsApp chats.
 3. Build the text from the notification parts, removing blanks and repeats.
 4. Reject non-payment text, then clean promos and balance text and require a payment signal and an amount.
@@ -50,6 +54,7 @@ Notification ingestion reads payment notifications from a fixed list of 19 known
 - A new-transaction notification for each added payment.
 - The Data sources card state and warning row.
 - A stored payee-to-account memory.
+- The user's watched-app choices, and the list of apps seen but not watched.
 - Activity entries with counts only.
 
 ### 2.4 Out of Scope
@@ -94,6 +99,38 @@ Source: analysis Part A 4.4, 4.5, 2.9, 5; Part B 6.9, 7.3; Kotlin `app/.../notif
 | `com.whatsapp`, `com.whatsapp.w4b` | WhatsApp Pay (two packages, one product) |
 
 UPI apps set (affects default channel): PhonePe, Google Pay, Paytm, BHIM, BHIM SBI Pay, CRED, super.money, Navi, WhatsApp Pay, Amazon Pay, MobiKwik. If channel detection returns OTHER and the app is in this set, channel becomes UPI.
+
+### 3.2.1 Apps added for the Flutter app (2026-11-05, FR-04-19)
+
+The Kotlin app's 19 were frozen in 2023 and miss most of the UPI and bank apps that now pay without a bank SMS. These 12 were added; each package name was checked against its own store listing rather than guessed.
+
+| Package | Display name | UPI app |
+|---|---|---|
+| `indwin.c3.shareapp` | slice | yes |
+| `money.jupiter` | Jupiter | yes |
+| `com.epifi.paisa` | Fi Money | yes |
+| `com.myairtelapp` | Airtel Thanks | yes |
+| `com.jio.myjio` | MyJio | yes |
+| `org.altruist.BajajExperia` | Bajaj Finserv | yes |
+| `com.hdfcbank.payzapp` | PayZapp | yes |
+| `com.bankofbaroda.upi` | BHIM Baroda Pay | yes |
+| `com.idfcfirstbank.optimus` | IDFC FIRST Bank | no |
+| `com.bankofbaroda.mconnect` | bob World | no |
+| `com.canarabank.mobility` | Canara ai1 | no |
+| `com.fedmobile` | Fed Mobile | no |
+
+That makes 32 built-in apps over 33 packages (WhatsApp still has two). The list stays a default, not a ceiling: section 3.9 covers what the user can change.
+
+### 3.9 Watched apps: the user's own list (FR-04-19, FR-04-20)
+
+A closed list silently drops every payment from an app it does not know, with nothing to show for it. Two things fix that.
+
+- **Switch a built-in off.** Its package leaves the list pushed to native, so it is no longer read.
+- **Add any other app.** While the switch is on, a notification from an unwatched app leaves only `{packageName, label, lastSeen, count}` in a capped (60) native list; its extras are never touched and its text never reaches Dart. The Watched apps screen lists those apps by their launcher name, and adding one puts its package into the list pushed to native. From then on it is read like a built-in, as a UPI app, under the label the phone gave it.
+
+The effective allow-list is therefore `(built-ins minus disabled) + added`, recomputed and pushed to native whenever any of it changes, and at every `start()`.
+
+An added app's notification is parsed by exactly the same `readNotification` rules as a built-in, so the rejection rules of section 3.5 (OTP, failed, reminder, promo, no signal, no amount) are what keep a non-payment notification out — nothing is accepted merely because the user added the app.
 
 ### 3.3 `onNotificationPosted` flow
 
@@ -224,7 +261,7 @@ Skipped:
 
 | ID | Requirement |
 |---|---|
-| FR-04-01 | Provide a notification-listener service that reads only notifications whose package is in the 19-package allow-list (section 2.2); all other notifications are ignored without reading their content. |
+| FR-04-01 | Provide a notification-listener service that reads only notifications whose package is in the effective allow-list (section 3.2, 3.2.1, 3.9); all other notifications are ignored without reading their content. |
 | FR-04-02 | Require both system notification access and the in-app `app_notifications` setting (default false). With access but setting off, record an activity note and ingest nothing. |
 | FR-04-03 | Ignore group-summary and ongoing notifications. |
 | FR-04-04 | Build the notification text from title, big title, text, big text, sub text, info text, summary text and text lines, trimmed, non-empty, de-duplicated, in that order. |
@@ -242,10 +279,12 @@ Skipped:
 | FR-04-16 | Data sources card shows On / Needs access / Off, a toggle, opens system listener settings when access is missing, and re-reads access on resume; show the warning row when disabled. |
 | FR-04-17 | Never persist or log notification text; the activity log holds counts and generic reasons only. |
 | FR-04-18 | The skip-lock flag is set before opening system notification-listener settings. |
+| FR-04-19 | Ship the built-in apps of sections 3.2 and 3.2.1 and let the user switch any of them off. The effective allow-list is `(built-ins minus disabled) + added`; it is pushed to native whenever it changes and at every start. A built-in that is switched off MUST NOT be read. |
+| FR-04-20 | While the switch is on, record for every unwatched app only its package name, launcher label, last post time and a count, capped at 60 apps, without touching the notification's extras. Offer those apps on a Watched apps screen; adding one makes it read like a built-in, as a UPI app under that label, and the choice survives a restart. Adding an app MUST NOT relax the rejection rules of FR-04-06 and FR-04-07. |
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
-- Privacy first: opt-in only, 19-app allow-list, chat guard, no text logging, no network. Nothing in a skipped notification is stored.
+- Privacy first: opt-in only, allow-list, chat guard, no text logging, no network. Nothing in a skipped notification is stored. The seen-apps list holds package names, launcher labels and times only, is written only while the switch is on, and is capped at 60 apps; an unwatched app's extras are never read.
 - Battery: event-driven service, no polling; parsing is regex over a few short strings (target < 5 ms per notification).
 - Reliability: the OS may kill or unbind the listener; on rebind nothing needs replay because notifications that matter will also appear as SMS/email, and merge handles late arrivals. Request rebind (`requestRebind`) after process restarts.
 - Offline: fully offline.
@@ -261,6 +300,7 @@ Skipped:
 | 3 | System "Notification access" settings page (opened from the toggle) | Android `ACTION_NOTIFICATION_LISTENER_SETTINGS` |
 | 4 | Transaction detail: Account/Card picker dialog with "Remember for {payee}" checkbox | `ui/transactions/TransactionDetailScreen.kt` (owned by [Transactions ledger](08_transactions_ledger.md)) |
 | 5 | Activity log rows, filter pill "Notifications", note "Skipped: {reason}" | `ui/more/ActivityLogScreen.kt:142` |
+| 7 | Watched apps screen `/settings/watched-apps`: "Apps you added", "Other apps that notified you" (Watch), "Payment and bank apps" (switch each) | Flutter-only (FR-04-19, FR-04-20) |
 | 6 | New-transaction notification with category actions (produced after ingest) | `notify/NewTransactionNotifier.kt` |
 
 ```mermaid
@@ -344,6 +384,27 @@ class PaymentApp with _$PaymentApp {
   }) = _PaymentApp;
 }
 
+/// The user's own choices (FR-04-19, FR-04-20).
+class WatchedApps {
+  const WatchedApps({this.disabled = const {}, this.extra = const {}});
+  final Set<String> disabled;      // built-in packages switched off
+  final Map<String, String> extra; // added package -> label
+}
+
+/// An app that notified the phone while it was not watched (FR-04-20).
+class UnwatchedApp {
+  const UnwatchedApp({
+    required this.packageName,
+    required this.label,
+    this.lastSeen = 0,
+    this.count = 0,
+  });
+  final String packageName;
+  final String label;   // launcher name; the package when unknown
+  final int lastSeen;   // epoch ms
+  final int count;
+}
+
 @freezed
 class NotificationSourceStatus with _$NotificationSourceStatus {
   const factory NotificationSourceStatus({
@@ -365,7 +426,8 @@ No table owned. Uses:
 - `transactions` / `transaction_sources` (source `APP`, `sourceMessageId = app:<hex32>`, `sender` = app display name, `rawText` = the joined notification text, kept up to 20,000 chars: note that raw text IS stored in the source row, only the logs never contain it).
 - `deleted_messages` tombstones (a deleted APP row is not re-ingested).
 - `accounts` (read only here).
-- Settings keys: `app_notifications` (bool, default false), `payee_accounts` (existing app: SharedPreferences map payee key -> accountId; Flutter: `payee_accounts` table below).
+- Settings keys: `app_notifications` (bool, default false), `notif_apps_off` (built-in packages switched off, one per line, FR-04-19), `notif_apps_extra` (added apps, one `package=label` per line, FR-04-20), `payee_accounts` (existing app: SharedPreferences map payee key -> accountId; Flutter: `payee_accounts` table below).
+- Native SharedPreferences `hisaab_notifications`: `enabled`, `packages` (the effective list), `pending` (the queue), `seen` (JSON `{package: {label, lastSeen, count}}`, capped at 60, FR-04-20).
 
 ```dart
 class PayeeAccounts extends Table {
@@ -378,7 +440,8 @@ class PayeeAccounts extends Table {
 
 ## 10. Business Rules & Logic (regex, parsing rules, algorithms, thresholds)
 
-- Package allow-list: exact string match (section 2.2). Chat apps: `com.whatsapp`, `com.whatsapp.w4b`.
+- Package allow-list: exact string match against `(built-ins minus disabled) + added` (sections 3.2, 3.2.1, 3.9). Chat apps: `com.whatsapp`, `com.whatsapp.w4b`. An added app resolves to `PaymentApp(package, label, isUpiApp: true)`; adding a package that is already built in switches that built-in back on instead of duplicating it.
+- Seen apps: written only while the switch is on, never for our own package, never for summary or ongoing notifications; capped at 60 by dropping the least recently seen; a watched package is filtered out of the list on read.
 - Id: `sha256_utf8("$package|$key|$joinedText")` first 16 bytes hex, prefix `app:`; `joinedText` joins parts with `\n`.
 - Rejection order and regexes: section 2.5 (all `IGNORE_CASE`, Unicode off).
 - Minimum text length 8; confidence 0.55; time = post time, `hasExplicitTime = false`.
@@ -459,7 +522,7 @@ android/app/src/main/kotlin/.../notify/
 
 | ID | Type | Covers | Case |
 |---|---|---|---|
-| TC-04-01 | unit | FR-04-01 | Allow-list contains exactly 20 package keys mapping to 19 display names; unknown package returns null and no content is read. |
+| TC-04-01 | unit | FR-04-01 | Allow-list packages are unique and non-empty, every app has a display name, and WhatsApp is the one product under two packages; an unknown package returns null and no content is read. |
 | TC-04-02 | unit | FR-04-02 | Setting off -> activity note `app notifications are off in settings`, no ingest call. |
 | TC-04-03 | unit | FR-04-03, FR-04-04 | Summary/ongoing ignored; parts joined distinct in order title, titleBig, text, bigText, sub, info, summary, lines. |
 | TC-04-04 | unit | FR-04-05 | WhatsApp: category MESSAGE -> skip; messages extra -> skip; channel `chat_messages` -> skip; line "You paid ₹500 to Asha" on a non-chat channel -> read; line "Payment of ₹500 successful" read; "Hi, paid ₹500?" -> skip. |
@@ -478,10 +541,16 @@ android/app/src/main/kotlin/.../notify/
 | TC-04-17 | integration | FR-04-15 | `reattributeAppRows` folds an account-less APP row into the bank row within 30 min and keeps the bank's exact paise; does not fold rows when references differ. |
 | TC-04-18 | widget | FR-04-16 | Card states On / Needs access / Off; warning row visible when off; toggle opens listener settings when access missing. |
 | TC-04-19 | unit | FR-04-17 | Logs and activity entries never contain the notification text (assert on captured logger). |
+| TC-04-20 | unit | FR-04-19 | A built-in switched off leaves the pushed list and its notification skips as `notWatched`; switching it back on reads it again. |
+| TC-04-21 | unit | FR-04-20 | An unknown package skips as `notWatched`; after `addApp(pkg, 'NewPay')` the same notification inserts a row with bank name "NewPay"; `removeApp` stops it again. |
+| TC-04-22 | unit | FR-04-20 | Added apps reload from the key-value store into `effectivePackages` after a restart. |
+| TC-04-23 | unit | FR-04-20 | `seenApps` returns the native list and `forgetSeen` clears it; with the native side missing both are no-ops and `seenApps` is empty. |
+| TC-04-24 | widget | FR-04-19 | Watched apps screen lists the built-ins (PhonePe, slice); switching PhonePe off persists and removes it from the pushed list. |
+| TC-04-25 | widget | FR-04-20 | Empty seen list shows the "Nothing yet" line; a seen app's Watch button adds it, pushes it to native and moves it under "Apps you added". |
 
 Fixtures: all rows of section 2.8, plus WhatsApp notifications with `category=msg`, `channelId='individual_chat_defaults'`.
 
-Implemented tests: `app/test/features/notification_ingestion/notification_engine_test.dart` (FR-04-01, 02, 03, 05, 06, 10, 11, 16: allow-list, setting off, repeat post no-op, live stream, chat guard, status/restricted hint, missing native) and `notification_access_card_test.dart` (FR-04-16). Parser fixtures (FR-04-06..09) live in `app/packages/parser_core`.
+Implemented tests: `app/test/features/notification_ingestion/notification_engine_test.dart` (FR-04-01, 02, 03, 05, 06, 10, 11, 16, 19, 20: allow-list, setting off, repeat post no-op, live stream, chat guard, status/restricted hint, missing native, per-app switch, adding and removing an app, persistence, seen apps), `notification_access_card_test.dart` (FR-04-16) and `watched_apps_screen_test.dart` (FR-04-19, FR-04-20). Parser fixtures (FR-04-06..09) live in `app/packages/parser_core`.
 
 ## 16. Acceptance Criteria
 
@@ -494,10 +563,14 @@ Implemented tests: `app/test/features/notification_ingestion/notification_engine
 - AC-04-07: Re-posted notifications do not duplicate (FR-04-10; TC-04-12).
 - AC-04-08: "Remember for payee" is honoured after restart (FR-04-14; TC-04-16).
 - AC-04-09: Logs hold no notification text (FR-04-17; TC-04-19).
+- AC-04-10: A payment from an app the built-in list does not know is tracked once the user adds it from the Watched apps screen, and the app appears there without its notification text ever being read (FR-04-20; TC-04-21, TC-04-25).
+- AC-04-11: A built-in app the user switches off stops being read (FR-04-19; TC-04-20, TC-04-24).
 
 ## 17. Open Questions
 
-1. Only 19 packages are read (analysis Part A open question 10). Should more bank apps (IDFC, Yes, BoB, PNB, Federal, etc.) or other wallets (Airtel Thanks, Jupiter, slice, Fi) be added for Flutter? Should the list be a remote/bundled JSON (the v2 spec proposes `notification_packages` in the sender registry)?
+1. ~~Only 19 packages are read.~~ Settled 2026-11-05: 12 confirmed packages added (section 3.2.1) and the list made user-extensible (section 3.9), so it is no longer a ceiling. Still open: should the built-in list move to a bundled JSON in the sender registry (`notification_packages` in the v2 spec) so it can be updated without a code change? Still missing by name: Yes Bank, PNB, Union, IndusInd, AU, RBL, Bandhan, Groww, OneCard, LazyPay, Simpl — package names could not be verified from this environment, and the user can add them meanwhile.
+9. An app the user adds is auto-booked, where PennyWise's equivalent ("Track Other Apps") only ever produces a suggestion the user confirms. DhanKosh's `readNotification` is much stricter than a generic extractor, and dedup and the review queue already catch mistakes, so auto-booking was kept. Revisit if added apps turn out to produce noise.
+10. The launcher label comes from `PackageManager.getApplicationLabel`. A notification listener normally has visibility of the apps that post to it; if an OEM denies it the label falls back to the package name. Unverified on a device.
 2. Raw notification text is stored in `transaction_sources.rawText` (needed for split/reparse) although logs never contain it. Confirm this is acceptable privacy-wise for payment-app text.
 3. English-only patterns: Hindi or other-language notifications produce skips. Is localisation of the signal/promo words desired?
 4. `FAILED` includes "will be credited" so "refund will be credited" is skipped; and `SIGNAL` credit includes "credited": ordering means refund-credited notifications (e.g. "Refund credited ₹500") are accepted. Verify with real samples.
@@ -508,13 +581,13 @@ Implemented tests: `app/test/features/notification_ingestion/notification_engine
 
 ## 18. Implementation Notes
 
-Phase 2 landed 2026-10-21. FR status: FR-04-01..06, 08 (via parser_core), 09, 10, 11 (ingest only), 16 done; FR-04-07 done in parser_core; FR-04-12..15 pending (ledger owned: payee map, adopt, repair); FR-04-17 met (no text logged; native queue holds text only until drained); FR-04-18 pending (no app-lock skip flag exists yet).
+Phase 2 landed 2026-10-21. FR status: FR-04-01..06, 08 (via parser_core), 09, 10, 11 (ingest only), 16, 19, 20 done; FR-04-07 done in parser_core; FR-04-12..15 pending (ledger owned: payee map, adopt, repair); FR-04-17 met (no text logged; native queue holds text only until drained); FR-04-18 pending (no app-lock skip flag exists yet).
 
-Native (`android/.../com/hisaab/notifications/`): `PaymentNotificationListener` (extracts title, bigTitle, text, bigText, sub, info, summary, lines; drops summary/ongoing and the WhatsApp chat guard before forwarding; `requestRebind` on disconnect), `NotificationStore` (EventChannel sink else SharedPreferences queue, cap 200, cleared by drain; accepts only when `enabled` and package in pushed list), `NotificationsBridge`. Manifest service entry with `BIND_NOTIFICATION_LISTENER_SERVICE`.
+Native (`android/.../com/hisaab/notifications/`): `PaymentNotificationListener` (extracts title, bigTitle, text, bigText, sub, info, summary, lines; drops summary/ongoing and the WhatsApp chat guard before forwarding; notes an unwatched app's package, launcher label and post time only, never its extras, and never our own package; `requestRebind` on disconnect), `NotificationStore` (EventChannel sink else SharedPreferences queue, cap 200, cleared by drain; accepts only when `enabled` and package in pushed list; `noteSeen`/`seen`/`forgetSeen` over a capped 60-entry JSON map), `NotificationsBridge`. Manifest service entry with `BIND_NOTIFICATION_LISTENER_SERVICE`.
 
-Channel `com.hisaab/notifications`: `isAccessEnabled` -> bool, `sdkInt` -> int, `openAccessSettings`, `drainPending` -> list of `{packageName,key,postTime,parts,isGroupSummary,isOngoing,category,hasMessagesExtra,channelId}`, `configure{enabled,packages}`. Events on `com.hisaab/notifications_live` (same map).
+Channel `com.hisaab/notifications`: `isAccessEnabled` -> bool, `sdkInt` -> int, `openAccessSettings`, `drainPending` -> list of `{packageName,key,postTime,parts,isGroupSummary,isOngoing,category,hasMessagesExtra,channelId}`, `configure{enabled,packages}`, `seenPackages` -> list of `{packageName,label,lastSeen,count}` (FR-04-20), `forgetSeen`. Events on `com.hisaab/notifications_live` (same map as `drainPending`).
 
-Dart (`lib/features/notification_ingestion`): `PaymentApps` allow-list (20 packages, 19 names), `HandleAppNotification` (allow-list, summary/ongoing, chat guard again, setting check, then `IngestMessage.detail` with Source.app and id `app:hex16(sha256(pkg|key|text))`), `NotificationEngine` (start/drain/setEnabled/status), `NotificationSettingsStore` (`app_notifications`), `NotificationAccessCard` embedded in More via `SettingsDataSourcesScreen.notificationCard` (composed in `app/router.dart` to respect the cross-feature rule). Wiring: `app/di/notification_providers.dart`; `pipelineSync` also runs `notificationSync` on launch and resume.
+Dart (`lib/features/notification_ingestion`): `PaymentApps` built-in list (33 packages, 32 names) with `resolve`/`effectivePackages` over `WatchedApps`, `WatchedAppsStore` (`notif_apps_off`, `notif_apps_extra`), `WatchedAppsScreen` at `/settings/watched-apps`, `HandleAppNotification` (allow-list, summary/ongoing, chat guard again, setting check, then `IngestMessage.detail` with Source.app and id `app:hex16(sha256(pkg|key|text))`), `NotificationEngine` (start/drain/setEnabled/status), `NotificationSettingsStore` (`app_notifications`), `NotificationAccessCard` embedded in More via `SettingsDataSourcesScreen.notificationCard` (composed in `app/router.dart` to respect the cross-feature rule). Wiring: `app/di/notification_providers.dart`; `pipelineSync` also runs `notificationSync` on launch and resume.
 
 Deviations: setting off drops natively before any text is read (stricter than the old app, which logged a skip note); skip reasons are returned to callers, not yet written to an activity log (no write path exists). Unverified: all Kotlin (not compiled here; CI compiles it), listener binding, restricted-settings flow, OEM kills, EventChannel hand-off on a device. Payee `NotificationSkip` enum is simplified to listener-level reasons; parser reasons pass through as strings.
 
@@ -525,3 +598,4 @@ Deviations: setting off drops natively before any text is read (stricter than th
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 2 notification ingestion landed | Phase 2 |
+| 2026-11-05 | Added FR-04-19 and FR-04-20: 12 more built-in apps (32 total), per-app switches, and a Watched apps screen that offers any app which notified the phone. New `watched_apps_store.dart`, `watched_apps_screen.dart`, native seen-apps list, channel methods `seenPackages`/`forgetSeen`; sections 2, 3.2.1, 3.9, 6, 7, 8, 9, 10, 11, 15, 16, 17 updated | Payments from apps outside the frozen 19-package list were dropped silently and the user had no way to see or change that, so notification-only payments went untracked |
