@@ -24,7 +24,7 @@ class ListedBank {
   final Set<String> domains;
 }
 
-/// The 51 listed banks.
+/// The listed banks and issuers.
 abstract final class IndianBanks {
   /// All listed banks in priority order.
   static const List<ListedBank> all = [
@@ -85,7 +85,7 @@ abstract final class IndianBanks {
     ),
     ListedBank(
       'Federal Bank',
-      {'FEDBNK', 'FEDSMS', 'FEDBKS'},
+      {'FEDBNK', 'FEDSMS', 'FEDBKS', 'FEDFIB', 'FEDSCP'},
       {'federalbank.co.in'},
     ),
     ListedBank(
@@ -100,7 +100,7 @@ abstract final class IndianBanks {
     ),
     ListedBank(
       'City Union Bank',
-      {'CUBANK', 'CUBSMS', 'CUBBNK'},
+      {'CUBANK', 'CUBSMS', 'CUBBNK', 'CUBLTD'},
       {'cityunionbank.com'},
     ),
     ListedBank('CSB Bank', {'CSBANK', 'CSBSMS', 'CSBBNK'}, {'csb.co.in'}),
@@ -112,7 +112,7 @@ abstract final class IndianBanks {
     ),
     ListedBank(
       'Jammu & Kashmir Bank',
-      {'JKBANK', 'JKBSMS', 'JKBBNK'},
+      {'JKBANK', 'JKBSMS', 'JKBBNK', 'JKBNK'},
       {'jkbank.com'},
     ),
     ListedBank(
@@ -127,13 +127,13 @@ abstract final class IndianBanks {
     ),
     ListedBank(
       'Karnataka Bank',
-      {'KTKBNK', 'KARBNK', 'KBLSMS'},
+      {'KTKBNK', 'KARBNK', 'KBLSMS', 'KBLBNK'},
       {'karnatakabank.com'},
     ),
     ListedBank('RBL Bank', {'RBLBNK', 'RBLCRD', 'RBLSMS'}, {'rblbank.com'}),
     ListedBank(
       'Bandhan Bank',
-      {'BANDHN', 'BDNBNK', 'BNDHAN'},
+      {'BANDHN', 'BDNBNK', 'BNDHAN', 'BDNSMS'},
       {'bandhanbank.com'},
     ),
     ListedBank(
@@ -153,12 +153,12 @@ abstract final class IndianBanks {
     ),
     ListedBank(
       'Suryoday Small Finance Bank',
-      {'SURYDY', 'SURYOD'},
+      {'SURYDY', 'SURYOD', 'SSFBNK'},
       {'suryodaybank.com'},
     ),
     ListedBank(
       'Utkarsh Small Finance Bank',
-      {'UTKSFB', 'UTKRSH'},
+      {'UTKSFB', 'UTKRSH', 'UTKSPR'},
       {'utkarsh.bank'},
     ),
     ListedBank(
@@ -195,13 +195,13 @@ abstract final class IndianBanks {
     ),
     ListedBank(
       'India Post Payments Bank',
-      {'IPPBNK', 'IPPBSM', 'IPPBLT'},
+      {'IPPBNK', 'IPPBSM', 'IPPBLT', 'IPBMSG'},
       {'ippbonline.com'},
     ),
     ListedBank('Fino Payments Bank', {'FINOPB', 'FINOBK'}, {'finobank.com'}),
     ListedBank(
       'Jio Payments Bank',
-      {'JIOPBL', 'JIOPAY'},
+      {'JIOPBL', 'JIOPBS', 'NSDLPB'},
       {'jiopaymentsbank.com'},
     ),
     ListedBank('Nagrik Sahakari Bank', {
@@ -256,6 +256,21 @@ abstract final class IndianBanks {
       {'janatabank.com'},
     ),
     ListedBank('Apna Sahakari Bank', {'APNABK', 'APNSBK'}, {'apnabank.co.in'}),
+    // Names for senders that were read under their raw header, or dropped
+    // (issue I-07). Codes are 6-letter registered headers seen in real inboxes.
+    ListedBank('Kerala Gramin Bank', {'KGBANK'}, {'keralagbank.com'}),
+    ListedBank('Kerala Bank', {'KELBNK'}, {'keralabank.in'}),
+    ListedBank(
+      'Greater Bank',
+      {'GRTRBN'},
+      {'greaterbank.com'},
+    ),
+    ListedBank('Post Office Savings Bank', {'DOPBNK'}, {'indiapost.gov.in'}),
+    ListedBank('Jupiter (CSB Bank)', {'JTEDGE'}, {'jupiter.money'}),
+    ListedBank('OneCard', {'ONECRD'}, {'getonecard.app', 'onecard.in'}),
+    ListedBank('American Express', {'AMEXIN', 'AMEXCC'},
+        {'americanexpress.co.in', 'aexp.com'},),
+    ListedBank('slice', {'SLCEIT', 'SLCBNK'}, {'slicepay.in', 'sliceit.com'}),
   ];
 }
 

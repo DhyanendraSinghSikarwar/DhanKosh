@@ -22,7 +22,7 @@ class PaymentAppParser extends BaseBankParser {
 
   @override
   Set<String> get smsHeaders =>
-      const {'PHNEPE', 'PHONPE', 'PHONEP', 'CREDCL', 'MOBIKW'};
+      const {'PHNEPE', 'PHONPE', 'PHONEP', 'CREDCL', 'CREDIN', 'MOBIKW'};
 
   @override
   Set<String> get emailDomains => const {

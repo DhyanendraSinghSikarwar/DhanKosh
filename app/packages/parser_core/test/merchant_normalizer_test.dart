@@ -88,9 +88,11 @@ void main() {
     expect(cat('INR 500 credited'), Category.income);
   });
 
-  test('the directory counts as the Kotlin one (115 rows, 17 lenders)', () {
+  test(
+      'the directory counts as the Kotlin one (115 rows, 17 lenders, 59 listed banks)',
+      () {
     expect(directoryRows.length, 115);
     expect(Lenders.all.length, 17);
-    expect(IndianBanks.all.length, 51);
+    expect(IndianBanks.all.length, 59);
   });
 }

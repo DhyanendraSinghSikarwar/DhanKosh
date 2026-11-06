@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1 SMS/email/notification path and Phase 3 card-due/investment SMS parsers done in parser_core; Flutter wrapper not built; ingest wires MF orders, NPS contributions, deposit and loan status, 2026-10-25) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-25 |
+| Last Updated | 2026-11-06 |
 
 ## 1. Description
 
@@ -439,6 +439,8 @@ Negatives that MUST be rejected: OTP `123456 is your OTP for txn of INR 1,500.00
 | FR-06-19 | The engine is pure Dart (no Flutter, no I/O, no platform channels), deterministic for fixed inputs and zone, safe to call from any isolate. |
 | FR-06-20 | Regex behaviour parity is verified: every Java construct used (named groups, lookbehind, lazy quantifiers, case-insensitive) is tested on Dart `RegExp`, including `.` not matching newlines (normalised text has none). |
 | FR-06-21 | Performance: a typical message parses in under 1 ms median on a mid-range phone; `Guarded` pre-checks are retained. |
+| FR-06-22 | Listed senders also cover the registered headers seen for banks the first list missed or named by raw header: `IPBMSG`, `JIOPBS`, `NSDLPB`, `UTKSPR`, `BDNSMS`, `FEDFIB`, `FEDSCP`, `PNBCCD`, `CUBLTD`, `JKBNK`, `SSFBNK`, `KBLBNK`, `CREDIN`, plus own entries Kerala Gramin Bank, Kerala Bank, Greater Bank, Post Office Savings Bank, Jupiter (CSB Bank), OneCard, American Express, slice (59 listed banks). `JIOPAY` (the JioPay wallet) is no longer a Jio Payments Bank account. Substring guards, 7+ letter names and bare words are not added. |
+| FR-06-23 | The type classifier reads "had a CREDIT/DEBIT transaction", "a charge of ... was made" and "(fuel) spend of", and treats a credit "by Loan Recovery" as a transfer, not income. |
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -832,3 +834,4 @@ Ingest wiring (2026-10-25): `parseMfOrder`, `InvestmentParser.npsContribution` a
 | 2026-10-21 | Phase 3 statement/holdings/card-due parsers ported to parser_core | Phase 3 |
 | 2026-10-25 | Capture coverage matrix + e2e tests | Verification |
 | 2026-10-25 | Capture gaps closed: MF orders, NPS contributions, deposit and loan status messages | Verification |
+| 2026-11-06 | FR-06-22/23: 13 sender codes and 8 named entries added from the PennyWise comparison; four classifier gaps fixed; wallets, mandates, balance-only updates and foreign banks not done (issue I-07) | PennyWise parity |

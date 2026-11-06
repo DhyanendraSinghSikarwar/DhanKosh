@@ -5,13 +5,13 @@ import 'package:parser_core/src/text/rx.dart';
 /// (FR-06-07, FR-06-11).
 abstract final class TypeClassifier {
   static final RegExp _debit = rx(
-    r'\b(?:debited|debit\s+(?:by|for|of|alert)|spent|withdrawn|withdrawal|paid|sent|purchased?|deducted|charged|'
+    r'\b(?:debited|debit\s+(?:by|for|of|alert|transaction)|spent|(?:fuel\s+|card\s+)?spend\s+of|a\s+charge\s+of\b.{0,40}?\bwas\s+made|withdrawn|withdrawal|paid|sent|purchased?|deducted|charged|'
     r'transferred\s+to|txn\s+of|used\s+(?:for|at|on)|thank\s+you\s+for\s+using|'
     // Card alerts: "Transaction of Rs.899 on Kotak Credit Card".
     r'(?:transaction|trxn|txn)\s+(?:of\s+)?(?:INR|USD|EUR|GBP|AED|SGD)|transaction\s+alert\s+on\s+(?:your\s+)?(?:\w+\s+){0,4}card|made\s+a\s+(?:transaction|purchase|payment))\b',
   );
   static final RegExp _credit = rx(
-    r'\b(?:credited|credit\s+(?:by|of|alert|with)|received|deposited|refund(?:ed)?|reversed|reversal)\b',
+    r'\b(?:credited|credit\s+(?:by|of|alert|with|transaction)|received|deposited|refund(?:ed)?|reversed|reversal)\b',
   );
 
   /// A credit-card bill payment or a move between the user's own accounts:
@@ -21,11 +21,19 @@ abstract final class TypeClassifier {
     // Card side, other wordings.
     r'\bpayment\b.{0,60}?\b(?:credited|posted|reflected)\b.{0,60}?\bcredit\s+card\b|'
     r'\bcredit\s+card\b.{0,40}?\bpayment\b.{0,40}?\b(?:credited|posted|reflected|received)\b|'
-    r'\bthank\s+you\s+for\s+(?:your\s+|the\s+)?payment\b|\bself[\s-]transfer\b|\bown\s+account\b|'
+    r'\bloan\s+recovery\b|\bthank\s+you\s+for\s+(?:your\s+|the\s+)?payment\b|\bself[\s-]transfer\b|\bown\s+account\b|'
     r'\bbetween\s+your\s+(?:own\s+)?accounts\b|'
     // Bank side of a card bill.
     r'\btowards\s+(?:your\s+)?(?:[A-Za-z]+\s+){0,3}credit\s+card\b|\b(?:credit\s+card|cc)\s+(?:bill\s+)?payment\b|\bcard\s+bill\b',
-    ['payment', 'self', 'own account', 'between your', 'towards', 'card bill'],
+    [
+      'payment',
+      'self',
+      'own account',
+      'between your',
+      'towards',
+      'card bill',
+      'recovery',
+    ],
   );
 
   /// Money the user sent to someone else's account. Banks write the payee's

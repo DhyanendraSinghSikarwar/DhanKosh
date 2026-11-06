@@ -84,7 +84,8 @@ abstract final class DepositParser {
   );
   static final RegExp _ppfClosed =
       rx(r'\b(?:account|a/c)\s+(?:has\s+been\s+|is\s+)?closed\b');
-  static final RegExp _indiaPost = rx('^(?:DOP|IPPB|INDPST|INDPOS|POSTAL)');
+  static final RegExp _indiaPost =
+      rx('^(?:DOP|IPPB|INDPST|INDPOS|POSTAL|POST OFFICE)');
 
   /// True when [text] might be about a deposit at all; a cheap first look.
   static bool mentionsDeposit(String text) => _quick.hasMatch(text);

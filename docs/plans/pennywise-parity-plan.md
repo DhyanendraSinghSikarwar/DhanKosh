@@ -104,7 +104,7 @@ Exclude-from-analytics, merchant alias, budget impact; tags; quick add; subscrip
 | I-04 | Done: column mapping, saved layouts, balance check (FR-05-28, 29, 31). Not done: dry-run preview with untick, one-to-one statement matching (moves to I-05) |
 | I-05 | Done: FR-07-19..22 (references, two apps, stated balances/times, late mail). Deferred as I-05b (ADR needed): D4, D6, D8, D9, D10, D12, D14, one-to-one statement matching |
 | I-06 | Partly done: Ignore account (FR-13-22, schema v8). Left as I-06b: remembered 3-vs-4-digit merge, Cash type, card utilisation bands, editable limit/statement day, low-balance alert |
-| I-07 | Pending |
+| I-07 | Done for India: FR-06-22/23. True counts: 172 parsers, 57 Indian, 27 countries. Not done (I-07b): wallet account kind (JioPay, Amazon Pay/JUSPAY, Pluxee, LazyPay), Cashfree, mutual-fund SMS, mandate records, balance-only updates, per-currency decimals, foreign banks (no verifiable sender data) |
 | I-08 | Pending |
 | I-10 | Done (FR-05-30) |
 | I-11 to I-25 | Pending |

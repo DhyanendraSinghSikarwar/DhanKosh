@@ -326,7 +326,7 @@ class PnbParser extends BaseBankParser {
   String get bankName => 'Punjab National Bank';
 
   @override
-  Set<String> get smsHeaders => const {'PNBSMS', 'PNBBNK', 'PUNBNK'};
+  Set<String> get smsHeaders => const {'PNBSMS', 'PNBBNK', 'PUNBNK', 'PNBCCD'};
 
   @override
   Set<String> get emailDomains =>
