@@ -30,12 +30,56 @@ abstract final class AlertRules {
   static const newTransactionIdBase = 10000;
   static const balanceUpdatedId = 9000;
   static const cardBillIdBase = 30000;
+
+  /// Notification ids of "Spent X at Y?" alerts (FR-38-13).
+  static const learnedSenderIdBase = 600000;
   static const statementIdBase = 4000;
 
   /// Budget alerts for the month `yyyy-MM` (FR-21-05): per budget the single
   /// highest reached level of {user percent, 100} not yet alerted.
   /// Budgets with a non-positive limit are skipped (memory 21 Open Question
   /// 12 decision: Home and Analysis ignore them).
+  /// "Spent ₹X at Y?" for a message from a sender the user taught the app
+  /// (FR-38-13). Tapping it, or Add, opens the unrecognised list; "Not a
+  /// payment" dismisses the message. Null when notifications are off.
+  static AlertDecision? learnedSenderAlert({
+    required int messageId,
+    required int amountMinor,
+    required String currency,
+    required bool isCredit,
+    required String who,
+    required AlertSettings settings,
+  }) {
+    if (!settings.transactionNotifications) return null;
+    final amount = AlertText.money(
+      amountMinor,
+      showPaise: true,
+      currency: currency,
+    );
+    return AlertDecision(
+      kind: AlertKind.learnedSender,
+      key: '',
+      channel: AlertChannel.newTransactions,
+      notificationId: learnedSenderIdBase + messageId,
+      title:
+          isCredit ? 'Received $amount from $who?' : 'Spent $amount at $who?',
+      body: 'Not read by a bank format. Add it?',
+      link: 'hisaab://unrecognised/$messageId',
+      actions: [
+        AlertAction(
+          id: 'unrecOpen',
+          label: 'Add',
+          payload: {'id': '$messageId'},
+        ),
+        AlertAction(
+          id: 'unrecNot',
+          label: 'Not a payment',
+          payload: {'id': '$messageId'},
+        ),
+      ],
+    );
+  }
+
   static List<AlertDecision> budgetAlerts({
     required List<Budget> budgets,
     required Map<Category, int> spentByCategory,

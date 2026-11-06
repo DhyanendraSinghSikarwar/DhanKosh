@@ -8,6 +8,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
 
 ### Added
+- A message from a sender you taught DhanKosh now raises a "Spent ₹X at Y?" notification with Add and Not a payment.
 - Language: all eight languages now ship inside the app as one text file each (no download); choosing one changes every screen at once, and a string without a translation yet shows in English.
 - Ignore an account (account menu): its bank messages are dropped from then on and no account is created for it; the Accounts screen lists ignored accounts with Stop ignoring.
 - Import a spreadsheet statement by matching its columns: a live sample, the layout remembered for the next file, and a balance check that compares the statement's closing balance with DhanKosh's.

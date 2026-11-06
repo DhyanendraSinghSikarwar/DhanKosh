@@ -19,8 +19,10 @@ class AlertActionHandler {
     required TransactionRepository txs,
     required AlertPoster poster,
     ActivityLogger? activity,
+    Future<void> Function(int id)? dismissUnrecognised,
     int Function()? nowMs,
-  })  : _state = cardState,
+  })  : _dismissUnrecognised = dismissUnrecognised,
+        _state = cardState,
         _paid = paid,
         _txs = txs,
         _poster = poster,
@@ -32,6 +34,7 @@ class AlertActionHandler {
   final TransactionRepository _txs;
   final AlertPoster _poster;
   final ActivityLogger? _activity;
+  final Future<void> Function(int id)? _dismissUnrecognised;
   final int Function() _nowMs;
 
   /// Applies the action in [query] (the `/alert-action` query parameters).
@@ -71,6 +74,13 @@ class AlertActionHandler {
             notified: false,
           ),
         );
+        return true;
+      case 'unrecNot':
+        // "Not a payment" on a learned sender's alert (FR-38-13).
+        final id = int.tryParse(query['id'] ?? '');
+        if (id == null || _dismissUnrecognised == null) return false;
+        await _dismissUnrecognised(id);
+        await _poster.cancel(AlertRules.learnedSenderIdBase + id);
         return true;
       case 'more':
         // Opens the Change category sheet; nothing to run here.

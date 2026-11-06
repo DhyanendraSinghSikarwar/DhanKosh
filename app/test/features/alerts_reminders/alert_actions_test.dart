@@ -179,4 +179,45 @@ void main() {
     expect(await engine.run(), 0);
     expect(activity.entries, hasLength(2));
   });
+
+  test('learned-sender alert: wording, route, Not a payment (FR-38-13)',
+      () async {
+    final d = AlertRules.learnedSenderAlert(
+      messageId: 7,
+      amountMinor: 45000,
+      currency: 'INR',
+      isCredit: false,
+      who: 'Swiggy',
+      settings: const AlertSettings(),
+    )!;
+    expect(d.title, 'Spent ₹450 at Swiggy?');
+    expect(d.channel, AlertChannel.newTransactions);
+    expect(alertRouteFor(d.link), '/review/unrecognised');
+    expect(d.actions.map((a) => a.label), ['Add', 'Not a payment']);
+    expect(
+      AlertRules.learnedSenderAlert(
+        messageId: 7,
+        amountMinor: 100,
+        currency: 'INR',
+        isCredit: true,
+        who: 'X',
+        settings: const AlertSettings(transactionNotifications: false),
+      ),
+      isNull,
+    );
+
+    final dismissed = <int>[];
+    final h = AlertActionHandler(
+      cardState: CardReminderStateStoreImpl(env.db),
+      paid: _Paid(),
+      txs: env.txs,
+      poster: poster,
+      dismissUnrecognised: (id) async => dismissed.add(id),
+      nowMs: () => t0,
+    );
+    expect(await h.handle({'a': 'unrecNot', 'id': '7'}), isTrue);
+    expect(dismissed, [7]);
+    expect(poster.cancelled, contains(AlertRules.learnedSenderIdBase + 7));
+    expect(await h.handle({'a': 'unrecNot', 'id': 'x'}), isFalse);
+  });
 }

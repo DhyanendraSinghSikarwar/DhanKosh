@@ -26,6 +26,7 @@ enum AlertKind {
   statementLocked,
   weeklySummary,
   updateAvailable,
+  learnedSender,
 }
 
 /// A notification button (FR-21-03, FR-21-10).

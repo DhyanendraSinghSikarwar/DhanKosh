@@ -21,7 +21,11 @@ class _AlertActionScreenState extends ConsumerState<AlertActionScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.query['a'] != 'more') {
+    if (widget.query['a'] == 'unrecOpen') {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => context.go('/review/unrecognised'),
+      );
+    } else if (widget.query['a'] != 'more') {
       WidgetsBinding.instance.addPostFrameCallback((_) => _run());
     }
   }

@@ -51,6 +51,8 @@ String alertRouteFor(String link) {
       return seg.isEmpty ? '/transactions' : '/transaction/${seg.first}';
     case 'account':
       return seg.isEmpty ? '/accounts' : '/accounts/${seg.first}';
+    case 'unrecognised':
+      return '/review/unrecognised';
     case 'budgets':
       return '/budgets';
     case 'bills':

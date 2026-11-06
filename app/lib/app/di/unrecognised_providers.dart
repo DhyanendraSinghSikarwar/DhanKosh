@@ -1,5 +1,7 @@
+import 'package:hisaab/app/di/alerts_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/features/alerts_reminders/domain/alert_rules.dart';
 import 'package:hisaab/features/notification_ingestion/domain/entities/app_notification.dart';
 import 'package:hisaab/features/notification_ingestion/domain/entities/payment_app.dart';
 import 'package:hisaab/features/notification_ingestion/domain/notification_ids.dart';
@@ -10,6 +12,7 @@ import 'package:hisaab/features/unrecognised_messages/domain/unrecognised_reposi
 import 'package:hisaab/features/unrecognised_messages/domain/usecases/add_from_unrecognised.dart';
 import 'package:hisaab/features/unrecognised_messages/domain/usecases/offer_unrecognised.dart';
 import 'package:hisaab/features/unrecognised_messages/domain/usecases/scan_missed_messages.dart';
+import 'package:parser_core/parser_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'unrecognised_providers.g.dart';
@@ -39,7 +42,7 @@ AddFromUnrecognised addFromUnrecognised(Ref ref) => AddFromUnrecognised(
 Future<void> Function(InboxSms sms) liveSmsOffer(Ref ref) {
   final offer = ref.watch(offerUnrecognisedProvider);
   return (sms) async {
-    await offer.sms(
+    final (result, id) = await offer.smsWithId(
       NewUnrecognised(
         source: UnrecognisedSource.sms,
         sender: sms.sender,
@@ -49,6 +52,19 @@ Future<void> Function(InboxSms sms) liveSmsOffer(Ref ref) {
       ),
       requireLearned: true,
     );
+    if (result != OfferResult.queuedFromLearned || id == null) return;
+    // FR-38-13: "Spent ₹X at Y?" for a sender the user taught the app.
+    final s = GenericExtractor.read(sms.sender, sms.body);
+    if (s == null) return;
+    final d = AlertRules.learnedSenderAlert(
+      messageId: id,
+      amountMinor: s.amountMinor,
+      currency: s.currency,
+      isCredit: s.type == TransactionType.credit,
+      who: s.merchant ?? sms.sender,
+      settings: await ref.read(alertSettingsRepositoryProvider).read(),
+    );
+    if (d != null) await ref.read(alertPosterProvider).post(d);
   };
 }
 

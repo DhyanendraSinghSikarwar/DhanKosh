@@ -33,18 +33,25 @@ class OfferUnrecognised {
   Future<OfferResult> sms(
     NewUnrecognised m, {
     required bool requireLearned,
+  }) async =>
+      (await smsWithId(m, requireLearned: requireLearned)).$1;
+
+  /// Offers an SMS; also gives the queued row's id when there is one.
+  Future<(OfferResult, int?)> smsWithId(
+    NewUnrecognised m, {
+    required bool requireLearned,
   }) async {
     final key = SenderKey.of(m.source, m.sender);
     final p = await _repo.pref(key);
-    if (p != null && p.ignored) return OfferResult.skipped;
+    if (p != null && p.ignored) return (OfferResult.skipped, null);
     final learned = p != null;
-    if (requireLearned && !learned) return OfferResult.skipped;
+    if (requireLearned && !learned) return (OfferResult.skipped, null);
     if (GenericExtractor.read(m.sender, m.body) == null) {
-      return OfferResult.skipped;
+      return (OfferResult.skipped, null);
     }
     final id = await _repo.offer(m);
-    if (id == null) return OfferResult.skipped;
-    return learned ? OfferResult.queuedFromLearned : OfferResult.queued;
+    if (id == null) return (OfferResult.skipped, null);
+    return (learned ? OfferResult.queuedFromLearned : OfferResult.queued, id);
   }
 
   /// Offers a payment-app notification the strict parser rejected.

@@ -2,6 +2,7 @@ import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
+import 'package:hisaab/app/di/unrecognised_providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_poster_impl.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_settings_store.dart';
@@ -39,6 +40,7 @@ AlertActionHandler alertActionHandler(Ref ref) => AlertActionHandler(
       txs: ref.watch(transactionRepositoryProvider),
       poster: ref.watch(alertPosterProvider),
       activity: ref.watch(activityLoggerProvider),
+      dismissUnrecognised: ref.watch(unrecognisedRepositoryProvider).dismiss,
     );
 
 /// Runs all alert checks and posts the results.

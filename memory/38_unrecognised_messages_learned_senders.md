@@ -69,7 +69,7 @@ N/A - the Kotlin app has no such feature. Designed from a study of how a competi
 | FR-38-10 | Retention: text of a waiting message is dropped after 30 days (expired), text of a handled message after 30 days; the row stays as a tombstone for 400 days. Purge runs when the queue is opened. |
 | FR-38-11 | Add books through the ledger's `addFromMessage` with the message's source and id; dedup applies; the same message read later is skipped; the queue row is marked added with the transaction id. |
 | FR-38-12 | The Add form can be opened pre-filled from a draft (amount, type, payee, reference, category, account, date, note) with an optional confirm callback; shared text uses the same draft (see [Transactions ledger](08_transactions_ledger.md) FR-08-27). |
-| FR-38-13 | "Spent ₹X at Y?" alert for a learned sender's message, tap opens Add pre-filled; Add and Not a payment actions. Pending. |
+| FR-38-13 | "Spent ₹X at Y?" alert for a learned sender's message, tap opens Add pre-filled; Add and Not a payment actions. Done: `AlertRules.learnedSenderAlert`, `AlertKind.learnedSender`, `hisaab://unrecognised/<id>` opens the list, `unrecNot` dismisses (notification id base 600000). Posted from `liveSmsOffer` only when the sender is learned. Tap/Add open the list, not the form. |
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 - Offline and on-device; the queue lives in the SQLCipher database.
@@ -161,7 +161,7 @@ Tests: `app/packages/parser_core/test/generic_extractor_test.dart`; `app/test/fe
 - AC-38-06: Message text is dropped after 30 days (FR-38-10; TC-38-04).
 
 ## 17. Open Questions
-1. The "Spent ₹X at Y?" alert needs a new alert kind in the native alerts channel (FR-38-13).
+1. (Resolved) The alert reuses the generic channel payload; no native change was needed.
 2. Should learning wait for two Adds before alerts start? One keeps it simple; revisit if noise appears.
 3. The live path queues only learned senders; an unknown bank's first message waits for the user's scan or the nightly job. A nightly scan of unknown senders was not added for privacy.
 4. Add currently pre-fills one currency; a foreign amount leaves the rupee field blank.
@@ -174,3 +174,4 @@ Landed 2026-11-06 (issue I-02). Reader, queue, learned senders, screens, hooks a
 | Date | Change | Reason |
 |---|---|---|
 | 2026-11-06 | Created: generic reader, review queue, learned senders, Learned senders screen, live and notification hooks, inbox scan | Payments no parser recognised were dropped silently (issue I-02, from the PennyWise comparison) |
+| 2026-11-06 | FR-38-13 done: "Spent ₹X at Y?" alert for learned senders | Issue I-02b |
