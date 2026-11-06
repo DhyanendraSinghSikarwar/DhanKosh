@@ -4,6 +4,8 @@ import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/app/di/unrecognised_providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
+import 'package:hisaab/core/platform_channels/background_channel.dart';
+import 'package:hisaab/core/platform_channels/background_tasks.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_poster_impl.dart';
 import 'package:hisaab/features/alerts_reminders/data/alert_settings_store.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_action_handler.dart';
@@ -12,6 +14,7 @@ import 'package:hisaab/features/alerts_reminders/domain/alert_poster.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alerts_engine.dart';
 import 'package:hisaab/features/forex_rates/domain/forex_rate.dart';
 import 'package:hisaab/features/news_support_updates/domain/update_keys.dart';
+import 'package:hisaab/features/sms_ingestion/domain/nightly_schedule.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'alerts_providers.g.dart';
@@ -24,8 +27,24 @@ AlertPoster alertPoster(Ref ref) => const AlertPosterImpl();
 
 /// Persisted alert settings.
 @Riverpod(keepAlive: true)
-AlertSettingsRepository alertSettingsRepository(Ref ref) =>
-    AlertSettingsStore(ref.watch(settingsRepositoryProvider));
+AlertSettingsRepository alertSettingsRepository(Ref ref) => AlertSettingsStore(
+      ref.watch(settingsRepositoryProvider),
+      onDailyChanged: ({required on}) async {
+        const channel = BackgroundChannel();
+        if (!on) {
+          await channel.cancel(BackgroundTasks.dailySummaryUnique);
+          return;
+        }
+        await channel.schedulePeriodic(
+          uniqueName: BackgroundTasks.dailySummaryUnique,
+          task: BackgroundTasks.alertsCheck,
+          intervalMinutes: Duration.minutesPerDay,
+          initialDelayMinutes:
+              nextNightlyDelay(DateTime.now(), hour: 21, minute: 0).inMinutes,
+          requiresBatteryNotLow: false,
+        );
+      },
+    );
 
 /// Alert settings, live.
 @riverpod

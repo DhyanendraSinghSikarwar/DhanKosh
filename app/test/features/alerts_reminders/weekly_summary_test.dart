@@ -36,6 +36,8 @@ class _Settings implements AlertSettingsRepository {
   @override
   Stream<AlertSettings> watch() => Stream.value(value);
   @override
+  Future<void> setDailySummary({required bool value}) async {}
+  @override
   Future<void> setBudgetAlertPercent(int percent) async {}
   @override
   Future<void> setCardDueReminders({required bool value}) async {}

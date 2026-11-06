@@ -36,6 +36,9 @@ abstract interface class AlertSettingsRepository {
   /// Turns the weekly summary on or off (FR-21-21).
   Future<void> setWeeklySummary({required bool value});
 
+  /// Turns the evening daily summary on or off (FR-21-29).
+  Future<void> setDailySummary({required bool value});
+
   /// Turns the update-available notification on or off (FR-31-34).
   Future<void> setUpdateAvailable({required bool value});
 }
@@ -55,6 +58,8 @@ String alertRouteFor(String link) {
       return '/review/unrecognised';
     case 'budgets':
       return '/budgets';
+    case 'transactions':
+      return '/transactions';
     case 'bills':
       return '/bills';
     case 'updates':

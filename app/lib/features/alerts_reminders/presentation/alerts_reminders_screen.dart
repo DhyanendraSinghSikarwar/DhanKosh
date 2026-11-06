@@ -136,6 +136,16 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
                 ),
                 const Divider(height: 1),
                 SwitchListTile(
+                  key: const Key('alerts-daily'),
+                  contentPadding: EdgeInsets.zero,
+                  secondary: const IconBadge(AppIcons.activity, size: 36),
+                  title: Text(t('Daily summary')),
+                  subtitle: Text(t('Today at 9 pm: spent and to categorise')),
+                  value: s.dailySummary,
+                  onChanged: (v) => unawaited(repo.setDailySummary(value: v)),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
                   key: const Key('alerts-weekly'),
                   contentPadding: EdgeInsets.zero,
                   secondary: const IconBadge(AppIcons.activity, size: 36),

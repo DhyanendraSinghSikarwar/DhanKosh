@@ -594,6 +594,37 @@ abstract final class AlertRules {
     );
   }
 
+  /// Evening recap (FR-21-29): today's spend and how many payments still wait
+  /// for a category. Silent on a day with neither, and before 21:00.
+  static AlertDecision? dailySummary({
+    required DateTime today,
+    required int hour,
+    required int spentMinor,
+    required int paymentCount,
+    required int uncategorisedCount,
+    required AlertSettings settings,
+    required Set<String> alerted,
+  }) {
+    if (!settings.dailySummary || hour < 21) return null;
+    final key = 'daily:${_date(today)}';
+    if (alerted.contains(key)) return null;
+    if (spentMinor <= 0 && uncategorisedCount <= 0) return null;
+    return AlertDecision(
+      kind: AlertKind.dailySummary,
+      key: key,
+      channel: AlertChannel.budgetsBills,
+      notificationId: AlertText.stableId(key),
+      title: spentMinor > 0
+          ? 'Today: ${AlertText.money(spentMinor)} spent'
+          : 'Today: nothing spent',
+      body: [
+        '$paymentCount ${paymentCount == 1 ? 'payment' : 'payments'}',
+        if (uncategorisedCount > 0) '$uncategorisedCount to categorise',
+      ].join(' · '),
+      link: 'hisaab://transactions',
+    );
+  }
+
   /// Spend and top category of [txs] inside [fromMs, toMs): debits that are
   /// not transfers or review rows, in INR (FR-21-21).
   static WeekSpend weekSpend(Iterable<LedgerTx> txs, int fromMs, int toMs) {

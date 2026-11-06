@@ -13,6 +13,7 @@ import 'package:hisaab/features/analytics/domain/civil_date.dart';
 import 'package:hisaab/features/credit_cards/domain/card_models.dart';
 import 'package:hisaab/features/credit_cards/domain/card_reminder_plan.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_repository.dart';
+import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_repository.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
@@ -123,6 +124,7 @@ class AlertsEngine {
         () => _newTxDecisions(settings),
         () => _renewalDecisions(today),
         () => _weeklyDecisions(settings, today),
+        () => _dailyDecisions(settings, today, ist.hour),
         () => _updateDecisions(settings),
       ]) {
         try {
@@ -394,6 +396,32 @@ class AlertsEngine {
       previous: AlertRules.weekSpend(rows, ms(prevMonday), ms(monday)),
       settings: settings,
       alerted: alerted,
+    );
+    return d == null ? const [] : [d];
+  }
+
+  Future<List<AlertDecision>> _dailyDecisions(
+    AlertSettings settings,
+    DateTime today,
+    int hour,
+  ) async {
+    final txs = _txs;
+    if (!settings.dailySummary || txs == null || hour < 21) return const [];
+    final from = today.millisecondsSinceEpoch - _istOffsetMs;
+    final rows = await txs
+        .watch(LedgerFilter(fromMs: from, toMs: from + 86400000))
+        .first;
+    final counted = rows.where(SpendCalc.counts).toList();
+    final debits = counted.where((t) => t.type == TransactionType.debit);
+    final d = AlertRules.dailySummary(
+      today: today,
+      hour: hour,
+      spentMinor: AlertRules.weekSpend(rows, from, from + 86400000).spentMinor,
+      paymentCount: debits.length,
+      uncategorisedCount:
+          debits.where((t) => t.category == Category.other).length,
+      settings: settings,
+      alerted: await _alerted.all(),
     );
     return d == null ? const [] : [d];
   }

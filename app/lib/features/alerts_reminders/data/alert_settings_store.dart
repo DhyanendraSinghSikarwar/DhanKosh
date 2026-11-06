@@ -8,9 +8,12 @@ import 'package:hisaab/features/settings_data_sources/domain/settings_repository
 /// [AlertSettingsRepository] over the settings table (FR-21-18).
 class AlertSettingsStore implements AlertSettingsRepository {
   /// Creates the store.
-  const AlertSettingsStore(this._s);
+  const AlertSettingsStore(this._s, {this.onDailyChanged});
 
   final SettingsRepository _s;
+
+  /// Told when the daily summary is switched, to schedule or cancel its job.
+  final Future<void> Function({required bool on})? onDailyChanged;
 
   @override
   Future<AlertSettings> read() async => AlertSettings(
@@ -19,6 +22,7 @@ class AlertSettingsStore implements AlertSettingsRepository {
         budgetAlertPercent: await _s.read(SettingKeys.budgetAlertPercent),
         cardDueReminders: await _s.read(SettingKeys.cardDueReminders),
         weeklySummary: await _s.read(weeklySummaryKey),
+        dailySummary: await _s.read(dailySummaryKey),
         updateAvailable: await _s.read(updateAlertKey),
       );
 
@@ -39,6 +43,7 @@ class AlertSettingsStore implements AlertSettingsRepository {
           _s.watch(SettingKeys.budgetAlertPercent),
           _s.watch(SettingKeys.cardDueReminders),
           _s.watch(weeklySummaryKey),
+          _s.watch(dailySummaryKey),
           _s.watch(updateAlertKey),
         ]) {
           subs.add(s.skip(1).listen((_) => unawaited(emit())));
@@ -68,6 +73,16 @@ class AlertSettingsStore implements AlertSettingsRepository {
   @override
   Future<void> setWeeklySummary({required bool value}) =>
       _s.write(weeklySummaryKey, value);
+
+  @override
+  Future<void> setDailySummary({required bool value}) async {
+    await _s.write(dailySummaryKey, value);
+    try {
+      await onDailyChanged?.call(on: value);
+    } on Object {
+      // The job is re-requested the next time the app starts.
+    }
+  }
 
   @override
   Future<void> setUpdateAvailable({required bool value}) =>

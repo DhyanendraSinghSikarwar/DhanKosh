@@ -28,6 +28,7 @@ enum AlertKind {
   updateAvailable,
   learnedSender,
   lowBalanceAccount,
+  dailySummary,
 }
 
 /// A notification button (FR-21-03, FR-21-10).
@@ -112,6 +113,7 @@ class AlertSettings {
     this.budgetAlertPercent = 90,
     this.cardDueReminders = true,
     this.weeklySummary = false,
+    this.dailySummary = false,
     this.updateAvailable = true,
   });
 
@@ -120,6 +122,9 @@ class AlertSettings {
 
   /// Weekly summary notification, off by default (FR-21-21).
   final bool weeklySummary;
+
+  /// Evening recap of today, off by default (FR-21-29).
+  final bool dailySummary;
 
   final bool transactionNotifications;
 
@@ -241,6 +246,9 @@ class BalanceGapInput {
 
 /// Setting key of the weekly summary toggle (FR-21-21).
 const weeklySummaryKey = SettingKey<bool>('weekly_summary_alert', false);
+
+/// Setting key of the daily summary toggle (FR-21-29).
+const dailySummaryKey = SettingKey<bool>('daily_summary_alert', false);
 
 /// Setting key of the update-available toggle (FR-31-34).
 const updateAlertKey = SettingKey<bool>('update_alert', true);
