@@ -166,6 +166,20 @@ class StatementParser {
   final ParserConfig config;
 
   static const _headerLines = 40;
+
+  static final RegExp _rowStart = rx(
+    r'^\s*\d{1,2}[-/. ](?:\d{1,2}|[A-Za-z]{3,4})[-/. ]\d{2,4}\b',
+  );
+
+  /// The lines above the first dated row (at most [_headerLines]), joined.
+  static String _preamble(List<String> lines) {
+    final out = <String>[];
+    for (final l in lines.take(_headerLines)) {
+      if (_rowStart.hasMatch(l)) break;
+      out.add(l);
+    }
+    return out.join(' ');
+  }
   static const _summaryLines = 120;
   static const _labelBlock = 8;
   static const _dateKeys = {'due_date', 'stmt_date', 'period'};
@@ -180,15 +194,22 @@ class StatementParser {
         .toList();
     final header = lines.take(_headerLines).join(' ');
     final isCard = _cardStatement.hasMatch(header);
-    final mm = _maskedNumber.firstMatch(header);
+    // The bank and the account number belong to the part above the first
+    // transaction: a row's narration ("UPI/.../HDFC BANK", "to A/c 6810") names
+    // the other side of a payment, never this statement's account.
+    final preamble = _preamble(lines);
+    final mm = _maskedNumber.firstMatch(preamble);
     final last4 = (mm == null ? null : firstGroup(mm)) ??
-        AccountExtractor.extract(header)?.last4;
+        AccountExtractor.extract(preamble)?.last4;
     String? bank;
-    for (final (re, name) in _banks) {
-      if (re.hasMatch(header)) {
-        bank = name;
-        break;
+    for (final text in [sender, preamble]) {
+      for (final (re, name) in _banks) {
+        if (re.hasMatch(text)) {
+          bank = name;
+          break;
+        }
       }
+      if (bank != null) break;
     }
     if (bank == null) {
       final lt = sender.indexOf('<');

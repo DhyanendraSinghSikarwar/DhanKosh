@@ -19,6 +19,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Watched apps screen (More, Payment-app notifications): switch any built-in app off, and add any other app that notifies your phone so its payments are tracked too.
 
 ### Fixed
+- A statement no longer creates a made-up account from a payee bank or number in a transaction line (an Axis statement with "YES BANK" in a row was booked under HDFC Bank ••6810). If you already have such an account, delete it from its menu.
 - More Indian senders are read and named: India Post Payments Bank (`IPBMSG`), Jio Payments Bank, Federal Bank's Fi and Scapia, Bandhan, Utkarsh, Kerala Bank, Greater Bank, OneCard, American Express, Jupiter, CRED SMS and others. Amex "a charge was made" and OneCard "fuel spend" alerts are now read, Greater Bank credits are no longer shown as debits, and a loan-recovery credit is no longer income.
 - Duplicate detection is stricter and smarter: references that differ only by a prefix match, stated balances tell two same-amount payments apart, two apps reporting one payment merge, and a late email merges into its SMS.
 - A payment that only produces an app notification (PhonePe and others) is now added right away, even with the app closed, instead of at the next time you open it.

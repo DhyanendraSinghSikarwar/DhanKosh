@@ -10,6 +10,32 @@ import 'support/statement_support.dart';
 void main() {
   const parser = StatementParser();
 
+  test('a payee bank or number in a row never becomes the statement account',
+      () {
+    final text = dedent('''
+      Axis Bank Account Statement
+      Account No: 9170XXXXXX2345
+      Date Particulars Chq Dr Cr Balance
+      24-05-2026 UPI/P2M/072283649940/RAJENDRA KUMAWAT /Paymen/YES BANK 20.00 4,600.38
+      25-05-2026 UPI/P2P/512345678901/ASHA/HDFC BANK/to A/c XX6810 150.00 4,450.38
+    ''');
+    final r = parser.parse(text, 'Statement', receivedAt);
+    expect(r.bankName, 'Axis Bank');
+    expect(r.last4, '2345');
+    expect(r.transactions.every((t) => t.bankName == 'Axis Bank'), isTrue);
+    expect(r.transactions.every((t) => t.accountLast4 == '2345'), isTrue);
+  });
+
+  test('no header: the statement account is left unknown, not guessed', () {
+    final text = dedent('''
+      24-05-2026 UPI/P2M/072283649940/RAJENDRA KUMAWAT /Paymen/HDFC BANK 20.00 4,600.38
+      25-05-2026 UPI/P2P/512345678901/ASHA/to A/c XX6810 150.00 4,450.38
+    ''');
+    final r = parser.parse(text, 'Statement', receivedAt);
+    expect(r.last4, isNull);
+    expect(r.bankName, isNot('HDFC Bank'));
+  });
+
   test('credit card statement rows become card transactions', () {
     final text = dedent('''
       HDFC Bank Credit Card Statement
