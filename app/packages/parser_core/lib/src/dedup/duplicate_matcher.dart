@@ -30,6 +30,22 @@ abstract final class DuplicateMatcher {
   /// Rounded payment-app amounts: 4 hours.
   static const int roundedWindowMillis = 4 * 60 * 60 * 1000;
 
+  /// A shared reference merges within 3 days (a statement's value date can
+  /// differ from the posting by more): 72 hours, 96 with a statement.
+  static const int referenceWindowMillis = 72 * 60 * 60 * 1000;
+
+  /// See [referenceWindowMillis].
+  static const int referenceStatementWindowMillis = 96 * 60 * 60 * 1000;
+
+  /// The same payment announced by two different payment apps: 10 minutes.
+  static const int crossAppWindowMillis = 10 * 60 * 1000;
+
+  /// Late mail for an SMS the day before: 24 hours.
+  static const int lateMailWindowMillis = 24 * 60 * 60 * 1000;
+
+  /// Two messages that print times this far apart are two transactions.
+  static const int explicitTimeApartMillis = 60 * 1000;
+
   /// One payment can be announced twice by payment apps (a status, then a
   /// receipt) within seconds; further apart it is another payment: 2 minutes.
   static const int appRepostWindowMillis = 2 * 60 * 1000;
@@ -48,14 +64,58 @@ abstract final class DuplicateMatcher {
     final txIsApp = txSource == 'APP';
     final ref = tx.referenceNumber;
     if (ref != null) {
+      PossibleDuplicate? sameRef;
       for (final s in await lookup.byReference(ref)) {
-        if (s.amountMinor == tx.amountMinor &&
-            s.type.direction == tx.type.direction) {
+        if (!refsEqual(s.referenceNumber, ref)) continue;
+        // The same reference on money going the other way is a reversal or a
+        // refund, never the same transaction (FR-07-19).
+        if (s.type.direction != tx.type.direction) continue;
+        if (!(s.amountMinor == tx.amountMinor || _roundedRelation(s, tx))) {
+          continue;
+        }
+        final statement =
+            txSource == _statement || s.sources.contains(_statement);
+        final limit =
+            statement ? referenceStatementWindowMillis : referenceWindowMillis;
+        final gap = (s.transactionTime - tx.transactionTime).abs();
+        final sLast4 = s.accountLast4;
+        final tLast4 = tx.accountLast4;
+        final conflict =
+            sLast4 != null && tLast4 != null && !last4Match(sLast4, tLast4);
+        if (gap <= limit && !conflict) {
           return Duplicate(s.id, MatchReason.reference);
         }
+        sameRef ??= PossibleDuplicate(
+          s.id,
+          conflict
+              ? 'Same reference on different accounts'
+              : 'Same reference, ${(gap / Duration.millisecondsPerDay).round()} days apart',
+        );
+      }
+      if (sameRef != null) return sameRef;
+    }
+    var h = await lookup.byHash(tx.transactionHash);
+    if (h != null) {
+      // Two rows that state a balance say whether they are one transaction or
+      // two (FR-07-21), whatever their hash says.
+      switch (_balanceVerdict(h, tx)) {
+        case _Balance.same:
+          return Duplicate(h.id, MatchReason.hash);
+        case _Balance.sequential:
+          h = null;
+        case _Balance.unknown:
+          break;
       }
     }
-    final h = await lookup.byHash(tx.transactionHash);
+    // Two messages from one source that print different times, with no
+    // reference to say otherwise, are two transactions: two ₹20 teas minutes
+    // apart (FR-07-21).
+    if (h != null &&
+        tx.referenceNumber == null &&
+        h.sources.contains(txSource) &&
+        _timesDiffer(h, tx)) {
+      h = null;
+    }
     if (h != null && txIsApp && ref == null && h.sources.contains('APP')) {
       // A payment-app notification names no account and usually no reference,
       // so its hash is only amount, direction and day: two ₹50 payments in a
@@ -110,7 +170,7 @@ abstract final class DuplicateMatcher {
       // they look.
       if (c.referenceNumber != null &&
           tx.referenceNumber != null &&
-          c.referenceNumber != tx.referenceNumber) {
+          !refsEqual(c.referenceNumber, tx.referenceNumber)) {
         continue;
       }
       final cLast4 = c.accountLast4;
@@ -118,6 +178,40 @@ abstract final class DuplicateMatcher {
       final bothHaveAccount = cLast4 != null && tLast4 != null;
       final sameAccount = bothHaveAccount && last4Match(cLast4, tLast4);
       if (bothHaveAccount && !sameAccount) continue;
+
+      // Stated balances settle it: equal is one transaction, a step of exactly
+      // the amount is two (FR-07-21).
+      switch (_balanceVerdict(c, tx)) {
+        case _Balance.same:
+          return Duplicate(c.id, MatchReason.fuzzy);
+        case _Balance.sequential:
+          continue;
+        case _Balance.unknown:
+          break;
+      }
+
+      // Two messages from one source printing different times, with no
+      // reference to say otherwise, are two transactions (FR-07-21).
+      if (tx.referenceNumber == null &&
+          c.sources.contains(txSource) &&
+          _timesDiffer(c, tx)) {
+        continue;
+      }
+
+      // The same payment announced by two different payment apps (a bank app
+      // and Google Pay) is one payment: another channel, not a repeat
+      // (FR-07-20).
+      if (txIsApp &&
+          c.sources.contains('APP') &&
+          c.appSenders.isNotEmpty &&
+          !c.appSenders.contains(tx.sender.toLowerCase())) {
+        if ((c.transactionTime - tx.transactionTime).abs() <=
+                crossAppWindowMillis &&
+            merchantsAgree(c.merchant, tx.merchant)) {
+          return Duplicate(c.id, MatchReason.fuzzy);
+        }
+        continue;
+      }
 
       // Two payment-app notifications for one amount are two payments unless
       // the second is a re-post within seconds. The same payee within half an
@@ -159,7 +253,19 @@ abstract final class DuplicateMatcher {
         }
         continue;
       }
-      if (gap > reviewWindowMillis) continue;
+      if (gap > reviewWindowMillis) {
+        // An email for an SMS the day before: worth a look, never a silent
+        // merge (FR-07-22).
+        if (review == null &&
+            gap <= lateMailWindowMillis &&
+            crossSource &&
+            sameAccount &&
+            _mailAgainstMessage(c, tx) &&
+            _namedPayeesAgree(c.merchant, tx.merchant)) {
+          review = (c, 'Same amount from SMS and email on consecutive days');
+        }
+        continue;
+      }
 
       if (close && crossSource && (sameAccount || sameMerchant)) {
         return Duplicate(c.id, MatchReason.fuzzy);
@@ -252,6 +358,95 @@ abstract final class DuplicateMatcher {
     return best;
   }
 
+  /// An email on one side, an SMS or notification on the other.
+  static bool _mailAgainstMessage(StoredTransaction c, ParsedTransaction tx) {
+    final txMail = sourceKey(tx.source) == 'EMAIL';
+    final cMail = c.sources.contains('EMAIL');
+    final cOther = c.sources.contains('SMS') || c.sources.contains('APP');
+    final txOther =
+        sourceKey(tx.source) == 'SMS' || sourceKey(tx.source) == 'APP';
+    return (txMail && cOther && !cMail) || (txOther && cMail && !cOther);
+  }
+
+  /// Both name a real payee and they agree.
+  static bool _namedPayeesAgree(String? a, String? b) => _samePayee(a, b);
+
+  /// Both messages print a time of day and the times are a minute or more
+  /// apart.
+  static bool _timesDiffer(StoredTransaction c, ParsedTransaction tx) =>
+      c.hasExplicitTime &&
+      tx.hasExplicitTime &&
+      (c.transactionTime - tx.transactionTime).abs() >= explicitTimeApartMillis;
+
+  /// What two stated balances say about two rows of the same amount and
+  /// direction on the same account.
+  static _Balance _balanceVerdict(StoredTransaction c, ParsedTransaction tx) {
+    final cb = c.balanceMinor;
+    final tb = tx.balanceMinor;
+    if (cb == null || tb == null) return _Balance.unknown;
+    if (c.amountMinor != tx.amountMinor ||
+        c.type.direction != tx.type.direction) {
+      return _Balance.unknown;
+    }
+    final cl = c.accountLast4;
+    final tl = tx.accountLast4;
+    if (cl == null || tl == null || !last4Match(cl, tl)) {
+      return _Balance.unknown;
+    }
+    if (cb == tb) {
+      // The same balance a day apart is one message told twice.
+      return (c.transactionTime - tx.transactionTime).abs() <=
+              lateMailWindowMillis
+          ? _Balance.same
+          : _Balance.unknown;
+    }
+    final earlier = c.transactionTime <= tx.transactionTime;
+    final eb = earlier ? cb : tb;
+    final lb = earlier ? tb : cb;
+    final step = tx.type.direction == 'OUT' ? -c.amountMinor : c.amountMinor;
+    return lb == eb + step ? _Balance.sequential : _Balance.unknown;
+  }
+
+  /// A payment-app amount of whole rupees against a bank amount with paise.
+  static bool _roundedRelation(StoredTransaction c, ParsedTransaction tx) {
+    final d = c.amountMinor - tx.amountMinor;
+    final txApp = sourceKey(tx.source) == 'APP';
+    final cApp = c.sources.length == 1 && c.sources.contains('APP');
+    if (txApp && tx.amountMinor % 100 == 0) return d >= 1 && d <= 99;
+    if (cApp && c.amountMinor % 100 == 0) return -d >= 1 && -d <= 99;
+    return false;
+  }
+
+  static final RegExp _refKeep = RegExp('[^A-Z0-9]');
+
+  /// A reference as compared: upper-case letters and digits, leading zeros
+  /// dropped. Null when too short (under 6) or one repeated character to say
+  /// anything (FR-07-19).
+  static String? normalizeReference(String? r) {
+    if (r == null) return null;
+    final t = r
+        .toUpperCase()
+        .replaceAll(_refKeep, '')
+        .replaceFirst(RegExp('^0+'), '');
+    if (t.length < 6) return null;
+    if (t.split('').toSet().length == 1) return null;
+    return t;
+  }
+
+  /// Two references name one payment: equal once normalised, or one is a
+  /// 12-digit UPI/IMPS reference and the other the same digits with a short
+  /// prefix (`UPI612345678901`) (FR-07-19).
+  static bool refsEqual(String? a, String? b) {
+    final x = normalizeReference(a);
+    final y = normalizeReference(b);
+    if (x == null || y == null) return a == b;
+    if (x == y) return true;
+    bool rrn(String v) => RegExp(r'^\d{12}$').hasMatch(v);
+    if (rrn(x) && y.length <= 22 && y.endsWith(x)) return true;
+    if (rrn(y) && x.length <= 22 && x.endsWith(y)) return true;
+    return false;
+  }
+
   /// A second notification for the same payment: seconds apart and not naming
   /// a different payee.
   static bool _appRepost(StoredTransaction c, ParsedTransaction tx) =>
@@ -291,3 +486,6 @@ abstract final class DuplicateMatcher {
   static bool last4Match(String a, String b) =>
       a == b || a.endsWith(b) || b.endsWith(a);
 }
+
+/// What stated balances say about two rows.
+enum _Balance { same, sequential, unknown }

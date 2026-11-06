@@ -112,23 +112,15 @@ class TransactionRepositoryImpl implements TransactionRepository {
       if (leg != null) decision = DedupDuplicate(leg, DuplicateReason.fuzzy);
     }
 
-    // Unique-hash race: a stored row with this hash absorbs the message. The
-    // exception is a payment-app notification, which has no account and
-    // usually no reference: its hash is only amount, direction and day, so a
-    // second payment of that amount shares it. The matcher has already judged
-    // it another payment, so it is stored under a hash of its own (FR-04-23).
+    // The matcher has judged this message a new transaction. When its hash is
+    // already taken (two ₹20 teas on one card in a day, two payments through an
+    // app), it is stored under a hash of its own and not absorbed into the
+    // other row (FR-04-23, FR-07-18, FR-07-21).
     var newHash = p.transactionHash;
     if (decision is DedupNew) {
-      final same = candidates
-          .where((c) => c.transactionHash == p.transactionHash)
-          .toList();
-      if (same.isNotEmpty) {
-        if (p.source == Source.app && p.referenceNumber == null) {
-          newHash = '${p.transactionHash}#$src:${item.sourceMessageId}';
-        } else {
-          decision = DedupDuplicate(same.first.id, DuplicateReason.hash);
-        }
-      }
+      final taken =
+          candidates.any((c) => c.transactionHash == p.transactionHash);
+      if (taken) newHash = '${p.transactionHash}#$src:${item.sourceMessageId}';
     }
 
     int txId;
@@ -396,6 +388,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
           ),
       if (ref != null && ref.isNotEmpty)
         _db.transactions.referenceNumber.equals(ref),
+      // The same reference written another way: extra leading zeros, a short
+      // prefix such as "UPI" (FR-07-19).
+      if (DuplicateMatcher.normalizeReference(ref) case final n?)
+        _db.transactions.referenceNumber.like('%$n'),
     ];
     final rows = await (_db.select(_db.transactions)
           ..where(

@@ -24,6 +24,7 @@ class DedupCandidate {
     this.balanceMinor,
     this.availableLimitMinor,
     this.sourceHashes = const {},
+    this.appSenders = const {},
   });
 
   final int id;
@@ -41,6 +42,9 @@ class DedupCandidate {
 
   /// Hashes of every message already merged into the row.
   final Set<String> sourceHashes;
+
+  /// Lower-cased names of the payment apps that reported the row (FR-07-20).
+  final Set<String> appSenders;
   final String? referenceNumber;
   final String? accountLast4;
   final int? accountId;
@@ -129,7 +133,11 @@ class _CandidateLookup extends DedupLookup {
   @override
   Future<List<StoredTransaction>> byReference(String referenceNumber) async => [
         for (final r in _rows)
-          if (r.stored.referenceNumber == referenceNumber) r.stored,
+          if (DuplicateMatcher.refsEqual(
+            r.stored.referenceNumber,
+            referenceNumber,
+          ))
+            r.stored,
       ];
 
   // A row also owns the hashes of the messages merged into it.
@@ -183,6 +191,9 @@ class _Row {
               : candidate.referenceNumber,
           transactionTime: candidate.timestamp,
           sources: {for (final s in candidate.sources) sourceKey(s)},
+          balanceMinor: candidate.balanceMinor,
+          hasExplicitTime: candidate.hasExplicitTime,
+          appSenders: candidate.appSenders,
         );
 
   final DedupCandidate candidate;

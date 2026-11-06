@@ -16,6 +16,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Watched apps screen (More, Payment-app notifications): switch any built-in app off, and add any other app that notifies your phone so its payments are tracked too.
 
 ### Fixed
+- Duplicate detection is stricter and smarter: references that differ only by a prefix match, stated balances tell two same-amount payments apart, two apps reporting one payment merge, and a late email merges into its SMS.
 - A payment that only produces an app notification (PhonePe and others) is now added right away, even with the app closed, instead of at the next time you open it.
 - Two payments of the same amount on one day through payment apps are both recorded; the second used to be held back for review and left out of totals.
 - Data sources shows whether the notification listener is connected and when it last read a payment notification.

@@ -102,7 +102,7 @@ Exclude-from-analytics, merchant alias, budget impact; tags; quick add; subscrip
 | I-02 | Done except the "Spent X at Y?" alert and device verification (F-38) |
 | I-03 | Done (FR-08-27); device verification pending |
 | I-04 | Done: column mapping, saved layouts, balance check (FR-05-28, 29, 31). Not done: dry-run preview with untick, one-to-one statement matching (moves to I-05) |
-| I-05 | Pending |
+| I-05 | Done: FR-07-19..22 (references, two apps, stated balances/times, late mail). Deferred as I-05b (ADR needed): D4, D6, D8, D9, D10, D12, D14, one-to-one statement matching |
 | I-06 | Pending |
 | I-07 | Pending |
 | I-08 | Pending |

@@ -66,6 +66,10 @@ DedupCandidate toCandidate(
           enumFromDb(Source.values, s.source, Source.sms),
       },
       sourceHashes: {for (final s in sources) s.parsedHash},
+      appSenders: {
+        for (final s in sources)
+          if (s.source == 'APP') s.sender.toLowerCase(),
+      },
       referenceNumber: r.referenceNumber,
       accountLast4: r.accountLast4,
       accountId: r.accountId,

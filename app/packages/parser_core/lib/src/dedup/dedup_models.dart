@@ -18,7 +18,22 @@ class StoredTransaction {
     required this.referenceNumber,
     required this.transactionTime,
     required this.sources,
+    this.balanceMinor,
+    this.hasExplicitTime = false,
+    this.appSenders = const {},
   });
+
+  /// The balance after the transaction, when a message stated one; two rows
+  /// whose balances differ by exactly the amount are two transactions
+  /// (FR-07-21).
+  final int? balanceMinor;
+
+  /// Whether the time came from the message text and not the arrival time.
+  final bool hasExplicitTime;
+
+  /// Lower-cased names of the payment apps that reported this row, so two
+  /// different apps announcing one payment count as two sources (FR-07-20).
+  final Set<String> appSenders;
 
   /// Row id.
   final int id;
@@ -50,6 +65,7 @@ class StoredTransaction {
     String? merchant,
     String? referenceNumber,
     Set<String>? sources,
+    Set<String>? appSenders,
   }) =>
       StoredTransaction(
         id: id,
@@ -60,6 +76,9 @@ class StoredTransaction {
         referenceNumber: referenceNumber ?? this.referenceNumber,
         transactionTime: transactionTime,
         sources: sources ?? this.sources,
+        balanceMinor: balanceMinor,
+        hasExplicitTime: hasExplicitTime,
+        appSenders: appSenders ?? this.appSenders,
       );
 }
 
