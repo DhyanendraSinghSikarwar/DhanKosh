@@ -2,7 +2,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
-import 'package:parser_core/parser_core.dart';
 
 import '../../support/parsed.dart';
 import '../../support/test_env.dart';

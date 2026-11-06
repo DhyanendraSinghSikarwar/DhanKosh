@@ -268,8 +268,11 @@ abstract final class IndianBanks {
     ListedBank('Post Office Savings Bank', {'DOPBNK'}, {'indiapost.gov.in'}),
     ListedBank('Jupiter (CSB Bank)', {'JTEDGE'}, {'jupiter.money'}),
     ListedBank('OneCard', {'ONECRD'}, {'getonecard.app', 'onecard.in'}),
-    ListedBank('American Express', {'AMEXIN', 'AMEXCC'},
-        {'americanexpress.co.in', 'aexp.com'},),
+    ListedBank(
+      'American Express',
+      {'AMEXIN', 'AMEXCC'},
+      {'americanexpress.co.in', 'aexp.com'},
+    ),
     ListedBank('slice', {'SLCEIT', 'SLCBNK'}, {'slicepay.in', 'sliceit.com'}),
   ];
 }

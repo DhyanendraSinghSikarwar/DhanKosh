@@ -180,6 +180,7 @@ class StatementParser {
     }
     return out.join(' ');
   }
+
   static const _summaryLines = 120;
   static const _labelBlock = 8;
   static const _dateKeys = {'due_date', 'stmt_date', 'period'};

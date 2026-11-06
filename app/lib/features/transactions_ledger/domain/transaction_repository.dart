@@ -71,6 +71,10 @@ abstract interface class TransactionRepository {
   Future<void> setSubcategory(int id, String? subcategory);
   Future<void> setNote(int id, String? note);
 
+  /// Shows [alias] instead of the payee's name on every row of that payee;
+  /// null or blank removes it (FR-09-20).
+  Future<void> setMerchantAlias(int id, String? alias);
+
   /// Leaves [ids] out of (or back in) every total; balances are unchanged
   /// (FR-10-24).
   Future<void> setExcluded(List<int> ids, {required bool excluded});

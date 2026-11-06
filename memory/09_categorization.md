@@ -6,7 +6,7 @@
 | Status | In progress (data layer, category picker, Rules screen and editor, Category detail (donut, 12-month trend, top merchants, budget, transactions, new sub-category) done; month stepper, expandable sub-rows, sub-category delete, logos, taxonomy catalogue pending); 2026-10-27 parity: brand logos (FR-09-32) and category icon picker (FR-09-33) done; sub-category dialog hook pending |
 | Priority | P0 |
 | Phase | 1 (core ledger + SMS; rule editor and category detail finish in Phase 4) |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-11-06 |
 
 ## 1. Description
 
@@ -361,6 +361,7 @@ Route `category/{key}?month={month}`; key is the enum name or `custom:<id>`; mon
 - FR-09-17: Budget category selection shall exclude SALARY, INCOME, REFUND, TRANSFER and categories already budgeted (see [Expense Tracking](10_expense_tracking.md)).
 - FR-09-18: Logo choice shall follow this order: (1) bundled WebP by `AppLogos` key (bank rules for a bank name; bank then merchant rules for a merchant); (2) `LogoPaths` vector (single-colour 24x24 Simple Icons path, tinted with the brand colour) when the brand defines one; (3) gradient monogram tile. A bundled WebP always wins over a vector (`BankLogo.kt:114-134`).
 - FR-09-19: `LogoPaths` vectors shall be kept for the brands that carry one (HDFC, ICICI, Axis, HSBC, Visa, Mastercard, Amex, Diners, Discover, JCB, Paytm, PhonePe, Google Pay), with the Simple Icons CC0 attribution and trademark note preserved in code comments (`LogoPaths.kt:3-6`).
+- FR-09-20: The user can choose a name to show instead of a payee's name (transaction detail, row "Shown as"; table `merchant_aliases`, schema v10, keyed by the merchant rule key). The alias is the row title everywhere a title is shown, for every row of that payee; the stored merchant is unchanged, so rules, dedup and search keep using the real name. Blank removes it. Not yet in the encrypted backup.
 - FR-09-32: Bank, payment app and merchant names shall map offline to one of 140 bundled logos (`assets/logos/<key>.webp`) with the Kotlin `AppLogos` rule order (specific, merchants, generic; banks separately); `BrandLogo` shows the logo or a letter avatar. Used on ledger rows (merchant logo, else bank logo) and account tiles.
 - FR-09-33: Custom categories and sub-categories shall store an icon key; the Kotlin icon set (46 general + 78 category icons) maps to Flutter `Icons` in `CategoryIcons`; the New category dialog has an icon picker (`showNameIconDialog`), custom category chips show the icon. The sub-category dialog can call the same helper.
 
@@ -681,3 +682,4 @@ Deferred: FR-09-14 month stepper, expandable sub-rows and sub-category delete (C
 | 2026-10-27 | Audit: Rules screen and learned rules confirmed done; Category detail, sub-category icons, icon picker and about 140 brand logos confirmed not built | Kotlin parity audit |
 | 2026-10-27 | Category detail screen built (FR-09-14 partial: no stepper or expandable rows) | Kotlin parity |
 | 2026-10-27 | Logos and icons | Kotlin parity |
+| 2026-11-06 | FR-09-20 merchant alias | PennyWise comparison, W2 |

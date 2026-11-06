@@ -677,6 +677,37 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Future<void> setSubcategory(int id, String? subcategory) =>
       _patch(id, TransactionsCompanion(subcategory: Value(subcategory)));
 
+  // FR-09-20
+  @override
+  Future<void> setMerchantAlias(int id, String? alias) async {
+    final r = await (_db.select(_db.transactions)
+          ..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    final key = r == null ? null : MerchantRule.keyOf(r.merchant, r.upiId);
+    if (key == null) return;
+    final a = alias?.trim();
+    if (a == null || a.isEmpty) {
+      await (_db.delete(_db.merchantAliases)
+            ..where((t) => t.merchantKey.equals(key)))
+          .go();
+    } else {
+      await _db.into(_db.merchantAliases).insertOnConflictUpdate(
+            MerchantAliasesCompanion.insert(
+              merchantKey: key,
+              alias: a,
+              updatedAt: _now(),
+            ),
+          );
+    }
+    // Lists listen to `transactions`; tell them the names changed.
+    _db.markTablesUpdated({_db.transactions});
+  }
+
+  Future<Map<String, String>> _aliases() async => {
+        for (final a in await _db.select(_db.merchantAliases).get())
+          a.merchantKey: a.alias,
+      };
+
   @override
   Future<void> setExcluded(List<int> ids, {required bool excluded}) async {
     for (final id in ids) {
@@ -957,7 +988,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
     final r = await (_db.select(_db.transactions)
           ..where((t) => t.id.equals(id)))
         .getSingleOrNull();
-    return r == null ? null : toLedgerTx(r);
+    if (r == null) return null;
+    final key = MerchantRule.keyOf(r.merchant, r.upiId);
+    final alias = key == null ? null : (await _aliases())[key];
+    return toLedgerTx(r, alias: alias);
   }
 
   @override
@@ -1050,7 +1084,16 @@ class TransactionRepositoryImpl implements TransactionRepository {
         (t) => OrderingTerm.desc(t.id),
       ]);
     if (limit != null) q.limit(limit);
-    return q.watch().map((rows) => rows.map(toLedgerTx).toList());
+    return q.watch().asyncMap((rows) async {
+      final aliases = await _aliases();
+      return [
+        for (final r in rows)
+          toLedgerTx(
+            r,
+            alias: aliases[MerchantRule.keyOf(r.merchant, r.upiId)],
+          ),
+      ];
+    });
   }
 
   @override

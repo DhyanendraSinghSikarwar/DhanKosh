@@ -4,7 +4,7 @@ import 'package:hisaab/features/dedup_review/domain/dedup_policy.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:parser_core/parser_core.dart';
 
-LedgerTx toLedgerTx(TransactionRow r) => LedgerTx(
+LedgerTx toLedgerTx(TransactionRow r, {String? alias}) => LedgerTx(
       id: r.id,
       amountMinor: r.amountMinor,
       currency: r.currency,
@@ -32,6 +32,7 @@ LedgerTx toLedgerTx(TransactionRow r) => LedgerTx(
       reviewReason: r.reviewReason,
       note: r.note,
       excluded: r.excluded,
+      alias: alias,
       createdAt: r.createdAt,
       inrMinor: r.inrMinor,
     );

@@ -224,6 +224,38 @@ class _Body extends ConsumerWidget {
     _refresh(ref);
   }
 
+  Future<void> _editAlias(BuildContext context, WidgetRef ref) async {
+    final c = TextEditingController(text: tt.alias ?? '');
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t('Show as')),
+        content: TextField(
+          key: const Key('alias_field'),
+          controller: c,
+          autofocus: true,
+          decoration: InputDecoration(hintText: tt.merchant ?? tt.upiId),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(t('Cancel')),
+          ),
+          FilledButton(
+            key: const Key('alias_save'),
+            onPressed: () => Navigator.pop(ctx, c.text.trim()),
+            child: Text(t('Save')),
+          ),
+        ],
+      ),
+    );
+    if (name == null) return;
+    await ref
+        .read(transactionRepositoryProvider)
+        .setMerchantAlias(tt.id, name.isEmpty ? null : name);
+    _refresh(ref);
+  }
+
   Future<void> _editNote(BuildContext context, WidgetRef ref) async {
     final c = TextEditingController(text: tt.note ?? '');
     final note = await showDialog<String>(
@@ -359,14 +391,22 @@ class _Body extends ConsumerWidget {
               if (tt.upiId != null) _Row('UPI id', tt.upiId!),
               if (tt.referenceNumber != null)
                 _Row('Reference', tt.referenceNumber!),
+              if (MerchantRule.keyOf(tt.merchant, tt.upiId) != null)
+                _Row(
+                  'Shown as',
+                  tt.alias ?? 'Same as payee',
+                  tag: 'detail_alias',
+                  onTap: () => _editAlias(context, ref),
+                ),
               _Row(
                 'Totals',
                 tt.excluded ? 'Left out' : 'Counted',
                 tag: 'detail_excluded',
-                onTap: () => ref
-                    .read(transactionRepositoryProvider)
-                    .setExcluded([tt.id],
-                        excluded: !tt.excluded,).then((_) => _refresh(ref)),
+                onTap: () =>
+                    ref.read(transactionRepositoryProvider).setExcluded(
+                  [tt.id],
+                  excluded: !tt.excluded,
+                ).then((_) => _refresh(ref)),
               ),
               _Row(
                 'Note',

@@ -30,6 +30,7 @@ class LedgerTx {
     this.reviewReason,
     this.note,
     this.excluded = false,
+    this.alias,
     this.inrMinor,
   });
 
@@ -61,11 +62,14 @@ class LedgerTx {
 
   /// The user left it out of totals; the balance still moves (FR-10-24).
   final bool excluded;
+
+  /// The name the user chose for this payee, if any (FR-09-20).
+  final String? alias;
   final int createdAt;
   final int? inrMinor;
 
   /// Merchant, or the bank when none (By-merchant grouping, FR-08-04).
-  String get title => merchant ?? bankName;
+  String get title => alias ?? merchant ?? bankName;
 }
 
 /// A message behind a ledger row.

@@ -14,6 +14,7 @@ import 'package:hisaab/core/db/tables/goals.dart';
 import 'package:hisaab/core/db/tables/holdings.dart';
 import 'package:hisaab/core/db/tables/ignored_accounts.dart';
 import 'package:hisaab/core/db/tables/loan_links.dart';
+import 'package:hisaab/core/db/tables/merchant_aliases.dart';
 import 'package:hisaab/core/db/tables/merchant_rules.dart';
 import 'package:hisaab/core/db/tables/mf_orders.dart';
 import 'package:hisaab/core/db/tables/net_worth_points.dart';
@@ -64,6 +65,7 @@ part 'app_database.g.dart';
     UnrecognisedMessages,
     SenderPrefs,
     IgnoredAccounts,
+    MerchantAliases,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -71,7 +73,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -149,6 +151,8 @@ class AppDatabase extends _$AppDatabase {
           if (from < 8) await m.createTable(ignoredAccounts);
           // v8 -> v9: transactions.excluded (FR-10-24). Additive.
           if (from < 9) await m.addColumn(transactions, transactions.excluded);
+          // v9 -> v10: merchant aliases (FR-09-20). Additive.
+          if (from < 10) await m.createTable(merchantAliases);
         },
         beforeOpen: (details) async {
           AppLog.instance.info(

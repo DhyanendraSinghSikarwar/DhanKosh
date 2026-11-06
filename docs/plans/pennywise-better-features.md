@@ -62,7 +62,7 @@ Status is kept in section 5.
 | ID | Status |
 |---|---|
 | W1 | Done (FR-10-24, schema v9) |
-| W2 | Pending |
+| W2 | Done (FR-09-20, schema v10); backup of aliases left out |
 | W3 | Pending |
 | W4 | Pending |
 | W5 | Pending |
