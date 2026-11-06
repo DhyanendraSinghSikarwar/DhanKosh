@@ -481,7 +481,6 @@ void main() {
         pay('Ravi Kumar', 0),
         _notification(
           '₹50',
-          title: 'Payment successful',
           body: '₹50 paid to Ravi Kumar',
           at: _t0 + 40 * 1000,
         ),

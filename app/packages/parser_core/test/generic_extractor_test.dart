@@ -102,10 +102,12 @@ void main() {
       test(why, () => expect(_read(body), isNull));
     }
 
-    test('a person\'s phone number is never a bank', () {
+    test("a person's phone number is never a bank", () {
       expect(
         GenericExtractor.read(
-            '+919876543210', 'Rs 500 debited from A/c XX1234'),
+          '+919876543210',
+          'Rs 500 debited from A/c XX1234',
+        ),
         isNull,
       );
       expect(GenericExtractor.isPhoneSender('9876543210'), isTrue);
@@ -152,8 +154,11 @@ void main() {
         'Payment of Rs 250 to Ravi failed',
         'Get up to Rs 250 cashback! Apply now',
       ]) {
-        expect(GenericExtractor.readLoose('PhonePe', body), isNull,
-            reason: body);
+        expect(
+          GenericExtractor.readLoose('PhonePe', body),
+          isNull,
+          reason: body,
+        );
       }
     });
 

@@ -6,6 +6,7 @@ import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/core/platform_channels/pdf_channel.dart';
+import 'package:hisaab/features/statement_import/data/column_layout_store_impl.dart';
 import 'package:hisaab/features/statement_import/data/file_source_impl.dart';
 import 'package:hisaab/features/statement_import/data/pdf_text_reader_impl.dart';
 import 'package:hisaab/features/statement_import/data/sheet_reader_impl.dart';
@@ -13,11 +14,13 @@ import 'package:hisaab/features/statement_import/data/statement_account_store_im
 import 'package:hisaab/features/statement_import/data/statement_file_store_impl.dart';
 import 'package:hisaab/features/statement_import/data/statement_locked_notifier_impl.dart';
 import 'package:hisaab/features/statement_import/data/statement_outcome_store.dart';
+import 'package:hisaab/features/statement_import/domain/column_layout_store.dart';
 import 'package:hisaab/features/statement_import/domain/password_source.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 import 'package:hisaab/features/statement_import/domain/statement_outcome.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
 import 'package:hisaab/features/statement_import/domain/usecases/apply_statement_accounts.dart';
+import 'package:hisaab/features/statement_import/domain/usecases/import_mapped_sheet.dart';
 import 'package:hisaab/features/statement_import/domain/usecases/import_statement.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -40,6 +43,23 @@ StatementOutcomeStore statementOutcomeStore(Ref ref) =>
 ApplyStatementAccounts applyStatementAccounts(Ref ref) =>
     ApplyStatementAccounts(
       StatementAccountStoreImpl(ref.watch(appDatabaseProvider)),
+    );
+
+/// Saved spreadsheet layouts (FR-05-28).
+@Riverpod(keepAlive: true)
+ColumnLayoutStore columnLayoutStore(Ref ref) =>
+    ColumnLayoutStoreImpl(ref.watch(keyValueStoreProvider));
+
+/// Spreadsheet import through a column mapping, with the balance check
+/// (FR-05-28, FR-05-29).
+@Riverpod(keepAlive: true)
+ImportMappedSheet importMappedSheet(Ref ref) => ImportMappedSheet(
+      sheets: const SheetReaderImpl(),
+      statements: ref.watch(statementRepositoryProvider),
+      files: const StatementFileStoreImpl(),
+      ledger: ref.watch(transactionRepositoryProvider),
+      accounts: ref.watch(accountRepositoryProvider),
+      layouts: ref.watch(columnLayoutStoreProvider),
     );
 
 /// Statement import use case (F-05).

@@ -58,6 +58,8 @@ import 'package:hisaab/features/security_privacy/presentation/security_privacy_s
 import 'package:hisaab/features/security_privacy/presentation/security_tile.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/sender_lists_screen.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_data_sources_screen.dart';
+import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
+import 'package:hisaab/features/statement_import/presentation/column_mapping_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statement_detail_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_tile.dart';
@@ -144,6 +146,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           unlockId: int.tryParse(state.uri.queryParameters['unlock'] ?? ''),
         ),
         routes: [
+          // Before ':id', or "map" would be read as a statement id.
+          GoRoute(
+            path: 'map',
+            builder: (_, state) =>
+                ColumnMappingScreen(file: state.extra! as PickedFile),
+          ),
           GoRoute(
             path: ':id',
             builder: (_, state) => StatementDetailScreen(

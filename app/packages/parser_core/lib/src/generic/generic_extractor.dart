@@ -130,7 +130,7 @@ abstract final class GenericExtractor {
       _read(sender, body, guessDirection: false);
 
   /// Like [read], for a payment app's notification: with an amount but no
-  /// direction word it assumes a payment and says so ([directionGuessed]),
+  /// direction word it assumes a payment and says so (`directionGuessed`),
   /// so the user can correct it before it is saved (FR-38-06).
   static GenericSuggestion? readLoose(String sender, String body) =>
       _read(sender, body, guessDirection: true);

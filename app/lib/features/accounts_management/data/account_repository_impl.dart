@@ -226,6 +226,58 @@ class AccountRepositoryImpl implements AccountRepository {
           .watch()
           .map((rows) => rows.map(_map).toList());
 
+  // FR-05-29
+  @override
+  Future<int?> balanceAsOf(int accountId, int asOfMs) async {
+    final all = (await _db.select(_db.accounts).get()).map(_map).toList();
+    final a = all.where((c) => c.id == accountId).firstOrNull;
+    if (a == null || a.kind == AccountKind.card) return null;
+    // The newest figure is the base, typed or reported.
+    final typed = a.manualBalanceMinor;
+    final typedAt = a.manualBalanceAt;
+    final reported = a.latestBalanceMinor;
+    final reportedAt = a.balanceUpdatedAt;
+    final int base;
+    final int baseAt;
+    if (typed != null &&
+        typedAt != null &&
+        (reported == null || reportedAt == null || typedAt >= reportedAt)) {
+      base = typed;
+      baseAt = typedAt;
+    } else if (reported != null && reportedAt != null) {
+      base = reported;
+      baseAt = reportedAt;
+    } else {
+      return null;
+    }
+    final merged = {
+      a.id,
+      ...all.where((c) => c.mergedIntoId == a.id).map((c) => c.id),
+    };
+    final members = {
+      ...merged,
+      ...all
+          .where(
+            (c) =>
+                c.linkedAccountId != null && merged.contains(c.linkedAccountId),
+          )
+          .map((c) => c.id),
+    };
+    final forward = asOfMs >= baseAt;
+    final lo = forward ? baseAt : asOfMs;
+    final hi = forward ? asOfMs : baseAt;
+    final row = await _db.customSelect(
+      'SELECT COALESCE(SUM($_effect), 0) AS m FROM transactions t '
+      'WHERE t.account_id IN (${members.join(',')}) '
+      'AND t.needs_review = 0 AND t.inr_minor IS NOT NULL '
+      'AND t.timestamp > ? AND t.timestamp <= ?',
+      variables: [Variable<int>(lo), Variable<int>(hi)],
+      readsFrom: {_db.transactions, _db.transactionSources},
+    ).getSingle();
+    final moved = row.read<int>('m');
+    return forward ? base + moved : base - moved;
+  }
+
   // FR-13-04: hidden and merged-away accounts leave the lists.
   @override
   Stream<List<Account>> watchVisible() =>

@@ -101,7 +101,7 @@ Exclude-from-analytics, merchant alias, budget impact; tags; quick add; subscrip
 | I-01 | Done and pushed (`bcdf26e`) |
 | I-02 | Done except the "Spent X at Y?" alert and device verification (F-38) |
 | I-03 | Done (FR-08-27); device verification pending |
-| I-04 | Pending |
+| I-04 | Done: column mapping, saved layouts, balance check (FR-05-28, 29, 31). Not done: dry-run preview with untick, one-to-one statement matching (moves to I-05) |
 | I-05 | Pending |
 | I-06 | Pending |
 | I-07 | Pending |

@@ -39,6 +39,18 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
     await _importFile(file);
   }
 
+  /// Picks a spreadsheet and opens the column mapping for it (FR-05-28).
+  Future<void> _importMapped() async {
+    final file = await ref.read(statementFileSourceProvider).pick();
+    if (file == null || !mounted) return;
+    await _map(file);
+  }
+
+  Future<void> _map(PickedFile file) async {
+    final r = await context.push<Object?>('/statements/map', extra: file);
+    if (r != null && mounted) ref.invalidate(statementsProvider);
+  }
+
   /// A file shared from another app, imported like a picked one (FR-05-26).
   void _takeShared() {
     final f = ref.read(sharedInboxProvider.notifier).take();
@@ -57,6 +69,31 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
     if (!mounted) return;
     _say(importResultText(r));
     if (r is ImportLocked) await _unlock(r.statementId, file.name);
+    // A sheet DhanKosh could not read by itself can be read by matching its
+    // columns (FR-05-28).
+    if (r is ImportDone && r.empty && _isSheet(file)) {
+      _offerMapping(file);
+    }
+  }
+
+  static bool _isSheet(PickedFile f) {
+    final t = sniffStatement(f.bytes, f.name);
+    return t == StatementFileType.csv || t == StatementFileType.xlsx;
+  }
+
+  void _offerMapping(PickedFile file) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('No rows found. Match the columns yourself?'),
+          action: SnackBarAction(
+            key: const Key('statements-map-columns'),
+            label: 'Match columns',
+            onPressed: () => unawaited(_map(file)),
+          ),
+        ),
+      );
   }
 
   Future<void> _unlock(int id, String name, [Statement? known]) async {
@@ -160,6 +197,28 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
             tooltip: 'Import',
             icon: const Icon(Icons.upload_file),
             onPressed: _busy ? null : _import,
+          ),
+          PopupMenuButton<String>(
+            key: const Key('statements-menu'),
+            onSelected: (v) {
+              if (v == 'map') unawaited(_importMapped());
+              if (v == 'forget') {
+                unawaited(ref.read(importMappedSheetProvider).forgetLayouts());
+                _say('Saved layouts forgotten');
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                key: Key('statements-menu-map'),
+                value: 'map',
+                child: Text('Import spreadsheet, match columns'),
+              ),
+              PopupMenuItem(
+                key: Key('statements-menu-forget'),
+                value: 'forget',
+                child: Text('Forget saved layouts'),
+              ),
+            ],
           ),
         ],
       ),

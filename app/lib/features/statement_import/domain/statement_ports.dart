@@ -71,8 +71,44 @@ abstract interface class PdfTextReader {
 /// File types a statement can be (FR-05-01, FR-05-05).
 enum StatementFileType { pdf, xlsx, xls, csv, protectedSheet, unknown }
 
+/// One worksheet of a statement workbook, or the single sheet of a CSV.
+class SheetData {
+  /// Creates a sheet.
+  const SheetData(this.name, this.rows);
+
+  /// Sheet name; the file name for a CSV.
+  final String name;
+
+  /// Cells as text; short rows are padded by the reader of the data.
+  final List<List<String>> rows;
+}
+
+/// Limits on a spreadsheet statement (FR-05-22). A sheet over a limit is
+/// refused, never cut short: a partial statement would import as complete.
+abstract final class SheetLimits {
+  /// Most rows in one sheet.
+  static const maxRows = 20000;
+
+  /// Most columns kept in a row.
+  static const maxColumns = 200;
+}
+
+/// A spreadsheet that is over the limits of [SheetLimits].
+class SheetTooLargeException implements Exception {
+  /// Creates the exception.
+  const SheetTooLargeException();
+
+  @override
+  String toString() => 'SheetTooLargeException';
+}
+
 /// Spreadsheet cells of a statement as text rows.
 abstract interface class SheetReader {
+  /// Every sheet of an XLSX in workbook order, each kept apart; throws
+  /// [FormatException] when it cannot be read and [SheetTooLargeException]
+  /// over [SheetLimits] (FR-05-28).
+  List<SheetData> xlsxSheets(Uint8List bytes);
+
   /// Rows of every sheet of an XLSX; throws [FormatException] when it cannot
   /// be read. CSV text is read by the use case.
   List<List<String>> xlsxRows(Uint8List bytes);

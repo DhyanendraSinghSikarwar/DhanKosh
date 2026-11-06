@@ -8,18 +8,38 @@ class SheetReaderImpl implements SheetReader {
   /// Creates the reader.
   const SheetReaderImpl();
 
-  @override
-  List<List<String>> xlsxRows(Uint8List bytes) {
-    final Excel book;
+  Excel _decode(Uint8List bytes) {
     try {
-      book = Excel.decodeBytes(bytes);
+      return Excel.decodeBytes(bytes);
     } on Object {
       throw const FormatException('Unreadable spreadsheet');
     }
-    return [
-      for (final sheet in book.tables.values)
-        for (final row in sheet.rows) [for (final c in row) _cell(c?.value)],
-    ];
+  }
+
+  @override
+  List<List<String>> xlsxRows(Uint8List bytes) => [
+        for (final sheet in _decode(bytes).tables.values)
+          for (final row in sheet.rows) [for (final c in row) _cell(c?.value)],
+      ];
+
+  @override
+  List<SheetData> xlsxSheets(Uint8List bytes) {
+    final book = _decode(bytes);
+    final out = <SheetData>[];
+    for (final e in book.tables.entries) {
+      if (e.value.rows.length > SheetLimits.maxRows) {
+        throw const SheetTooLargeException();
+      }
+      out.add(
+        SheetData(e.key, [
+          for (final row in e.value.rows)
+            [
+              for (final c in row.take(SheetLimits.maxColumns)) _cell(c?.value),
+            ],
+        ]),
+      );
+    }
+    return out;
   }
 
   static String _two(int v) => v.toString().padLeft(2, '0');

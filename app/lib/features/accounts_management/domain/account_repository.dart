@@ -22,6 +22,12 @@ abstract interface class AccountRepository {
 
   Future<Account?> byId(int id);
 
+  /// The balance the app shows for [accountId] at the end of [asOfMs]: the
+  /// newest typed or reported figure moved by the transactions between its
+  /// time and [asOfMs], forwards or backwards. Null when the app has no
+  /// figure to start from, or for a card (FR-05-29).
+  Future<int?> balanceAsOf(int accountId, int asOfMs);
+
   /// Adds an account; null when (bank, last4) already exists.
   Future<int?> create(NewAccount account);
 

@@ -48,6 +48,9 @@ class FakePdf implements PdfTextReader {
 class FakeSheets implements SheetReader {
   @override
   List<List<String>> xlsxRows(Uint8List bytes) => const [];
+
+  @override
+  List<SheetData> xlsxSheets(Uint8List bytes) => const [];
 }
 
 class MemFiles implements StatementFileStore {
