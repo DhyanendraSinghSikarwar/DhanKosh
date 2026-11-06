@@ -59,8 +59,7 @@ void main() {
     for (final l in Language.values) {
       final file = File('assets/l10n/${l.code}.yaml');
       expect(file.existsSync(), isTrue, reason: '${l.code}.yaml is bundled');
-      final cat = parseCatalogue(file.readAsStringSync());
-      cat.forEach((k, v) {
+      parseCatalogue(file.readAsStringSync()).forEach((k, v) {
         expect(tokens(v), tokens(k), reason: '${l.code}: $k');
       });
     }
