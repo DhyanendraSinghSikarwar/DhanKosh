@@ -6,7 +6,7 @@
 | Status | In progress (grouped Accounts screen; Phase 1 data layer and UI; gap detection with GapCard, Add transaction/Assign/Ignore, duplicate and debit-link suggestions, Merge/Unmerge, Restore missing accounts, edit sheet with nickname, colour, network, link, usage, forex markup, account chart 6 months/Year/All time done; tabs with Book filter, matured-deposit auto-hide, notifications posting by the alerts engine and statement retry on unlock save pending) |
 | Priority | P0 |
 | Phase | 1 (account creation from messages, balances, lists); 2 for debit-card link, merge and gap detection; 3 for statement unlock details |
-| Last Updated | 2026-10-31 |
+| Last Updated | 2026-11-06 |
 
 ## 1. Description
 
@@ -204,6 +204,7 @@ Gap UI: `GapCard` (amber "Untracked change . {summary}", candidate rows "Assign 
 - FR-13-18: Added-while-Business-book accounts shall default to usage BUSINESS.
 - FR-13-19: An account marked Business (edit sheet usage control, `AccountUsage`) shows a Business badge on its tile; the Book store scopes lists and totals by it (FR-20-23).
 - FR-13-19: The edit sheet shall personalise an account: nickname, usage, type, card network, debit-card link (bank accounts of the same list), colour (8 swatches or none) and, for cards, forex markup 0..20% (stored as bps in `forexMarkupBps`, a change recomputes `inrMinor`, FR-14-15). Writes go through `AccountAdminRepository`.
+- FR-13-22: "Ignore" (account menu) remembers the bank and last 4 (`ignored_accounts`, schema v8), deletes the account (optionally with its transactions, as Delete) and drops every later message for it at ingest with reason `ignored_account`; it never creates an account or a row. The Accounts screen lists "Ignored (n)" with "Stop ignoring". Unlike Hide, nothing is kept or counted. A forced account (manual entry) is not dropped.
 - FR-13-20: The encrypted backup shall carry and restore these fields (colour, network, last stated balance/limit, forex markup, debit-card link and merge target by `bank|last4` key) without changing JSON schema 1 ([Backup & Export](24_backup_export.md) FR-24-33).
 - FR-13-21: The Accounts screen (`/accounts`) lists accounts and cards in groups Bank accounts, Cash and wallets, Credit cards, filtered by the global Book (`bookProvider`; usage personal/business). Each group is one filled card with hairline-separated rows (no per-row cards, no counts in headers). Rows show a coloured icon, name with last digits, type and source (Synced, Manual or No balance yet), balance (credit cards: due amount and % of limit used) and a Personal/Business tag. A header card shows the total balance and total card dues. The Add button is in the app bar. Tapping a bank account opens `/accounts/<id>`; tapping a credit card opens `/cards/<id>`, falling back to `/cards` when that route is absent.
 
@@ -542,3 +543,4 @@ Pending: tabs and Book filter (Book provider owned by the transactions work), ma
 | 2026-10-27 | Untracked gaps, merge/link suggestions, Merge/Unmerge, Restore missing, delete options, edit sheet personalisation, account chart, backup of account fields (FR-13-15, 08, 09, 11, 12, 17, 19, 20) | Kotlin parity |
 | 2026-10-31 | Accounts screen grouped (Bank accounts, Cash and wallets, Credit cards), header with balance and card dues, book filter, coloured icons, source and book tags (FR-13-21) | Approved More/Accounts/Profile mockups |
 | 2026-10-31 | Accounts groups are single cards with divider rows; tag under the balance (FR-13-21) | More/Accounts/Profile matched to approved mock |
+| 2026-11-06 | Added FR-13-22 Ignore account (table `ignored_accounts`, schema v8, dropped at ingest, "Ignored" list with Stop ignoring) | Auto-discovered accounts parity with PennyWise (issue I-06) |

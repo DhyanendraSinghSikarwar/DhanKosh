@@ -207,18 +207,24 @@ Future<bool> deleteAccountWithOptions(
   required AccountRepository accounts,
   required TransactionRepository transactions,
   BankIdentityRepository? identities,
+  AccountAdminRepository? ignoreWith,
 }) async {
+  final ignore = ignoreWith != null;
   var withTx = false;
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, set) => AlertDialog(
-        title: Text('Delete ${account.label}?'),
+        title: Text('${ignore ? 'Ignore' : 'Delete'} ${account.label}?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Transactions stay, without an account.'),
+            Text(
+              ignore
+                  ? 'Its messages are dropped from now on.'
+                  : 'Transactions stay, without an account.',
+            ),
             CheckboxListTile(
               key: const Key('delete_with_tx'),
               contentPadding: EdgeInsets.zero,
@@ -236,13 +242,14 @@ Future<bool> deleteAccountWithOptions(
           FilledButton(
             key: const Key('delete_confirm'),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(ignore ? 'Ignore' : 'Delete'),
           ),
         ],
       ),
     ),
   );
   if (ok != true) return false;
+  await ignoreWith?.ignore(account.id);
   if (withTx) {
     await transactions.deleteTransactions(
       await transactions.idsForAccount(account.id),

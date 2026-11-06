@@ -86,6 +86,25 @@ class TransactionRepositoryImpl implements TransactionRepository {
       return const IngestResult(IngestOutcome.skipped, reason: 'deleted');
     }
 
+    // FR-13-22: a message for an ignored account is dropped, unless the user
+    // chose the account for it.
+    final ignoredLast4 = item.parsed.accountLast4;
+    if (item.accountId == null && ignoredLast4 != null) {
+      final ignored = await (_db.select(_db.ignoredAccounts)
+            ..where(
+              (t) =>
+                  t.bankName.equals(item.parsed.bankName) &
+                  t.last4.equals(ignoredLast4),
+            ))
+          .getSingleOrNull();
+      if (ignored != null) {
+        return const IngestResult(
+          IngestOutcome.skipped,
+          reason: 'ignored_account',
+        );
+      }
+    }
+
     // FR-09-10: merchant rule (never for transfers).
     var p = item.parsed;
     final rule = rules.ruleFor(

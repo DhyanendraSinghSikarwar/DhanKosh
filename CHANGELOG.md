@@ -8,6 +8,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
 
 ### Added
+- Ignore an account (account menu): its bank messages are dropped from then on and no account is created for it; the Accounts screen lists ignored accounts with Stop ignoring.
 - Import a spreadsheet statement by matching its columns: a live sample, the layout remembered for the next file, and a balance check that compares the statement's closing balance with DhanKosh's.
 - Statements asking for a password now show the subject line of the email they came from, and every emailed statement has a View email button that opens the mail.
 - Unrecognised messages (More): payments no bank format matched wait for you with a "Looks like" line; add one in a tap and the app learns the sender. A watched payment app's notification that carries only an amount reaches it too, and "Find missed messages" looks through your inbox.

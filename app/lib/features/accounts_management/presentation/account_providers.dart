@@ -1,5 +1,7 @@
+import 'package:hisaab/app/di/accounts_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/accounts_management/domain/account_admin_repository.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
@@ -20,6 +22,11 @@ Stream<List<AccountWithActivity>> accountsWithActivity(Ref ref) {
 @riverpod
 Stream<List<Account>> hiddenAccounts(Ref ref) =>
     ref.watch(accountRepositoryProvider).watchHidden();
+
+/// Accounts being ignored (FR-13-22); invalidate after changing them.
+@riverpod
+Future<List<IgnoredAccount>> ignoredAccounts(Ref ref) =>
+    ref.watch(accountAdminRepositoryProvider).ignored();
 
 /// Latest activity of one account, including merged children (FR-13-17).
 @riverpod

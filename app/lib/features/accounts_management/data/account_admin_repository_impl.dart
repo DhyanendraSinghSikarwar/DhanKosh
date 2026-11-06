@@ -101,6 +101,43 @@ class AccountAdminRepositoryImpl implements AccountAdminRepository {
           .map(_map)
           .toList();
 
+  // FR-13-22
+  @override
+  Future<void> ignore(int id) async {
+    final a = await (_db.select(_db.accounts)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    if (a == null) return;
+    await _db.into(_db.ignoredAccounts).insert(
+          IgnoredAccountsCompanion.insert(
+            bankName: a.bankName,
+            last4: a.last4,
+            ignoredAt: _now(),
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+  }
+
+  @override
+  Future<List<IgnoredAccount>> ignored() async => [
+        for (final r in await (_db.select(_db.ignoredAccounts)
+              ..orderBy([(t) => OrderingTerm.desc(t.ignoredAt)]))
+            .get())
+          IgnoredAccount(r.bankName, r.last4, r.ignoredAt),
+      ];
+
+  @override
+  Future<bool> isIgnored(String bankName, String last4) async =>
+      await (_db.select(_db.ignoredAccounts)
+            ..where((t) => t.bankName.equals(bankName) & t.last4.equals(last4)))
+          .getSingleOrNull() !=
+      null;
+
+  @override
+  Future<void> unignore(String bankName, String last4) =>
+      (_db.delete(_db.ignoredAccounts)
+            ..where((t) => t.bankName.equals(bankName) & t.last4.equals(last4)))
+          .go();
+
   // FR-13-12: never deletes or moves rows; only creates accounts.
   @override
   Future<List<OrphanRow>> restoreMissing() => _db.transaction(() async {

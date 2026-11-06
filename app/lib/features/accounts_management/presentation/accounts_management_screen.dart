@@ -30,6 +30,7 @@ class AccountsManagementScreen extends ConsumerWidget {
     final masked = ref.watch(hideAmountsProvider).value ?? true;
     final list = ref.watch(accountsWithActivityProvider);
     final hidden = ref.watch(hiddenAccountsProvider).value ?? const [];
+    final ignored = ref.watch(ignoredAccountsProvider).value ?? const [];
     final book = ref.watch(bookProvider);
     final cardInfo = {
       for (final c
@@ -144,6 +145,30 @@ class AccountsManagementScreen extends ConsumerWidget {
                           .read(accountRepositoryProvider)
                           .setHidden(a.id, hidden: false),
                       child: const Text('Show again'),
+                    ),
+                  ),
+              ],
+              if (ignored.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'Ignored (${ignored.length})',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                for (final i in ignored)
+                  ListTile(
+                    key: Key('ignored_${i.bankName}_${i.last4}'),
+                    title: Text('${i.bankName} ••${i.last4}'),
+                    subtitle: const Text('Messages for it are dropped.'),
+                    trailing: TextButton(
+                      onPressed: () async {
+                        await ref
+                            .read(accountAdminRepositoryProvider)
+                            .unignore(i.bankName, i.last4);
+                        ref.invalidate(ignoredAccountsProvider);
+                      },
+                      child: const Text('Stop ignoring'),
                     ),
                   ),
               ],

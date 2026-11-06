@@ -15,7 +15,7 @@ import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:parser_core/parser_core.dart';
 
-enum _Action { edit, rename, type, balance, merge, hide, delete }
+enum _Action { edit, rename, type, balance, merge, hide, ignore, delete }
 
 /// Account detail (route `/accounts/:id`): balance, estimated flag, this
 /// month's spend, recent activity, actions (FR-13-06, 10, 11, 17 basics).
@@ -83,6 +83,17 @@ class AccountDetailScreen extends ConsumerWidget {
                 case _Action.hide:
                   await repo.setHidden(a.id, hidden: true);
                   if (context.mounted) context.pop();
+                case _Action.ignore:
+                  final gone = await deleteAccountWithOptions(
+                    context,
+                    account: a,
+                    accounts: repo,
+                    transactions: ref.read(transactionRepositoryProvider),
+                    identities: ref.read(bankIdentityRepositoryProvider),
+                    ignoreWith: ref.read(accountAdminRepositoryProvider),
+                  );
+                  ref.invalidate(ignoredAccountsProvider);
+                  if (gone && context.mounted) context.pop();
                 case _Action.delete:
                   final gone = await deleteAccountWithOptions(
                     context,
@@ -101,6 +112,7 @@ class AccountDetailScreen extends ConsumerWidget {
               PopupMenuItem(value: _Action.balance, child: Text('Set balance')),
               PopupMenuItem(value: _Action.merge, child: Text('Merge into…')),
               PopupMenuItem(value: _Action.hide, child: Text('Hide')),
+              PopupMenuItem(value: _Action.ignore, child: Text('Ignore')),
               PopupMenuItem(value: _Action.delete, child: Text('Delete')),
             ],
           ),
