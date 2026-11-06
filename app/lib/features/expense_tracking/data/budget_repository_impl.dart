@@ -53,7 +53,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
 
   static const _sql =
       'SELECT category, SUM(inr_minor) AS total FROM transactions '
-      "WHERE type IN ('DEBIT','INVESTMENT') AND inr_minor IS NOT NULL "
+      "WHERE type IN ('DEBIT','INVESTMENT') AND inr_minor IS NOT NULL AND excluded = 0 "
       'AND timestamp BETWEEN ?1 AND ?2 GROUP BY category ORDER BY total DESC';
 
   Map<Category, int> _fold(List<MapEntry<Category?, int>> rows) => {

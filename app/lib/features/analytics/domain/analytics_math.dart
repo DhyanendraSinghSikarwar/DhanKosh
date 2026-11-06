@@ -398,6 +398,7 @@ abstract final class AnalyticsMath {
           (t) =>
               t.type == TransactionType.debit &&
               !t.needsReview &&
+              !t.excluded &&
               t.currency == 'INR',
         )
         .toList();

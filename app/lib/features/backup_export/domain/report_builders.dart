@@ -38,7 +38,8 @@ abstract final class ReportBuilders {
   static int _inr(LedgerTx t) =>
       t.inrMinor ?? (t.currency == 'INR' ? t.amountMinor : 0);
 
-  static bool _counts(LedgerTx t) => !t.needsReview && t.duplicateOfId == null;
+  static bool _counts(LedgerTx t) =>
+      !t.needsReview && t.duplicateOfId == null && !t.excluded;
 
   /// Month name and year, e.g. `October 2026`.
   static String monthLabel(int year, int month) =>

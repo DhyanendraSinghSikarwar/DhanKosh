@@ -43,4 +43,7 @@ class Transactions extends Table {
   TextColumn get subcategory => text().nullable()();
   IntColumn get customCategoryId => integer().nullable()();
   IntColumn get inrMinor => integer().nullable()();
+
+  /// Left out of every total but still moves the balance (FR-10-24).
+  BoolColumn get excluded => boolean().withDefault(const Constant(false))();
 }

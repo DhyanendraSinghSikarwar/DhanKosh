@@ -338,7 +338,7 @@ CASE t.type
         'COALESCE(SUM(CASE WHEN t.timestamp > ? THEN $_effect END), 0) AS m, '
         'COALESCE(SUM(CASE WHEN t.timestamp > ? THEN $_effect END), 0) AS r, '
         "COALESCE(SUM(CASE WHEN t.type IN ('DEBIT','INVESTMENT') "
-        'AND t.timestamp >= ? AND t.timestamp < ? THEN t.inr_minor END), 0) AS s '
+        'AND t.excluded = 0 AND t.timestamp >= ? AND t.timestamp < ? THEN t.inr_minor END), 0) AS s '
         'FROM transactions t '
         'WHERE t.account_id IN (${members.join(',')}) '
         'AND t.needs_review = 0 AND t.inr_minor IS NOT NULL',

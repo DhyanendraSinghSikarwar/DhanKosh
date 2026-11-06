@@ -9,6 +9,7 @@ class IngestItem {
     this.subject,
     this.accountId,
     this.note,
+    this.excluded = false,
     this.phoneLast4s = const {},
   });
 
@@ -22,6 +23,9 @@ class IngestItem {
   /// Forces the account (manual entries); skips `ensureAccount`.
   final int? accountId;
   final String? note;
+
+  /// Restored as left out of totals (FR-10-24).
+  final bool excluded;
   final Set<String> phoneLast4s;
 }
 

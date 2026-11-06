@@ -576,7 +576,9 @@ abstract final class AlertRules {
     final total = SpendCalc.totals(inRange, context: txs.toList()).spentMinor;
     final by = <Category, int>{};
     for (final t in inRange) {
-      if (t.needsReview || t.type != TransactionType.debit) continue;
+      if (t.needsReview || t.excluded || t.type != TransactionType.debit) {
+        continue;
+      }
       final inr = SpendCalc.rupees(t);
       by.update(t.category, (v) => v + inr, ifAbsent: () => inr);
     }

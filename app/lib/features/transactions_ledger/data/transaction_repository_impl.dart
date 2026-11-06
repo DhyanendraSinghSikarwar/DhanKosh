@@ -456,6 +456,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
             transactionHash: hash,
             confidence: p.confidence,
             needsReview: Value(flagged != null),
+            excluded: Value(item.excluded),
             duplicateOfId: Value(flagged?.$1),
             reviewReason: Value(flagged?.$2),
             note: Value(
@@ -675,6 +676,13 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<void> setSubcategory(int id, String? subcategory) =>
       _patch(id, TransactionsCompanion(subcategory: Value(subcategory)));
+
+  @override
+  Future<void> setExcluded(List<int> ids, {required bool excluded}) async {
+    for (final id in ids) {
+      await _patch(id, TransactionsCompanion(excluded: Value(excluded)));
+    }
+  }
 
   @override
   Future<void> setNote(int id, String? note) {
@@ -1061,7 +1069,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
       _db
           .customSelect(
             'SELECT * FROM transactions '
-            'WHERE needs_review = 0 AND inr_minor IS NOT NULL '
+            'WHERE needs_review = 0 AND excluded = 0 AND inr_minor IS NOT NULL '
             'AND timestamp >= ? AND timestamp < ?'
             '${accountId == null ? '' : ' AND account_id IN (${_accountScope(accountId)})'}'
             '${usage == null ? '' : ' AND ${_usageSql(usage).replaceAll('transactions.account_id', 'account_id')}'}',

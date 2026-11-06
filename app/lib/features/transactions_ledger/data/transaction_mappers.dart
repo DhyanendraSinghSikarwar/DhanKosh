@@ -31,6 +31,7 @@ LedgerTx toLedgerTx(TransactionRow r) => LedgerTx(
       duplicateOfId: r.duplicateOfId,
       reviewReason: r.reviewReason,
       note: r.note,
+      excluded: r.excluded,
       createdAt: r.createdAt,
       inrMinor: r.inrMinor,
     );

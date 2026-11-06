@@ -61,7 +61,7 @@ Status is kept in section 5.
 
 | ID | Status |
 |---|---|
-| W1 | Pending |
+| W1 | Done (FR-10-24, schema v9) |
 | W2 | Pending |
 | W3 | Pending |
 | W4 | Pending |

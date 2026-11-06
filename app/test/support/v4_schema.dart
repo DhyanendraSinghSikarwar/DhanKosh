@@ -45,5 +45,11 @@ Future<void> dropV7(AppDatabase db) async {
 
 /// Drops everything added in schema v8 so a test can fake a v7 file.
 Future<void> dropV8(AppDatabase db) async {
+  await dropV9(db);
   await db.customStatement('DROP TABLE ignored_accounts');
+}
+
+/// Drops everything added in schema v9 so a test can fake a v8 file.
+Future<void> dropV9(AppDatabase db) async {
+  await db.customStatement('ALTER TABLE transactions DROP COLUMN excluded');
 }

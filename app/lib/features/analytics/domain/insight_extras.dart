@@ -73,6 +73,7 @@ abstract final class InsightExtras {
     for (final t in txs) {
       if (t.type != TransactionType.credit ||
           t.needsReview ||
+          t.excluded ||
           t.duplicateOfId != null) {
         continue;
       }

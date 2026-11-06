@@ -71,6 +71,10 @@ abstract interface class TransactionRepository {
   Future<void> setSubcategory(int id, String? subcategory);
   Future<void> setNote(int id, String? note);
 
+  /// Leaves [ids] out of (or back in) every total; balances are unchanged
+  /// (FR-10-24).
+  Future<void> setExcluded(List<int> ids, {required bool excluded});
+
   /// Moves a row to [accountId]; [rememberPayee] files later rows of the same
   /// payee under it too (FR-08-24).
   Future<void> setAccount(int id, int? accountId, {bool rememberPayee = false});

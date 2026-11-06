@@ -9,7 +9,8 @@ abstract final class SpendCalc {
       t.inrMinor ?? (t.currency == 'INR' ? t.amountMinor : 0);
 
   /// Rows counted in any total (FR-10-03).
-  static bool counts(LedgerTx t) => !t.needsReview && t.duplicateOfId == null;
+  static bool counts(LedgerTx t) =>
+      !t.needsReview && t.duplicateOfId == null && !t.excluded;
 
   /// Cash-basis spend (ADR-0011): account debits and card bill payments, no
   /// card purchases, no own transfers. [context] pairs card payments.

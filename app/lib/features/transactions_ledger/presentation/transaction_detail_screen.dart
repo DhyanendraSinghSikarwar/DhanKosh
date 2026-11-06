@@ -360,6 +360,15 @@ class _Body extends ConsumerWidget {
               if (tt.referenceNumber != null)
                 _Row('Reference', tt.referenceNumber!),
               _Row(
+                'Totals',
+                tt.excluded ? 'Left out' : 'Counted',
+                tag: 'detail_excluded',
+                onTap: () => ref
+                    .read(transactionRepositoryProvider)
+                    .setExcluded([tt.id],
+                        excluded: !tt.excluded,).then((_) => _refresh(ref)),
+              ),
+              _Row(
                 'Note',
                 tt.note ?? 'Add note',
                 tag: 'detail_note',

@@ -71,7 +71,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -147,6 +147,8 @@ class AppDatabase extends _$AppDatabase {
           }
           // v7 -> v8: ignored accounts (FR-13-22). Additive.
           if (from < 8) await m.createTable(ignoredAccounts);
+          // v8 -> v9: transactions.excluded (FR-10-24). Additive.
+          if (from < 9) await m.addColumn(transactions, transactions.excluded);
         },
         beforeOpen: (details) async {
           AppLog.instance.info(

@@ -129,6 +129,7 @@ class LedgerTxTile extends StatelessWidget {
                       tx.category.label,
                       bank,
                       if (tx.needsReview) 'Needs review',
+                      if (tx.excluded) 'Excluded',
                     ].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

@@ -6,7 +6,7 @@
 | Status | In progress (Phase 4: budgets repository, maths, Budgets screen (`/budgets`) and Home budget rings done; global Book/Period filters, spent-widget chart, alert posting, widget and tap-through pending) Cash basis (ADR-0011) implemented 2026-10-27: SpendCalc, watchTotals, income repository, Analysis headline, reports, weekly summary; Home book scope |
 | Priority | P0 |
 | Phase | 1 (totals, Book and Period filters, Home spent widget); 4 for Budgets screen, alerts and analytics budget bars |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-11-06 |
 
 ## 1. Description
 
@@ -170,6 +170,7 @@ Glance widget "DhanKosh spend", 3x2 cells (min 180x110dp, resizable), `updatePer
 - FR-10-20: A credit on a card is never income; a card refund reduces its category on the card and is not netted from the headline.
 - FR-10-21: Screens showing a headline beside a category breakdown shall show the card purchases figure and one line: "Expenses exclude card purchases, include card bill payments".
 - FR-10-22: The rule shall live once in `SpendCalc.totals` (`CashTotals`: spent, card purchases, card payments, invested, income, refund, card refund); `ledgerSpent`, `netSpent`, `outflow`, `LedgerMath.spent/income`, `watchTotals`, the income repository, report builders and the weekly summary all call it. Rows outside the period within the 5-day window pair payments through the `context` argument. A card-only account scope counts card purchases as spend.
+- FR-10-24: A transaction can be left out of totals (detail screen, row "Totals": Counted / Left out; column `transactions.excluded`, schema v9). A left-out row is dropped from period totals, category breakdowns, budgets, account spent, insights and reports, is shown with an "Excluded" tag in lists, and keeps its effect on the account balance. It is saved in the encrypted backup. Not a transfer or a duplicate: those stay system exclusions (FR-10-03).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -467,3 +468,4 @@ Alert dedupe keys live in `AlertedKeyStore` ([21](21_alerts_reminders.md)); the 
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |
 | 2026-10-21 | Phase 4 UI landed | Phase 4 |
 | 2026-10-27 | ADR-0011 cash basis: `SpendCalc.totals`/`CashTotals`, card purchases shown beside headline, card payments counted once, card credits never income (FR-10-18..22). Parity exception: the Kotlin app counts card purchases as spend and ignores the bill payment. Shared `bookProvider`/`periodProvider` live in `lib/app/di/scope_providers.dart` | Owner requirement, Kotlin parity |
+| 2026-11-06 | FR-10-24 "Leave out of totals" per transaction | PennyWise comparison, W1 |

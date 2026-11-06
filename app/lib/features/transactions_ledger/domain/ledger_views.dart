@@ -85,7 +85,7 @@ class CategoryGroup {
 List<CategoryGroup> groupByCategory(Iterable<LedgerTx> rows) {
   final map = <Category, List<LedgerTx>>{};
   for (final t in rows) {
-    if (t.needsReview) continue;
+    if (t.needsReview || t.excluded) continue;
     final spend =
         t.type == TransactionType.debit && t.category != Category.transfer;
     final refund =

@@ -184,6 +184,9 @@ class FakeTxRepo implements TransactionRepository {
   @override
   Future<void> setNote(int id, String? note) async => notes.add((id, note));
 
+  @override
+  Future<void> setExcluded(List<int> ids, {required bool excluded}) async {}
+
   final subs = <(int, String?)>[];
   final accountSets = <(int, int?)>[];
 

@@ -29,6 +29,7 @@ class LedgerTx {
     this.duplicateOfId,
     this.reviewReason,
     this.note,
+    this.excluded = false,
     this.inrMinor,
   });
 
@@ -57,6 +58,9 @@ class LedgerTx {
   final int? duplicateOfId;
   final String? reviewReason;
   final String? note;
+
+  /// The user left it out of totals; the balance still moves (FR-10-24).
+  final bool excluded;
   final int createdAt;
   final int? inrMinor;
 

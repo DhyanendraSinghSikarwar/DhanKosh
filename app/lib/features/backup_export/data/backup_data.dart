@@ -196,6 +196,7 @@ class BackupData {
         'confidence': t.confidence,
         'review': t.needsReview,
         'note': t.note,
+        'excluded': t.excluded,
         'inr': t.inrMinor,
         'sources': [
           for (final s in sources)
@@ -706,6 +707,7 @@ class BackupData {
             rawText: s['raw'] as String?,
             subject: s['subject'] as String?,
             note: t['note'] as String?,
+            excluded: t['excluded'] == true,
           ),
         );
       }
