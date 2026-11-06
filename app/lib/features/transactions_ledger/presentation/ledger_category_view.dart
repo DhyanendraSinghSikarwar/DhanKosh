@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_views.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_category_style.dart';
@@ -74,7 +75,7 @@ class _LedgerCategoryViewState extends State<LedgerCategoryView> {
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Total', style: theme.textTheme.labelSmall),
+                    Text(t('Total'), style: theme.textTheme.labelSmall),
                     Text(
                       compactAmount(total, masked: widget.masked),
                       key: const Key('category_total'),

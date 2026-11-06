@@ -6,6 +6,7 @@ import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/features/loans/presentation/loan_card.dart';
 import 'package:hisaab/features/loans/presentation/loan_duplicates_section.dart';
 import 'package:hisaab/features/loans/presentation/loan_form_sheet.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
 
@@ -20,11 +21,11 @@ class LoansScreen extends ConsumerWidget {
     final state = ref.watch(loansStateProvider);
     final masked = ref.watch(hideAmountsProvider).value ?? true;
     return Scaffold(
-      appBar: AppBar(title: const Text('Loans')),
+      appBar: AppBar(title: Text(t('Loans'))),
       floatingActionButton: FloatingActionButton(
         heroTag: null,
         key: const Key('loans-add'),
-        tooltip: 'Add loan',
+        tooltip: t('Add loan'),
         onPressed: () => showModalBottomSheet<void>(
           context: context,
           isScrollControlled: true,
@@ -34,12 +35,12 @@ class LoansScreen extends ConsumerWidget {
       ),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(child: Text('Could not load loans')),
+        error: (e, _) => Center(child: Text(t('Could not load loans'))),
         data: (s) {
           if (s.loans.isEmpty && s.dismissed.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.account_balance_outlined,
-              title: 'No loans yet',
+              title: t('No loans yet'),
               hint: 'EMIs are detected from payments. Or add one.',
             );
           }
@@ -59,7 +60,7 @@ class LoansScreen extends ConsumerWidget {
               ],
               if (s.dismissed.isNotEmpty) ...[
                 Text(
-                  'Not a loan',
+                  t('Not a loan'),
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 for (final p in s.dismissed)
@@ -71,7 +72,7 @@ class LoansScreen extends ConsumerWidget {
                       onPressed: () => ref
                           .read(loanLinkRepositoryProvider)
                           .undismissPayee(p),
-                      child: const Text('Undo'),
+                      child: Text(t('Undo')),
                     ),
                   ),
               ],

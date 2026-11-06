@@ -11,6 +11,7 @@ import 'package:hisaab/features/loans/presentation/loan_card.dart';
 import 'package:hisaab/features/loans/presentation/loan_emi_chart.dart';
 import 'package:hisaab/features/loans/presentation/loan_form_sheet.dart';
 import 'package:hisaab/features/loans/presentation/loan_merged_section.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 
@@ -36,7 +37,7 @@ class LoanDetailScreen extends ConsumerWidget {
           if (loan?.accountId != null)
             IconButton(
               key: const Key('loan-edit'),
-              tooltip: 'Edit',
+              tooltip: t('Edit'),
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => showModalBottomSheet<void>(
                 context: context,
@@ -50,7 +51,7 @@ class LoanDetailScreen extends ConsumerWidget {
           ? Center(
               child: state.isLoading
                   ? const CircularProgressIndicator()
-                  : const Text('Loan not found'),
+                  : Text(t('Loan not found')),
             )
           : _Body(loan: loan, links: links, masked: masked),
     );
@@ -70,10 +71,10 @@ class _Body extends ConsumerWidget {
     String money(int? m) =>
         m == null ? '-' : formatAmount(m, masked: masked, paise: false);
     final repo = ref.read(loanLinkRepositoryProvider);
-    final t = loan.terms;
-    final schedule = t == null
+    final tt = loan.terms;
+    final schedule = tt == null
         ? const <Instalment>[]
-        : Amortization.schedule(t, emiMinor: loan.emiMinor);
+        : Amortization.schedule(tt, emiMinor: loan.emiMinor);
     Widget kv(String k, String v, [Key? key]) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
@@ -127,7 +128,7 @@ class _Body extends ConsumerWidget {
                   isScrollControlled: true,
                   builder: (_) => LinkPaymentSheet(loan: loan),
                 ),
-                child: const Text('Link payment'),
+                child: Text(t('Link payment')),
               ),
             if (loan.detected)
               OutlinedButton(
@@ -136,7 +137,7 @@ class _Body extends ConsumerWidget {
                   await repo.dismissPayee(loan.key.substring('payee:'.length));
                   if (context.mounted) Navigator.pop(context);
                 },
-                child: const Text('Not a loan'),
+                child: Text(t('Not a loan')),
               ),
           ],
         ),
@@ -150,7 +151,7 @@ class _Body extends ConsumerWidget {
           ExpansionTile(
             key: const Key('loan-schedule'),
             tilePadding: EdgeInsets.zero,
-            title: const Text('Schedule'),
+            title: Text(t('Schedule')),
             children: [
               for (final i in schedule)
                 ListTile(
@@ -175,8 +176,8 @@ class _Body extends ConsumerWidget {
             ],
           ),
         const SizedBox(height: 8),
-        Text('Payments', style: text.titleSmall),
-        if (loan.payments.isEmpty) const Text('None yet'),
+        Text(t('Payments'), style: text.titleSmall),
+        if (loan.payments.isEmpty) Text(t('None yet')),
         for (final p in loan.payments.take(30))
           ListTile(
             key: Key('pay-${p.id}'),
@@ -193,7 +194,7 @@ class _Body extends ConsumerWidget {
                     ))
                   IconButton(
                     key: Key('unlink-${p.id}'),
-                    tooltip: 'Unlink',
+                    tooltip: t('Unlink'),
                     icon: const Icon(Icons.link_off),
                     onPressed: () => links.tx.containsKey(p.id)
                         ? repo.unlinkTx(p.id)

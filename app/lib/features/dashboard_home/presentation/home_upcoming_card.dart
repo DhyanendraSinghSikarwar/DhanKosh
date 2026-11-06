@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/home_composition_providers.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_charts.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
@@ -44,7 +45,7 @@ class HomeUpcomingCard extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'Nothing due in the next 7 days',
+                t('Nothing due in the next 7 days'),
                 style: MockText.small(context),
               ),
             ),

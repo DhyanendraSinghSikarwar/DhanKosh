@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/news_support_updates/domain/upi_link.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
@@ -40,7 +41,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
     }
     if (!ok && mounted) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('No UPI app found')));
+          .showSnackBar(SnackBar(content: Text(t('No UPI app found'))));
     }
   }
 
@@ -49,7 +50,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
     return Scaffold(
-      appBar: AppBar(title: const Text('Support')),
+      appBar: AppBar(title: Text(t('Support'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
         children: [
@@ -61,13 +62,13 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                 const Icon(Icons.favorite, size: 34, color: AppIcons.red),
                 const SizedBox(height: 6),
                 Text(
-                  'Support DhanKosh',
+                  t('Support DhanKosh'),
                   style: theme.textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Free, offline, no ads. A tip is optional.',
+                  t('Free, offline, no ads. A tip is optional.'),
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(color: muted),
                 ),
@@ -89,7 +90,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                       ),
                     ChoiceChip(
                       key: const Key('support-pill-custom'),
-                      label: const Text('Other'),
+                      label: Text(t('Other')),
                       selected: _custom,
                       onSelected: (_) => setState(() {
                         _custom = !_custom;
@@ -107,7 +108,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(6),
                     ],
-                    decoration: const InputDecoration(labelText: 'Amount (₹)'),
+                    decoration: InputDecoration(labelText: t('Amount (₹)')),
                     onChanged: (v) => setState(() => _customText = v),
                   ),
                 ],
@@ -118,12 +119,12 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                   child: FilledButton(
                     key: const Key('support-pay'),
                     onPressed: _pay,
-                    child: const Text('Pay with UPI'),
+                    child: Text(t('Pay with UPI')),
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Opens your UPI app. DhanKosh sends nothing.',
+                  t('Opens your UPI app. DhanKosh sends nothing.'),
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(color: muted),
                 ),

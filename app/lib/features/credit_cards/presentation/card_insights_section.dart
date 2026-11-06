@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/cards_providers.dart';
 import 'package:hisaab/features/credit_cards/domain/card_insights.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_due_format.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 
 /// Under a card: this-cycle spend, late-payment risk and statement history
@@ -43,13 +44,13 @@ class CardInsightsSection extends ConsumerWidget {
                   Icons.warning_amber_outlined,
                   color: theme.colorScheme.error,
                 ),
-                label: const Text('Late payment risk'),
+                label: Text(t('Late payment risk')),
               ),
             ),
           if (ins.cycleSpendMinor != null)
             Row(
               children: [
-                const Expanded(child: Text('Spent this cycle')),
+                Expanded(child: Text(t('Spent this cycle'))),
                 Text(
                   cardMoney(ins.cycleSpendMinor!, masked: masked),
                   key: Key('card_cycle_$cardId'),
@@ -58,7 +59,7 @@ class CardInsightsSection extends ConsumerWidget {
             ),
           if (ins.history.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text('Statements', style: theme.textTheme.titleSmall),
+            Text(t('Statements'), style: theme.textTheme.titleSmall),
             for (var i = 0; i < ins.history.length; i++)
               _Entry(
                 key: Key('card_stmt_${cardId}_$i'),

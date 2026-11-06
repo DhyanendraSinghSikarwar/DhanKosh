@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/settings_row.dart';
 
@@ -12,8 +13,8 @@ class NewsTile extends StatelessWidget {
   Widget build(BuildContext context) => SettingsRow(
         key: const Key('news-tile'),
         badge: AppIcons.news,
-        title: 'Market news',
-        subtitle: 'Headlines for your holdings',
+        title: t('Market news'),
+        subtitle: t('Headlines for your holdings'),
         onTap: () => context.push('/news'),
       );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// One-time "What's new in x.y.z" sheet (FR-31-36).
 class WhatsNewSheet extends StatelessWidget {
@@ -50,7 +51,7 @@ class WhatsNewSheet extends StatelessWidget {
                 child: FilledButton(
                   key: const Key('whats-new-done'),
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Done'),
+                  child: Text(t('Done')),
                 ),
               ),
             ],

@@ -8,6 +8,7 @@ import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_tile.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// Colour swatches of the edit sheet (null clears).
@@ -182,7 +183,7 @@ class _AccountEditSheetState extends ConsumerState<AccountEditSheet> {
               key: const Key('edit_nickname'),
               controller: _nick,
               decoration: InputDecoration(
-                labelText: 'Nickname',
+                labelText: t('Nickname'),
                 hintText: '${_a.bankName} ••${_a.last4}',
               ),
             ),
@@ -190,14 +191,14 @@ class _AccountEditSheetState extends ConsumerState<AccountEditSheet> {
             SegmentedButton<AccountUsage>(
               key: const Key('edit_usage'),
               showSelectedIcon: false,
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: AccountUsage.personal,
-                  label: Text('Personal'),
+                  label: Text(t('Personal')),
                 ),
                 ButtonSegment(
                   value: AccountUsage.business,
-                  label: Text('Business'),
+                  label: Text(t('Business')),
                 ),
               ],
               selected: {_usage},
@@ -218,7 +219,7 @@ class _AccountEditSheetState extends ConsumerState<AccountEditSheet> {
             ),
             if (isCard) ...[
               const SizedBox(height: 12),
-              Text('Network', style: Theme.of(context).textTheme.labelLarge),
+              Text(t('Network'), style: Theme.of(context).textTheme.labelLarge),
               Wrap(
                 spacing: 8,
                 children: [
@@ -238,9 +239,9 @@ class _AccountEditSheetState extends ConsumerState<AccountEditSheet> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: const InputDecoration(
-                  labelText: 'Forex markup %',
-                  helperText: 'Include GST: 3.5% + 18% = 4.13%.',
+                decoration: InputDecoration(
+                  labelText: t('Forex markup %'),
+                  helperText: t('Include GST: 3.5% + 18% = 4.13%.'),
                 ),
               ),
             ],
@@ -248,7 +249,7 @@ class _AccountEditSheetState extends ConsumerState<AccountEditSheet> {
               DropdownButtonFormField<int>(
                 key: const Key('edit_link'),
                 initialValue: _banks.any((b) => b.id == _link) ? _link : null,
-                hint: const Text('Linked bank account'),
+                hint: Text(t('Linked bank account')),
                 items: [
                   for (final b in _banks)
                     DropdownMenuItem(value: b.id, child: Text(b.label)),
@@ -261,7 +262,7 @@ class _AccountEditSheetState extends ConsumerState<AccountEditSheet> {
               children: [
                 ChoiceChip(
                   key: const Key('edit_color_none'),
-                  label: const Text('No colour'),
+                  label: Text(t('No colour')),
                   selected: _color == null,
                   onSelected: (_) => setState(() => _color = null),
                 ),
@@ -296,13 +297,13 @@ class _AccountEditSheetState extends ConsumerState<AccountEditSheet> {
                 key: const Key('edit_remove_balance'),
                 contentPadding: EdgeInsets.zero,
                 value: _removeBalance,
-                title: const Text('Remove the balance I set'),
+                title: Text(t('Remove the balance I set')),
                 onChanged: (v) => setState(() => _removeBalance = v ?? false),
               ),
             if (_children.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
-                'Merged accounts',
+                t('Merged accounts'),
                 style: Theme.of(context).textTheme.labelLarge,
               ),
               for (final c in _children)
@@ -318,7 +319,7 @@ class _AccountEditSheetState extends ConsumerState<AccountEditSheet> {
                           .unmerge(c.id);
                       await _load();
                     },
-                    child: const Text('Unmerge'),
+                    child: Text(t('Unmerge')),
                   ),
                 ),
             ],
@@ -326,7 +327,7 @@ class _AccountEditSheetState extends ConsumerState<AccountEditSheet> {
               TextButton.icon(
                 key: const Key('edit_unlock'),
                 icon: const Icon(Icons.lock_outline),
-                label: const Text('Statement unlock details'),
+                label: Text(t('Statement unlock details')),
                 onPressed: () => showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
@@ -346,13 +347,13 @@ class _AccountEditSheetState extends ConsumerState<AccountEditSheet> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(t('Cancel')),
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
                   key: const Key('edit_save'),
                   onPressed: _save,
-                  child: const Text('Save'),
+                  child: Text(t('Save')),
                 ),
               ],
             ),

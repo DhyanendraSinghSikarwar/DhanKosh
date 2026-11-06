@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/backup_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/report/report_document.dart';
 
 /// PDF reports (FR-24-29, FR-24-30): monthly or yearly summary, portfolio.
@@ -49,13 +50,13 @@ class _State extends ConsumerState<ReportsSection> {
           children: [
             ListTile(
               key: const Key('report-this-month'),
-              title: const Text('This month'),
+              title: Text(t('This month')),
               onTap: () =>
                   Navigator.pop(c, () => svc.month(now.year, now.month)),
             ),
             ListTile(
               key: const Key('report-last-month'),
-              title: const Text('Last month'),
+              title: Text(t('Last month')),
               onTap: () =>
                   Navigator.pop(c, () => svc.month(last.year, last.month)),
             ),
@@ -80,24 +81,24 @@ class _State extends ConsumerState<ReportsSection> {
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('PDF reports', style: Theme.of(context).textTheme.titleSmall),
+          Text(t('PDF reports'), style: Theme.of(context).textTheme.titleSmall),
           ListTile(
             key: const Key('report-summary'),
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.picture_as_pdf_outlined),
-            title: const Text('Monthly or yearly summary'),
-            subtitle: const Text('Income, spend, merchants, budgets'),
+            title: Text(t('Monthly or yearly summary')),
+            subtitle: Text(t('Income, spend, merchants, budgets')),
             trailing: OutlinedButton(
               onPressed: _busy ? null : _summary,
-              child: const Text('Create'),
+              child: Text(t('Create')),
             ),
           ),
           ListTile(
             key: const Key('report-portfolio'),
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.pie_chart_outline),
-            title: const Text('Portfolio report'),
-            subtitle: const Text('Holdings, allocation, gain'),
+            title: Text(t('Portfolio report')),
+            subtitle: Text(t('Holdings, allocation, gain')),
             trailing: OutlinedButton(
               onPressed: _busy
                   ? null
@@ -106,7 +107,7 @@ class _State extends ConsumerState<ReportsSection> {
                             .read(reportServiceProvider)
                             .portfolio(DateTime.now()),
                       ),
-              child: const Text('Create'),
+              child: Text(t('Create')),
             ),
           ),
           if (_busy) const LinearProgressIndicator(),

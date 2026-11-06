@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/loans_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// "Looks like the same loan" suggestions with Merge and Not duplicates
 /// (FR-15-12). Shows nothing when there are none.
@@ -17,7 +18,7 @@ class LoanDuplicatesSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Possible duplicates',
+          t('Possible duplicates'),
           style: Theme.of(context).textTheme.titleSmall,
         ),
         for (final d in dups)
@@ -39,7 +40,7 @@ class LoanDuplicatesSection extends ConsumerWidget {
                           await actions.notDuplicates(d);
                           ref.invalidate(loanDuplicatesProvider);
                         },
-                        child: const Text('Not duplicates'),
+                        child: Text(t('Not duplicates')),
                       ),
                       FilledButton(
                         key: Key('dup-merge-${d.key}'),
@@ -47,7 +48,7 @@ class LoanDuplicatesSection extends ConsumerWidget {
                           await actions.merge(d);
                           ref.invalidate(loanDuplicatesProvider);
                         },
-                        child: const Text('Merge'),
+                        child: Text(t('Merge')),
                       ),
                     ],
                   ),

@@ -7,6 +7,7 @@ import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/core/money/money.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/statement_import/domain/import_result.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
 import 'package:hisaab/features/statement_import/domain/usecases/import_mapped_sheet.dart';
@@ -198,7 +199,7 @@ class _State extends ConsumerState<ColumnMappingScreen> {
     final text = Theme.of(context).textTheme;
     if (_failure != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Match columns')),
+        appBar: AppBar(title: Text(t('Match columns'))),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -213,7 +214,7 @@ class _State extends ConsumerState<ColumnMappingScreen> {
     }
     final parsed = _parsed;
     return Scaffold(
-      appBar: AppBar(title: const Text('Match columns')),
+      appBar: AppBar(title: Text(t('Match columns'))),
       body: _sheets.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -259,7 +260,7 @@ class _State extends ConsumerState<ColumnMappingScreen> {
                           const Spacer(),
                           IconButton(
                             key: const Key('map-header-up'),
-                            tooltip: 'Row above',
+                            tooltip: t('Row above'),
                             onPressed: _m.headerRow > 0
                                 ? () => _setHeader(_m.headerRow - 1)
                                 : null,
@@ -267,7 +268,7 @@ class _State extends ConsumerState<ColumnMappingScreen> {
                           ),
                           IconButton(
                             key: const Key('map-header-down'),
-                            tooltip: 'Row below',
+                            tooltip: t('Row below'),
                             onPressed: _m.headerRow < _rows.length - 1
                                 ? () => _setHeader(_m.headerRow + 1)
                                 : null,
@@ -318,7 +319,7 @@ class _State extends ConsumerState<ColumnMappingScreen> {
           isExpanded: true,
           decoration: InputDecoration(labelText: label),
           items: [
-            const DropdownMenuItem<int?>(child: Text('None')),
+            DropdownMenuItem<int?>(child: Text(t('None'))),
             for (var i = 0; i < _columns; i++)
               DropdownMenuItem<int?>(
                 value: i,
@@ -351,13 +352,13 @@ class _State extends ConsumerState<ColumnMappingScreen> {
               initialValue: _m.dateFormat,
               isExpanded: true,
               decoration: InputDecoration(
-                labelText: 'Date format',
+                labelText: t('Date format'),
                 helperText: _m.dateFormat == null && _parsed?.dateFormat != null
                     ? 'Found ${_parsed!.dateFormat}'
                     : null,
               ),
               items: [
-                const DropdownMenuItem<String?>(child: Text('Automatic')),
+                DropdownMenuItem<String?>(child: Text(t('Automatic'))),
                 for (final f in StatementDateFormats.names)
                   DropdownMenuItem<String?>(
                     value: f,
@@ -387,9 +388,9 @@ class _State extends ConsumerState<ColumnMappingScreen> {
           ),
           SegmentedButton<bool>(
             key: const Key('map-mode'),
-            segments: const [
-              ButtonSegment(value: true, label: Text('Debit and credit')),
-              ButtonSegment(value: false, label: Text('One amount')),
+            segments: [
+              ButtonSegment(value: true, label: Text(t('Debit and credit'))),
+              ButtonSegment(value: false, label: Text(t('One amount'))),
             ],
             selected: {split},
             onSelectionChanged: (s) {
@@ -479,9 +480,9 @@ class _State extends ConsumerState<ColumnMappingScreen> {
             key: const Key('map-account'),
             initialValue: _accountId,
             isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Account'),
+            decoration: InputDecoration(labelText: t('Account')),
             items: [
-              const DropdownMenuItem<int?>(child: Text('No account')),
+              DropdownMenuItem<int?>(child: Text(t('No account'))),
               for (final a in _accounts)
                 DropdownMenuItem<int?>(value: a.id, child: Text(a.label)),
             ],
@@ -547,7 +548,7 @@ class _State extends ConsumerState<ColumnMappingScreen> {
             const SizedBox(height: 8),
             if (c.addsUp)
               Text(
-                'Balances add up.',
+                t('Balances add up.'),
                 key: const Key('map-adds-up'),
                 style: text.bodySmall?.copyWith(color: Colors.green),
               )
@@ -677,17 +678,17 @@ class _ResultState extends ConsumerState<_ResultSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Imported', style: text.titleMedium),
+          Text(t('Imported'), style: text.titleMedium),
           Text(parts.join(', '), key: const Key('result-counts')),
           if (c != null) ...[
             const Divider(height: 24),
-            Text('Balance check', style: text.titleSmall),
+            Text(t('Balance check'), style: text.titleSmall),
             const SizedBox(height: 6),
             _line('Statement', _m(c.statementMinor)),
             _line('DhanKosh', c.appMinor == null ? 'unknown' : _m(c.appMinor!)),
             if (c.appMinor != null && c.matches)
               Text(
-                'Matches.',
+                t('Matches.'),
                 key: const Key('result-matches'),
                 style: text.bodyMedium?.copyWith(color: Colors.green),
               )
@@ -715,7 +716,7 @@ class _ResultState extends ConsumerState<_ResultSheet> {
                 child: OutlinedButton(
                   key: const Key('result-use-balance'),
                   onPressed: _use,
-                  child: const Text('Use statement balance'),
+                  child: Text(t('Use statement balance')),
                 ),
               ),
             if (_note != null)
@@ -734,7 +735,7 @@ class _ResultState extends ConsumerState<_ResultSheet> {
             child: FilledButton(
               key: const Key('result-done'),
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Done'),
+              child: Text(t('Done')),
             ),
           ),
         ],

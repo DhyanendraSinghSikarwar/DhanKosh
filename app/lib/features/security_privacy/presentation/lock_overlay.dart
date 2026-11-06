@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// Opaque full-screen lock (FR-25-04). Shows no app content.
 class LockOverlay extends StatefulWidget {
@@ -69,12 +70,12 @@ class _LockOverlayState extends State<LockOverlay> {
             Icon(Icons.lock_outline, size: 56, color: scheme.primary),
             const SizedBox(height: 16),
             Text(
-              'DhanKosh is locked',
+              t('DhanKosh is locked'),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             if (failed && !busy) ...[
               const SizedBox(height: 8),
-              const Text('Not unlocked', key: Key('lock-failed')),
+              Text(t('Not unlocked'), key: const Key('lock-failed')),
             ],
             if (wait > 0) ...[
               const SizedBox(height: 8),
@@ -87,7 +88,7 @@ class _LockOverlayState extends State<LockOverlay> {
             FilledButton(
               key: const Key('lock-unlock'),
               onPressed: busy || wait > 0 ? null : widget.onUnlock,
-              child: const Text('Unlock'),
+              child: Text(t('Unlock')),
             ),
           ],
         ),

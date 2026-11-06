@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/settings_row.dart';
 
@@ -19,8 +20,8 @@ class SupportTile extends StatelessWidget {
       : SettingsRow(
           key: const Key('support-tile'),
           badge: AppIcons.support,
-          title: 'Support',
-          subtitle: 'Optional UPI tip',
+          title: t('Support'),
+          subtitle: t('Optional UPI tip'),
           onTap: () => context.push('/settings/support'),
         );
 }

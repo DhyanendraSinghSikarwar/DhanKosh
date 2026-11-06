@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/settings_row.dart';
 
@@ -12,8 +13,8 @@ class AlertsTile extends StatelessWidget {
   Widget build(BuildContext context) => SettingsRow(
         key: const Key('alerts-tile'),
         badge: AppIcons.alerts,
-        title: 'Alerts',
-        subtitle: 'Bill reminders, new transactions',
+        title: t('Alerts'),
+        subtitle: t('Bill reminders, new transactions'),
         onTap: () => context.push('/settings/alerts'),
       );
 }

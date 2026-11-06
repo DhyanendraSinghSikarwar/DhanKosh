@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/alerts_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_models.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 
@@ -61,7 +62,7 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
     final s = ref.watch(alertSettingsProvider).value ?? const AlertSettings();
     final repo = ref.read(alertSettingsRepositoryProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Alerts')),
+      appBar: AppBar(title: Text(t('Alerts'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -73,17 +74,17 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Notifications are off', style: text.titleSmall),
+                    Text(t('Notifications are off'), style: text.titleSmall),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Settings > Apps > DhanKosh > Notifications',
-                      key: Key('alerts-howto'),
+                    Text(
+                      t('Settings > Apps > DhanKosh > Notifications'),
+                      key: const Key('alerts-howto'),
                     ),
                     const SizedBox(height: 8),
                     FilledButton(
                       key: const Key('alerts-allow'),
                       onPressed: _allow,
-                      child: const Text('Allow'),
+                      child: Text(t('Allow')),
                     ),
                   ],
                 ),
@@ -116,8 +117,8 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
                   key: const Key('alerts-transactions'),
                   contentPadding: EdgeInsets.zero,
                   secondary: const IconBadge(AppIcons.sms, size: 36),
-                  title: const Text('Transaction alerts'),
-                  subtitle: const Text('New spends, to pick a category'),
+                  title: Text(t('Transaction alerts')),
+                  subtitle: Text(t('New spends, to pick a category')),
                   value: s.transactionNotifications,
                   onChanged: (v) =>
                       unawaited(repo.setTransactionNotifications(value: v)),
@@ -127,8 +128,8 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
                   key: const Key('alerts-cards'),
                   contentPadding: EdgeInsets.zero,
                   secondary: const IconBadge(AppIcons.cards, size: 36),
-                  title: const Text('Card bill reminders'),
-                  subtitle: const Text('Mark paid or snooze'),
+                  title: Text(t('Card bill reminders')),
+                  subtitle: Text(t('Mark paid or snooze')),
                   value: s.cardDueReminders,
                   onChanged: (v) =>
                       unawaited(repo.setCardDueReminders(value: v)),
@@ -138,8 +139,8 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
                   key: const Key('alerts-weekly'),
                   contentPadding: EdgeInsets.zero,
                   secondary: const IconBadge(AppIcons.activity, size: 36),
-                  title: const Text('Weekly summary'),
-                  subtitle: const Text('Spent last week vs the week before'),
+                  title: Text(t('Weekly summary')),
+                  subtitle: Text(t('Spent last week vs the week before')),
                   value: s.weeklySummary,
                   onChanged: (v) => unawaited(repo.setWeeklySummary(value: v)),
                 ),
@@ -148,8 +149,8 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
                   key: const Key('alerts-update'),
                   contentPadding: EdgeInsets.zero,
                   secondary: const IconBadge(AppIcons.updates, size: 36),
-                  title: const Text('Update available'),
-                  subtitle: const Text('Once per new version'),
+                  title: Text(t('Update available')),
+                  subtitle: Text(t('Once per new version')),
                   value: s.updateAvailable,
                   onChanged: (v) =>
                       unawaited(repo.setUpdateAvailable(value: v)),
@@ -158,7 +159,7 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
             ),
           ),
           const SizedBox(height: 12),
-          Text('Budget alert at', style: text.titleSmall),
+          Text(t('Budget alert at'), style: text.titleSmall),
           Text(
             'Notified when a budget is used up. Earlier levels go to the '
             'Activity log.',

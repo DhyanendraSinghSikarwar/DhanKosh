@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hisaab/features/loans/domain/loan_models.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 
@@ -55,12 +56,12 @@ class LoanCard extends StatelessWidget {
           Row(
             children: [
               Expanded(child: Text(loan.name, style: text.titleMedium)),
-              if (loan.detected) const Chip(label: Text('Detected')),
-              if (loan.closed) const Chip(label: Text('Closed')),
+              if (loan.detected) Chip(label: Text(t('Detected'))),
+              if (loan.closed) Chip(label: Text(t('Closed'))),
             ],
           ),
           const SizedBox(height: 4),
-          Text('Outstanding', style: text.labelMedium),
+          Text(t('Outstanding'), style: text.labelMedium),
           Text(money(loan.outstandingMinor), style: text.headlineSmall),
           const SizedBox(height: 8),
           Row(

@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Feature ID | F-29 |
-| Status | In progress (Phase 5: `t()`, packs, download from the documented URL, Language screen and More tile done; string conversion of existing screens and build-time key check pending) |
+| Status | In progress (bundled YAML catalogues for 8 languages, `t()` on screens and the check tool are done; texts built from values, some dialogs and enum labels are still English; translations not yet reviewed by native speakers) |
 | Priority | P2 |
 | Phase | 5 (the `t()` lookup API is introduced in Phase 0 so all UI strings are wrapped from the start) |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-11-06 |
 
 ## 1. Description
 
@@ -130,20 +130,21 @@ DataStore `language`: key `language` (en, hi, bn, te, mr, ta, gu, kn), default e
 - FR-29-02: All user-visible strings (except those listed as out of scope) are passed through `t()`; the English text is the key.
 - FR-29-03: Changing the active language rebuilds all visible screens without restarting the app.
 - FR-29-04: Supported languages are en, hi, bn, te, mr, ta, gu, kn with the native names in Section 2.1; English is built in and cannot be deleted.
-- FR-29-05: A pack is a JSON object with `version` (int), `code` (string) and `strings` (map English to translation); blank translations are ignored.
-- FR-29-06: Downloading a pack performs an HTTPS GET of `<base>/<code>.json` with connect timeout 10 s and read timeout 20 s; a non-2xx status or an empty parsed map is an error.
-- FR-29-07: The pack is written to a temporary file and atomically renamed over `lang/<code>.json`, replacing any older copy.
-- FR-29-08: Selecting a downloaded language applies it and stores its code under the `language` key; selecting a not-downloaded one downloads first, then applies.
-- FR-29-09: Deleting a downloaded pack removes the file; if it was active, the app switches to English and stores `en`.
-- FR-29-10: On start the saved language is restored; if its pack is missing or unreadable the app uses English without crashing.
+- FR-29-05: Each language is one bundled YAML catalogue `app/assets/l10n/<code>.yaml` with `version`, `code` and `strings` (map English text to translation). A blank value is ignored, so an untranslated string shows English. This replaces the downloadable JSON pack of 2.9.8 (superseded: no network, no download).
+- FR-29-06: (superseded by FR-29-05) Nothing is downloaded; every language ships in the app, so switching works offline.
+- FR-29-07: (superseded by FR-29-05) No pack files are written to the phone.
+- FR-29-08: Choosing a language loads its catalogue, applies it at once on every screen and stores its code under the `language` key.
+- FR-29-09: (superseded) English and the seven other languages are always present; nothing is deleted.
+- FR-29-10: On start the saved language is restored; if its file is missing or unreadable the app uses English without crashing.
 - FR-29-11: The Language screen lists all 8 languages in enum order, each row showing the native-name initial tile, native name, subtitle ("Built in" / "<English> · Downloaded" / "<English> · Tap to download") and a trailing state (spinner, "In use" check, "Download" cloud, "Remove download" trash).
-- FR-29-12: While a language is downloading, its row shows a spinner and other taps on it are ignored; failures show "Couldn't download {lang}. Check your connection."; a corrupt pack shows "That language pack is damaged. Download it again.".
+- FR-29-12: If a catalogue cannot be loaded the app shows English and the message "Couldn't load {lang}. Showing English."
 - FR-29-13: Placeholders in translations must keep the same `{name}` tokens as the English key; a missing token in the translation leaves the output without that value (see test and tooling requirement).
-- FR-29-14: No personal data is sent during download; the request carries no identifiers beyond what the HTTP stack sends.
-- FR-29-15: A build-time check verifies that every `t()` literal in the source exists in `lang/keys.json` and that every pack covers the key list (reports missing and extra keys).
+- FR-29-14: The language feature makes no network request.
+- FR-29-15: `python3 tools/check_l10n.py check` fails when a `t()` key used in code is missing from `en.yaml`, a catalogue holds a key no code uses, or a translation changes its key's `{placeholders}`; it prints coverage per language. `sync` rewrites the catalogues from the code and keeps existing translations. A Dart test also checks placeholders of every bundled file.
 - FR-29-16: Plural forms use separate keys (for example `"{n} account and cards"`) chosen by a `plural(n, one, other)` helper, not ICU.
 - FR-29-17: Dates, numbers and currency keep the existing English / en-IN formatting regardless of language (parity with 2.9.8).
-- FR-29-18: Language packs live in app-private storage and are excluded from backup.
+- FR-29-18: (superseded by FR-29-05) Catalogues are app assets, not backup data.
+- FR-29-19: Screen text is written as `t('English text')` in the presentation layer (Text, title, subtitle, label, hint, tooltip); text built from values uses `{name}` placeholders and `args`. Text stored in the database or sent in a notification from a background run is not translated.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -389,3 +390,4 @@ Landed 2026-10-21: FR-29-01, 03..12, 14, 16..18 (TC via `test/features/localizat
 | 2026-10-19 | Verified `lang/keys.json` has 1,455 unique keys (each pack 1,455); all counts in this file confirmed as 1,455 | Audit Gate gap, scan_N |
 | 2026-10-21 | Phase 5 theming + localization landed | Phase 5 |
 | 2026-10-27 | Audit: packs and download confirmed done; string conversion to t() and pack removal still to verify | Kotlin parity audit |
+| 2026-11-06 | Catalogues are bundled YAML files (`assets/l10n/<code>.yaml`), download and delete removed (FR-29-05..10, 12, 14, 18 amended); about 800 screen texts moved to `t()` (FR-29-19); `tools/check_l10n.py` (FR-29-15) | Owner asked for language text kept in a file per language that shows at once on change (issue I-08) |

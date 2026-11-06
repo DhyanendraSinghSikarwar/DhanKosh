@@ -10,6 +10,7 @@ import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/scope_providers.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_refresh_sheet.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/shared/widgets/mock_kit.dart';
@@ -85,7 +86,7 @@ class HomeHeader extends ConsumerWidget {
                 ),
                 if (!hasName)
                   Text(
-                    'Tap to set up your profile',
+                    t('Tap to set up your profile'),
                     style: MockText.small(context),
                   ),
               ],
@@ -118,13 +119,13 @@ class HomeHeader extends ConsumerWidget {
         if (editing)
           IconButton(
             key: const Key('home_edit_done'),
-            tooltip: 'Done',
+            tooltip: t('Done'),
             icon: const Icon(Icons.check),
             onPressed: onEdit,
           ),
         PopupMenuButton<String>(
           key: const Key('home_menu'),
-          tooltip: 'More',
+          tooltip: t('More'),
           icon: const Icon(Icons.more_vert),
           onSelected: (v) {
             switch (v) {
@@ -137,15 +138,15 @@ class HomeHeader extends ConsumerWidget {
             }
           },
           itemBuilder: (_) => [
-            const PopupMenuItem(
-              key: Key('home_add'),
+            PopupMenuItem(
+              key: const Key('home_add'),
               value: 'add',
-              child: Text('Add transaction'),
+              child: Text(t('Add transaction')),
             ),
-            const PopupMenuItem(
-              key: Key('home_accounts_button'),
+            PopupMenuItem(
+              key: const Key('home_accounts_button'),
               value: 'accounts',
-              child: Text('Accounts'),
+              child: Text(t('Accounts')),
             ),
             PopupMenuItem(
               key: const Key('home_edit'),
@@ -208,7 +209,7 @@ class _InboxBell extends ConsumerWidget {
     final n = ref.watch(inboxUnreadProvider);
     return IconButton(
       key: const Key('home_bell'),
-      tooltip: 'Inbox',
+      tooltip: t('Inbox'),
       icon: Badge(
         key: const Key('home_bell_badge'),
         isLabelVisible: n > 0,

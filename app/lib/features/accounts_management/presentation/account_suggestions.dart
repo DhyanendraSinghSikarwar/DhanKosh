@@ -4,6 +4,7 @@ import 'package:hisaab/app/di/accounts_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/accounts_management/domain/merge_suggestions.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -63,7 +64,7 @@ class AccountSuggestions extends ConsumerWidget {
         for (final l in links)
           _SuggestionCard(
             key: Key('suggest_link_${l.card.id}'),
-            title: 'Link this debit card?',
+            title: t('Link this debit card?'),
             body: '${l.card.label} to ${l.account.label}. ${l.reason}',
             primary: 'Link',
             secondary: 'Not now',

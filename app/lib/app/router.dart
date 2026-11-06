@@ -34,6 +34,7 @@ import 'package:hisaab/features/loans/presentation/loan_detail_screen.dart';
 import 'package:hisaab/features/loans/presentation/loan_link_prompt_screen.dart';
 import 'package:hisaab/features/loans/presentation/loans_screen.dart';
 import 'package:hisaab/features/loans/presentation/loans_tile.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/localization/presentation/language_screen.dart';
 import 'package:hisaab/features/localization/presentation/language_tile.dart';
 import 'package:hisaab/features/news_support_updates/presentation/news_screen.dart';
@@ -353,31 +354,31 @@ class _ScaffoldWithNavBar extends StatelessWidget {
         selectedIndex: shell.currentIndex,
         onDestinationSelected: (i) =>
             shell.goBranch(i, initialLocation: i == shell.currentIndex),
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home_rounded),
+            label: t('Home'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Transactions',
+            icon: const Icon(Icons.receipt_long_outlined),
+            selectedIcon: const Icon(Icons.receipt_long),
+            label: t('Transactions'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.pie_chart_outline),
-            selectedIcon: Icon(Icons.pie_chart),
-            label: 'Portfolio',
+            icon: const Icon(Icons.pie_chart_outline),
+            selectedIcon: const Icon(Icons.pie_chart),
+            label: t('Portfolio'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
-            label: 'Analysis',
+            icon: const Icon(Icons.insights_outlined),
+            selectedIcon: const Icon(Icons.insights),
+            label: t('Analysis'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.menu),
-            selectedIcon: Icon(Icons.menu_open),
-            label: 'More',
+            icon: const Icon(Icons.menu),
+            selectedIcon: const Icon(Icons.menu_open),
+            label: t('More'),
           ),
         ],
       ),

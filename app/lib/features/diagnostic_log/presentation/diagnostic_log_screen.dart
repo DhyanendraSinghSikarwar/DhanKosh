@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/log_providers.dart';
 import 'package:hisaab/features/diagnostic_log/domain/diagnostic_log_store.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/log/app_logger.dart';
 import 'package:hisaab/shared/log/log_format.dart';
 import 'package:hisaab/shared/log/log_models.dart';
@@ -94,16 +95,16 @@ class _State extends ConsumerState<DiagnosticLogScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Clear log?'),
+        title: Text(t('Clear log?')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           TextButton(
             key: const Key('log-clear-confirm'),
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Clear'),
+            child: Text(t('Clear')),
           ),
         ],
       ),
@@ -124,7 +125,7 @@ class _State extends ConsumerState<DiagnosticLogScreen> {
               if (_filter == null || e.category == _filter) e,
           ];
     return Scaffold(
-      appBar: AppBar(title: const Text('Diagnostic log')),
+      appBar: AppBar(title: Text(t('Diagnostic log'))),
       body: v == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -144,7 +145,7 @@ class _State extends ConsumerState<DiagnosticLogScreen> {
                 SwitchListTile(
                   key: const Key('log-toggle'),
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Keep a diagnostic log'),
+                  title: Text(t('Keep a diagnostic log')),
                   value: v.config.enabled,
                   onChanged: (on) =>
                       _setConfig(LogConfig(enabled: on, level: v.config.level)),
@@ -152,14 +153,14 @@ class _State extends ConsumerState<DiagnosticLogScreen> {
                 if (v.config.enabled)
                   SegmentedButton<LogLevel>(
                     key: const Key('log-level'),
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: LogLevel.info,
-                        label: Text('Info'),
+                        label: Text(t('Info')),
                       ),
                       ButtonSegment(
                         value: LogLevel.debug,
-                        label: Text('Debug'),
+                        label: Text(t('Debug')),
                       ),
                     ],
                     selected: {
@@ -178,17 +179,17 @@ class _State extends ConsumerState<DiagnosticLogScreen> {
                     FilledButton(
                       key: const Key('log-export'),
                       onPressed: _export,
-                      child: const Text('Export log'),
+                      child: Text(t('Export log')),
                     ),
                     OutlinedButton(
                       key: const Key('log-copy'),
                       onPressed: _copy,
-                      child: const Text('Copy last 200 lines'),
+                      child: Text(t('Copy last 200 lines')),
                     ),
                     OutlinedButton(
                       key: const Key('log-clear'),
                       onPressed: _clear,
-                      child: const Text('Clear log'),
+                      child: Text(t('Clear log')),
                     ),
                   ],
                 ),
@@ -208,7 +209,7 @@ class _State extends ConsumerState<DiagnosticLogScreen> {
                 ),
                 const SizedBox(height: 8),
                 if (shown.isEmpty)
-                  const Text('No entries', key: Key('log-empty'))
+                  Text(t('No entries'), key: const Key('log-empty'))
                 else
                   for (final e in shown)
                     Padding(

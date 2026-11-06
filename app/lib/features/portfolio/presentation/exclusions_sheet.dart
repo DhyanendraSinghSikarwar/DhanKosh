@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/asset_class.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart';
 
@@ -36,7 +37,7 @@ class ExclusionsSheet extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Include in net worth',
+            t('Include in net worth'),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           for (final c in AssetClass.values)

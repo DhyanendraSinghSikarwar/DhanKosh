@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/settings_row.dart';
 
@@ -12,8 +13,8 @@ class StatementsTile extends StatelessWidget {
   Widget build(BuildContext context) => SettingsRow(
         key: const Key('statements-tile'),
         badge: AppIcons.statements,
-        title: 'Statements',
-        subtitle: 'PDF, Excel, CSV import',
+        title: t('Statements'),
+        subtitle: t('PDF, Excel, CSV import'),
         onTap: () => context.push('/statements'),
       );
 }

@@ -7,6 +7,7 @@ import 'package:hisaab/app/di/alerts_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/features/analytics/domain/civil_date.dart';
 import 'package:hisaab/features/forex_rates/domain/forex_rate.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 const _defaultCurrencies = ['USD', 'EUR', 'GBP', 'AED', 'SGD'];
 
@@ -66,7 +67,7 @@ class ForexRatesScreen extends ConsumerWidget {
     final rates = ref.watch(forexRatesProvider).value ?? const <ForexRate>[];
     final foreign = ref.watch(forexForeignProvider).value ?? const [];
     return Scaffold(
-      appBar: AppBar(title: const Text('Forex rates')),
+      appBar: AppBar(title: Text(t('Forex rates'))),
       floatingActionButton: FloatingActionButton(
         heroTag: null,
         key: const Key('forex-add'),
@@ -83,10 +84,10 @@ class ForexRatesScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Your spends abroad', style: text.titleSmall),
+                  Text(t('Your spends abroad'), style: text.titleSmall),
                   const SizedBox(height: 8),
                   if (foreign.isEmpty)
-                    const Text('No foreign spends', key: Key('forex-none')),
+                    Text(t('No foreign spends'), key: const Key('forex-none')),
                   for (final c in foreign)
                     Row(
                       children: [
@@ -103,7 +104,7 @@ class ForexRatesScreen extends ConsumerWidget {
                           )
                         else
                           Text(
-                            'All counted',
+                            t('All counted'),
                             key: Key('forex-ok-${c.currency}'),
                           ),
                       ],
@@ -114,12 +115,12 @@ class ForexRatesScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Spends without a rate are left out of totals.',
+            t('Spends without a rate are left out of totals.'),
             style: text.bodySmall,
           ),
           const SizedBox(height: 8),
           if (rates.isEmpty)
-            const Text('No rates yet', key: Key('forex-empty')),
+            Text(t('No rates yet'), key: const Key('forex-empty')),
           for (final r in rates)
             ListTile(
               key: Key('forex-rate-${r.currency}-${r.day}'),
@@ -130,7 +131,7 @@ class ForexRatesScreen extends ConsumerWidget {
               trailing: IconButton(
                 key: Key('forex-del-${r.currency}-${r.day}'),
                 icon: const Icon(Icons.delete_outline),
-                tooltip: 'Delete',
+                tooltip: t('Delete'),
                 onPressed: () => unawaited(
                   ref.read(forexRepositoryProvider).delete(r.currency, r.day),
                 ),
@@ -182,7 +183,7 @@ class _RateDialogState extends State<_RateDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Exchange rate'),
+      title: Text(t('Exchange rate')),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -208,7 +209,7 @@ class _RateDialogState extends State<_RateDialog> {
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp('[A-Za-z]')),
               ],
-              decoration: const InputDecoration(labelText: 'Currency'),
+              decoration: InputDecoration(labelText: t('Currency')),
               onChanged: (_) => setState(() {}),
             ),
             TextButton.icon(
@@ -227,7 +228,7 @@ class _RateDialogState extends State<_RateDialog> {
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp('[0-9.]')),
               ],
-              decoration: const InputDecoration(labelText: 'Rupees per unit'),
+              decoration: InputDecoration(labelText: t('Rupees per unit')),
               onChanged: (_) => setState(() {}),
             ),
           ],
@@ -236,13 +237,13 @@ class _RateDialogState extends State<_RateDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(t('Cancel')),
         ),
         FilledButton(
           key: const Key('forex-save'),
           onPressed:
               _draft.canSave ? () => Navigator.pop(context, _draft) : null,
-          child: const Text('Save'),
+          child: Text(t('Save')),
         ),
       ],
     );

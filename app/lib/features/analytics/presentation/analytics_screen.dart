@@ -15,6 +15,7 @@ import 'package:hisaab/features/analytics/presentation/analytics_filter_bar.dart
 import 'package:hisaab/features/analytics/presentation/analytics_spend_cards.dart';
 import 'package:hisaab/features/analytics/presentation/analytics_tab_strip.dart';
 import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/theming_customisation/domain/section_layout.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
@@ -109,21 +110,21 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
     final Widget content;
     if (!d.loaded) {
-      content = const SizedBox(
+      content = SizedBox(
         height: 300,
         child: EmptyState(
-          key: Key('analytics-empty'),
+          key: const Key('analytics-empty'),
           icon: Icons.insights_outlined,
-          title: 'Loading',
+          title: t('Loading'),
         ),
       );
     } else if (v.txs.isEmpty && d.monthly.every((m) => m.spent == 0)) {
-      content = const SizedBox(
+      content = SizedBox(
         height: 300,
         child: EmptyState(
-          key: Key('analytics-empty'),
+          key: const Key('analytics-empty'),
           icon: Icons.insights_outlined,
-          title: 'No spending yet',
+          title: t('No spending yet'),
           hint: 'Transactions show up here.',
         ),
       );
@@ -173,7 +174,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         },
       );
     }
-    final t = Theme.of(context).textTheme;
+    final tt = Theme.of(context).textTheme;
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -186,10 +187,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                   children: [
                     Flexible(
                       child: Text(
-                        'Analysis',
+                        t('Analysis'),
                         key: const Key('analytics-title'),
                         overflow: TextOverflow.ellipsis,
-                        style: t.headlineMedium?.copyWith(
+                        style: tt.headlineMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),

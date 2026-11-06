@@ -9,6 +9,7 @@ import 'package:hisaab/app/di/unrecognised_providers.dart';
 import 'package:hisaab/core/money/money.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/add_draft.dart';
 import 'package:hisaab/features/unrecognised_messages/domain/unrecognised_message.dart';
 import 'package:hisaab/features/unrecognised_messages/domain/usecases/add_from_unrecognised.dart';
@@ -71,11 +72,11 @@ class _State extends ConsumerState<UnrecognisedScreen> {
     final masked = ref.watch(hideAmountsProvider).value ?? true;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Unrecognised messages'),
+        title: Text(t('Unrecognised messages')),
         actions: [
           IconButton(
             key: const Key('unrecognised_scan'),
-            tooltip: 'Find missed messages',
+            tooltip: t('Find missed messages'),
             onPressed: _scanning ? null : _scan,
             icon: _scanning
                 ? const SizedBox(
@@ -87,7 +88,7 @@ class _State extends ConsumerState<UnrecognisedScreen> {
           ),
           IconButton(
             key: const Key('unrecognised_senders'),
-            tooltip: 'Learned senders',
+            tooltip: t('Learned senders'),
             onPressed: () => context.push('/review/unrecognised/senders'),
             icon: const Icon(Icons.school_outlined),
           ),
@@ -95,15 +96,15 @@ class _State extends ConsumerState<UnrecognisedScreen> {
       ),
       body: list.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const EmptyState(
+        error: (_, __) => EmptyState(
           icon: Icons.error_outline,
-          title: 'Could not load',
+          title: t('Could not load'),
         ),
         data: (rows) => rows.isEmpty
-            ? const EmptyState(
-                key: Key('unrecognised_empty'),
+            ? EmptyState(
+                key: const Key('unrecognised_empty'),
                 icon: Icons.check_circle_outline,
-                title: 'All messages recognised',
+                title: t('All messages recognised'),
                 hint: 'Tap the search icon to look for missed ones.',
               )
             : ListView(
@@ -281,15 +282,15 @@ class _MessageCard extends ConsumerWidget {
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text('Dismissed'),
+                      content: Text(t('Dismissed')),
                       action: SnackBarAction(
-                        label: 'Undo',
+                        label: t('Undo'),
                         onPressed: () => repo.restore(message.id),
                       ),
                     ),
                   );
                 },
-                child: const Text('Dismiss'),
+                child: Text(t('Dismiss')),
               ),
               TextButton(
                 key: Key('ignore_${message.id}'),
@@ -297,19 +298,19 @@ class _MessageCard extends ConsumerWidget {
                   await repo.ignoreSender(message.senderKey);
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content:
-                          Text('Sender switched off. See Learned senders.'),
+                          Text(t('Sender switched off. See Learned senders.')),
                     ),
                   );
                 },
-                child: const Text('Ignore sender'),
+                child: Text(t('Ignore sender')),
               ),
               const Spacer(),
               FilledButton(
                 key: Key('add_${message.id}'),
                 onPressed: () => _add(context, ref),
-                child: const Text('Add'),
+                child: Text(t('Add')),
               ),
             ],
           ),

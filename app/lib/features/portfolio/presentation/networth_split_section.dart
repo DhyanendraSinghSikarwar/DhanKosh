@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart';
 import 'package:hisaab/features/portfolio/domain/portfolio_charts.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -52,7 +53,7 @@ class NetWorthSplitSection extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
                 onPressed: onChoose,
-                child: const Text('Choose what counts'),
+                child: Text(t('Choose what counts')),
               ),
             ],
           ),
@@ -84,9 +85,9 @@ class NetWorthSplitSection extends StatelessWidget {
               ),
           ],
           const Divider(),
-          _Row(label: 'Assets', value: money(worth.assetsMinor), bold: true),
+          _Row(label: t('Assets'), value: money(worth.assetsMinor), bold: true),
           _Row(
-            label: 'Liabilities',
+            label: t('Liabilities'),
             value: money(worth.liabilitiesMinor),
             bold: true,
           ),

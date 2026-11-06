@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/features/loans/domain/loan_models.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/section_label.dart';
 
@@ -50,9 +51,9 @@ class PortfolioLoansSection extends StatelessWidget {
             ],
           ),
           if (open.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text('No open loans'),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(t('No open loans')),
             )
           else ...[
             const SizedBox(height: 8),
@@ -68,7 +69,7 @@ class PortfolioLoansSection extends StatelessWidget {
                         style: theme.textTheme.titleLarge,
                       ),
                       Text(
-                        'Outstanding',
+                        t('Outstanding'),
                         style: TextStyle(fontSize: 12, color: muted),
                       ),
                     ],

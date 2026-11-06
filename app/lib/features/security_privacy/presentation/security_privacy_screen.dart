@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/erase_all.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/security_privacy/domain/app_lock_service.dart';
 import 'package:hisaab/features/security_privacy/domain/security_settings.dart';
 import 'package:hisaab/features/security_privacy/presentation/lock_controller.dart';
@@ -44,7 +45,7 @@ class SecurityPrivacyScreen extends ConsumerWidget {
     final step = await showDialog<_EraseStep>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Erase all data?'),
+        title: Text(t('Erase all data?')),
         content: const Text(
           'Removes transactions, accounts, saved passwords and settings from '
           'this phone. This cannot be undone. Export an encrypted backup '
@@ -53,17 +54,17 @@ class SecurityPrivacyScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           TextButton(
             key: const Key('erase-export-first'),
             onPressed: () => Navigator.pop(c, _EraseStep.export),
-            child: const Text('Export first'),
+            child: Text(t('Export first')),
           ),
           TextButton(
             key: const Key('erase-continue'),
             onPressed: () => Navigator.pop(c, _EraseStep.erase),
-            child: const Text('Continue'),
+            child: Text(t('Continue')),
           ),
         ],
       ),
@@ -82,7 +83,7 @@ class SecurityPrivacyScreen extends ConsumerWidget {
       ref.read(lockControllerProvider.notifier).markUnlocked();
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('All data erased')));
+            .showSnackBar(SnackBar(content: Text(t('All data erased'))));
       }
     }
   }
@@ -97,24 +98,24 @@ class SecurityPrivacyScreen extends ConsumerWidget {
     final canLock = avail == AuthAvailability.available;
     final text = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Security & privacy')),
+      appBar: AppBar(title: Text(t('Security & privacy'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           SwitchListTile(
             key: const Key('app-lock-switch'),
             contentPadding: EdgeInsets.zero,
-            title: const Text('App lock'),
+            title: Text(t('App lock')),
             subtitle: avail != null && !canLock
-                ? const Text('Set a screen lock on this phone first')
-                : const Text('Fingerprint, face or screen lock'),
+                ? Text(t('Set a screen lock on this phone first'))
+                : Text(t('Fingerprint, face or screen lock')),
             value: lock,
             onChanged: canLock || lock ? (v) => _setLock(ref, value: v) : null,
           ),
           SwitchListTile(
             key: const Key('hide-amounts-switch'),
             contentPadding: EdgeInsets.zero,
-            title: const Text('Hide amounts'),
+            title: Text(t('Hide amounts')),
             value: hide,
             onChanged: (v) => ref
                 .read(settingsRepositoryProvider)
@@ -124,8 +125,8 @@ class SecurityPrivacyScreen extends ConsumerWidget {
             ListTile(
               key: const Key('auto-lock-timeout'),
               contentPadding: EdgeInsets.zero,
-              title: const Text('Lock after'),
-              subtitle: const Text('Time away before the app locks again'),
+              title: Text(t('Lock after')),
+              subtitle: Text(t('Time away before the app locks again')),
               trailing: DropdownButton<int>(
                 key: const Key('auto-lock-dropdown'),
                 value: SecuritySettings.timeoutChoices.contains(timeout)
@@ -147,15 +148,15 @@ class SecurityPrivacyScreen extends ConsumerWidget {
               key: const Key('lock-now'),
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.lock_outline),
-              title: const Text('Lock now'),
+              title: Text(t('Lock now')),
               onTap: () => ref.read(lockControllerProvider.notifier).lockNow(),
             ),
           ],
           SwitchListTile(
             key: const Key('block-screenshots-switch'),
             contentPadding: EdgeInsets.zero,
-            title: const Text('Block screenshots'),
-            subtitle: const Text('Also hides the app in recent apps'),
+            title: Text(t('Block screenshots')),
+            subtitle: Text(t('Also hides the app in recent apps')),
             value: block,
             onChanged: (v) => ref
                 .read(settingsRepositoryProvider)
@@ -163,7 +164,7 @@ class SecurityPrivacyScreen extends ConsumerWidget {
           ),
           ...hostedRows,
           const SizedBox(height: 16),
-          Text('Privacy', style: text.titleSmall),
+          Text(t('Privacy'), style: text.titleSmall),
           for (final (icon, line) in _statements)
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -175,7 +176,7 @@ class SecurityPrivacyScreen extends ConsumerWidget {
           OutlinedButton(
             key: const Key('security-erase-all'),
             onPressed: () => _erase(context, ref),
-            child: const Text('Erase all data'),
+            child: Text(t('Erase all data')),
           ),
         ],
       ),
@@ -204,26 +205,26 @@ class _TypeToConfirmDialogState extends State<_TypeToConfirmDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Type ERASE to confirm'),
+        title: Text(t('Type ERASE to confirm')),
         content: TextField(
           key: const Key('erase-word'),
           controller: _c,
           autofocus: true,
           textCapitalization: TextCapitalization.characters,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(labelText: 'ERASE'),
+          decoration: InputDecoration(labelText: t('ERASE')),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           TextButton(
             key: const Key('security-erase-confirm'),
             onPressed: _c.text.trim() == word
                 ? () => Navigator.pop(context, true)
                 : null,
-            child: const Text('Erase everything'),
+            child: Text(t('Erase everything')),
           ),
         ],
       );

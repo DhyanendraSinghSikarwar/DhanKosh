@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/settings_row.dart';
 
@@ -12,8 +13,8 @@ class RulesTile extends StatelessWidget {
   Widget build(BuildContext context) => SettingsRow(
         key: const Key('rules-tile'),
         badge: AppIcons.rules,
-        title: 'Rules',
-        subtitle: 'Automatic categorisation',
+        title: t('Rules'),
+        subtitle: t('Automatic categorisation'),
         onTap: () => context.push('/rules'),
       );
 }

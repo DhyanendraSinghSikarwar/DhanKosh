@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/share_in_providers.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/statement_import/domain/import_result.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
@@ -86,10 +87,10 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: const Text('No rows found. Match the columns yourself?'),
+          content: Text(t('No rows found. Match the columns yourself?')),
           action: SnackBarAction(
             key: const Key('statements-map-columns'),
-            label: 'Match columns',
+            label: t('Match columns'),
             onPressed: () => unawaited(_map(file)),
           ),
         ),
@@ -118,17 +119,17 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Delete statement?'),
-        content: const Text('Imported transactions stay.'),
+        title: Text(t('Delete statement?')),
+        content: Text(t('Imported transactions stay.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: const Key('statement-delete-confirm'),
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Delete'),
+            child: Text(t('Delete')),
           ),
         ],
       ),
@@ -190,11 +191,11 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Statements'),
+        title: Text(t('Statements')),
         actions: [
           IconButton(
             key: const Key('statements-import'),
-            tooltip: 'Import',
+            tooltip: t('Import'),
             icon: const Icon(Icons.upload_file),
             onPressed: _busy ? null : _import,
           ),
@@ -207,16 +208,16 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
                 _say('Saved layouts forgotten');
               }
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(
-                key: Key('statements-menu-map'),
+                key: const Key('statements-menu-map'),
                 value: 'map',
-                child: Text('Import spreadsheet, match columns'),
+                child: Text(t('Import spreadsheet, match columns')),
               ),
               PopupMenuItem(
-                key: Key('statements-menu-forget'),
+                key: const Key('statements-menu-forget'),
                 value: 'forget',
-                child: Text('Forget saved layouts'),
+                child: Text(t('Forget saved layouts')),
               ),
             ],
           ),
@@ -238,7 +239,7 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
             ),
           Expanded(
             child: list.isEmpty
-                ? const Center(child: Text('No statements yet.'))
+                ? Center(child: Text(t('No statements yet.')))
                 : ListView.builder(
                     itemCount: list.length,
                     itemBuilder: (_, i) {
@@ -265,13 +266,13 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
                             if (hasMail(s))
                               IconButton(
                                 key: Key('statement-mail-${s.id}'),
-                                tooltip: 'View email',
+                                tooltip: t('View email'),
                                 icon: const Icon(Icons.mail_outline),
                                 onPressed: () => showStatementMail(context, s),
                               ),
                             IconButton(
                               key: Key('statement-delete-${s.id}'),
-                              tooltip: 'Delete',
+                              tooltip: t('Delete'),
                               icon: const Icon(Icons.delete_outline),
                               onPressed: () => _delete(s),
                             ),

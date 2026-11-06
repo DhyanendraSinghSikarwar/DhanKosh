@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
 import 'package:hisaab/app/di/sip_providers.dart';
 import 'package:hisaab/core/utils/ist.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/recurring_transactions/domain/bills_view.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_detector.dart';
@@ -71,13 +72,13 @@ class _State extends ConsumerState<RecurringTransactionsScreen> {
           child: TextButton(
             key: const Key('bills-back'),
             onPressed: () => context.pop(),
-            child: const Text('‹ Back'),
+            child: Text(t('‹ Back')),
           ),
         ),
         centerTitle: true,
-        title: const Text(
-          'Bills and recurring',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        title: Text(
+          t('Bills and recurring'),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
         actions: [
           TextButton(
@@ -88,25 +89,25 @@ class _State extends ConsumerState<RecurringTransactionsScreen> {
               showDragHandle: true,
               builder: (_) => const SipSetupSheet(),
             ),
-            child: const Text('Add SIP'),
+            child: Text(t('Add SIP')),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         key: const Key('bills-add'),
         heroTag: null,
-        tooltip: 'Add regular payment',
+        tooltip: t('Add regular payment'),
         onPressed: _sheet,
         child: const Icon(Icons.add),
       ),
       body: bills.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(child: Text('Could not load bills')),
+        error: (e, _) => Center(child: Text(t('Could not load bills'))),
         data: (items) {
           if (items.isEmpty && (ref.watch(sipsProvider).value ?? []).isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.event_repeat_outlined,
-              title: 'Nothing found yet',
+              title: t('Nothing found yet'),
               hint: 'Repeats show after two months. Or add one.',
             );
           }
@@ -177,10 +178,12 @@ class _State extends ConsumerState<RecurringTransactionsScreen> {
               if (widget.extraSection != null)
                 widget.extraSection!(_month, _day),
               if (events.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child:
-                      Text('Nothing on this day', key: Key('bills-day-empty')),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    t('Nothing on this day'),
+                    key: const Key('bills-day-empty'),
+                  ),
                 )
               else
                 AppCard(

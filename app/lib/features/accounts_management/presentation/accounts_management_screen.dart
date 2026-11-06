@@ -14,6 +14,7 @@ import 'package:hisaab/features/accounts_management/presentation/account_suggest
 import 'package:hisaab/features/accounts_management/presentation/account_tile.dart';
 import 'package:hisaab/features/accounts_management/presentation/add_account_sheet.dart';
 import 'package:hisaab/features/credit_cards/domain/card_models.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -39,13 +40,13 @@ class AccountsManagementScreen extends ConsumerWidget {
     };
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Accounts'),
+        title: Text(t('Accounts')),
         actions: [
           TextButton.icon(
             key: const Key('accounts_add'),
             onPressed: () => showAddAccountSheet(context),
             icon: const Icon(Icons.add),
-            label: const Text('Add'),
+            label: Text(t('Add')),
           ),
           PopupMenuButton<int>(
             key: const Key('accounts_menu'),
@@ -60,20 +61,23 @@ class AccountsManagementScreen extends ConsumerWidget {
                 );
               }
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 0, child: Text('Restore missing accounts')),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 0,
+                child: Text(t('Restore missing accounts')),
+              ),
             ],
           ),
         ],
       ),
       body: list.when(
-        loading: () => const Center(child: Text('Loading…')),
+        loading: () => Center(child: Text(t('Loading…'))),
         error: (e, _) => const Center(child: Text("Couldn't load accounts")),
         data: (items) {
           if (items.isEmpty && hidden.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.account_balance_outlined,
-              title: 'No accounts yet',
+              title: t('No accounts yet'),
               hint: 'Add one, or read your SMS.',
             );
           }
@@ -116,9 +120,9 @@ class AccountsManagementScreen extends ConsumerWidget {
               ),
               AccountSuggestions(items),
               if (shown.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('No accounts in this book yet.'),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(t('No accounts in this book yet.')),
                 ),
               _Section('Bank accounts', banks, masked: masked),
               _Section('Cash and wallets', wallets, masked: masked),
@@ -144,7 +148,7 @@ class AccountsManagementScreen extends ConsumerWidget {
                       onPressed: () => ref
                           .read(accountRepositoryProvider)
                           .setHidden(a.id, hidden: false),
-                      child: const Text('Show again'),
+                      child: Text(t('Show again')),
                     ),
                   ),
               ],
@@ -160,7 +164,7 @@ class AccountsManagementScreen extends ConsumerWidget {
                   ListTile(
                     key: Key('ignored_${i.bankName}_${i.last4}'),
                     title: Text('${i.bankName} ••${i.last4}'),
-                    subtitle: const Text('Messages for it are dropped.'),
+                    subtitle: Text(t('Messages for it are dropped.')),
                     trailing: TextButton(
                       onPressed: () async {
                         await ref
@@ -168,7 +172,7 @@ class AccountsManagementScreen extends ConsumerWidget {
                             .unignore(i.bankName, i.last4);
                         ref.invalidate(ignoredAccountsProvider);
                       },
-                      child: const Text('Stop ignoring'),
+                      child: Text(t('Stop ignoring')),
                     ),
                   ),
               ],
@@ -302,7 +306,7 @@ class _Header extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Balance across accounts',
+                      t('Balance across accounts'),
                       style: theme.textTheme.bodySmall,
                     ),
                     Text(
@@ -316,7 +320,7 @@ class _Header extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('Card dues', style: theme.textTheme.bodySmall),
+                  Text(t('Card dues'), style: theme.textTheme.bodySmall),
                   Text(
                     formatAmount(dues, masked: masked),
                     key: const Key('accounts_dues'),

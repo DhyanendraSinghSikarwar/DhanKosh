@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_providers.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -55,7 +56,7 @@ class BankSmsCard extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text('Bank SMS', style: text.titleMedium),
+                    child: Text(t('Bank SMS'), style: text.titleMedium),
                   ),
                   Text(
                     granted ? 'Allowed' : 'Not allowed',
@@ -67,7 +68,7 @@ class BankSmsCard extends ConsumerWidget {
               SwitchListTile(
                 key: const Key('sms-enabled'),
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Read new bank SMS'),
+                title: Text(t('Read new bank SMS')),
                 value: enabled,
                 onChanged: (v) =>
                     ref.read(smsEngineProvider).setEnabled(enabled: v),
@@ -80,7 +81,7 @@ class BankSmsCard extends ConsumerWidget {
                         ? () =>
                             ref.read(scanControllerProvider.notifier).scanNow()
                         : null,
-                    child: const Text('Scan now'),
+                    child: Text(t('Scan now')),
                   ),
                   const SizedBox(width: 12),
                   if (scan.running)

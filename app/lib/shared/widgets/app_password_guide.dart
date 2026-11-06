@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/email_account.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// Short numbered steps to create an app password for [provider] (FR-03-07).
 class AppPasswordGuide extends StatelessWidget {
@@ -17,7 +18,7 @@ class AppPasswordGuide extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'An app password is separate from your normal one.',
+          t('An app password is separate from your normal one.'),
           style: text.bodySmall,
         ),
         const SizedBox(height: 4),

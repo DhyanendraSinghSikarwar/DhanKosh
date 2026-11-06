@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/statement_import/domain/import_result.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 import 'package:hisaab/features/statement_import/presentation/statement_mail_sheet.dart';
@@ -86,7 +87,7 @@ class _State extends ConsumerState<UnlockStatementSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Unlock statement', style: text.titleMedium),
+          Text(t('Unlock statement'), style: text.titleMedium),
           if (_subject case final subject?) ...[
             Text(
               subject,
@@ -110,7 +111,7 @@ class _State extends ConsumerState<UnlockStatementSheet> {
                 key: const Key('unlock-view-mail'),
                 onPressed: () => showStatementMail(context, st),
                 icon: const Icon(Icons.mail_outline, size: 18),
-                label: const Text('View email'),
+                label: Text(t('View email')),
               ),
             ),
           const SizedBox(height: 12),
@@ -120,7 +121,7 @@ class _State extends ConsumerState<UnlockStatementSheet> {
             obscureText: true,
             autofocus: true,
             decoration: InputDecoration(
-              labelText: 'Password',
+              labelText: t('Password'),
               errorText: _error,
             ),
             onSubmitted: (_) => _submit(),
@@ -129,8 +130,8 @@ class _State extends ConsumerState<UnlockStatementSheet> {
             key: const Key('unlock-remember'),
             contentPadding: EdgeInsets.zero,
             controlAffinity: ListTileControlAffinity.leading,
-            title: const Text('Save for this bank'),
-            subtitle: const Text('Encrypted on this phone'),
+            title: Text(t('Save for this bank')),
+            subtitle: Text(t('Encrypted on this phone')),
             value: _remember,
             onChanged: (v) => setState(() => _remember = v ?? false),
           ),

@@ -8,6 +8,7 @@ import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/credit_cards/domain/card_day.dart';
 import 'package:hisaab/features/credit_cards/domain/card_view.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_due_format.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -109,10 +110,10 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
     final masked = ref.watch(hideAmountsProvider).value ?? true;
     if (v == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Card')),
-        body: const EmptyState(
+        appBar: AppBar(title: Text(t('Card'))),
+        body: EmptyState(
           icon: Icons.credit_card_outlined,
-          title: 'Card not found',
+          title: t('Card not found'),
           hint: 'It may have been merged or hidden.',
         ),
       );
@@ -127,7 +128,7 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
           child: TextButton(
             key: const Key('card_detail_back'),
             onPressed: () => context.pop(),
-            child: const Text('‹ Back'),
+            child: Text(t('‹ Back')),
           ),
         ),
         centerTitle: true,
@@ -191,20 +192,20 @@ class _CardDetailScreenState extends ConsumerState<CardDetailScreen> {
               TextButton(
                 key: const Key('card_edit_reset'),
                 onPressed: () => _reset(v),
-                child: const Text('Reset all'),
+                child: Text(t('Reset all')),
               ),
             const Spacer(),
             TextButton(
               key: const Key('card_edit_cancel'),
               onPressed: () => setState(() => _editing = false),
-              child: const Text('Cancel'),
+              child: Text(t('Cancel')),
             ),
             const SizedBox(width: 8),
             FilledButton(
               key: const Key('card_edit_save'),
               onPressed:
                   _fields.any((f) => _value(f) == -1) ? null : () => _save(v),
-              child: const Text('Save'),
+              child: Text(t('Save')),
             ),
           ],
         ),
@@ -227,7 +228,7 @@ class _EditedTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        'edited',
+        t('edited'),
         style: theme.textTheme.labelSmall
             ?.copyWith(color: theme.colorScheme.onSecondaryContainer),
       ),
@@ -481,7 +482,7 @@ class _Upcoming extends ConsumerWidget {
         children: [
           IconAmountRow(
             icon: AppIcons.bills,
-            title: 'Statement due',
+            title: t('Statement due'),
             subtitle: cardDate(due),
             amount: cardWhole(owed, masked: masked),
             divider: c.minDueMinor != null,
@@ -489,7 +490,7 @@ class _Upcoming extends ConsumerWidget {
           if (c.minDueMinor != null)
             IconAmountRow(
               icon: AppIcons.alerts,
-              title: 'Minimum due',
+              title: t('Minimum due'),
               subtitle: cardDate(due),
               amount: cardWhole(c.minDueMinor!, masked: masked),
             ),
@@ -498,7 +499,7 @@ class _Upcoming extends ConsumerWidget {
             child: TextButton(
               key: const Key('card_detail_paid'),
               onPressed: () => ref.read(cardDueActionsProvider).markPaid(c),
-              child: const Text('Mark paid'),
+              child: Text(t('Mark paid')),
             ),
           ),
         ],
@@ -522,9 +523,9 @@ class _Txs extends ConsumerWidget {
       child: Column(
         children: [
           if (txs.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: Text('No card transactions yet'),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(t('No card transactions yet')),
             ),
           for (final (i, t) in txs.indexed)
             InkWell(
@@ -547,7 +548,7 @@ class _Txs extends ConsumerWidget {
             child: TextButton(
               key: const Key('card_detail_all_txs'),
               onPressed: () => context.go('/transactions'),
-              child: const Text('All card transactions ›'),
+              child: Text(t('All card transactions ›')),
             ),
           ),
         ],
@@ -571,9 +572,9 @@ class _History extends ConsumerWidget {
       child: Column(
         children: [
           if (hist.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: Text('No statements yet'),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(t('No statements yet')),
             ),
           for (var i = 0; i < hist.length; i++)
             KeyedSubtree(

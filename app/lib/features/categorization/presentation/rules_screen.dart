@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
 import 'package:hisaab/features/categorization/presentation/rule_editor_sheet.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
 
 final _rulesProvider = StreamProvider<List<MerchantRule>>(
@@ -27,9 +28,9 @@ class RulesScreen extends ConsumerWidget {
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: const Text('Rule removed'),
+          content: Text(t('Rule removed')),
           action: SnackBarAction(
-            label: 'Undo',
+            label: t('Undo'),
             onPressed: () async {
               if (r.manual) {
                 await repo.saveManualRule(r);
@@ -81,7 +82,7 @@ class RulesScreen extends ConsumerWidget {
                     : null,
                 trailing: IconButton(
                   key: Key('rule_remove_${r.merchantKey}'),
-                  tooltip: 'Remove',
+                  tooltip: t('Remove'),
                   icon: const Icon(Icons.delete_outline),
                   onPressed: () => _remove(context, ref, r),
                 ),
@@ -89,21 +90,21 @@ class RulesScreen extends ConsumerWidget {
           ],
         );
     return Scaffold(
-      appBar: AppBar(title: const Text('Rules')),
+      appBar: AppBar(title: Text(t('Rules'))),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: null,
         key: const Key('rule_add'),
         onPressed: () => showRuleEditor(context),
         icon: const Icon(Icons.add),
-        label: const Text('Add rule'),
+        label: Text(t('Add rule')),
       ),
       body: rules == null
           ? const Center(child: CircularProgressIndicator())
           : rules.isEmpty
-              ? const EmptyState(
-                  key: Key('rules_empty'),
+              ? EmptyState(
+                  key: const Key('rules_empty'),
                   icon: Icons.rule_outlined,
-                  title: 'No rules yet',
+                  title: t('No rules yet'),
                 )
               : ListView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),

@@ -6,6 +6,7 @@ import 'package:hisaab/features/categorization/domain/custom_category.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
 import 'package:hisaab/features/categorization/presentation/category_icons.dart';
 import 'package:hisaab/features/categorization/presentation/name_icon_dialog.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:parser_core/parser_core.dart';
 
 final _customCategoriesProvider = StreamProvider<List<CustomCategory>>(
@@ -71,7 +72,7 @@ class _CategorySheetState extends ConsumerState<CategorySheet> {
       );
 
   Future<void> _newCategory() async {
-    final made = await showNameIconDialog(context, title: 'New category');
+    final made = await showNameIconDialog(context, title: t('New category'));
     if (made == null) return;
     final id = await ref.read(categoryRepositoryProvider).addCustomCategory(
           name: made.name,
@@ -112,9 +113,9 @@ class _CategorySheetState extends ConsumerState<CategorySheet> {
                     TextField(
                       key: const Key('category_search'),
                       onChanged: (v) => setState(() => _search = v),
-                      decoration: const InputDecoration(
-                        hintText: 'Search categories',
-                        prefixIcon: Icon(Icons.search),
+                      decoration: InputDecoration(
+                        hintText: t('Search categories'),
+                        prefixIcon: const Icon(Icons.search),
                         isDense: true,
                       ),
                     ),
@@ -136,7 +137,7 @@ class _CategorySheetState extends ConsumerState<CategorySheet> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Your categories',
+                      t('Your categories'),
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     Wrap(
@@ -156,7 +157,7 @@ class _CategorySheetState extends ConsumerState<CategorySheet> {
                         ActionChip(
                           key: const Key('new_category'),
                           avatar: const Icon(Icons.add, size: 18),
-                          label: const Text('New category'),
+                          label: Text(t('New category')),
                           onPressed: _newCategory,
                         ),
                       ],
@@ -208,7 +209,7 @@ class _CategorySheetState extends ConsumerState<CategorySheet> {
                     applyToPast: _applyPast,
                   ),
                 ),
-                child: const Text('Save'),
+                child: Text(t('Save')),
               ),
             ),
             const SizedBox(height: 16),

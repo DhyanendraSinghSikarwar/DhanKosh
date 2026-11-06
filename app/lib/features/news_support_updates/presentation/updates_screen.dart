@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/news_support_updates/domain/release.dart';
 import 'package:hisaab/features/news_support_updates/domain/update_state.dart';
 import 'package:hisaab/features/news_support_updates/domain/version_compare.dart';
@@ -45,7 +46,7 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
     final ctl = ref.read(updateControllerProvider.notifier);
     final busy = state is UpdateChecking || state is UpdateDownloading;
     return Scaffold(
-      appBar: AppBar(title: const Text('About')),
+      appBar: AppBar(title: Text(t('About'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -54,7 +55,7 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
             height: 72,
             semanticLabel: 'DhanKosh',
           ),
-          Text('DhanKosh', style: Theme.of(context).textTheme.headlineSmall),
+          Text(t('DhanKosh'), style: Theme.of(context).textTheme.headlineSmall),
           Text('Version ${widget.version}', key: const Key('about-version')),
           const SizedBox(height: 16),
           Card(
@@ -64,7 +65,7 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Updates',
+                    t('Updates'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -73,7 +74,7 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                   OutlinedButton(
                     key: const Key('check-updates'),
                     onPressed: busy ? null : () => ctl.check(force: true),
-                    child: const Text('Check for updates'),
+                    child: Text(t('Check for updates')),
                   ),
                 ],
               ),
@@ -111,23 +112,23 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
           TextButton(
             key: const Key('open-release-page'),
             onPressed: () => unawaited(_openPage(r)),
-            child: const Text('Open release page'),
+            child: Text(t('Open release page')),
           ),
         ],
       );
 
   Widget _status(BuildContext context, UpdateState s, UpdateController ctl) =>
       switch (s) {
-        UpdateIdle() => const Text('Not checked yet.'),
-        UpdateChecking() => const Row(
+        UpdateIdle() => Text(t('Not checked yet.')),
+        UpdateChecking() => Row(
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              SizedBox(width: 8),
-              Text('Checking...'),
+              const SizedBox(width: 8),
+              Text(t('Checking...')),
             ],
           ),
         UpdateUpToDate() => Text(
@@ -162,7 +163,7 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
               TextButton(
                 key: const Key('cancel-download'),
                 onPressed: ctl.cancelDownload,
-                child: const Text('Cancel'),
+                child: Text(t('Cancel')),
               ),
             ],
           ),
@@ -221,10 +222,10 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Release history', style: theme.textTheme.titleMedium),
+            Text(t('Release history'), style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             if (h.loading && h.releases.isEmpty)
-              const Text('Loading...', key: Key('history-loading')),
+              Text(t('Loading...'), key: const Key('history-loading')),
             if (h.failed)
               Text(
                 h.releases.isEmpty
@@ -262,8 +263,8 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
         children: [
           Text(r.version),
           const SizedBox(width: 8),
-          if (installed) const Chip(label: Text('Installed')),
-          if (newer) const Chip(label: Text('New')),
+          if (installed) Chip(label: Text(t('Installed'))),
+          if (newer) Chip(label: Text(t('New'))),
         ],
       ),
       subtitle: date.isEmpty ? null : Text(date),
@@ -276,7 +277,7 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
             child: TextButton(
               key: Key('install-${r.version}'),
               onPressed: () => unawaited(ctl.install(r)),
-              child: const Text('Download and install'),
+              child: Text(t('Download and install')),
             ),
           ),
       ],

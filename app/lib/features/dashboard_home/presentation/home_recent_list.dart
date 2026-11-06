@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -32,7 +33,7 @@ class HomeRecentList extends StatelessWidget {
           if (txs.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text('Nothing yet', style: MockText.small(context)),
+              child: Text(t('Nothing yet'), style: MockText.small(context)),
             ),
           for (final (n, t) in txs.indexed)
             InkWell(

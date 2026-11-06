@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/analytics_providers.dart';
 import 'package:hisaab/app/di/backup_providers.dart';
 import 'package:hisaab/app/di/share_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_calculator.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_plan.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_report_builder.dart';
@@ -30,22 +31,22 @@ class TaxCentreScreen extends ConsumerWidget {
     final plan = base?.plan(whatIf);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tax Centre'),
+        title: Text(t('Tax Centre')),
         actions: [
           PopupMenuButton<String>(
             key: const Key('tax-share'),
-            tooltip: 'Share',
+            tooltip: t('Share'),
             icon: const Icon(Icons.share_outlined),
             enabled: plan != null && plan.hasIncome,
             onSelected: (v) => _share(context, ref, plan!, v, masked: masked),
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'image', child: Text('Share as image')),
-              PopupMenuItem(value: 'pdf', child: Text('Share as PDF')),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'image', child: Text(t('Share as image'))),
+              PopupMenuItem(value: 'pdf', child: Text(t('Share as PDF'))),
             ],
           ),
           IconButton(
             key: const Key('tax-export'),
-            tooltip: 'Export PDF',
+            tooltip: t('Export PDF'),
             icon: const Icon(Icons.picture_as_pdf_outlined),
             onPressed: plan == null || !plan.hasIncome
                 ? null
@@ -59,10 +60,13 @@ class TaxCentreScreen extends ConsumerWidget {
           SegmentedButton<TaxPeriod>(
             key: const Key('tax-period'),
             showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(value: TaxPeriod.thisFy, label: Text('This FY')),
-              ButtonSegment(value: TaxPeriod.lastFy, label: Text('Last FY')),
-              ButtonSegment(value: TaxPeriod.last12, label: Text('12 months')),
+            segments: [
+              ButtonSegment(value: TaxPeriod.thisFy, label: Text(t('This FY'))),
+              ButtonSegment(value: TaxPeriod.lastFy, label: Text(t('Last FY'))),
+              ButtonSegment(
+                value: TaxPeriod.last12,
+                label: Text(t('12 months')),
+              ),
             ],
             selected: {period},
             onSelectionChanged: (s) =>
@@ -95,11 +99,11 @@ class TaxCentreScreen extends ConsumerWidget {
       context: context,
       builder: (c) => AlertDialog(
         title: Text('$verb with amounts?'),
-        content: const Text('The file shows real figures.'),
+        content: Text(t('The file shows real figures.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           TextButton(
             key: const Key('tax-export-confirm'),
@@ -142,7 +146,7 @@ class TaxCentreScreen extends ConsumerWidget {
     }
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Could not share')));
+          .showSnackBar(SnackBar(content: Text(t('Could not share'))));
     }
   }
 
@@ -170,14 +174,14 @@ class TaxCentreScreen extends ConsumerWidget {
     TaxPlan plan,
     String Function(int) money,
   ) {
-    final t = Theme.of(context).textTheme;
+    final tt = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     Widget row(String l, String v, {TextStyle? style}) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 3),
           child: Row(
             children: [
-              Expanded(child: Text(l, style: style ?? t.bodyMedium)),
-              Text(v, style: style ?? t.bodyMedium),
+              Expanded(child: Text(l, style: style ?? tt.bodyMedium)),
+              Text(v, style: style ?? tt.bodyMedium),
             ],
           ),
         );
@@ -188,7 +192,7 @@ class TaxCentreScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: t.titleSmall),
+                Text(title, style: tt.titleSmall),
                 const SizedBox(height: 8),
                 ...kids,
               ],
@@ -204,7 +208,7 @@ class TaxCentreScreen extends ConsumerWidget {
       Text(
         '${plan.fyLabel} estimate. FY 2026-27 rules unconfirmed.',
         key: const Key('tax-note'),
-        style: t.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+        style: tt.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
       ),
       const SizedBox(height: 12),
       card('Income', [
@@ -214,19 +218,19 @@ class TaxCentreScreen extends ConsumerWidget {
         row('Rent', money(plan.rentUsed)),
         row('Other', money(plan.otherUsed)),
         const Divider(),
-        row('Total', money(plan.income), style: t.titleSmall),
+        row('Total', money(plan.income), style: tt.titleSmall),
         if (plan.est.estimated)
           Text(
             'Estimated from ${plan.est.monthsOfData} months of data',
-            style: t.bodySmall,
+            style: tt.bodySmall,
           ),
       ]),
       if (!plan.hasIncome)
-        const Padding(
-          padding: EdgeInsets.only(bottom: 12),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
           child: Text(
-            'No income found. Use What if to enter figures.',
-            key: Key('tax-no-income'),
+            t('No income found. Use What if to enter figures.'),
+            key: const Key('tax-no-income'),
           ),
         )
       else
@@ -271,7 +275,7 @@ class TaxCentreScreen extends ConsumerWidget {
             child: FilledButton.tonal(
               key: const Key('tax-whatif'),
               onPressed: () => showTaxWhatIfSheet(context, ref, plan),
-              child: const Text('What if'),
+              child: Text(t('What if')),
             ),
           ),
           if (plan.whatIf.any) ...[
@@ -281,7 +285,7 @@ class TaxCentreScreen extends ConsumerWidget {
               onPressed: () => ref
                   .read(taxWhatIfStateProvider.notifier)
                   .set(const TaxWhatIf()),
-              child: const Text('Reset'),
+              child: Text(t('Reset')),
             ),
           ],
         ],
@@ -295,15 +299,15 @@ class TaxCentreScreen extends ConsumerWidget {
     RegimeTax r,
     String Function(int) money,
   ) {
-    final t = Theme.of(context).textTheme;
+    final tt = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(name, style: t.labelLarge),
-        Text(money(r.total), key: Key('tax-total-$name'), style: t.titleLarge),
-        Text('Taxable ${money(r.taxable)}', style: t.bodySmall),
-        Text('Deductions ${money(r.deductions)}', style: t.bodySmall),
-        Text('Cess ${money(r.cess)}', style: t.bodySmall),
+        Text(name, style: tt.labelLarge),
+        Text(money(r.total), key: Key('tax-total-$name'), style: tt.titleLarge),
+        Text('Taxable ${money(r.taxable)}', style: tt.bodySmall),
+        Text('Deductions ${money(r.deductions)}', style: tt.bodySmall),
+        Text('Cess ${money(r.cess)}', style: tt.bodySmall),
       ],
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -142,9 +143,9 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
             const SizedBox(height: 12),
             SegmentedButton<bool>(
               key: const Key('rec-type'),
-              segments: const [
-                ButtonSegment(value: false, label: Text('Expense')),
-                ButtonSegment(value: true, label: Text('Income')),
+              segments: [
+                ButtonSegment(value: false, label: Text(t('Expense'))),
+                ButtonSegment(value: true, label: Text(t('Income'))),
               ],
               selected: {_income},
               onSelectionChanged: (v) => setState(() => _income = v.first),
@@ -153,23 +154,23 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
             TextField(
               key: const Key('rec-name'),
               controller: _name,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(labelText: t('Name')),
             ),
             TextField(
               key: const Key('rec-amount'),
               controller: _amount,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Amount',
+              decoration: InputDecoration(
+                labelText: t('Amount'),
                 prefixText: '₹ ',
               ),
             ),
             const SizedBox(height: 12),
             SegmentedButton<bool>(
               key: const Key('rec-freq'),
-              segments: const [
-                ButtonSegment(value: false, label: Text('Monthly')),
-                ButtonSegment(value: true, label: Text('Yearly')),
+              segments: [
+                ButtonSegment(value: false, label: Text(t('Monthly'))),
+                ButtonSegment(value: true, label: Text(t('Yearly'))),
               ],
               selected: {_yearly},
               onSelectionChanged: (v) => setState(() => _yearly = v.first),
@@ -181,7 +182,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
                     key: const Key('rec-day'),
                     controller: _day,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Day (1-31)'),
+                    decoration: InputDecoration(labelText: t('Day (1-31)')),
                   ),
                 ),
                 if (_yearly) ...[
@@ -190,7 +191,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
                     child: DropdownButtonFormField<int>(
                       key: const Key('rec-month'),
                       initialValue: _month,
-                      decoration: const InputDecoration(labelText: 'Month'),
+                      decoration: InputDecoration(labelText: t('Month')),
                       items: [
                         for (var i = 1; i <= 12; i++)
                           DropdownMenuItem(
@@ -208,7 +209,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
               key: const Key('rec-category'),
               initialValue: _category,
               isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Category'),
+              decoration: InputDecoration(labelText: t('Category')),
               items: [
                 for (final c in Category.values)
                   DropdownMenuItem(value: c, child: Text(c.label)),
@@ -231,7 +232,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
                   TextButton(
                     key: const Key('rec-delete'),
                     onPressed: _delete,
-                    child: const Text('Delete'),
+                    child: Text(t('Delete')),
                   ),
                 const Spacer(),
                 FilledButton(

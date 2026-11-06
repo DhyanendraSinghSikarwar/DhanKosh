@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/settings_row.dart';
 
@@ -12,8 +13,8 @@ class DiagnosticLogTile extends StatelessWidget {
   Widget build(BuildContext context) => SettingsRow(
         key: const Key('diagnostic-log-tile'),
         badge: AppIcons.diagnostics,
-        title: 'Diagnostic log',
-        subtitle: 'Counts only, never messages',
+        title: t('Diagnostic log'),
+        subtitle: t('Counts only, never messages'),
         onTap: () => context.push('/settings/logs'),
       );
 }

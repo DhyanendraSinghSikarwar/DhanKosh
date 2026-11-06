@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/settings_row.dart';
 
@@ -13,8 +14,8 @@ class ForexTile extends StatelessWidget {
   Widget build(BuildContext context) => SettingsRow(
         key: const Key('forex-tile'),
         badge: AppIcons.forex,
-        title: 'Forex rates',
-        subtitle: 'Manual conversion rates',
+        title: t('Forex rates'),
+        subtitle: t('Manual conversion rates'),
         onTap: () => context.push('/settings/forex'),
       );
 }

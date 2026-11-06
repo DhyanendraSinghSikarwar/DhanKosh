@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/scope_bar.dart' show PeriodChips;
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/search_filters/domain/ledger_view_state.dart';
 import 'package:hisaab/features/search_filters/presentation/ledger_view_notifier.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
@@ -72,7 +73,7 @@ class LedgerTitleActions extends ConsumerWidget {
       children: [
         IconButton(
           key: const Key('ledger_search_toggle'),
-          tooltip: 'Search',
+          tooltip: t('Search'),
           icon: Icon(open ? Icons.search_off : Icons.search),
           onPressed: () {
             ref.read(ledgerSearchOpenProvider.notifier).toggle();
@@ -81,7 +82,7 @@ class LedgerTitleActions extends ConsumerWidget {
         ),
         IconButton(
           key: const Key('ledger_filter_button'),
-          tooltip: 'Filters',
+          tooltip: t('Filters'),
           icon: Badge(
             key: const Key('ledger_filter_badge'),
             isLabelVisible: n > 0,
@@ -173,7 +174,7 @@ class _LedgerFilterBarState extends ConsumerState<LedgerFilterBar> {
               onChanged: _onChanged,
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'Search merchant, amount, note…',
+                hintText: t('Search merchant, amount, note…'),
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _controller.text.isEmpty
                     ? null
@@ -280,7 +281,7 @@ class _LedgerFilterSheetState extends ConsumerState<LedgerFilterSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    'Filters',
+                    t('Filters'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
@@ -292,7 +293,7 @@ class _LedgerFilterSheetState extends ConsumerState<LedgerFilterSheet> {
                       _max.clear();
                       notifier.clear();
                     },
-                    child: const Text('Clear'),
+                    child: Text(t('Clear')),
                   ),
               ],
             ),
@@ -321,7 +322,10 @@ class _LedgerFilterSheetState extends ConsumerState<LedgerFilterSheet> {
                   key: const Key('account_filter'),
                   onSelected: (v) => notifier.setAccount(v < 0 ? null : v),
                   itemBuilder: (_) => [
-                    const PopupMenuItem(value: -1, child: Text('All accounts')),
+                    PopupMenuItem(
+                      value: -1,
+                      child: Text(t('All accounts')),
+                    ),
                     for (final a in accounts)
                       PopupMenuItem(value: a.id, child: Text(a.label)),
                   ],
@@ -341,9 +345,9 @@ class _LedgerFilterSheetState extends ConsumerState<LedgerFilterSheet> {
                     v.isEmpty ? null : Category.values.byName(v),
                   ),
                   itemBuilder: (_) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: '',
-                      child: Text('All categories'),
+                      child: Text(t('All categories')),
                     ),
                     for (final c in Category.values)
                       PopupMenuItem(value: c.name, child: Text(c.label)),
@@ -382,7 +386,7 @@ class _LedgerFilterSheetState extends ConsumerState<LedgerFilterSheet> {
                   child: _AmountField(
                     fieldKey: const Key('amount_min'),
                     controller: _min,
-                    label: 'Min ₹',
+                    label: t('Min ₹'),
                     onChanged: (v) => notifier.setAmountRange(
                       rupeesToMinor(v),
                       ref.read(ledgerViewProvider).maxMinor,
@@ -394,7 +398,7 @@ class _LedgerFilterSheetState extends ConsumerState<LedgerFilterSheet> {
                   child: _AmountField(
                     fieldKey: const Key('amount_max'),
                     controller: _max,
-                    label: 'Max ₹',
+                    label: t('Max ₹'),
                     onChanged: (v) => notifier.setAmountRange(
                       ref.read(ledgerViewProvider).minMinor,
                       rupeesToMinor(v),
@@ -409,7 +413,7 @@ class _LedgerFilterSheetState extends ConsumerState<LedgerFilterSheet> {
               child: FilledButton(
                 key: const Key('filters_done'),
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Done'),
+                child: Text(t('Done')),
               ),
             ),
           ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/goals_providers.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/core/utils/ist.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/savings_goals/domain/goal.dart';
 
 /// Records money the user set aside for a goal (FR-36-02). A note only;
@@ -65,7 +66,7 @@ class _State extends ConsumerState<ContributionSheet> {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: 'Amount (₹)',
+                labelText: t('Amount (₹)'),
                 errorText: _error,
               ),
             ),
@@ -73,7 +74,7 @@ class _State extends ConsumerState<ContributionSheet> {
             FilledButton(
               key: const Key('contrib-save'),
               onPressed: _save,
-              child: const Text('Add'),
+              child: Text(t('Add')),
             ),
           ],
         ),

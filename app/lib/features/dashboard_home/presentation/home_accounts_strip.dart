@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/mock_kit.dart';
@@ -73,7 +74,7 @@ class _HomeAccountsStripState extends State<HomeAccountsStrip> {
           if (_open) ...[
             const SizedBox(height: 8),
             if (accounts.isEmpty)
-              Text('No accounts yet', style: MockText.small(context))
+              Text(t('No accounts yet'), style: MockText.small(context))
             else
               Wrap(
                 spacing: 8,

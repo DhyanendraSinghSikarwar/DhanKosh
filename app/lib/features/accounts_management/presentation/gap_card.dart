@@ -6,6 +6,7 @@ import 'package:hisaab/app/di/accounts_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/accounts_management/domain/untracked_gap.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -57,7 +58,7 @@ class _GapCardState extends ConsumerState<GapCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Untracked change',
+            t('Untracked change'),
             style: theme.textTheme.titleSmall
                 ?.copyWith(color: theme.colorScheme.tertiary),
           ),
@@ -85,7 +86,7 @@ class _GapCardState extends ConsumerState<GapCard> {
                       await svc.assign(g, _candidates[i]);
                       ref.invalidate(openGapsProvider);
                     },
-                    child: const Text('Assign'),
+                    child: Text(t('Assign')),
                   ),
                 ],
               ),
@@ -99,12 +100,12 @@ class _GapCardState extends ConsumerState<GapCard> {
                   await svc.ignore(g);
                   ref.invalidate(openGapsProvider);
                 },
-                child: const Text('Ignore'),
+                child: Text(t('Ignore')),
               ),
               FilledButton(
                 key: const Key('gap_add'),
                 onPressed: () => showGapExplainSheet(context, g),
-                child: const Text('Add transaction'),
+                child: Text(t('Add transaction')),
               ),
             ],
           ),
@@ -262,7 +263,7 @@ class _GapExplainSheetState extends ConsumerState<GapExplainSheet> {
               child: FilledButton(
                 key: const Key('gap_save'),
                 onPressed: _save,
-                child: const Text('Save'),
+                child: Text(t('Save')),
               ),
             ),
           ],

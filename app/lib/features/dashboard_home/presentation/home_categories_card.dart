@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/home_composition_providers.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_charts.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_spent_chart.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
@@ -72,7 +73,7 @@ class _HomeCategoriesCardState extends ConsumerState<HomeCategoriesCard> {
                   key: const Key('home_categories_back'),
                   onTap: () => setState(() => _drill = null),
                   child: Text(
-                    '‹ All categories',
+                    t('‹ All categories'),
                     style: TextStyle(
                       fontSize: 13,
                       color: theme.colorScheme.primary,

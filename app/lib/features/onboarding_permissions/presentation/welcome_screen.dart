@@ -9,6 +9,7 @@ import 'package:hisaab/core/errors/failure.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/email_account.dart';
 import 'package:hisaab/features/email_ingestion/domain/usecases/manage_email_account.dart';
 import 'package:hisaab/features/email_ingestion/domain/verification_code.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/usecases/onboarding_usecases.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/validators/onboarding_validators.dart';
 import 'package:hisaab/shared/widgets/app_password_guide.dart';
@@ -107,12 +108,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'DhanKosh',
+              t('DhanKosh'),
               textAlign: TextAlign.center,
               style: text.displaySmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             Text(
-              'Know your money.',
+              t('Know your money.'),
               textAlign: TextAlign.center,
               style: text.bodyLarge,
             ),
@@ -132,7 +133,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
-                    'Your data never leaves this phone.',
+                    t('Your data never leaves this phone.'),
                     style: text.bodySmall?.copyWith(color: scheme.outline),
                   ),
                 ),
@@ -228,9 +229,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             key: const Key('welcome-name'),
             controller: _name,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Full name (as per bank)',
-              prefixIcon: Icon(Icons.person_outline),
+            decoration: InputDecoration(
+              labelText: t('Full name (as per bank)'),
+              prefixIcon: const Icon(Icons.person_outline),
             ),
           ),
           const SizedBox(height: 12),
@@ -252,9 +253,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             controller: _email,
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
-            decoration: const InputDecoration(
-              labelText: 'Email address',
-              prefixIcon: Icon(Icons.mail_outline),
+            decoration: InputDecoration(
+              labelText: t('Email address'),
+              prefixIcon: const Icon(Icons.mail_outline),
             ),
             onChanged: (v) {
               final d = EmailProvider.detect(v);
@@ -270,7 +271,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             obscureText: true,
             enableSuggestions: false,
             autocorrect: false,
-            decoration: const InputDecoration(labelText: 'App password'),
+            decoration: InputDecoration(labelText: t('App password')),
           ),
           const SizedBox(height: 8),
           AppPasswordGuide(_provider),
@@ -291,7 +292,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               _step = _Step.phone;
               _emailMessage = null;
             }),
-            child: const Text('Use mobile number instead'),
+            child: Text(t('Use mobile number instead')),
           ),
         ],
       ),
@@ -303,7 +304,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Verify your email',
+          t('Verify your email'),
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
@@ -318,19 +319,19 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(6),
           ],
-          decoration: const InputDecoration(labelText: '6-digit code'),
+          decoration: InputDecoration(labelText: t('6-digit code')),
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 16),
         FilledButton(
           key: const Key('welcome-verify'),
           onPressed: _code.text.length == 6 && !_emailBusy ? _verify : null,
-          child: const Text('Verify'),
+          child: Text(t('Verify')),
         ),
         TextButton(
           key: const Key('welcome-resend'),
           onPressed: _emailBusy ? null : _resend,
-          child: const Text('Resend code'),
+          child: Text(t('Resend code')),
         ),
         TextButton(
           key: const Key('welcome-code-back'),
@@ -341,7 +342,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               _code.clear();
             });
           },
-          child: const Text('Back'),
+          child: Text(t('Back')),
         ),
       ],
     );
@@ -360,9 +361,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               key: const Key('welcome-name'),
               controller: _name,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Full name (as per bank)',
-                prefixIcon: Icon(Icons.person_outline),
+              decoration: InputDecoration(
+                labelText: t('Full name (as per bank)'),
+                prefixIcon: const Icon(Icons.person_outline),
               ),
             ),
             const SizedBox(height: 12),
@@ -371,10 +372,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               controller: _phone,
               keyboardType: TextInputType.phone,
               inputFormatters: const [PhoneDigitsFormatter()],
-              decoration: const InputDecoration(
-                labelText: 'Mobile (as per bank)',
+              decoration: InputDecoration(
+                labelText: t('Mobile (as per bank)'),
                 prefixText: '+91 ',
-                prefixIcon: Icon(Icons.phone_outlined),
+                prefixIcon: const Icon(Icons.phone_outlined),
               ),
             ),
             const SizedBox(height: 20),
@@ -382,17 +383,17 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               key: const Key('welcome-continue'),
               onPressed:
                   ok ? () => setState(() => _step = _Step.details) : null,
-              child: const Text('Continue'),
+              child: Text(t('Continue')),
             ),
             TextButton(
               key: const Key('welcome-use-email'),
               onPressed: () => setState(() => _step = _Step.email),
-              child: const Text('Sign in with email instead'),
+              child: Text(t('Sign in with email instead')),
             ),
             TextButton(
               key: const Key('welcome-skip-setup'),
               onPressed: () => ref.read(onboardingGateProvider.notifier).skip(),
-              child: const Text('Skip for now'),
+              child: Text(t('Skip for now')),
             ),
           ],
         );
@@ -409,12 +410,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Unlock your statements',
+              t('Unlock your statements'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 4),
             Text(
-              'Optional. Used on this phone to open locked statements.',
+              t('Optional. Used on this phone to open locked statements.'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -422,7 +423,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               key: const Key('welcome-alt-name'),
               controller: _altName,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Alternate name'),
+              decoration: InputDecoration(labelText: t('Alternate name')),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -430,8 +431,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               controller: _altPhone,
               keyboardType: TextInputType.phone,
               inputFormatters: const [PhoneDigitsFormatter()],
-              decoration: const InputDecoration(
-                labelText: 'Alternate mobile',
+              decoration: InputDecoration(
+                labelText: t('Alternate mobile'),
                 prefixText: '+91 ',
               ),
             ),
@@ -462,7 +463,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               textCapitalization: TextCapitalization.characters,
               inputFormatters: [LengthLimitingTextInputFormatter(10)],
               decoration: InputDecoration(
-                labelText: 'PAN',
+                labelText: t('PAN'),
                 errorText: validPan ? null : 'Format ABCDE1234F',
               ),
             ),
@@ -470,12 +471,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             FilledButton(
               key: const Key('welcome-finish'),
               onPressed: validPan && !_saving ? () => _save(skip: false) : null,
-              child: const Text('Finish'),
+              child: Text(t('Finish')),
             ),
             TextButton(
               key: const Key('welcome-skip-details'),
               onPressed: _saving ? null : () => _save(skip: true),
-              child: const Text('Skip for now'),
+              child: Text(t('Skip for now')),
             ),
           ],
         );
@@ -490,9 +491,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (perm != null && perm.granted)
-          const ListTile(
-            leading: Icon(Icons.check_circle_outline),
-            title: Text('SMS access allowed'),
+          ListTile(
+            leading: const Icon(Icons.check_circle_outline),
+            title: Text(t('SMS access allowed')),
           )
         else
           SmsPermissionCard(
@@ -506,7 +507,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         FilledButton(
           key: const Key('welcome-start'),
           onPressed: _done,
-          child: const Text('Start'),
+          child: Text(t('Start')),
         ),
       ],
     );

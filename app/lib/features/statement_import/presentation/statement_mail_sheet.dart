@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 
 /// Whether [s] came from an email we kept something of (FR-05-30).
@@ -48,7 +49,7 @@ class StatementMailView extends StatelessWidget {
         const Divider(height: 20),
         if (body == null || body.isEmpty)
           Text(
-            'No text was kept from this email.',
+            t('No text was kept from this email.'),
             key: const Key('mail-empty'),
             style: text.bodySmall,
           )

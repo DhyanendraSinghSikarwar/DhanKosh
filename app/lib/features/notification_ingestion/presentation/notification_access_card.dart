@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/notification_ingestion/domain/entities/payment_app.dart';
 import 'package:hisaab/features/notification_ingestion/domain/usecases/notification_engine.dart';
 import 'package:hisaab/features/notification_ingestion/presentation/notification_providers.dart';
@@ -83,8 +84,10 @@ class _State extends ConsumerState<NotificationAccessCard>
           Row(
             children: [
               Expanded(
-                child:
-                    Text('Payment-app notifications', style: text.titleMedium),
+                child: Text(
+                  t('Payment-app notifications'),
+                  style: text.titleMedium,
+                ),
               ),
               Text(
                 _label(s.state),
@@ -96,7 +99,7 @@ class _State extends ConsumerState<NotificationAccessCard>
           SwitchListTile(
             key: const Key('notif-enabled'),
             contentPadding: EdgeInsets.zero,
-            title: const Text('Read payment-app notifications'),
+            title: Text(t('Read payment-app notifications')),
             value: s.enabled,
             onChanged: (v) => unawaited(n.setEnabled(enabled: v)),
           ),
@@ -104,7 +107,7 @@ class _State extends ConsumerState<NotificationAccessCard>
             FilledButton.tonal(
               key: const Key('notif-open-settings'),
               onPressed: () => unawaited(n.openAccessSettings()),
-              child: const Text('Open access settings'),
+              child: Text(t('Open access settings')),
             ),
             if (s.showRestrictedHint) ...[
               const SizedBox(height: 8),
@@ -127,7 +130,7 @@ class _State extends ConsumerState<NotificationAccessCard>
           if (!s.enabled) ...[
             const SizedBox(height: 8),
             Text(
-              'Off: UPI payments without a bank SMS are not tracked.',
+              t('Off: UPI payments without a bank SMS are not tracked.'),
               key: const Key('notif-off-warning'),
               style: text.bodySmall,
             ),
@@ -136,7 +139,7 @@ class _State extends ConsumerState<NotificationAccessCard>
           ListTile(
             key: const Key('notif-apps'),
             contentPadding: EdgeInsets.zero,
-            title: const Text('Watched apps'),
+            title: Text(t('Watched apps')),
             subtitle: Text(
               '${PaymentApps.all.length} payment and bank apps. '
               'Add any other app that notifies you.',

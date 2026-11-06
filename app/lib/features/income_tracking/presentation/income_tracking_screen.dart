@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/budget_providers.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/features/income_tracking/domain/cash_flow.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
@@ -35,7 +36,7 @@ class IncomeTrackingScreen extends ConsumerWidget {
     final empty = flows != null &&
         flows.every((f) => f.incomeMinor == 0 && f.spentMinor == 0);
     return Scaffold(
-      appBar: AppBar(title: const Text('Income')),
+      appBar: AppBar(title: Text(t('Income'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -63,16 +64,16 @@ class IncomeTrackingScreen extends ConsumerWidget {
             ],
           ),
           if (flows == null)
-            const Padding(
-              padding: EdgeInsets.all(32),
-              child: Center(child: Text('Loading…')),
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(child: Text(t('Loading…'))),
             )
           else if (empty)
-            const Padding(
-              padding: EdgeInsets.only(top: 48),
+            Padding(
+              padding: const EdgeInsets.only(top: 48),
               child: EmptyState(
                 icon: Icons.trending_up,
-                title: 'No income yet',
+                title: t('No income yet'),
                 hint: 'Credits from your bank show up here.',
               ),
             )
@@ -117,7 +118,10 @@ class IncomeTrackingScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Income vs spent', style: theme.textTheme.titleMedium),
+                  Text(
+                    t('Income vs spent'),
+                    style: theme.textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 12),
                   SizedBox(height: 160, child: _FlowChart(flows: flows)),
                 ],
@@ -130,7 +134,7 @@ class IncomeTrackingScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Savings rate', style: theme.textTheme.titleMedium),
+                    Text(t('Savings rate'), style: theme.textTheme.titleMedium),
                     const SizedBox(height: 8),
                     for (final p in series.reversed.take(6))
                       Row(

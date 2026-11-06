@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/ocr_providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/screenshot_fill.dart';
 
 /// "Fill from a screenshot" card for the Add screen (FR-08-12). Picks an
@@ -72,8 +73,8 @@ class _OcrFillCardState extends ConsumerState<OcrFillCard> {
                 key: const Key('ocr_fill'),
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.image_search_outlined),
-                title: const Text('Fill from a screenshot'),
-                subtitle: const Text('Read on this device'),
+                title: Text(t('Fill from a screenshot')),
+                subtitle: Text(t('Read on this device')),
                 onTap: _scanning ? null : _scan,
               ),
               if (_scanning) const LinearProgressIndicator(),

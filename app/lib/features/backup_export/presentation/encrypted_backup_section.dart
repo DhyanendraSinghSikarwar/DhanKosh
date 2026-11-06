@@ -4,6 +4,7 @@ import 'package:hisaab/app/di/backup_providers.dart';
 import 'package:hisaab/features/backup_export/domain/backup_errors.dart';
 import 'package:hisaab/features/backup_export/domain/full_backup.dart';
 import 'package:hisaab/features/backup_export/domain/passphrase_strength.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:intl/intl.dart';
 
 /// Encrypted full backup and restore (FR-24-17..27): the only way to recover
@@ -98,29 +99,29 @@ class _State extends ConsumerState<EncryptedBackupSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Encrypted backup',
+          t('Encrypted backup'),
           style: Theme.of(context).textTheme.titleSmall,
         ),
         ListTile(
           key: const Key('full-backup-export'),
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.enhanced_encryption_outlined),
-          title: const Text('Export encrypted backup'),
-          subtitle: const Text('Everything, locked with your passphrase'),
+          title: Text(t('Export encrypted backup')),
+          subtitle: Text(t('Everything, locked with your passphrase')),
           trailing: FilledButton(
             onPressed: _busy ? null : _export,
-            child: const Text('Export'),
+            child: Text(t('Export')),
           ),
         ),
         ListTile(
           key: const Key('full-backup-restore'),
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.settings_backup_restore),
-          title: const Text('Restore from backup'),
-          subtitle: const Text('Adds what is missing'),
+          title: Text(t('Restore from backup')),
+          subtitle: Text(t('Adds what is missing')),
           trailing: OutlinedButton(
             onPressed: _busy ? null : _restore,
-            child: const Text('Restore'),
+            child: Text(t('Restore')),
           ),
         ),
         if (_busy) const LinearProgressIndicator(),
@@ -161,7 +162,7 @@ class _NewPassphraseDialogState extends State<_NewPassphraseDialog> {
     final long = _a.text.length >= PassphraseStrength.minLength;
     final match = _a.text == _b.text;
     return AlertDialog(
-      title: const Text('Backup passphrase'),
+      title: Text(t('Backup passphrase')),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -172,7 +173,7 @@ class _NewPassphraseDialogState extends State<_NewPassphraseDialog> {
               controller: _a,
               obscureText: true,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(labelText: 'Passphrase'),
+              decoration: InputDecoration(labelText: t('Passphrase')),
             ),
             if (_a.text.isNotEmpty)
               Text(
@@ -184,9 +185,9 @@ class _NewPassphraseDialogState extends State<_NewPassphraseDialog> {
               controller: _b,
               obscureText: true,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(labelText: 'Repeat'),
+              decoration: InputDecoration(labelText: t('Repeat')),
             ),
-            if (_b.text.isNotEmpty && !match) const Text('Passphrases differ'),
+            if (_b.text.isNotEmpty && !match) Text(t('Passphrases differ')),
             const SizedBox(height: 12),
             const Text(
               'We cannot recover this passphrase. Lose it and the backup '
@@ -199,13 +200,13 @@ class _NewPassphraseDialogState extends State<_NewPassphraseDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(t('Cancel')),
         ),
         TextButton(
           key: const Key('backup-pass-ok'),
           onPressed:
               long && match ? () => Navigator.pop(context, _a.text) : null,
-          child: const Text('Save backup'),
+          child: Text(t('Save backup')),
         ),
       ],
     );
@@ -230,23 +231,23 @@ class _AskPassphraseDialogState extends State<_AskPassphraseDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Backup passphrase'),
+        title: Text(t('Backup passphrase')),
         content: TextField(
           key: const Key('restore-pass'),
           controller: _c,
           obscureText: true,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Passphrase'),
+          decoration: InputDecoration(labelText: t('Passphrase')),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           TextButton(
             key: const Key('restore-pass-ok'),
             onPressed: () => Navigator.pop(context, _c.text),
-            child: const Text('Open'),
+            child: Text(t('Open')),
           ),
         ],
       );
@@ -263,7 +264,7 @@ class _SummaryDialog extends StatelessWidget {
         ? ''
         : ' from ${DateFormat('d MMM y').format(DateTime.fromMillisecondsSinceEpoch(opened.createdAt))}';
     return AlertDialog(
-      title: const Text('Restore backup?'),
+      title: Text(t('Restore backup?')),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,17 +279,17 @@ class _SummaryDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(t('Cancel')),
         ),
         TextButton(
           key: const Key('restore-replace'),
           onPressed: () => Navigator.pop(context, _Mode.replace),
-          child: const Text('Replace everything'),
+          child: Text(t('Replace everything')),
         ),
         TextButton(
           key: const Key('restore-merge'),
           onPressed: () => Navigator.pop(context, _Mode.merge),
-          child: const Text('Merge'),
+          child: Text(t('Merge')),
         ),
       ],
     );
@@ -300,7 +301,7 @@ class _ReplaceConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Erase and replace?'),
+        title: Text(t('Erase and replace?')),
         content: const Text(
           'All data on this phone is erased first, then the backup is '
           'restored. This cannot be undone.',
@@ -308,12 +309,12 @@ class _ReplaceConfirmDialog extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           TextButton(
             key: const Key('restore-replace-confirm'),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Erase and restore'),
+            child: Text(t('Erase and restore')),
           ),
         ],
       );

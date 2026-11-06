@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/home_cards_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_due_format.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
@@ -66,7 +67,7 @@ class BillsCardDues extends ConsumerWidget {
                       padding: const EdgeInsets.only(left: 8),
                       child: ActionChip(
                         key: Key('bills_card_paid_${r.id}'),
-                        label: const Text('Mark paid'),
+                        label: Text(t('Mark paid')),
                         labelStyle: const TextStyle(fontSize: 11),
                         visualDensity: VisualDensity.compact,
                         onPressed: () =>

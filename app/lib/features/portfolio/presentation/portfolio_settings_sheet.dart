@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/nav_refresh.dart';
 import 'package:hisaab/features/settings_data_sources/domain/settings_repository.dart';
 
@@ -69,9 +70,9 @@ class _State extends ConsumerState<PortfolioSettingsSheet> {
             SwitchListTile(
               key: const Key('nav-toggle'),
               contentPadding: EdgeInsets.zero,
-              title: const Text('Refresh fund NAV'),
-              subtitle: const Text(
-                'Once a day from the public AMFI file. Sends no data about you.',
+              title: Text(t('Refresh fund NAV')),
+              subtitle: Text(
+                t('Once a day from the public AMFI file. Sends no data about you.'),
               ),
               value: _on ?? false,
               onChanged: _on == null ? null : _set,
@@ -85,7 +86,7 @@ class _State extends ConsumerState<PortfolioSettingsSheet> {
                   TextButton(
                     key: const Key('nav-now'),
                     onPressed: _busy ? null : _now,
-                    child: const Text('Refresh now'),
+                    child: Text(t('Refresh now')),
                   ),
                 ],
               ),

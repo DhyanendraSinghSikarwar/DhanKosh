@@ -8,6 +8,7 @@ import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/profile_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/entities/identity.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/entities/user_profile.dart';
 import 'package:hisaab/features/onboarding_permissions/domain/validators/onboarding_validators.dart';
@@ -33,11 +34,11 @@ class ProfileScreen extends ConsumerWidget {
     final id = ref.watch(identityDataProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(t('Profile')),
         actions: [
           IconButton(
             key: const Key('profile-support'),
-            tooltip: 'Support DhanKosh',
+            tooltip: t('Support DhanKosh'),
             icon: const Icon(Icons.favorite_outline, color: AppIcons.red),
             onPressed: () => context.push('/settings/support'),
           ),
@@ -154,7 +155,7 @@ class _FormState extends ConsumerState<_Form> {
       ..read(onboardingGateProvider.notifier).refresh();
     if (!mounted) return;
     ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Saved')));
+        .showSnackBar(SnackBar(content: Text(t('Saved'))));
     Navigator.of(context).maybePop();
   }
 
@@ -258,7 +259,7 @@ class _FormState extends ConsumerState<_Form> {
                     TextButton(
                       key: const Key('profile-photo-remove'),
                       onPressed: _removePhoto,
-                      child: const Text('Remove'),
+                      child: Text(t('Remove')),
                     ),
                 ],
               ),
@@ -270,14 +271,14 @@ class _FormState extends ConsumerState<_Form> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Personal', style: theme.textTheme.titleSmall),
+              Text(t('Personal'), style: theme.textTheme.titleSmall),
               gap,
               TextField(
                 key: const Key('profile-name'),
                 controller: _name,
                 textCapitalization: TextCapitalization.words,
                 decoration: InputDecoration(
-                  labelText: 'Full name (as per bank)',
+                  labelText: t('Full name (as per bank)'),
                   errorText: _draft.nameValid ? null : 'Required',
                 ),
                 onChanged: (_) => setState(() {}),
@@ -289,7 +290,7 @@ class _FormState extends ConsumerState<_Form> {
                 keyboardType: TextInputType.phone,
                 inputFormatters: const [PhoneDigitsFormatter()],
                 decoration: InputDecoration(
-                  labelText: 'Mobile',
+                  labelText: t('Mobile'),
                   prefixText: '+91 ',
                   errorText: _mobileValid ? null : 'Enter 10 digits',
                 ),
@@ -300,7 +301,7 @@ class _FormState extends ConsumerState<_Form> {
                 key: const Key('profile-email'),
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(labelText: t('Email')),
                 onChanged: (_) => setState(() {}),
               ),
               gap,
@@ -308,7 +309,7 @@ class _FormState extends ConsumerState<_Form> {
                 key: const Key('profile-occupation'),
                 controller: _occupation,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(labelText: 'Occupation'),
+                decoration: InputDecoration(labelText: t('Occupation')),
                 onChanged: (_) => setState(() {}),
               ),
             ],
@@ -319,12 +320,12 @@ class _FormState extends ConsumerState<_Form> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Statement unlock', style: theme.textTheme.titleSmall),
+              Text(t('Statement unlock'), style: theme.textTheme.titleSmall),
               gap,
               ListTile(
                 key: const Key('profile-dob'),
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Date of birth'),
+                title: Text(t('Date of birth')),
                 subtitle: Text(
                   _dob == null
                       ? 'Not set'
@@ -339,7 +340,7 @@ class _FormState extends ConsumerState<_Form> {
                 textCapitalization: TextCapitalization.characters,
                 maxLength: 10,
                 decoration: InputDecoration(
-                  labelText: 'PAN',
+                  labelText: t('PAN'),
                   counterText: '',
                   errorText: panOk ? null : 'Format ABCDE1234F',
                 ),
@@ -355,7 +356,10 @@ class _FormState extends ConsumerState<_Form> {
                 },
               ),
               gap,
-              Text('Other names as per bank', style: theme.textTheme.bodySmall),
+              Text(
+                t('Other names as per bank'),
+                style: theme.textTheme.bodySmall,
+              ),
               Wrap(
                 spacing: 8,
                 children: [
@@ -374,15 +378,15 @@ class _FormState extends ConsumerState<_Form> {
                       key: const Key('profile-alt-name'),
                       controller: _altName,
                       textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
-                        labelText: 'Add a name',
+                      decoration: InputDecoration(
+                        labelText: t('Add a name'),
                       ),
                       onSubmitted: (_) => _addAltName(),
                     ),
                   ),
                   IconButton(
                     key: const Key('profile-alt-name-add'),
-                    tooltip: 'Add name',
+                    tooltip: t('Add name'),
                     icon: const Icon(Icons.add),
                     onPressed: _addAltName,
                   ),
@@ -390,7 +394,7 @@ class _FormState extends ConsumerState<_Form> {
               ),
               gap,
               Text(
-                'Other mobiles as per bank',
+                t('Other mobiles as per bank'),
                 style: theme.textTheme.bodySmall,
               ),
               Wrap(
@@ -412,8 +416,8 @@ class _FormState extends ConsumerState<_Form> {
                       controller: _altPhone,
                       keyboardType: TextInputType.phone,
                       inputFormatters: const [PhoneDigitsFormatter()],
-                      decoration: const InputDecoration(
-                        labelText: 'Add a mobile',
+                      decoration: InputDecoration(
+                        labelText: t('Add a mobile'),
                         prefixText: '+91 ',
                       ),
                       onSubmitted: (_) => _addAltPhone(),
@@ -421,7 +425,7 @@ class _FormState extends ConsumerState<_Form> {
                   ),
                   IconButton(
                     key: const Key('profile-alt-phone-add'),
-                    tooltip: 'Add mobile',
+                    tooltip: t('Add mobile'),
                     icon: const Icon(Icons.add),
                     onPressed: _addAltPhone,
                   ),
@@ -431,7 +435,7 @@ class _FormState extends ConsumerState<_Form> {
               ListTile(
                 key: const Key('profile-bank-details'),
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Bank details'),
+                title: Text(t('Bank details')),
                 subtitle: Text(
                   '$count saved  ·  $pw statement '
                   '${pw == 1 ? 'password' : 'passwords'}',
@@ -451,11 +455,11 @@ class _FormState extends ConsumerState<_Form> {
         FilledButton(
           key: const Key('profile-save'),
           onPressed: _canSave ? _save : null,
-          child: const Text('Save'),
+          child: Text(t('Save')),
         ),
         const SizedBox(height: 12),
         Text(
-          'Stored encrypted on this device only.',
+          t('Stored encrypted on this device only.'),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),

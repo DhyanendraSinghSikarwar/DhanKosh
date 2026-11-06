@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/analytics_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/tax_centre/domain/tax_plan.dart';
 
 /// Opens the what-if sheet; values stay in memory only (FR-19-07, FR-19-08).
@@ -95,7 +96,7 @@ class _SheetState extends State<_Sheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('What if', style: Theme.of(context).textTheme.titleMedium),
+          Text(t('What if'), style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           field('Salary', _salary, const Key('wi-salary')),
           field('80C', _c80, const Key('wi-80c')),
@@ -104,7 +105,7 @@ class _SheetState extends State<_Sheet> {
           FilledButton(
             key: const Key('wi-apply'),
             onPressed: _apply,
-            child: const Text('Apply'),
+            child: Text(t('Apply')),
           ),
         ],
       ),

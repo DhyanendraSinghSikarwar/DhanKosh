@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/unrecognised_messages/presentation/unrecognised_providers.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/settings_row.dart';
@@ -16,7 +17,7 @@ class UnrecognisedTile extends ConsumerWidget {
     return SettingsRow(
       key: const Key('unrecognised-tile'),
       badge: AppIcons.diagnostics,
-      title: 'Unrecognised messages',
+      title: t('Unrecognised messages'),
       subtitle: n == 0 ? 'Payments no bank format matched' : '$n to review',
       onTap: () => context.push('/review/unrecognised'),
     );

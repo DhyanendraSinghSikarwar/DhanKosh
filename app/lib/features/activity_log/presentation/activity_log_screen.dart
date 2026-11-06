@@ -7,6 +7,7 @@ import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/features/activity_log/domain/activity_stats.dart';
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/activity_log/domain/inbox_logic.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:intl/intl.dart';
@@ -57,18 +58,18 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Clear log?'),
+        title: Text(t('Clear log?')),
         content: const Text('Removes every entry. Transactions are not '
             'affected.'),
         actions: [
           TextButton(
             key: const Key('activity-clear-confirm'),
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Clear'),
+            child: Text(t('Clear')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
         ],
       ),
@@ -104,12 +105,12 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
     ];
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inbox'),
+        title: Text(t('Inbox')),
         actions: [
           if (entries.isNotEmpty)
             IconButton(
               key: const Key('activity-clear'),
-              tooltip: 'Clear log',
+              tooltip: t('Clear log'),
               icon: const Icon(Icons.delete_sweep_outlined),
               onPressed: _confirmClear,
             ),
@@ -119,12 +120,12 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           _TotalsCard(
-            title: 'Today',
+            title: t('Today'),
             totals: ActivityStats.today(entries, now),
           ),
           const SizedBox(height: 12),
           _TotalsCard(
-            title: 'This week',
+            title: t('This week'),
             totals: ActivityStats.week(entries, now),
           ),
           const SizedBox(height: 12),
@@ -166,15 +167,15 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
           ),
           const SizedBox(height: 12),
           if (shown.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 32),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
               child: Column(
-                key: Key('activity-empty'),
+                key: const Key('activity-empty'),
                 children: [
-                  Icon(Icons.history, size: 40),
-                  SizedBox(height: 8),
-                  Text('No activity yet'),
-                  Text('Each sync is recorded here, on this phone only.'),
+                  const Icon(Icons.history, size: 40),
+                  const SizedBox(height: 8),
+                  Text(t('No activity yet')),
+                  Text(t('Each sync is recorded here, on this phone only.')),
                 ],
               ),
             )
@@ -281,17 +282,17 @@ class _SyncCard extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.sms_outlined),
-              title: const Text('Last SMS scan'),
+              title: Text(t('Last SMS scan')),
               trailing: Text(_t(lastSms, 'Not yet')),
             ),
             ListTile(
               leading: const Icon(Icons.mail_outline),
-              title: const Text('Last email sync'),
+              title: Text(t('Last email sync')),
               trailing: Text(_t(lastEmail, 'Not yet')),
             ),
             ListTile(
               leading: const Icon(Icons.sync),
-              title: const Text('Next scheduled sync'),
+              title: Text(t('Next scheduled sync')),
               trailing: Text(_t(next, 'Not scheduled')),
             ),
           ],

@@ -4,6 +4,7 @@ import 'package:hisaab/app/di/sip_providers.dart';
 import 'package:hisaab/core/money/money.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/core/utils/ist.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/recurring_transactions/domain/sip.dart';
 
 const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -135,21 +136,21 @@ class _SipSetupSheetState extends ConsumerState<SipSetupSheet> {
             TextField(
               key: const Key('sip-name'),
               controller: _name,
-              decoration: const InputDecoration(labelText: 'Fund or SIP name'),
+              decoration: InputDecoration(labelText: t('Fund or SIP name')),
             ),
             TextField(
               key: const Key('sip-amount'),
               controller: _amount,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Amount (₹)'),
+              decoration: InputDecoration(labelText: t('Amount (₹)')),
             ),
             if (_freq == SipFrequency.monthly)
               TextField(
                 key: const Key('sip-day'),
                 controller: _day,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Day of month'),
+                decoration: InputDecoration(labelText: t('Day of month')),
               ),
             if (_freq == SipFrequency.weekly)
               Wrap(
@@ -191,9 +192,9 @@ class _SipSetupSheetState extends ConsumerState<SipSetupSheet> {
           ],
         );
       default:
-        return const Text(
-          'Saved here only. No money moves.',
-          key: Key('sip-confirm-note'),
+        return Text(
+          t('Saved here only. No money moves.'),
+          key: const Key('sip-confirm-note'),
         );
     }
   }
@@ -237,14 +238,14 @@ class _SipSetupSheetState extends ConsumerState<SipSetupSheet> {
                   TextButton(
                     key: const Key('sip-delete'),
                     onPressed: _delete,
-                    child: const Text('Delete'),
+                    child: Text(t('Delete')),
                   ),
                 const Spacer(),
                 if (_step > 0 && _step != 2)
                   TextButton(
                     key: const Key('sip-back'),
                     onPressed: () => _go(_step - 1),
-                    child: const Text('Back'),
+                    child: Text(t('Back')),
                   ),
                 if (_step < 3)
                   FilledButton(
@@ -256,7 +257,7 @@ class _SipSetupSheetState extends ConsumerState<SipSetupSheet> {
                   FilledButton(
                     key: const Key('sip-save'),
                     onPressed: _save,
-                    child: const Text('Save SIP'),
+                    child: Text(t('Save SIP')),
                   ),
               ],
             ),

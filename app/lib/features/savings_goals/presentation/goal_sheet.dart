@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/goals_providers.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/core/utils/ist.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/savings_goals/domain/goal.dart';
 
 /// Add or edit a goal (FR-36-01).
@@ -109,14 +110,14 @@ class _GoalSheetState extends ConsumerState<GoalSheet> {
             TextField(
               key: const Key('goal-name'),
               controller: _name,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(labelText: t('Name')),
             ),
             TextField(
               key: const Key('goal-target'),
               controller: _target,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Target (₹)'),
+              decoration: InputDecoration(labelText: t('Target (₹)')),
             ),
             ListTile(
               key: const Key('goal-date'),
@@ -132,7 +133,7 @@ class _GoalSheetState extends ConsumerState<GoalSheet> {
               trailing: day == null
                   ? const Icon(Icons.event_outlined)
                   : IconButton(
-                      tooltip: 'Clear date',
+                      tooltip: t('Clear date'),
                       icon: const Icon(Icons.close),
                       onPressed: () => setState(() => _day = null),
                     ),
@@ -150,13 +151,13 @@ class _GoalSheetState extends ConsumerState<GoalSheet> {
                   TextButton(
                     key: const Key('goal-delete'),
                     onPressed: _delete,
-                    child: const Text('Delete'),
+                    child: Text(t('Delete')),
                   ),
                 const Spacer(),
                 FilledButton(
                   key: const Key('goal-save'),
                   onPressed: _save,
-                  child: const Text('Save'),
+                  child: Text(t('Save')),
                 ),
               ],
             ),

@@ -14,6 +14,7 @@ import 'package:hisaab/features/dashboard_home/presentation/home_recent_list.dar
 import 'package:hisaab/features/dashboard_home/presentation/home_sms_card.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_spent_card.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_upcoming_card.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/theming_customisation/domain/section_layout.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
@@ -85,7 +86,7 @@ class _DashboardHomeScreenState extends ConsumerState<DashboardHomeScreen> {
     return Scaffold(
       body: SafeArea(
         child: !loaded
-            ? const Center(child: Text('Loading…'))
+            ? Center(child: Text(t('Loading…')))
             : empty
                 ? _EmptyHome(masked: masked)
                 : ListView(
@@ -134,7 +135,7 @@ class _PrivacyBadge extends StatelessWidget {
         Icon(Icons.lock_outline, size: 14, color: theme.colorScheme.outline),
         const SizedBox(width: 4),
         Text(
-          'Data stays on this phone',
+          t('Data stays on this phone'),
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.outline),
         ),
@@ -169,20 +170,20 @@ class _EmptyHome extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: HomeSmsCard(),
               ),
-              const EmptyState(
+              EmptyState(
                 icon: Icons.account_balance_wallet_outlined,
-                title: 'No transactions yet',
+                title: t('No transactions yet'),
                 hint: 'Read your bank SMS to get started.',
               ),
               FilledButton(
                 key: const Key('home_scan_sms'),
                 onPressed: () => context.go('/more'),
-                child: const Text('Scan SMS'),
+                child: Text(t('Scan SMS')),
               ),
               TextButton(
                 key: const Key('home_import_statement'),
                 onPressed: () => context.push('/statements'),
-                child: const Text('Import your first statement'),
+                child: Text(t('Import your first statement')),
               ),
             ],
           ),

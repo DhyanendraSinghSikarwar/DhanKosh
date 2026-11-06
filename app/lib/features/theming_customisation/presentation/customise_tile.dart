@@ -14,7 +14,7 @@ class CustomiseTile extends StatelessWidget {
         key: const Key('customise-tile'),
         badge: AppIcons.customise,
         title: t('Customise'),
-        subtitle: 'Theme, sections, text size',
+        subtitle: t('Theme, sections, text size'),
         onTap: () => context.push('/settings/appearance'),
       );
 }

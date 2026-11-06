@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/categorization/domain/category_choice.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_category_style.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_tx_tile.dart';
@@ -59,12 +60,12 @@ class TransactionDetailScreen extends ConsumerWidget {
     final tx = ref.watch(_txProvider(id));
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transaction'),
+        title: Text(t('Transaction')),
         actions: [
           if (tx.value != null)
             IconButton(
               key: const Key('detail_delete'),
-              tooltip: 'Delete',
+              tooltip: t('Delete'),
               icon: const Icon(Icons.delete_outline),
               onPressed: () => _delete(context, ref),
             ),
@@ -72,16 +73,16 @@ class TransactionDetailScreen extends ConsumerWidget {
       ),
       body: tx.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const EmptyState(
+        error: (e, _) => EmptyState(
           icon: Icons.error_outline,
-          title: 'Could not load',
+          title: t('Could not load'),
         ),
-        data: (t) => t == null
-            ? const EmptyState(
+        data: (tt) => tt == null
+            ? EmptyState(
                 icon: Icons.search_off,
-                title: 'Transaction not found',
+                title: t('Transaction not found'),
               )
-            : _Body(t, pickCategory),
+            : _Body(tt, pickCategory),
       ),
     );
   }
@@ -90,16 +91,16 @@ class TransactionDetailScreen extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete 1 transaction?'),
+        title: Text(t('Delete 1 transaction?')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: const Key('delete_confirm'),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(t('Delete')),
           ),
         ],
       ),
@@ -116,22 +117,22 @@ class TransactionDetailScreen extends ConsumerWidget {
 }
 
 class _Body extends ConsumerWidget {
-  const _Body(this.t, this.pickCategory);
-  final LedgerTx t;
+  const _Body(this.tt, this.pickCategory);
+  final LedgerTx tt;
   final CategoryPicker pickCategory;
 
-  void _refresh(WidgetRef ref) => ref.invalidate(_txProvider(t.id));
+  void _refresh(WidgetRef ref) => ref.invalidate(_txProvider(tt.id));
 
   Future<void> _editCategory(BuildContext context, WidgetRef ref) async {
-    final choice = await pickCategory(context, t);
+    final choice = await pickCategory(context, tt);
     if (choice == null) return;
     final txs = ref.read(transactionRepositoryProvider);
     await txs.setCategory(
-      [t.id],
+      [tt.id],
       choice.category,
       customCategoryId: choice.customCategoryId,
     );
-    final key = MerchantRule.keyOf(t.merchant, t.upiId);
+    final key = MerchantRule.keyOf(tt.merchant, tt.upiId);
     if (choice.saveRule && key != null) {
       final rule = MerchantRule(
         merchantKey: key,
@@ -147,19 +148,19 @@ class _Body extends ConsumerWidget {
     // FR-15-09: an EMI payment may be counted towards a loan.
     if (choice.category.name == 'emiLoan' &&
         choice.customCategoryId == null &&
-        (t.merchant ?? '').length >= 2 &&
+        (tt.merchant ?? '').length >= 2 &&
         context.mounted) {
-      await context.push('/loan-link/${t.id}');
+      await context.push('/loan-link/${tt.id}');
     }
   }
 
   // FR-08-10: sub-category as free text; empty clears it.
   Future<void> _editSubcategory(BuildContext context, WidgetRef ref) async {
-    final c = TextEditingController(text: t.subcategory ?? '');
+    final c = TextEditingController(text: tt.subcategory ?? '');
     final sub = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Sub-category'),
+        title: Text(t('Sub-category')),
         content: TextField(
           key: const Key('sub_field'),
           controller: c,
@@ -168,12 +169,12 @@ class _Body extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: const Key('sub_save'),
             onPressed: () => Navigator.pop(ctx, c.text.trim()),
-            child: const Text('Save'),
+            child: Text(t('Save')),
           ),
         ],
       ),
@@ -181,7 +182,7 @@ class _Body extends ConsumerWidget {
     if (sub == null) return;
     await ref
         .read(transactionRepositoryProvider)
-        .setSubcategory(t.id, sub.isEmpty ? null : sub);
+        .setSubcategory(tt.id, sub.isEmpty ? null : sub);
     _refresh(ref);
   }
 
@@ -195,7 +196,7 @@ class _Body extends ConsumerWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => SimpleDialog(
-          title: const Text('Account'),
+          title: Text(t('Account')),
           children: [
             for (final a in accounts)
               SimpleDialogOption(
@@ -203,13 +204,13 @@ class _Body extends ConsumerWidget {
                 onPressed: () => Navigator.pop(ctx, a.id),
                 child: Text(a.label),
               ),
-            if (t.merchant != null || t.upiId != null)
+            if (tt.merchant != null || tt.upiId != null)
               CheckboxListTile(
                 key: const Key('acct_remember'),
                 dense: true,
                 value: remember,
                 onChanged: (v) => setS(() => remember = v ?? false),
-                title: const Text('Remember for this payee'),
+                title: Text(t('Remember for this payee')),
               ),
           ],
         ),
@@ -218,17 +219,17 @@ class _Body extends ConsumerWidget {
     if (picked == null) return;
     await ref
         .read(transactionRepositoryProvider)
-        .setAccount(t.id, picked, rememberPayee: remember);
+        .setAccount(tt.id, picked, rememberPayee: remember);
     ref.invalidate(_accountLabelProvider);
     _refresh(ref);
   }
 
   Future<void> _editNote(BuildContext context, WidgetRef ref) async {
-    final c = TextEditingController(text: t.note ?? '');
+    final c = TextEditingController(text: tt.note ?? '');
     final note = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Note'),
+        title: Text(t('Note')),
         content: TextField(
           key: const Key('note_field'),
           controller: c,
@@ -238,12 +239,12 @@ class _Body extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: const Key('note_save'),
             onPressed: () => Navigator.pop(ctx, c.text.trim()),
-            child: const Text('Save'),
+            child: Text(t('Save')),
           ),
         ],
       ),
@@ -251,7 +252,7 @@ class _Body extends ConsumerWidget {
     if (note == null) return;
     await ref
         .read(transactionRepositoryProvider)
-        .setNote(t.id, note.isEmpty ? null : note);
+        .setNote(tt.id, note.isEmpty ? null : note);
     _refresh(ref);
   }
 
@@ -259,16 +260,16 @@ class _Body extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final masked = ref.watch(hideAmountsProvider).value ?? true;
-    final account = t.accountId == null
+    final account = tt.accountId == null
         ? null
-        : ref.watch(_accountLabelProvider(t.accountId!)).value;
-    final sources = ref.watch(_sourcesProvider(t.id)).value ?? const [];
-    final last4 = t.accountLast4;
+        : ref.watch(_accountLabelProvider(tt.accountId!)).value;
+    final sources = ref.watch(_sourcesProvider(tt.id)).value ?? const [];
+    final last4 = tt.accountLast4;
     final fallbackAccount =
-        last4 == null ? t.bankName : '${t.bankName} ••$last4';
+        last4 == null ? tt.bankName : '${tt.bankName} ••$last4';
     final when = DateFormat(
-      t.hasExplicitTime ? 'd MMM yyyy, h:mm a' : 'd MMM yyyy',
-    ).format(DateTime.fromMillisecondsSinceEpoch(t.timestamp));
+      tt.hasExplicitTime ? 'd MMM yyyy, h:mm a' : 'd MMM yyyy',
+    ).format(DateTime.fromMillisecondsSinceEpoch(tt.timestamp));
     return ListView(
       padding: const EdgeInsets.all(14),
       children: [
@@ -283,8 +284,8 @@ class _Body extends ConsumerWidget {
                   color: theme.colorScheme.surfaceContainerHighest,
                 ),
                 child: Icon(
-                  categoryStyle(t.category).icon,
-                  color: categoryStyle(t.category).color,
+                  categoryStyle(tt.category).icon,
+                  color: categoryStyle(tt.category).color,
                 ),
               ),
               const SizedBox(width: 14),
@@ -293,32 +294,32 @@ class _Body extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      t.title,
+                      tt.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      txAmountText(t, masked: masked),
+                      txAmountText(tt, masked: masked),
                       key: const Key('detail_amount'),
                       style: theme.textTheme.headlineMedium?.copyWith(
                         fontSize: 28,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    if (t.needsReview)
+                    if (tt.needsReview)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
-                          t.reviewReason ?? 'Needs review',
+                          tt.reviewReason ?? 'Needs review',
                           style: theme.textTheme.bodySmall,
                         ),
                       ),
                   ],
                 ),
               ),
-              SourceTag(t.accountKind),
+              SourceTag(tt.accountKind),
             ],
           ),
         ),
@@ -329,13 +330,13 @@ class _Body extends ConsumerWidget {
             children: withDividers([
               _Row(
                 'Category',
-                t.category.label,
+                tt.category.label,
                 tag: 'detail_category',
                 onTap: () => _editCategory(context, ref),
               ),
               _Row(
                 'Sub-category',
-                t.subcategory ?? 'Add',
+                tt.subcategory ?? 'Add',
                 tag: 'detail_subcategory',
                 onTap: () => _editSubcategory(context, ref),
               ),
@@ -346,21 +347,21 @@ class _Body extends ConsumerWidget {
                 onTap: () => _editAccount(context, ref),
               ),
               _Row('Date', when),
-              _Row('Channel', t.channel.name.toUpperCase()),
-              if (t.currency != 'INR')
+              _Row('Channel', tt.channel.name.toUpperCase()),
+              if (tt.currency != 'INR')
                 _Row(
                   'In rupees',
-                  t.inrMinor == null
-                      ? 'Add a ${t.currency} rate in Settings'
-                      : '≈ ${formatAmount(t.inrMinor!, masked: masked)}',
+                  tt.inrMinor == null
+                      ? 'Add a ${tt.currency} rate in Settings'
+                      : '≈ ${formatAmount(tt.inrMinor!, masked: masked)}',
                   tag: 'detail_inr',
                 ),
-              if (t.upiId != null) _Row('UPI id', t.upiId!),
-              if (t.referenceNumber != null)
-                _Row('Reference', t.referenceNumber!),
+              if (tt.upiId != null) _Row('UPI id', tt.upiId!),
+              if (tt.referenceNumber != null)
+                _Row('Reference', tt.referenceNumber!),
               _Row(
                 'Note',
-                t.note ?? 'Add note',
+                tt.note ?? 'Add note',
                 tag: 'detail_note',
                 onTap: () => _editNote(context, ref),
               ),
@@ -372,7 +373,7 @@ class _Body extends ConsumerWidget {
           padding: EdgeInsets.fromLTRB(4, 18, 4, 8),
         ),
         if (sources.isEmpty)
-          const Text('No source messages')
+          Text(t('No source messages'))
         else
           for (final s in sources)
             _MessageView(
@@ -381,10 +382,10 @@ class _Body extends ConsumerWidget {
                   ? () async {
                       final id = await ref
                           .read(transactionRepositoryProvider)
-                          .splitSource(t.id, s.id);
+                          .splitSource(tt.id, s.id);
                       ref
-                        ..invalidate(_sourcesProvider(t.id))
-                        ..invalidate(_txProvider(t.id));
+                        ..invalidate(_sourcesProvider(tt.id))
+                        ..invalidate(_txProvider(tt.id));
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -452,7 +453,7 @@ class _MessageView extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             if (raw == null)
-              const Text('Original text not available')
+              Text(t('Original text not available'))
             else ...[
               Text(raw, maxLines: 10, overflow: TextOverflow.ellipsis),
               Align(
@@ -463,12 +464,12 @@ class _MessageView extends StatelessWidget {
                       TextButton(
                         key: Key('split_${s.id}'),
                         onPressed: onSplit,
-                        child: const Text('Split out'),
+                        child: Text(t('Split out')),
                       ),
                     TextButton(
                       onPressed: () =>
                           Clipboard.setData(ClipboardData(text: raw)),
-                      child: const Text('Copy text'),
+                      child: Text(t('Copy text')),
                     ),
                   ],
                 ),

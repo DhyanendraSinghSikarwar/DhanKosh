@@ -4,6 +4,7 @@ import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/accounts_management/domain/account_admin_repository.dart';
 import 'package:hisaab/features/accounts_management/domain/account_repository.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_tile.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/profile/domain/bank_identity_repository.dart';
 import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
 
@@ -36,12 +37,12 @@ Future<String?> _prompt(
           ),
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
+          child: Text(t('Cancel')),
         ),
         FilledButton(
           key: const Key('prompt_ok'),
           onPressed: () => Navigator.pop(ctx, c.text.trim()),
-          child: const Text('Save'),
+          child: Text(t('Save')),
         ),
       ],
     ),
@@ -56,7 +57,7 @@ Future<void> renameAccount(
 ) async {
   final v = await _prompt(
     context,
-    title: 'Rename',
+    title: t('Rename'),
     initial: a.nickname,
     hint: '${a.bankName} ••${a.last4}',
   );
@@ -69,21 +70,21 @@ Future<void> changeAccountType(
   AccountRepository repo,
   Account a,
 ) async {
-  final t = await showDialog<AccountType>(
+  final tt = await showDialog<AccountType>(
     context: context,
     builder: (ctx) => SimpleDialog(
-      title: const Text('Account type'),
+      title: Text(t('Account type')),
       children: [
-        for (final t in AccountType.values)
+        for (final tt in AccountType.values)
           SimpleDialogOption(
-            key: Key('type_${t.name}'),
-            onPressed: () => Navigator.pop(ctx, t),
-            child: Text(accountTypeLabel(t)),
+            key: Key('type_${tt.name}'),
+            onPressed: () => Navigator.pop(ctx, tt),
+            child: Text(accountTypeLabel(tt)),
           ),
       ],
     ),
   );
-  if (t != null) await repo.setType(a.id, t);
+  if (tt != null) await repo.setType(a.id, tt);
 }
 
 /// Set or remove the typed balance (FR-13-06, FR-13-07).
@@ -95,7 +96,7 @@ Future<void> setBalance(
 }) async {
   final v = await _prompt(
     context,
-    title: 'Set balance',
+    title: t('Set balance'),
     hint: '0.00',
     keyboard: const TextInputType.numberWithOptions(decimal: true),
     removeLabel: a.manualBalanceMinor == null ? null : 'Remove',
@@ -120,16 +121,16 @@ Future<bool> confirmDelete(
     context: context,
     builder: (ctx) => AlertDialog(
       title: Text('Delete ${a.label}?'),
-      content: const Text('Transactions stay, without an account.'),
+      content: Text(t('Transactions stay, without an account.')),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancel'),
+          child: Text(t('Cancel')),
         ),
         FilledButton(
           key: const Key('delete_confirm'),
           onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Delete'),
+          child: Text(t('Delete')),
         ),
       ],
     ),
@@ -158,12 +159,12 @@ Future<bool> mergeAccountInto(
   final target = await showDialog<Account>(
     context: context,
     builder: (ctx) => SimpleDialog(
-      title: const Text('Merge into'),
+      title: Text(t('Merge into')),
       children: [
         if (all.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(24),
-            child: Text('No other account to merge into.'),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(t('No other account to merge into.')),
           ),
         for (final x in all)
           SimpleDialogOption(
@@ -179,16 +180,16 @@ Future<bool> mergeAccountInto(
     context: context,
     builder: (ctx) => AlertDialog(
       title: Text('Merge into ${target.label}?'),
-      content: const Text('Shown together. You can unmerge any time.'),
+      content: Text(t('Shown together. You can unmerge any time.')),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancel'),
+          child: Text(t('Cancel')),
         ),
         FilledButton(
           key: const Key('merge_confirm'),
           onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Merge'),
+          child: Text(t('Merge')),
         ),
       ],
     ),
@@ -229,7 +230,7 @@ Future<bool> deleteAccountWithOptions(
               key: const Key('delete_with_tx'),
               contentPadding: EdgeInsets.zero,
               value: withTx,
-              title: const Text('Also delete its transactions'),
+              title: Text(t('Also delete its transactions')),
               onChanged: (v) => set(() => withTx = v ?? false),
             ),
           ],
@@ -237,7 +238,7 @@ Future<bool> deleteAccountWithOptions(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: const Key('delete_confirm'),

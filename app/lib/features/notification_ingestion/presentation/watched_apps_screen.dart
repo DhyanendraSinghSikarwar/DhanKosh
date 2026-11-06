@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/notification_ingestion/domain/entities/payment_app.dart';
 import 'package:hisaab/features/notification_ingestion/domain/notification_ports.dart';
 import 'package:hisaab/features/notification_ingestion/presentation/notification_providers.dart';
@@ -19,10 +20,10 @@ class WatchedAppsScreen extends ConsumerWidget {
     final state = ref.watch(watchedAppsListProvider);
     final n = ref.read(watchedAppsListProvider.notifier);
     return Scaffold(
-      appBar: AppBar(title: const Text('Watched apps')),
+      appBar: AppBar(title: Text(t('Watched apps'))),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Could not load apps')),
+        error: (_, __) => Center(child: Text(t('Could not load apps'))),
         data: (v) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -74,7 +75,7 @@ class WatchedAppsScreen extends ConsumerWidget {
                             trailing: TextButton(
                               onPressed: () =>
                                   unawaited(n.addApp(a.packageName, a.label)),
-                              child: const Text('Watch'),
+                              child: Text(t('Watch')),
                             ),
                           ),
                       ],

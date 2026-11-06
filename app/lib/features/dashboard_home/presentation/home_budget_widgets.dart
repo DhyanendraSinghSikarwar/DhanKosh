@@ -9,6 +9,7 @@ import 'package:hisaab/features/dashboard_home/presentation/home_providers.dart'
 import 'package:hisaab/features/dashboard_home/presentation/home_spent_chart.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_math.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
@@ -34,12 +35,12 @@ class HomeBudgetsCard extends ConsumerWidget {
         children: [
           CardHeader(
             'Budgets',
-            trailing: uses.isEmpty ? const Text('Set budgets') : null,
+            trailing: uses.isEmpty ? Text(t('Set budgets')) : null,
           ),
           const SizedBox(height: 10),
           if (uses.isEmpty)
             Text(
-              'Set monthly limits for the categories you watch.',
+              t('Set monthly limits for the categories you watch.'),
               style: MockText.small(context),
             )
           else
@@ -156,7 +157,7 @@ class _HomeCashFlowCardState extends ConsumerState<HomeCashFlowCard> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'Where this month’s income went.',
+                t('Where this month’s income went.'),
                 style: MockText.small(context),
               ),
             ),
@@ -173,7 +174,7 @@ class _HomeCashFlowCardState extends ConsumerState<HomeCashFlowCard> {
                       key: const Key('home_cashflow_line'),
                       style: MockText.mid(context, color: colors?.income),
                     ),
-                    Text('Income', style: MockText.small(context)),
+                    Text(t('Income'), style: MockText.small(context)),
                   ],
                 ),
               ),

@@ -5,6 +5,7 @@ import 'package:hisaab/app/di/home_cards_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/features/credit_cards/domain/card_view.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_due_format.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
@@ -178,7 +179,7 @@ class _CardRow extends ConsumerWidget {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2),
                           child: Text(
-                            'Mark paid',
+                            t('Mark paid'),
                             style: TextStyle(
                               fontSize: 12,
                               color: theme.colorScheme.primary,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// Placeholder screen for: Search & Filters.
 class SearchFiltersScreen extends StatelessWidget {
@@ -6,11 +7,11 @@ class SearchFiltersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Text(
-          'Search & Filters placeholder',
-          key: Key('search_filters_placeholder'),
+          t('Search & Filters placeholder'),
+          key: const Key('search_filters_placeholder'),
         ),
       ),
     );

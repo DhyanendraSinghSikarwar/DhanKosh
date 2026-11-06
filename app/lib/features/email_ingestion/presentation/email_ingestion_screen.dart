@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// Placeholder screen for: Email Ingestion.
 class EmailIngestionScreen extends StatelessWidget {
@@ -6,11 +7,11 @@ class EmailIngestionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Text(
-          'Email Ingestion placeholder',
-          key: Key('email_ingestion_placeholder'),
+          t('Email Ingestion placeholder'),
+          key: const Key('email_ingestion_placeholder'),
         ),
       ),
     );

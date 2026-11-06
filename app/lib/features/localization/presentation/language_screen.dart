@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/appearance_providers.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
-import 'package:hisaab/features/localization/presentation/language_controller.dart';
 
 /// Language picker (F-29, FR-29-11, FR-29-12).
 class LanguageScreen extends ConsumerWidget {
@@ -46,48 +45,18 @@ class LanguageScreen extends ConsumerWidget {
                   l.native,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                subtitle: Text(
-                  l.builtIn
-                      ? t('Built in')
-                      : s.downloaded.contains(l)
-                          ? '${t(l.english)} · ${t('Downloaded')}'
-                          : '${t(l.english)} · ${t('Tap to download')}',
-                ),
-                trailing: _trailing(s, l, c),
-                onTap: s.busy == l ? null : () => c.choose(l),
+                subtitle: Text(l.builtIn ? t('Built in') : t(l.english)),
+                trailing: l == s.active
+                    ? Tooltip(
+                        message: t('In use'),
+                        child: const Icon(Icons.check_circle),
+                      )
+                    : null,
+                onTap: () => c.choose(l),
               ),
             ),
         ],
       ),
-    );
-  }
-
-  Widget _trailing(LanguageState s, Language l, LanguageController c) {
-    if (s.busy == l) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-    if (l == s.active) {
-      return Tooltip(
-        message: t('In use'),
-        child: const Icon(Icons.check_circle),
-      );
-    }
-    if (!l.builtIn && s.downloaded.contains(l)) {
-      return IconButton(
-        key: Key('lang-remove-${l.code}'),
-        tooltip: t('Remove download'),
-        icon: const Icon(Icons.delete_outline),
-        onPressed: () => c.remove(l),
-      );
-    }
-    if (l.builtIn) return const SizedBox.shrink();
-    return Tooltip(
-      message: t('Download'),
-      child: const Icon(Icons.cloud_download_outlined),
     );
   }
 }

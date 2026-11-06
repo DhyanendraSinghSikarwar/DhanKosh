@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/home_sync_provider.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/mock_kit.dart';
 
 /// Bottom sheet shown while Home fetches new SMS and email: determinate
@@ -37,7 +38,7 @@ class HomeRefreshSheet extends ConsumerWidget {
                 ),
                 IconButton(
                   key: const Key('home_refresh_close'),
-                  tooltip: 'Close',
+                  tooltip: t('Close'),
                   icon: const Icon(Icons.close),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
@@ -83,21 +84,21 @@ class HomeRefreshSheet extends ConsumerWidget {
             const SizedBox(height: 12),
             _Step(
               key: const Key('home_refresh_sms'),
-              label: 'SMS',
+              label: t('SMS'),
               detail: s.scanned > 0 ? 'Reading ${s.scanned} messages' : 'Inbox',
               fraction: s.smsFraction,
               done: s.stage.index > HomeSyncStage.sms.index,
             ),
             _Step(
               key: const Key('home_refresh_email'),
-              label: 'Email',
+              label: t('Email'),
               detail: 'Connected mailboxes',
               fraction: s.emailFraction,
               done: s.stage.index > HomeSyncStage.email.index,
             ),
             _Step(
               key: const Key('home_refresh_matching'),
-              label: 'Matching',
+              label: t('Matching'),
               detail: 'Removing duplicates',
               fraction: s.matchFraction,
               done: finished,
@@ -126,12 +127,12 @@ class HomeRefreshSheet extends ConsumerWidget {
                 child: FilledButton(
                   key: const Key('home_refresh_done'),
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Done'),
+                  child: Text(t('Done')),
                 ),
               ),
             ] else
               Text(
-                'Everything is read on this phone. Nothing is uploaded.',
+                t('Everything is read on this phone. Nothing is uploaded.'),
                 style: MockText.small(context),
               ),
           ],

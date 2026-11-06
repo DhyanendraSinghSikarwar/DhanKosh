@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/settings_row.dart';
 
@@ -12,8 +13,8 @@ class TaxTile extends StatelessWidget {
   Widget build(BuildContext context) => SettingsRow(
         key: const Key('tax-tile'),
         badge: AppIcons.tax,
-        title: 'Tax centre',
-        subtitle: 'Year summary and export',
+        title: t('Tax centre'),
+        subtitle: t('Year summary and export'),
         onTap: () => context.push('/tax'),
       );
 }

@@ -11,6 +11,7 @@ import 'package:hisaab/features/accounts_management/presentation/account_provide
 import 'package:hisaab/features/accounts_management/presentation/account_series_chart.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_tile.dart';
 import 'package:hisaab/features/accounts_management/presentation/gap_card.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:parser_core/parser_core.dart';
@@ -105,15 +106,21 @@ class AccountDetailScreen extends ConsumerWidget {
                   if (gone && context.mounted) context.pop();
               }
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: _Action.edit, child: Text('Edit')),
-              PopupMenuItem(value: _Action.rename, child: Text('Rename')),
-              PopupMenuItem(value: _Action.type, child: Text('Set type')),
-              PopupMenuItem(value: _Action.balance, child: Text('Set balance')),
-              PopupMenuItem(value: _Action.merge, child: Text('Merge into…')),
-              PopupMenuItem(value: _Action.hide, child: Text('Hide')),
-              PopupMenuItem(value: _Action.ignore, child: Text('Ignore')),
-              PopupMenuItem(value: _Action.delete, child: Text('Delete')),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: _Action.edit, child: Text(t('Edit'))),
+              PopupMenuItem(value: _Action.rename, child: Text(t('Rename'))),
+              PopupMenuItem(value: _Action.type, child: Text(t('Set type'))),
+              PopupMenuItem(
+                value: _Action.balance,
+                child: Text(t('Set balance')),
+              ),
+              PopupMenuItem(
+                value: _Action.merge,
+                child: Text(t('Merge into…')),
+              ),
+              PopupMenuItem(value: _Action.hide, child: Text(t('Hide'))),
+              PopupMenuItem(value: _Action.ignore, child: Text(t('Ignore'))),
+              PopupMenuItem(value: _Action.delete, child: Text(t('Delete'))),
             ],
           ),
         ],
@@ -141,7 +148,7 @@ class AccountDetailScreen extends ConsumerWidget {
                 ),
                 if (item.balanceIsEstimated)
                   Text(
-                    'Estimated, from later transactions',
+                    t('Estimated, from later transactions'),
                     key: const Key('detail_estimated'),
                     style: theme.textTheme.bodySmall,
                   ),
@@ -159,11 +166,11 @@ class AccountDetailScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           AccountSeriesChart(accountId: accountId),
           const SizedBox(height: 16),
-          Text('Recent activity', style: theme.textTheme.titleMedium),
+          Text(t('Recent activity'), style: theme.textTheme.titleMedium),
           if (txs.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Text('No transactions yet'),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(t('No transactions yet')),
             ),
           for (final t in txs)
             ListTile(

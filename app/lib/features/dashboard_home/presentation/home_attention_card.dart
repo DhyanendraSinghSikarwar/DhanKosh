@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/home_composition_providers.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_attention.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/mock_kit.dart';
@@ -49,7 +50,7 @@ class HomeAttentionCard extends ConsumerWidget {
                     ? Text('›', style: MockText.body(context, color: muted))
                     : IconButton(
                         key: const Key('attn_update_dismiss'),
-                        tooltip: 'Dismiss',
+                        tooltip: t('Dismiss'),
                         icon: const Icon(Icons.close, size: 18),
                         onPressed: () => unawaited(
                           ref.read(dismissUpdateNoticeProvider)(

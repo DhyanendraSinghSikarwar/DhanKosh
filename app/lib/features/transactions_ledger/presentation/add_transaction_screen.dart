@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/add_draft.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
 import 'package:hisaab/features/transactions_ledger/domain/screenshot_fill.dart';
@@ -138,7 +139,7 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Transfer added')));
+          .showSnackBar(SnackBar(content: Text(t('Transfer added'))));
       if (context.canPop()) {
         context.pop();
       } else {
@@ -212,18 +213,18 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
               children: [
                 SegmentedButton<TransactionType>(
                   key: const Key('add_type'),
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: TransactionType.debit,
-                      label: Text('Spent'),
+                      label: Text(t('Spent')),
                     ),
                     ButtonSegment(
                       value: TransactionType.credit,
-                      label: Text('Received'),
+                      label: Text(t('Received')),
                     ),
                     ButtonSegment(
                       value: TransactionType.transfer,
-                      label: Text('Transfer'),
+                      label: Text(t('Transfer')),
                     ),
                   ],
                   selected: {_type},
@@ -236,7 +237,7 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Amount',
+                    labelText: t('Amount'),
                     prefixText: '₹ ',
                     errorText: _error,
                   ),
@@ -255,7 +256,7 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
                   TextField(
                     key: const Key('add_payee'),
                     controller: _payee,
-                    decoration: const InputDecoration(labelText: 'Payee'),
+                    decoration: InputDecoration(labelText: t('Payee')),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -267,7 +268,7 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
                         _type == TransactionType.transfer ? 'From' : 'Account',
                   ),
                   items: [
-                    const DropdownMenuItem<int?>(child: Text('None')),
+                    DropdownMenuItem<int?>(child: Text(t('None'))),
                     for (final a in accounts)
                       DropdownMenuItem<int?>(value: a.id, child: Text(a.label)),
                   ],
@@ -278,9 +279,9 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
                   DropdownButtonFormField<int?>(
                     key: const Key('add_to_account'),
                     initialValue: _toAccountId,
-                    decoration: const InputDecoration(labelText: 'To'),
+                    decoration: InputDecoration(labelText: t('To')),
                     items: [
-                      const DropdownMenuItem<int?>(child: Text('None')),
+                      DropdownMenuItem<int?>(child: Text(t('None'))),
                       for (final a in accounts)
                         DropdownMenuItem<int?>(
                           value: a.id,
@@ -295,7 +296,7 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
                   DropdownButtonFormField<Category>(
                     key: const Key('add_category'),
                     initialValue: _category,
-                    decoration: const InputDecoration(labelText: 'Category'),
+                    decoration: InputDecoration(labelText: t('Category')),
                     items: [
                       for (final c in Category.values)
                         DropdownMenuItem(value: c, child: Text(c.label)),
@@ -308,20 +309,20 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
                 ListTile(
                   key: const Key('add_date'),
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Date'),
+                  title: Text(t('Date')),
                   trailing: Text('${_when.day}/${_when.month}/${_when.year}'),
                   onTap: _pickDate,
                 ),
                 TextField(
                   key: const Key('add_reference'),
                   controller: _ref,
-                  decoration: const InputDecoration(labelText: 'Reference'),
+                  decoration: InputDecoration(labelText: t('Reference')),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   key: const Key('add_note'),
                   controller: _note,
-                  decoration: const InputDecoration(labelText: 'Note'),
+                  decoration: InputDecoration(labelText: t('Note')),
                 ),
               ],
             ),
@@ -335,7 +336,7 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
               minimumSize: const Size.fromHeight(48),
             ),
             onPressed: _saving ? null : _save,
-            child: const Text('Save'),
+            child: Text(t('Save')),
           ),
         ],
       ),

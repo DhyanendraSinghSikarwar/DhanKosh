@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/features/email_ingestion/domain/entities/email_account.dart';
 import 'package:hisaab/features/email_ingestion/presentation/email_controller.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_password_guide.dart';
 
 /// Email sources: mailbox login, senders, sync (F-03, FR-03-22).
@@ -43,16 +44,16 @@ class _State extends ConsumerState<EmailSettingsScreen> {
       context: context,
       builder: (c) => AlertDialog(
         title: Text('Remove $address?'),
-        content: const Text('Wipes the saved password. Transactions stay.'),
+        content: Text(t('Wipes the saved password. Transactions stay.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: const Key('email-remove-confirm'),
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Remove'),
+            child: Text(t('Remove')),
           ),
         ],
       ),
@@ -72,10 +73,10 @@ class _State extends ConsumerState<EmailSettingsScreen> {
           child: Text(t, style: text.titleSmall),
         );
     return Scaffold(
-      appBar: AppBar(title: const Text('Email')),
+      appBar: AppBar(title: Text(t('Email'))),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(child: Text('Could not load email.')),
+        error: (e, _) => Center(child: Text(t('Could not load email.'))),
         data: (s) {
           final busy = s.busy != null;
           final awaiting = s.codeSentTo != null;
@@ -109,7 +110,7 @@ class _State extends ConsumerState<EmailSettingsScreen> {
                       ),
                       IconButton(
                         key: Key('email-remove-${v.account.address}'),
-                        tooltip: 'Remove',
+                        tooltip: t('Remove'),
                         icon: const Icon(Icons.delete_outline),
                         onPressed: busy
                             ? null
@@ -153,7 +154,7 @@ class _State extends ConsumerState<EmailSettingsScreen> {
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(6),
                   ],
-                  decoration: const InputDecoration(labelText: '6-digit code'),
+                  decoration: InputDecoration(labelText: t('6-digit code')),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -173,17 +174,17 @@ class _State extends ConsumerState<EmailSettingsScreen> {
                                   null;
                               if (done) _address.clear();
                             },
-                      child: const Text('Verify'),
+                      child: Text(t('Verify')),
                     ),
                     OutlinedButton(
                       key: const Key('email-resend'),
                       onPressed: busy ? null : c.resendCode,
-                      child: const Text('Resend code'),
+                      child: Text(t('Resend code')),
                     ),
                     TextButton(
                       key: const Key('email-cancel-code'),
                       onPressed: busy ? null : c.cancelVerify,
-                      child: const Text('Cancel'),
+                      child: Text(t('Cancel')),
                     ),
                   ],
                 ),
@@ -207,7 +208,7 @@ class _State extends ConsumerState<EmailSettingsScreen> {
                   controller: _address,
                   keyboardType: TextInputType.emailAddress,
                   autocorrect: false,
-                  decoration: const InputDecoration(labelText: 'Email address'),
+                  decoration: InputDecoration(labelText: t('Email address')),
                   onChanged: (v) {
                     final d = EmailProvider.detect(v);
                     if (d != EmailProvider.custom && d != _provider) {
@@ -220,7 +221,7 @@ class _State extends ConsumerState<EmailSettingsScreen> {
                     key: const Key('email-host'),
                     controller: _host,
                     autocorrect: false,
-                    decoration: const InputDecoration(labelText: 'IMAP server'),
+                    decoration: InputDecoration(labelText: t('IMAP server')),
                   ),
                 TextField(
                   key: const Key('email-password'),
@@ -228,7 +229,7 @@ class _State extends ConsumerState<EmailSettingsScreen> {
                   obscureText: true,
                   enableSuggestions: false,
                   autocorrect: false,
-                  decoration: const InputDecoration(labelText: 'App password'),
+                  decoration: InputDecoration(labelText: t('App password')),
                 ),
                 const SizedBox(height: 8),
                 AppPasswordGuide(_provider),
@@ -277,7 +278,7 @@ class _State extends ConsumerState<EmailSettingsScreen> {
                   dense: true,
                   title: Text(x),
                   trailing: IconButton(
-                    tooltip: 'Remove',
+                    tooltip: t('Remove'),
                     icon: const Icon(Icons.close),
                     onPressed: () => c.removeSender(x),
                   ),
@@ -289,14 +290,14 @@ class _State extends ConsumerState<EmailSettingsScreen> {
                       key: const Key('email-sender-input'),
                       controller: _sender,
                       autocorrect: false,
-                      decoration: const InputDecoration(
-                        labelText: 'Add address or domain',
+                      decoration: InputDecoration(
+                        labelText: t('Add address or domain'),
                       ),
                     ),
                   ),
                   IconButton(
                     key: const Key('email-sender-add'),
-                    tooltip: 'Add',
+                    tooltip: t('Add'),
                     icon: const Icon(Icons.add),
                     onPressed: () async {
                       await c.addSender(_sender.text);
@@ -310,7 +311,7 @@ class _State extends ConsumerState<EmailSettingsScreen> {
                 child: TextButton(
                   key: const Key('email-sender-reset'),
                   onPressed: s.customSenders.isEmpty ? null : c.resetSenders,
-                  child: const Text('Reset to defaults'),
+                  child: Text(t('Reset to defaults')),
                 ),
               ),
             ],

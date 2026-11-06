@@ -4,6 +4,7 @@ import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/credit_cards/domain/card_day.dart';
 import 'package:hisaab/features/credit_cards/domain/card_models.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_due_format.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// Result of Edit amounts: values to store (equal-to-calculated are dropped
 /// by `CardDueActions.saveEdit`) or a reset of all overrides.
@@ -128,7 +129,7 @@ class _CardAmountsSheetState extends State<CardAmountsSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Edit amounts',
+              t('Edit amounts'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
@@ -149,7 +150,7 @@ class _CardAmountsSheetState extends State<CardAmountsSheet> {
                   suffixIcon: _value(f) != _calcOf(f)
                       ? IconButton(
                           key: Key('card_reset_$f'),
-                          tooltip: 'Reset',
+                          tooltip: t('Reset'),
                           icon: const Icon(Icons.restart_alt),
                           onPressed: () => _c[f]!.text = _text(_calcOf(f)),
                         )
@@ -161,14 +162,14 @@ class _CardAmountsSheetState extends State<CardAmountsSheet> {
             ListTile(
               key: const Key('card_field_due'),
               contentPadding: EdgeInsets.zero,
-              title: const Text('Due date'),
+              title: Text(t('Due date')),
               subtitle: Text(
                 _due == null ? 'Not set' : cardDate(_due!),
               ),
               trailing: _due != _calc.dueDay
                   ? IconButton(
                       key: const Key('card_reset_due'),
-                      tooltip: 'Reset',
+                      tooltip: t('Reset'),
                       icon: const Icon(Icons.restart_alt),
                       onPressed: () => setState(() => _due = _calc.dueDay),
                     )
@@ -201,7 +202,7 @@ class _CardAmountsSheetState extends State<CardAmountsSheet> {
                       context,
                       const CardEditResult(reset: true),
                     ),
-                    child: const Text('Reset all'),
+                    child: Text(t('Reset all')),
                   ),
                 const Spacer(),
                 FilledButton(
@@ -218,7 +219,7 @@ class _CardAmountsSheetState extends State<CardAmountsSheet> {
                             ),
                           )
                       : null,
-                  child: const Text('Save'),
+                  child: Text(t('Save')),
                 ),
               ],
             ),

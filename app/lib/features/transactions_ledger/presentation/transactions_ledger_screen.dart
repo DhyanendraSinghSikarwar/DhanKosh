@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/scope_bar.dart' show BookTag;
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/day_groups.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
@@ -105,12 +106,12 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: const Key('bulk_delete_confirm'),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(t('Delete')),
           ),
         ],
       ),
@@ -142,16 +143,16 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Merge $n transactions into one?'),
-        content: const Text('The oldest row is kept; the rest are removed.'),
+        content: Text(t('The oldest row is kept; the rest are removed.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: const Key('bulk_merge_confirm'),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Merge'),
+            child: Text(t('Merge')),
           ),
         ],
       ),
@@ -164,7 +165,7 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
   AppBar _selectionBar() => AppBar(
         leading: IconButton(
           key: const Key('sel_close'),
-          tooltip: 'Clear selection',
+          tooltip: t('Clear selection'),
           icon: const Icon(Icons.close),
           onPressed: () => setState(_selected.clear),
         ),
@@ -172,7 +173,7 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
         actions: [
           IconButton(
             key: const Key('sel_all'),
-            tooltip: 'Select all',
+            tooltip: t('Select all'),
             icon: const Icon(Icons.select_all),
             onPressed: () => setState(
               () => _selected.addAll(_shown.map((t) => t.id)),
@@ -181,20 +182,20 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
           if (_selected.length > 1)
             IconButton(
               key: const Key('sel_merge'),
-              tooltip: 'Merge',
+              tooltip: t('Merge'),
               icon: const Icon(Icons.merge_type),
               onPressed: _bulkMerge,
             ),
           if (widget.pickCategory != null)
             IconButton(
               key: const Key('sel_category'),
-              tooltip: 'Change category',
+              tooltip: t('Change category'),
               icon: const Icon(Icons.label_outline),
               onPressed: _bulkCategory,
             ),
           IconButton(
             key: const Key('sel_delete'),
-            tooltip: 'Delete',
+            tooltip: t('Delete'),
             icon: const Icon(Icons.delete_outline),
             onPressed: _bulkDelete,
           ),
@@ -232,7 +233,7 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
             : FloatingActionButton(
                 key: const Key('ledger_add'),
                 heroTag: null,
-                tooltip: 'Add transaction',
+                tooltip: t('Add transaction'),
                 backgroundColor: AppIcons.mint,
                 foregroundColor: const Color(0xFF06220F),
                 elevation: 2,
@@ -369,7 +370,7 @@ class _State extends ConsumerState<TransactionsLedgerScreen> {
                 children: [
                   Flexible(
                     child: Text(
-                      'Transactions',
+                      t('Transactions'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style:

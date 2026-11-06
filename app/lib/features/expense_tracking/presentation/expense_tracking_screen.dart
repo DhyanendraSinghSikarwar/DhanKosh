@@ -6,6 +6,7 @@ import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_math.dart';
 import 'package:hisaab/features/expense_tracking/presentation/budget_widgets.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
@@ -44,12 +45,12 @@ class ExpenseTrackingScreen extends ConsumerWidget {
             ),
           );
     return Scaffold(
-      appBar: AppBar(title: const Text('Budgets')),
+      appBar: AppBar(title: Text(t('Budgets'))),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: null,
         key: const Key('budget_add'),
         icon: const Icon(Icons.add),
-        label: const Text('Budget'),
+        label: Text(t('Budget')),
         onPressed: () => _edit(context, ref, null, uses ?? const []),
       ),
       body: ListView(
@@ -78,16 +79,16 @@ class ExpenseTrackingScreen extends ConsumerWidget {
             ],
           ),
           if (summary == null)
-            const Padding(
-              padding: EdgeInsets.all(32),
-              child: Center(child: Text('Loading…')),
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(child: Text(t('Loading…'))),
             )
           else if (summary.lines.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 48),
+            Padding(
+              padding: const EdgeInsets.only(top: 48),
               child: EmptyState(
                 icon: Icons.savings_outlined,
-                title: 'No budgets yet',
+                title: t('No budgets yet'),
                 hint: 'Set a monthly limit for a category.',
               ),
             )
@@ -150,7 +151,7 @@ class _CategorySpend extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Spent by category',
+            t('Spent by category'),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
@@ -401,7 +402,7 @@ class _BudgetSheetState extends ConsumerState<BudgetSheet> {
             DropdownButtonFormField<Category>(
               key: const Key('budget_category'),
               initialValue: _category,
-              hint: const Text('Category'),
+              hint: Text(t('Category')),
               items: [
                 for (final c in options)
                   DropdownMenuItem(value: c, child: Text(c.label)),
@@ -413,10 +414,10 @@ class _BudgetSheetState extends ConsumerState<BudgetSheet> {
             key: const Key('budget_amount'),
             controller: _amount,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Monthly limit',
+            decoration: InputDecoration(
+              labelText: t('Monthly limit'),
               prefixText: '₹ ',
-              helperText: 'Applies every month',
+              helperText: t('Applies every month'),
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -430,12 +431,12 @@ class _BudgetSheetState extends ConsumerState<BudgetSheet> {
                     await ref.read(budgetRepositoryProvider).delete(_category!);
                     if (context.mounted) Navigator.pop(context);
                   },
-                  child: const Text('Delete'),
+                  child: Text(t('Delete')),
                 ),
               const Spacer(),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: Text(t('Cancel')),
               ),
               FilledButton(
                 key: const Key('budget_save'),
@@ -447,7 +448,7 @@ class _BudgetSheetState extends ConsumerState<BudgetSheet> {
                             .save(_category!, minor);
                         if (context.mounted) Navigator.pop(context);
                       },
-                child: const Text('Save'),
+                child: Text(t('Save')),
               ),
             ],
           ),

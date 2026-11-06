@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/backup_providers.dart';
 import 'package:hisaab/features/backup_export/presentation/encrypted_backup_section.dart';
 import 'package:hisaab/features/backup_export/presentation/reports_section.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:intl/intl.dart';
 
 /// Backup & Export (F-24): CSV export and import.
@@ -58,7 +59,7 @@ class _State extends ConsumerState<BackupExportScreen> {
         final ok = await showDialog<bool>(
           context: context,
           builder: (c) => AlertDialog(
-            title: const Text('Import transactions?'),
+            title: Text(t('Import transactions?')),
             content: Text(
               '${parsed.rows.length} rows to add'
               '${parsed.badLines > 0 ? ', ${parsed.badLines} unreadable' : ''}.'
@@ -67,12 +68,12 @@ class _State extends ConsumerState<BackupExportScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(c, false),
-                child: const Text('Cancel'),
+                child: Text(t('Cancel')),
               ),
               TextButton(
                 key: const Key('backup-import-confirm'),
                 onPressed: () => Navigator.pop(c, true),
-                child: const Text('Import'),
+                child: Text(t('Import')),
               ),
             ],
           ),
@@ -86,7 +87,7 @@ class _State extends ConsumerState<BackupExportScreen> {
   Widget build(BuildContext context) {
     final last = ref.watch(lastExportProvider).value ?? 0;
     return Scaffold(
-      appBar: AppBar(title: const Text('Backup & Export')),
+      appBar: AppBar(title: Text(t('Backup & Export'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -98,22 +99,22 @@ class _State extends ConsumerState<BackupExportScreen> {
             key: const Key('backup-export'),
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.upload_file),
-            title: const Text('Export CSV'),
-            subtitle: const Text('Every transaction, to a file you choose'),
+            title: Text(t('Export CSV')),
+            subtitle: Text(t('Every transaction, to a file you choose')),
             trailing: FilledButton(
               onPressed: _busy ? null : _export,
-              child: const Text('Export'),
+              child: Text(t('Export')),
             ),
           ),
           ListTile(
             key: const Key('backup-import'),
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.download),
-            title: const Text('Import CSV'),
-            subtitle: const Text('Rows already present are skipped'),
+            title: Text(t('Import CSV')),
+            subtitle: Text(t('Rows already present are skipped')),
             trailing: OutlinedButton(
               onPressed: _busy ? null : _import,
-              child: const Text('Import'),
+              child: Text(t('Import')),
             ),
           ),
           if (_busy) const LinearProgressIndicator(),

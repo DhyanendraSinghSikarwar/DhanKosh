@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hisaab/features/analytics/domain/analytics_math.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
 import 'package:hisaab/features/analytics/presentation/analytics_cards.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/widgets/charts/bars_chart.dart';
 import 'package:hisaab/shared/widgets/charts/chart_card.dart';
@@ -50,7 +51,7 @@ class TotalSpentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return ChartCard(
-      label: 'Total spent',
+      label: t('Total spent'),
       tip: tip,
       tipKey: const Key('analytics-basis-note'),
       child: Column(
@@ -207,7 +208,7 @@ class _DailySpendCardState extends State<DailySpendCard> {
       (days - 1, '${widget.to.day}'),
     ];
     return ChartCard(
-      label: 'Daily spend',
+      label: t('Daily spend'),
       trailing: PillSegment(
         options: const ['Line', 'Bars'],
         selected: _mode,

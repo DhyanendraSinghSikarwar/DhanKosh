@@ -6,6 +6,7 @@ import 'package:hisaab/features/loans/domain/loan_account_repository.dart';
 import 'package:hisaab/features/loans/domain/loan_builder.dart';
 import 'package:hisaab/features/loans/domain/loan_models.dart';
 import 'package:hisaab/features/loans/presentation/loan_card.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// Add or edit a hand-entered loan (FR-15-06). Terms are validated by
 /// `Loans.termsFromForm`; the EMI is calculated from them.
@@ -223,7 +224,7 @@ class _LoanFormSheetState extends ConsumerState<LoanFormSheet> {
               child: FilledButton(
                 key: const Key('loan-save'),
                 onPressed: _save,
-                child: const Text('Save'),
+                child: Text(t('Save')),
               ),
             ),
           ],

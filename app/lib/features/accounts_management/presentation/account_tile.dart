@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/categorization/domain/brand_logos.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/brand_logo.dart';
@@ -139,9 +140,9 @@ class AccountTile extends StatelessWidget {
                   style: theme.textTheme.bodyLarge,
                 ),
                 if (cardDueMinor != null)
-                  Text('due', style: theme.textTheme.bodySmall)
+                  Text(t('due'), style: theme.textTheme.bodySmall)
                 else if (isCard && bal != null)
-                  Text('limit left', style: theme.textTheme.bodySmall),
+                  Text(t('limit left'), style: theme.textTheme.bodySmall),
                 Container(
                   key: Key(
                     a.usage == AccountUsage.business

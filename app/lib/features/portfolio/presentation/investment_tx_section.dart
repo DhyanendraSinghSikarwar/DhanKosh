@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/investment_tx.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -33,9 +34,10 @@ class InvestmentTxSection extends StatelessWidget {
         children: [
           const SectionLabel('Investment transactions'),
           if (items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text('None yet', key: Key('investment-txs-empty')),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child:
+                  Text(t('None yet'), key: const Key('investment-txs-empty')),
             ),
           for (final t in items.take(10))
             ListTile(

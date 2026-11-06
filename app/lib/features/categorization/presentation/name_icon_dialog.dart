@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hisaab/features/categorization/presentation/category_icons.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// Asks for a name and an icon for a new category or sub-category (FR-09-33).
 /// Returns null on cancel or an empty name.
@@ -25,7 +26,7 @@ Future<({String name, String icon})?> showNameIconDialog(
                 key: nameKey ?? const Key('new_category_name'),
                 controller: c,
                 autofocus: true,
-                decoration: const InputDecoration(hintText: 'Name'),
+                decoration: InputDecoration(hintText: t('Name')),
               ),
               const SizedBox(height: 12),
               Flexible(
@@ -53,7 +54,7 @@ Future<({String name, String icon})?> showNameIconDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: addKey ?? const Key('new_category_add'),
@@ -64,7 +65,7 @@ Future<({String name, String icon})?> showNameIconDialog(
                 name.isEmpty ? null : (name: name, icon: icon),
               );
             },
-            child: const Text('Add'),
+            child: Text(t('Add')),
           ),
         ],
       ),

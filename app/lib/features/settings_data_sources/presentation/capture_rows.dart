@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/bank_sms_card.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/history_days_card.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/paste_sms_card.dart';
@@ -54,7 +55,7 @@ class BankSmsRow extends ConsumerWidget {
     return SettingsRow(
       key: const Key('bank-sms-row'),
       badge: AppIcons.sms,
-      title: 'Bank SMS',
+      title: t('Bank SMS'),
       subtitle: granted ? '$live$scan' : 'Not allowed',
       onTap: () => showCaptureSheet(context, const BankSmsCard()),
     );
@@ -70,8 +71,8 @@ class PasteSmsRow extends StatelessWidget {
   Widget build(BuildContext context) => SettingsRow(
         key: const Key('paste-sms-row'),
         badge: AppIcons.pasteSms,
-        title: 'Paste SMS',
-        subtitle: 'Add a message by hand',
+        title: t('Paste SMS'),
+        subtitle: t('Add a message by hand'),
         onTap: () => showCaptureSheet(context, const PasteSmsCard()),
       );
 }
@@ -96,7 +97,7 @@ class HistoryDaysRow extends ConsumerWidget {
     return SettingsRow(
       key: const Key('history-row'),
       badge: AppIcons.history,
-      title: 'History window',
+      title: t('History window'),
       subtitle: 'Scan last ${span(days)}',
       onTap: () => showCaptureSheet(context, const HistoryDaysCard()),
     );
@@ -115,8 +116,8 @@ class NotificationAccessRow extends StatelessWidget {
   Widget build(BuildContext context) => SettingsRow(
         key: const Key('notification-access-row'),
         badge: AppIcons.notifications,
-        title: 'Notification access',
-        subtitle: 'Payment-app alerts',
+        title: t('Notification access'),
+        subtitle: t('Payment-app alerts'),
         onTap: () => showCaptureSheet(context, card),
       );
 }
@@ -144,7 +145,7 @@ class SmsAccessBanner extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Read bank SMS', style: text.bodyLarge),
+                  Text(t('Read bank SMS'), style: text.bodyLarge),
                   Text(
                     perm.blocked
                         ? 'Open App settings to allow SMS'

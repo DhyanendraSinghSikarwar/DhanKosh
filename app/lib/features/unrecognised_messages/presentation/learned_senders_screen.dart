@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/unrecognised_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/unrecognised_messages/domain/unrecognised_message.dart';
 import 'package:hisaab/features/unrecognised_messages/presentation/unrecognised_providers.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -17,18 +18,18 @@ class LearnedSendersScreen extends ConsumerWidget {
     final prefs = ref.watch(senderPrefsProvider);
     final repo = ref.read(unrecognisedRepositoryProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Learned senders')),
+      appBar: AppBar(title: Text(t('Learned senders'))),
       body: prefs.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const EmptyState(
+        error: (_, __) => EmptyState(
           icon: Icons.error_outline,
-          title: 'Could not load',
+          title: t('Could not load'),
         ),
         data: (list) => list.isEmpty
-            ? const EmptyState(
-                key: Key('senders_empty'),
+            ? EmptyState(
+                key: const Key('senders_empty'),
                 icon: Icons.school_outlined,
-                title: 'No learned senders',
+                title: t('No learned senders'),
                 hint: 'Add a message from a new sender once and its later '
                     'messages are offered to you.',
               )
@@ -47,7 +48,7 @@ class LearnedSendersScreen extends ConsumerWidget {
                           trailing: TextButton(
                             key: Key('forget_${p.senderKey}'),
                             onPressed: () => repo.forget(p.senderKey),
-                            child: const Text('Forget'),
+                            child: Text(t('Forget')),
                           ),
                         ),
                       ),

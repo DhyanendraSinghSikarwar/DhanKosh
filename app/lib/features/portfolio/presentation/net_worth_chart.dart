@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart';
 import 'package:hisaab/features/portfolio/presentation/compact_money.dart';
 
@@ -29,7 +30,7 @@ class NetWorthChart extends StatelessWidget {
         height: 120,
         child: Center(
           child: Text(
-            'History builds up day by day',
+            t('History builds up day by day'),
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
@@ -52,7 +53,7 @@ class NetWorthChart extends StatelessWidget {
     }
 
     return Semantics(
-      label: 'Net worth history chart',
+      label: t('Net worth history chart'),
       child: SizedBox(
         height: 150,
         child: LineChart(

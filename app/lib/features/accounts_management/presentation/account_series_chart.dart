@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account_series.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
@@ -77,18 +78,18 @@ class _State extends ConsumerState<AccountSeriesChart> {
         ),
         const SizedBox(height: 8),
         if (empty)
-          const SizedBox(
+          SizedBox(
             height: 80,
             child: Center(
               child: Text(
-                'Nothing moved in this period.',
-                key: Key('series_empty'),
+                t('Nothing moved in this period.'),
+                key: const Key('series_empty'),
               ),
             ),
           )
         else
           Semantics(
-            label: 'Spend and income by month',
+            label: t('Spend and income by month'),
             child: SizedBox(
               height: 160,
               child: LineChart(

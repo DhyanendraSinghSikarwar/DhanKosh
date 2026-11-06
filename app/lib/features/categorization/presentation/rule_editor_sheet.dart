@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
 import 'package:hisaab/features/categorization/presentation/category_sheet.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// Opens the rule editor; [existing] edits a manual rule.
@@ -108,7 +109,7 @@ class _State extends ConsumerState<RuleEditorSheet> {
           TextField(
             key: const Key('rule_key'),
             controller: _key,
-            decoration: const InputDecoration(labelText: 'Merchant or text'),
+            decoration: InputDecoration(labelText: t('Merchant or text')),
             onChanged: (_) {
               setState(() {});
               unawaited(_recount());
@@ -118,9 +119,12 @@ class _State extends ConsumerState<RuleEditorSheet> {
           SegmentedButton<RuleMatch>(
             key: const Key('rule_match'),
             showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(value: RuleMatch.exact, label: Text('Is')),
-              ButtonSegment(value: RuleMatch.contains, label: Text('Contains')),
+            segments: [
+              ButtonSegment(value: RuleMatch.exact, label: Text(t('Is'))),
+              ButtonSegment(
+                value: RuleMatch.contains,
+                label: Text(t('Contains')),
+              ),
             ],
             selected: {_match},
             onSelectionChanged: (s) {
@@ -131,7 +135,7 @@ class _State extends ConsumerState<RuleEditorSheet> {
           ListTile(
             key: const Key('rule_category'),
             contentPadding: EdgeInsets.zero,
-            title: const Text('Category'),
+            title: Text(t('Category')),
             trailing: Text(_cat.label),
             onTap: _pick,
           ),
@@ -142,7 +146,7 @@ class _State extends ConsumerState<RuleEditorSheet> {
           SwitchListTile(
             key: const Key('rule_apply'),
             contentPadding: EdgeInsets.zero,
-            title: const Text('Also apply to past transactions'),
+            title: Text(t('Also apply to past transactions')),
             value: _apply,
             onChanged: (v) => setState(() => _apply = v),
           ),
@@ -151,7 +155,7 @@ class _State extends ConsumerState<RuleEditorSheet> {
             child: FilledButton(
               key: const Key('rule_save'),
               onPressed: valid ? _save : null,
-              child: const Text('Save'),
+              child: Text(t('Save')),
             ),
           ),
         ],

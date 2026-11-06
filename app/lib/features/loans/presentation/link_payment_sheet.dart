@@ -7,6 +7,7 @@ import 'package:hisaab/features/loans/domain/loan_builder.dart';
 import 'package:hisaab/features/loans/domain/loan_link_repository.dart';
 import 'package:hisaab/features/loans/domain/loan_models.dart';
 import 'package:hisaab/features/loans/presentation/loan_card.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:parser_core/parser_core.dart' show Category;
 
@@ -44,21 +45,21 @@ class _LinkPaymentSheetState extends ConsumerState<LinkPaymentSheet> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Link a payment',
+              t('Link a payment'),
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
           SwitchListTile(
             key: const Key('link-all'),
-            title: const Text('Link all from this payee'),
+            title: Text(t('Link all from this payee')),
             value: _all,
             onChanged: (v) => setState(() => _all = v),
           ),
           Flexible(
             child: rows.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('No EMI payments to link'),
+                ? Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(t('No EMI payments to link')),
                   )
                 : ListView(
                     shrinkWrap: true,

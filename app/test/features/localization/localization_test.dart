@@ -1,4 +1,4 @@
-import 'dart:convert';
+// FR-29: bundled YAML catalogues, switching language, placeholder safety.
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,35 +6,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisaab/app/di/appearance_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
-import 'package:hisaab/features/localization/data/language_pack_store_impl.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/localization/presentation/language_screen.dart';
 
 import '../../support/test_env.dart';
 import '../../support/ui_harness.dart';
 
-class _MemStore implements LanguagePackStore {
-  final files = <Language, String>{};
+class _Mem implements LanguageCatalogue {
+  _Mem(this.files);
+  final Map<Language, String> files;
   @override
-  Future<Set<Language>> downloaded() async => files.keys.toSet();
-  @override
-  Future<String?> read(Language l) async => files[l];
-  @override
-  Future<void> write(Language l, String b) async => files[l] = b;
-  @override
-  Future<void> delete(Language l) async => files.remove(l);
+  Future<String?> load(Language l) async => files[l];
 }
 
-class _Remote implements LanguagePackRemote {
-  _Remote(this.body);
-  String? body;
-  @override
-  Future<String> fetch(Language l) async =>
-      body ?? (throw const SocketException('offline'));
-}
+String _yaml(Map<String, String> s) => [
+      'version: 1',
+      'code: hi',
+      'strings:',
+      for (final e in s.entries) '  "${e.key}": "${e.value}"',
+    ].join('\n');
 
-String _pack(Map<String, String> s) =>
-    jsonEncode({'version': 1, 'code': 'hi', 'strings': s});
+String _t(String s) => t(s);
 
 void main() {
   tearDown(() => I18n.current = const Translator());
@@ -47,65 +39,79 @@ void main() {
     expect(I18n.current.plural(2, '{n} item', '{n} items'), '2 items');
   });
 
-  test('parsePack ignores blanks and rejects empty (FR-29-05/06)', () {
-    expect(parsePack(_pack({'a': 'b', 'c': ' '})), {'a': 'b'});
+  test('parseCatalogue ignores blanks and rejects bad files (FR-29-05)', () {
+    expect(parseCatalogue(_yaml({'a': 'b', 'c': ' '})), {'a': 'b'});
+    expect(parseCatalogue(_yaml({'a': ''})), isEmpty);
     expect(
-      () => parsePack(_pack({'a': ''})),
-      throwsA(isA<PackFormatException>()),
+      () => parseCatalogue('strings: [1'),
+      throwsA(isA<CatalogueFormatException>()),
     );
-    expect(() => parsePack('{bad'), throwsA(isA<PackFormatException>()));
+    expect(
+      () => parseCatalogue('version: 1'),
+      throwsA(isA<CatalogueFormatException>()),
+    );
   });
 
-  test('file store atomic write, list, delete (FR-29-07)', () async {
-    final d = Directory.systemTemp.createTempSync('lang');
-    addTearDown(() => d.deleteSync(recursive: true));
-    final s = LanguagePackStoreImpl(() async => d);
-    await s.write(Language.hi, _pack({'a': 'b'}));
-    expect(await s.downloaded(), {Language.hi});
-    expect(await s.read(Language.hi), contains('"b"'));
-    await s.delete(Language.hi);
-    expect(await s.downloaded(), isEmpty);
+  test("every bundled catalogue keeps its keys' placeholders (FR-29-13)", () {
+    final token = RegExp(r'\{[A-Za-z_][A-Za-z0-9_]*\}');
+    Set<String> tokens(String s) =>
+        token.allMatches(s).map((m) => m.group(0)!).toSet();
+    for (final l in Language.values) {
+      final file = File('assets/l10n/${l.code}.yaml');
+      expect(file.existsSync(), isTrue, reason: '${l.code}.yaml is bundled');
+      final cat = parseCatalogue(file.readAsStringSync());
+      cat.forEach((k, v) {
+        expect(tokens(v), tokens(k), reason: '${l.code}: $k');
+      });
+    }
   });
 
-  testWidgets('Language screen: download, use, remove, failure (FR-29-08..12)',
-      (t) async {
+  testWidgets('Language screen switches at once and remembers (FR-29-03/08)',
+      (tester) async {
     final env = TestEnv();
     addTearDown(env.db.close);
-    final store = _MemStore();
-    final remote = _Remote(null);
-    await t.pumpWidget(
+    final cat = _Mem({
+      Language.hi: _yaml({'Language': 'भाषा', 'Hindi': 'हिन्दी'}),
+    });
+    await tester.pumpWidget(
       ProviderScope(
         overrides: [
           settingsRepositoryProvider.overrideWithValue(env.settings),
-          languagePackStoreProvider.overrideWithValue(store),
-          languagePackRemoteProvider.overrideWithValue(remote),
+          languageCatalogueProvider.overrideWithValue(cat),
         ],
         child: const MaterialApp(home: LanguageScreen()),
       ),
     );
-    await settle(t);
+    await settle(tester);
     expect(find.text('Built in'), findsOneWidget);
-    expect(find.text('Hindi · Tap to download'), findsOneWidget);
 
-    await t.tap(find.byKey(const Key('lang-hi')));
-    await settle(t);
-    expect(find.textContaining("Couldn't download Hindi"), findsOneWidget);
-
-    remote.body = _pack({'Language': 'भाषा', 'Hindi': 'हिन्दी'});
-    await t.tap(find.byKey(const Key('lang-hi')));
-    await settle(t);
-    expect(t_('Language'), 'भाषा');
-    expect(find.text('भाषा'), findsWidgets);
-    expect(store.files.containsKey(Language.hi), true);
+    await tester.tap(find.byKey(const Key('lang-hi')));
+    await settle(tester);
+    expect(_t('Language'), 'भाषा');
     expect(await env.settings.read(languageKey), 'hi');
 
-    await t.tap(find.byKey(const Key('lang-en')));
-    await settle(t);
-    await t.tap(find.byKey(const Key('lang-remove-hi')));
-    await settle(t);
-    expect(store.files, isEmpty);
-    expect(t_('Language'), 'Language');
+    await tester.tap(find.byKey(const Key('lang-en')));
+    await settle(tester);
+    expect(_t('Language'), 'Language');
+    expect(await env.settings.read(languageKey), 'en');
+  });
+
+  testWidgets('a language with no file falls back to English (FR-29-10)',
+      (tester) async {
+    final env = TestEnv();
+    addTearDown(env.db.close);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          settingsRepositoryProvider.overrideWithValue(env.settings),
+          languageCatalogueProvider.overrideWithValue(_Mem({})),
+        ],
+        child: const MaterialApp(home: LanguageScreen()),
+      ),
+    );
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('lang-ta')));
+    await settle(tester);
+    expect(_t('Language'), 'Language');
   });
 }
-
-String t_(String s) => t(s);

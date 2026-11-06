@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/features/credit_cards/domain/card_models.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_due_format.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 
 /// One card: position lines and due actions (FR-14-12, FR-14-13).
@@ -73,12 +74,12 @@ class CardTile extends StatelessWidget {
               if (p.edited)
                 Chip(
                   key: Key('card_edited_${card.id}'),
-                  label: const Text('Edited'),
+                  label: Text(t('Edited')),
                   visualDensity: VisualDensity.compact,
                 ),
               IconButton(
                 key: Key('card_edit_${card.id}'),
-                tooltip: 'Edit amounts',
+                tooltip: t('Edit amounts'),
                 icon: const Icon(Icons.edit_outlined),
                 onPressed: onEdit,
               ),
@@ -139,13 +140,13 @@ class CardTile extends StatelessWidget {
                     TextButton(
                       key: Key('card_undo_${card.id}'),
                       onPressed: onUndo,
-                      child: const Text('Undo'),
+                      child: Text(t('Undo')),
                     )
                   else
                     FilledButton.tonal(
                       key: Key('card_mark_paid_${card.id}'),
                       onPressed: onMarkPaid,
-                      child: const Text('Mark paid'),
+                      child: Text(t('Mark paid')),
                     ),
                 ],
               ),

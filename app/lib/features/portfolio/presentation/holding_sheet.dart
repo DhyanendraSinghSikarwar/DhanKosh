@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/asset_class.dart';
 import 'package:hisaab/features/portfolio/domain/holding.dart';
 import 'package:hisaab/features/portfolio/presentation/holding_labels.dart';
@@ -86,17 +87,17 @@ class _HoldingSheetState extends ConsumerState<HoldingSheet> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Delete holding?'),
+        title: Text(t('Delete holding?')),
         content: Text(widget.holding!.name),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: const Key('holding-delete-confirm'),
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Delete'),
+            child: Text(t('Delete')),
           ),
         ],
       ),
@@ -130,7 +131,7 @@ class _HoldingSheetState extends ConsumerState<HoldingSheet> {
             DropdownButtonFormField<HoldingKind>(
               key: const Key('holding-kind'),
               initialValue: _kind,
-              decoration: const InputDecoration(labelText: 'Type'),
+              decoration: InputDecoration(labelText: t('Type')),
               items: [
                 for (final k in HoldingKind.values)
                   DropdownMenuItem(value: k, child: Text(holdingKindLabel(k))),
@@ -141,7 +142,7 @@ class _HoldingSheetState extends ConsumerState<HoldingSheet> {
             TextField(
               key: const Key('holding-name'),
               controller: _name,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(labelText: t('Name')),
               onChanged: (_) => setState(() {}),
             ),
             gap,
@@ -150,7 +151,7 @@ class _HoldingSheetState extends ConsumerState<HoldingSheet> {
               controller: _units,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Units (optional)'),
+              decoration: InputDecoration(labelText: t('Units (optional)')),
             ),
             gap,
             TextField(
@@ -158,8 +159,8 @@ class _HoldingSheetState extends ConsumerState<HoldingSheet> {
               controller: _value,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Current value',
+              decoration: InputDecoration(
+                labelText: t('Current value'),
                 prefixText: '₹ ',
               ),
               onChanged: (_) => setState(() {}),
@@ -170,8 +171,8 @@ class _HoldingSheetState extends ConsumerState<HoldingSheet> {
               controller: _invested,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Invested (optional)',
+              decoration: InputDecoration(
+                labelText: t('Invested (optional)'),
                 prefixText: '₹ ',
               ),
               onChanged: (_) => setState(() {}),
@@ -183,13 +184,13 @@ class _HoldingSheetState extends ConsumerState<HoldingSheet> {
                   TextButton(
                     key: const Key('holding-delete'),
                     onPressed: _delete,
-                    child: const Text('Delete'),
+                    child: Text(t('Delete')),
                   ),
                 const Spacer(),
                 FilledButton(
                   key: const Key('holding-save'),
                   onPressed: _valid ? _save : null,
-                  child: const Text('Save'),
+                  child: Text(t('Save')),
                 ),
               ],
             ),

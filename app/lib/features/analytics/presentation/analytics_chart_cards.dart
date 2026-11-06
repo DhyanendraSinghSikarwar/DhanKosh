@@ -11,6 +11,7 @@ import 'package:hisaab/features/analytics/presentation/charts/fan_chart.dart';
 import 'package:hisaab/features/analytics/presentation/charts/pair_bars_chart.dart';
 import 'package:hisaab/features/analytics/presentation/charts/sankey_chart.dart';
 import 'package:hisaab/features/analytics/presentation/charts/stacked_bars_chart.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/widgets/charts/chart_card.dart';
 import 'package:hisaab/shared/widgets/charts/chart_legend.dart';
@@ -91,12 +92,12 @@ class _CategoryDonutCardState extends State<CategoryDonutCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('No spending'),
+            Text(t('No spending')),
             if (cat != null)
               TextButton(
                 key: const Key('donut-back'),
                 onPressed: () => widget.onSelect(selection.back()),
-                child: const Text('Back'),
+                child: Text(t('Back')),
               ),
           ],
         ),
@@ -137,7 +138,7 @@ class _CategoryDonutCardState extends State<CategoryDonutCard> {
                 ActionChip(
                   key: const Key('donut-back'),
                   avatar: const Icon(Icons.arrow_back, size: 16),
-                  label: const Text('Back'),
+                  label: Text(t('Back')),
                   onPressed: () => widget.onSelect(selection.back()),
                 ),
                 const Spacer(),
@@ -145,7 +146,7 @@ class _CategoryDonutCardState extends State<CategoryDonutCard> {
                   TextButton(
                     key: const Key('donut-open'),
                     onPressed: () => widget.onOpenCategory!(cat),
-                    child: const Text('Open category'),
+                    child: Text(t('Open category')),
                   ),
               ],
             ),
@@ -301,7 +302,7 @@ class _MonthlyTrendCardState extends State<MonthlyTrendCard> {
     final picked =
         _picked != null && _picked! < bars.length ? bars[_picked!] : null;
     return ChartCard(
-      label: 'Last 12 months',
+      label: t('Last 12 months'),
       tip: 'Essentials, lifestyle, other. Dashed line is the 11-month '
           'average (current month excluded).',
       child: Column(
@@ -383,7 +384,7 @@ class HeatmapCard extends StatelessWidget {
     final s = selection.heatSlot;
     final muted = TextStyle(color: style.label, fontSize: 12);
     return ChartCard(
-      label: 'When you spend',
+      label: t('When you spend'),
       tip: 'Darker = more spent. Tap a cell to read its total.',
       child: Column(
         key: const Key('analytics-heat'),
@@ -450,7 +451,7 @@ class HeatmapCard extends StatelessWidget {
               style: muted,
             )
           else
-            Text('Tap a cell', style: muted),
+            Text(t('Tap a cell'), style: muted),
           if (peak != null && !(d != null && s != null))
             Text('Most on ${LedgerMath.peakText(peak)}', style: muted),
         ],
@@ -497,7 +498,7 @@ class IncomeFlowCard extends StatelessWidget {
     final income = s.inputs.fold(0, (a, n) => a + n.value);
     final muted = TextStyle(color: scheme.onSurfaceVariant, fontSize: 13);
     return ChartCard(
-      label: 'Income flow',
+      label: t('Income flow'),
       child: Column(
         key: const Key('analytics-flow'),
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -551,7 +552,7 @@ class IncomeVsSpendCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final m = months.length > 6 ? months.sublist(months.length - 6) : months;
     return ChartCard(
-      label: 'Income against spend',
+      label: t('Income against spend'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -605,9 +606,9 @@ class SavingsRateCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     if (s == null) {
       return ChartCard(
-        label: 'Savings rate',
+        label: t('Savings rate'),
         child: Text(
-          'Needs at least two months with income in the last 12.',
+          t('Needs at least two months with income in the last 12.'),
           style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
         ),
       );
@@ -618,7 +619,7 @@ class SavingsRateCard extends StatelessWidget {
     final top = hi <= 0 ? 24.0 : niceMax(hi);
     final bottom = lo < 0 ? -niceMax(-lo) : 0.0;
     return ChartCard(
-      label: 'Savings rate',
+      label: t('Savings rate'),
       child: Column(
         key: const Key('analytics-savings'),
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -691,7 +692,7 @@ class ForecastCard extends StatelessWidget {
       return titledCard(
         context,
         'Forecast',
-        const Text('Forecast is for the current month.'),
+        Text(t('Forecast is for the current month.')),
       );
     }
     final v = f.verdict(data.budget);
@@ -724,7 +725,7 @@ class ForecastCard extends StatelessWidget {
           ),
         );
     return ChartCard(
-      label: 'Month-end forecast',
+      label: t('Month-end forecast'),
       tip: 'Shaded band is the likely range from past months. Dashed line '
           'is the expected path.',
       child: Column(
@@ -787,9 +788,9 @@ class CompareCard extends StatelessWidget {
         key: const Key('analytics-compare'),
         children: [
           if (rows.isEmpty)
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
-              child: Text('No spending in either period.'),
+              child: Text(t('No spending in either period.')),
             ),
           for (final (i, c) in rows.indexed)
             Padding(

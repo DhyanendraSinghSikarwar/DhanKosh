@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// Crop, zoom and rotate a picked photo into a square avatar (FR-27-09).
 /// Pops with PNG bytes, or null when cancelled.
@@ -40,7 +41,7 @@ class _PhotoCropScreenState extends State<PhotoCropScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Adjust photo')),
+      appBar: AppBar(title: Text(t('Adjust photo'))),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, c) {
@@ -85,16 +86,16 @@ class _PhotoCropScreenState extends State<PhotoCropScreen> {
                     children: [
                       IconButton(
                         key: const Key('crop-rotate'),
-                        tooltip: 'Rotate',
+                        tooltip: t('Rotate'),
                         icon: const Icon(Icons.rotate_90_degrees_cw_outlined),
                         onPressed: () =>
                             setState(() => _turns = (_turns + 1) % 4),
                       ),
-                      const Text('Pinch to zoom, drag to move'),
+                      Text(t('Pinch to zoom, drag to move')),
                       FilledButton(
                         key: const Key('crop-done'),
                         onPressed: _saving ? null : () => _done(side),
-                        child: const Text('Use photo'),
+                        child: Text(t('Use photo')),
                       ),
                     ],
                   ),

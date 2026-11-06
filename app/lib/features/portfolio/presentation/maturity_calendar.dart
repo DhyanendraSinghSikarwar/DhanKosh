@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/maturity_items.dart';
 import 'package:hisaab/features/portfolio/domain/portfolio_charts.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -24,9 +25,9 @@ class MaturityCalendar extends StatelessWidget {
         children: [
           const SectionLabel('Upcoming maturities'),
           if (groups.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text('No deposits maturing in 12 months'),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(t('No deposits maturing in 12 months')),
             ),
           for (final e in groups.entries) ...[
             Padding(

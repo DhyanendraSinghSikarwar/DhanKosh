@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
 import 'package:hisaab/core/money/money.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_views.dart';
@@ -134,7 +135,7 @@ class _State extends State<LedgerCalendarView> {
                 children: [
                   IconButton(
                     key: const Key('cal_prev'),
-                    tooltip: 'Previous month',
+                    tooltip: t('Previous month'),
                     onPressed: m.isAfter(lo)
                         ? () => setState(
                               () => _month = DateTime(m.year, m.month - 1),
@@ -152,7 +153,7 @@ class _State extends State<LedgerCalendarView> {
                   ),
                   IconButton(
                     key: const Key('cal_next'),
-                    tooltip: 'Next month',
+                    tooltip: t('Next month'),
                     onPressed: m.isBefore(hi)
                         ? () => setState(
                               () => _month = DateTime(m.year, m.month + 1),
@@ -227,9 +228,9 @@ class _State extends State<LedgerCalendarView> {
             key: const Key('cal_day_rows'),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             child: dayRows.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('No transactions on this day'),
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(t('No transactions on this day')),
                   )
                 : Column(
                     children: withDividers(

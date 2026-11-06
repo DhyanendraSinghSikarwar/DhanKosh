@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/goals_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/savings_goals/domain/goal_math.dart';
 import 'package:hisaab/features/savings_goals/domain/goal_settings.dart';
 import 'package:hisaab/features/savings_goals/domain/round_up.dart';
@@ -40,20 +41,23 @@ class GoalsScreen extends ConsumerWidget {
     final masked = ref.watch(hideAmountsProvider).value ?? true;
     String money(int m) => formatAmount(m, masked: masked, paise: false);
     return Scaffold(
-      appBar: AppBar(title: const Text('Goals & salary plan')),
+      appBar: AppBar(title: Text(t('Goals & salary plan'))),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: null,
         key: const Key('goal-add'),
         onPressed: () => _sheet(context, const GoalSheet()),
         icon: const Icon(Icons.add),
-        label: const Text('Add goal'),
+        label: Text(t('Add goal')),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
         children: [
           if (goals.isEmpty)
-            const AppCard(
-              child: Text('No goals yet. Add one.', key: Key('goals-empty')),
+            AppCard(
+              child: Text(
+                t('No goals yet. Add one.'),
+                key: const Key('goals-empty'),
+              ),
             ),
           for (final p in goals)
             Padding(
@@ -101,7 +105,7 @@ class _GoalCard extends StatelessWidget {
               Expanded(child: Text(g.name, style: theme.textTheme.titleMedium)),
               IconButton(
                 key: Key('goal-edit-${g.id}'),
-                tooltip: 'Edit goal',
+                tooltip: t('Edit goal'),
                 icon: const Icon(Icons.edit_outlined),
                 onPressed: onEdit,
               ),
@@ -114,7 +118,7 @@ class _GoalCard extends StatelessWidget {
             key: Key('goal-saved-${g.id}'),
           ),
           if (p.done)
-            const Text('Reached', key: Key('goal-done'))
+            Text(t('Reached'), key: const Key('goal-done'))
           else if (p.projectedDay != null)
             Text(
               'At this pace: ${_day(p.projectedDay!)}'
@@ -132,7 +136,7 @@ class _GoalCard extends StatelessWidget {
             child: TextButton(
               key: Key('goal-contribute-${g.id}'),
               onPressed: onAdd,
-              child: const Text('Add money'),
+              child: Text(t('Add money')),
             ),
           ),
         ],
@@ -159,7 +163,7 @@ class _RoundUpCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Round-ups', style: Theme.of(context).textTheme.titleSmall),
+          Text(t('Round-ups'), style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -180,7 +184,7 @@ class _RoundUpCard extends ConsumerWidget {
               isExpanded: true,
               value: match?.goal.id ?? 0,
               items: [
-                const DropdownMenuItem(value: 0, child: Text('No goal')),
+                DropdownMenuItem(value: 0, child: Text(t('No goal'))),
                 for (final g in goals)
                   DropdownMenuItem(value: g.goal.id, child: Text(g.goal.name)),
               ],
@@ -271,7 +275,7 @@ class _SalaryCardState extends ConsumerState<_SalaryCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Salary plan', style: Theme.of(context).textTheme.titleSmall),
+          Text(t('Salary plan'), style: Theme.of(context).textTheme.titleSmall),
           Row(
             children: [
               pct('Savings', _s, const Key('plan-savings')),
@@ -280,7 +284,7 @@ class _SalaryCardState extends ConsumerState<_SalaryCard> {
               TextButton(
                 key: const Key('plan-save'),
                 onPressed: _save,
-                child: const Text('Save'),
+                child: Text(t('Save')),
               ),
             ],
           ),

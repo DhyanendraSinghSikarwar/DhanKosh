@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/history_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/features/settings_data_sources/domain/usecases/change_history_days.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -45,7 +46,9 @@ class _HistoryDaysCardState extends ConsumerState<HistoryDaysCard> {
         children: [
           Row(
             children: [
-              Expanded(child: Text('History to read', style: text.titleMedium)),
+              Expanded(
+                child: Text(t('History to read'), style: text.titleMedium),
+              ),
               Text(
                 '$shown days',
                 key: const Key('history-days'),

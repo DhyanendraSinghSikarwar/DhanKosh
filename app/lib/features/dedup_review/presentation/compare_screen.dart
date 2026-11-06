@@ -6,6 +6,7 @@ import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/core/money/money.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/dedup_review/domain/compare_rows.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -70,21 +71,21 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
                 .format(DateTime.fromMillisecondsSinceEpoch(ms)),
           );
     return Scaffold(
-      appBar: AppBar(title: const Text('Compare')),
+      appBar: AppBar(title: Text(t('Compare'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           if (existing == null)
-            const Text('The existing row is gone.')
+            Text(t('The existing row is gone.'))
           else ...[
             Row(
               children: [
                 const Expanded(child: SizedBox()),
                 Expanded(
-                  child: Text('New', style: theme.textTheme.labelLarge),
+                  child: Text(t('New'), style: theme.textTheme.labelLarge),
                 ),
                 Expanded(
-                  child: Text('Existing', style: theme.textTheme.labelLarge),
+                  child: Text(t('Existing'), style: theme.textTheme.labelLarge),
                 ),
               ],
             ),
@@ -125,7 +126,7 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
           if (_sources.length > 1) ...[
             const SizedBox(height: 16),
             Text(
-              'Messages in the existing row',
+              t('Messages in the existing row'),
               style: theme.textTheme.titleSmall,
             ),
             for (final s in _sources)
@@ -136,7 +137,7 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
                 trailing: TextButton(
                   key: Key('split_${s.id}'),
                   onPressed: s.rawText == null ? null : () => _split(s),
-                  child: const Text('Split'),
+                  child: Text(t('Split')),
                 ),
               ),
           ],
@@ -150,7 +151,7 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
                   await repo.keepSeparate(fresh.id);
                   if (context.mounted) Navigator.pop(context);
                 },
-                child: const Text('Keep separate'),
+                child: Text(t('Keep separate')),
               ),
               const SizedBox(width: 8),
               FilledButton(
@@ -161,7 +162,7 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
                         await repo.mergeFlagged(fresh.id);
                         if (context.mounted) Navigator.pop(context);
                       },
-                child: const Text('Merge'),
+                child: Text(t('Merge')),
               ),
             ],
           ),

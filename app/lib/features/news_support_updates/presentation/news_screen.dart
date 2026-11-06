@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/news_support_updates/domain/news.dart';
 import 'package:hisaab/features/portfolio/domain/portfolio_class.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -39,7 +40,7 @@ class _NewsScreenState extends ConsumerState<NewsScreen> {
     final s = ref.watch(newsControllerProvider);
     final c = ref.read(newsControllerProvider.notifier);
     return Scaffold(
-      appBar: AppBar(title: const Text('Latest news')),
+      appBar: AppBar(title: Text(t('Latest news'))),
       body: Column(
         children: [
           Padding(
@@ -89,11 +90,11 @@ class _NewsScreenState extends ConsumerState<NewsScreen> {
             const Icon(Icons.cloud_off, size: 40),
             const SizedBox(height: 8),
             const Text("Couldn't load headlines"),
-            const Text('Check your connection and try again.'),
+            Text(t('Check your connection and try again.')),
             const SizedBox(height: 12),
             FilledButton(
               onPressed: () => c.load(s.feed, force: true),
-              child: const Text('Try again'),
+              child: Text(t('Try again')),
             ),
           ],
         ),
@@ -110,9 +111,9 @@ class _NewsScreenState extends ConsumerState<NewsScreen> {
           ]
         : s.items;
     if (items.isEmpty) {
-      return const Center(
-        key: Key('news-none'),
-        child: Text('No headlines for your holdings'),
+      return Center(
+        key: const Key('news-none'),
+        child: Text(t('No headlines for your holdings')),
       );
     }
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;

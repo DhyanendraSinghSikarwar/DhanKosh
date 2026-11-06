@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/sender_lists_controller.dart';
 
 /// Editable bank sender list (SMS ids) and mail-domain list (FR-26-31).
@@ -15,7 +16,7 @@ class SenderListsScreen extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Bank senders'),
+          title: Text(t('Bank senders')),
           bottom: const TabBar(
             tabs: [
               Tab(key: Key('senders-tab-sms'), text: 'SMS'),
@@ -25,7 +26,7 @@ class SenderListsScreen extends ConsumerWidget {
         ),
         body: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => const Center(child: Text('Could not load senders.')),
+          error: (e, _) => Center(child: Text(t('Could not load senders.'))),
           data: (s) => TabBarView(
             children: [
               _ListTab(
@@ -127,7 +128,7 @@ class _ListTabState extends State<_ListTab> {
               ),
               IconButton(
                 key: Key('senders-$p-add'),
-                tooltip: 'Add',
+                tooltip: t('Add'),
                 icon: const Icon(Icons.add),
                 onPressed: _add,
               ),
@@ -151,7 +152,7 @@ class _ListTabState extends State<_ListTab> {
                 onPressed: widget.added.isEmpty && widget.off.isEmpty
                     ? null
                     : widget.onReset,
-                child: const Text('Reset to defaults'),
+                child: Text(t('Reset to defaults')),
               ),
             ],
           ),
@@ -166,9 +167,9 @@ class _ListTabState extends State<_ListTab> {
                   key: Key('senders-$p-added-$k'),
                   dense: true,
                   title: Text(k),
-                  subtitle: const Text('Yours'),
+                  subtitle: Text(t('Yours')),
                   trailing: IconButton(
-                    tooltip: 'Remove',
+                    tooltip: t('Remove'),
                     icon: const Icon(Icons.close),
                     onPressed: () => widget.onRemoveAdded(k),
                   ),

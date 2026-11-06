@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/layout_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/theming_customisation/domain/section_layout.dart';
 
 /// Show, hide and reorder the sections of one screen, with presets for Home
@@ -63,7 +64,7 @@ class SectionLayoutEditor extends ConsumerWidget {
         TextButton(
           key: Key('layout-reset-$screenId'),
           onPressed: () => ref.read(sectionLayoutResetProvider)(screenId),
-          child: const Text('Reset'),
+          child: Text(t('Reset')),
         ),
       ],
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_rules.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:parser_core/parser_core.dart';
 
 const _palette = <Color>[
@@ -48,7 +49,7 @@ class ChangeCategorySheet extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Change category',
+              t('Change category'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),

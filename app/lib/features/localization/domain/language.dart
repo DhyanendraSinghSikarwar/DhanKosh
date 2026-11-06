@@ -1,6 +1,5 @@
-import 'dart:convert';
-
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
+import 'package:yaml/yaml.dart';
 
 /// Supported languages (FR-29-04); English is built in.
 enum Language {
@@ -35,35 +34,36 @@ enum Language {
 /// Persisted active language code (FR-29-08).
 const languageKey = SettingKey<String>('language', 'en');
 
-/// Pack file is malformed (FR-29-05, FR-29-06).
-class PackFormatException implements Exception {
+/// A catalogue file is malformed (FR-29-05).
+class CatalogueFormatException implements Exception {
   /// Creates the exception.
-  const PackFormatException(this.message);
+  const CatalogueFormatException(this.message);
 
   /// Reason.
   final String message;
 
   @override
-  String toString() => 'PackFormatException: $message';
+  String toString() => 'CatalogueFormatException: $message';
 }
 
-/// Parses a pack `{version, code, strings}`; blank translations dropped;
-/// empty result is an error (FR-29-05, FR-29-06).
-Map<String, String> parsePack(String body) {
-  final Object? json;
+/// Parses a catalogue (`assets/l10n/<code>.yaml`): `version`, `code` and a
+/// `strings` map of English text to translation. Blank translations are
+/// ignored, so a string still waiting for its translation shows in English
+/// (FR-29-05).
+Map<String, String> parseCatalogue(String body) {
+  final Object? doc;
   try {
-    json = jsonDecode(body);
-  } on FormatException catch (e) {
-    throw PackFormatException(e.message);
+    doc = loadYaml(body);
+  } on YamlException catch (e) {
+    throw CatalogueFormatException(e.message);
   }
-  if (json is! Map || json['strings'] is! Map) {
-    throw const PackFormatException('missing strings');
+  if (doc is! Map || doc['strings'] is! Map) {
+    throw const CatalogueFormatException('missing strings');
   }
   final out = <String, String>{};
-  (json['strings'] as Map).forEach((k, v) {
+  (doc['strings'] as Map).forEach((k, v) {
     if (k is String && v is String && v.trim().isNotEmpty) out[k] = v;
   });
-  if (out.isEmpty) throw const PackFormatException('empty pack');
   return out;
 }
 
@@ -97,23 +97,8 @@ abstract final class I18n {
 String t(String english, {Map<String, Object?> args = const {}}) =>
     I18n.current(english, args: args);
 
-/// Local pack storage port (FR-29-07, FR-29-18).
-abstract interface class LanguagePackStore {
-  /// Languages whose pack file exists.
-  Future<Set<Language>> downloaded();
-
-  /// Raw pack body, null when missing.
-  Future<String?> read(Language l);
-
-  /// Atomically replaces the pack.
-  Future<void> write(Language l, String body);
-
-  /// Removes the pack.
-  Future<void> delete(Language l);
-}
-
-/// Remote pack source port (FR-29-06).
-abstract interface class LanguagePackRemote {
-  /// Fetches the pack body; throws on failure.
-  Future<String> fetch(Language l);
+/// Where catalogues come from: the app's bundled files (FR-29-05).
+abstract interface class LanguageCatalogue {
+  /// The raw YAML of [l], or null when the language has no file.
+  Future<String?> load(Language l);
 }

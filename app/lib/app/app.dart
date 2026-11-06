@@ -7,6 +7,7 @@ import 'package:hisaab/app/lock_gate.dart';
 import 'package:hisaab/app/router.dart';
 import 'package:hisaab/app/startup_tasks.dart';
 import 'package:hisaab/app/theme/app_theme.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/onboarding_permissions/presentation/app_lifecycle_gate.dart';
 import 'package:hisaab/features/theming_customisation/domain/appearance.dart';
 
@@ -18,7 +19,7 @@ class HisaabApp extends ConsumerWidget {
     final a = ref.watch(appearanceProvider);
     final lang = ref.watch(languageProvider.select((s) => s.active));
     return MaterialApp.router(
-      title: 'DhanKosh',
+      title: t('DhanKosh'),
       debugShowCheckedModeBanner: false,
       theme: AppTheme.build(a.palette, Brightness.light, backdrop: true),
       darkTheme: AppTheme.build(

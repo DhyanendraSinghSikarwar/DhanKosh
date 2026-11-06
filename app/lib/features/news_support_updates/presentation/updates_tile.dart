@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 import 'package:hisaab/shared/widgets/settings_row.dart';
 
@@ -13,7 +14,7 @@ class UpdatesTile extends StatelessWidget {
   Widget build(BuildContext context) => SettingsRow(
         key: const Key('updates-tile'),
         badge: AppIcons.updates,
-        title: 'Check for updates',
+        title: t('Check for updates'),
         subtitle: 'v$appVersion',
         onTap: () => context.push('/settings/updates'),
       );

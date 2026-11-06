@@ -6,6 +6,7 @@ import 'package:hisaab/features/credit_cards/domain/card_models.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_amounts_sheet.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_insights_section.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_tile.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
 
@@ -44,14 +45,14 @@ class CreditCardsScreen extends ConsumerWidget {
     final masked = ref.watch(hideAmountsProvider).value ?? true;
     final now = DateTime.now().millisecondsSinceEpoch;
     return Scaffold(
-      appBar: AppBar(title: const Text('Credit cards')),
+      appBar: AppBar(title: Text(t('Credit cards'))),
       body: cards.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(child: Text('Could not load cards')),
+        error: (e, _) => Center(child: Text(t('Could not load cards'))),
         data: (list) => list.isEmpty
-            ? const EmptyState(
+            ? EmptyState(
                 icon: Icons.credit_card_outlined,
-                title: 'No credit cards',
+                title: t('No credit cards'),
                 hint: 'Bills from SMS or email appear here.',
               )
             : ListView.separated(

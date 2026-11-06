@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/report/report_document.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -50,7 +51,10 @@ Future<Uint8List> renderReportPdf(
           ),
           pw.SizedBox(height: 4),
           if (s.rows.isEmpty)
-            pw.Text('Nothing to show', style: const pw.TextStyle(color: grey))
+            pw.Text(
+              t('Nothing to show'),
+              style: const pw.TextStyle(color: grey),
+            )
           else if (s.columns.isEmpty)
             pw.TableHelper.fromTextArray(
               data: s.rows,

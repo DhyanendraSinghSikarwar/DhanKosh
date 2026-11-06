@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/profile/domain/bank_identity.dart';
 
 /// Accounts with their saved unlock details (FR-27-15).
@@ -23,9 +24,9 @@ class BankDetailsListSheet extends ConsumerWidget {
         b.accountId,
     };
     if (accounts.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(24),
-        child: Text('No bank accounts yet'),
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(t('No bank accounts yet')),
       );
     }
     return SafeArea(
@@ -149,7 +150,7 @@ class _BankDetailsSheetState extends ConsumerState<BankDetailsSheet> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Blank fields use your profile.',
+              t('Blank fields use your profile.'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -164,7 +165,7 @@ class _BankDetailsSheetState extends ConsumerState<BankDetailsSheet> {
               child: FilledButton(
                 key: const Key('bank-save'),
                 onPressed: _save,
-                child: const Text('Save'),
+                child: Text(t('Save')),
               ),
             ),
           ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/features/loans/domain/loan_models.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// Asked after a payment is categorised as an EMI: count it towards one of
 /// the loans? (FR-15-09). Route `/loan-link/:txId`; "Not now" just closes.
@@ -21,13 +22,13 @@ class LoanLinkPromptScreen extends ConsumerWidget {
         if (l.accountId != null) l,
     ];
     return Scaffold(
-      appBar: AppBar(title: const Text('Link to a loan?')),
+      appBar: AppBar(title: Text(t('Link to a loan?'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Count this EMI towards a loan.'),
+          Text(t('Count this EMI towards a loan.')),
           const SizedBox(height: 8),
-          if (loans.isEmpty) const Text('No loan accounts yet.'),
+          if (loans.isEmpty) Text(t('No loan accounts yet.')),
           for (final l in loans)
             ListTile(
               key: Key('prompt-loan-${l.accountId}'),
@@ -44,7 +45,7 @@ class LoanLinkPromptScreen extends ConsumerWidget {
           TextButton(
             key: const Key('prompt-not-now'),
             onPressed: () => Navigator.maybePop(context),
-            child: const Text('Not now'),
+            child: Text(t('Not now')),
           ),
         ],
       ),

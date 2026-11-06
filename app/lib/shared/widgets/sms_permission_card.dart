@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
 
 /// SMS access ask: rationale, or the restricted-settings guidance when Android
@@ -50,10 +51,12 @@ class SmsPermissionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Read bank SMS',
-                      style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    Text(
+                      t('Read bank SMS'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
                       body,
@@ -76,7 +79,7 @@ class SmsPermissionCard extends StatelessWidget {
               if (onNotNow != null)
                 IconButton(
                   key: const Key('sms-not-now'),
-                  tooltip: 'Not now',
+                  tooltip: t('Not now'),
                   iconSize: 18,
                   icon: const Icon(Icons.close),
                   onPressed: onNotNow,
@@ -99,7 +102,7 @@ class SmsPermissionCard extends StatelessWidget {
                 Icon(Icons.sms_outlined, color: scheme.onSecondaryContainer),
                 const SizedBox(width: 8),
                 Text(
-                  'Read bank SMS',
+                  t('Read bank SMS'),
                   style: text.titleMedium?.copyWith(
                     color: scheme.onSecondaryContainer,
                   ),
@@ -133,7 +136,7 @@ class SmsPermissionCard extends StatelessWidget {
                   TextButton(
                     key: const Key('sms-not-now'),
                     onPressed: onNotNow,
-                    child: const Text('Not now'),
+                    child: Text(t('Not now')),
                   ),
               ],
             ),

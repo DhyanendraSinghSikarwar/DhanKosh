@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/home_composition_providers.dart';
 import 'package:hisaab/app/theme/semantic_colors.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 
@@ -33,18 +34,20 @@ class HomeNetWorthCard extends ConsumerWidget {
                 children: [
                   const Icon(Icons.account_balance_wallet_outlined),
                   const SizedBox(width: 12),
-                  const Expanded(child: Text('Add accounts to see net worth')),
+                  Expanded(
+                    child: Text(t('Add accounts to see net worth')),
+                  ),
                   TextButton(
                     key: const Key('home_networth_add'),
                     onPressed: () => context.push('/accounts'),
-                    child: const Text('Add account'),
+                    child: Text(t('Add account')),
                   ),
                 ],
               )
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Net worth', style: theme.textTheme.bodySmall),
+                  Text(t('Net worth'), style: theme.textTheme.bodySmall),
                   CountUpAmount(
                     key: const Key('home_networth_value'),
                     minor: nw.netMinor,

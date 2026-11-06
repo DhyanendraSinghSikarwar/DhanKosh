@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/core/money/money.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 import 'package:hisaab/features/statement_import/domain/statement_outcome.dart';
 import 'package:hisaab/features/statement_import/presentation/import_result_text.dart';
@@ -53,15 +54,15 @@ class _State extends ConsumerState<StatementDetailScreen> {
     final detail = ref.watch(statementDetailProvider(widget.id));
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Statement')),
+      appBar: AppBar(title: Text(t('Statement'))),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Cannot load statement.')),
+        error: (_, __) => Center(child: Text(t('Cannot load statement.'))),
         data: (d) {
-          if (d == null) return const Center(child: Text('Not found.'));
+          if (d == null) return Center(child: Text(t('Not found.')));
           final s = d.statement;
           final o = d.outcome;
-          final t = s.totals;
+          final tt = s.totals;
           final rows = <(String, String)>[
             ('File', s.fileName),
             if (s.source == StatementSource.email &&
@@ -72,8 +73,8 @@ class _State extends ConsumerState<StatementDetailScreen> {
                 'Bank',
                 s.last4 == null ? s.bankName! : '${s.bankName} ${s.last4}',
               ),
-            if (t.statementEpochDay != null)
-              ('Statement date', _day(t.statementEpochDay!)),
+            if (tt.statementEpochDay != null)
+              ('Statement date', _day(tt.statementEpochDay!)),
             ('Status', s.status.name),
             ('Rows imported', '${o?.added ?? s.transactionCount}'),
             if (o != null) ('Rows merged', '${o.merged}'),
@@ -81,13 +82,13 @@ class _State extends ConsumerState<StatementDetailScreen> {
             ('Holdings updated', '${o?.holdingsUpdated ?? s.holdingCount}'),
             if (o != null && o.depositsUpdated > 0)
               ('Deposits updated', '${o.depositsUpdated}'),
-            if (t.totalDueMinor != null) ('Total due', _m(t.totalDueMinor)),
-            if (t.minDueMinor != null) ('Minimum due', _m(t.minDueMinor)),
-            if (t.dueEpochDay != null) ('Due date', _day(t.dueEpochDay!)),
-            if (t.creditLimitMinor != null)
-              ('Credit limit', _m(t.creditLimitMinor)),
-            if (t.openingMinor != null) ('Opening', _m(t.openingMinor)),
-            if (t.closingMinor != null) ('Closing', _m(t.closingMinor)),
+            if (tt.totalDueMinor != null) ('Total due', _m(tt.totalDueMinor)),
+            if (tt.minDueMinor != null) ('Minimum due', _m(tt.minDueMinor)),
+            if (tt.dueEpochDay != null) ('Due date', _day(tt.dueEpochDay!)),
+            if (tt.creditLimitMinor != null)
+              ('Credit limit', _m(tt.creditLimitMinor)),
+            if (tt.openingMinor != null) ('Opening', _m(tt.openingMinor)),
+            if (tt.closingMinor != null) ('Closing', _m(tt.closingMinor)),
           ];
           final e = o?.effect;
           return ListView(
@@ -130,7 +131,7 @@ class _State extends ConsumerState<StatementDetailScreen> {
                     key: const Key('statement-view-mail'),
                     onPressed: () => showStatementMail(context, s),
                     icon: const Icon(Icons.mail_outline),
-                    label: const Text('View email'),
+                    label: Text(t('View email')),
                   ),
                 ),
               if (s.filePath != null && s.status != StatementStatus.locked)
@@ -139,7 +140,7 @@ class _State extends ConsumerState<StatementDetailScreen> {
                   child: OutlinedButton(
                     key: const Key('statement-read-again'),
                     onPressed: _busy ? null : _again,
-                    child: const Text('Read again'),
+                    child: Text(t('Read again')),
                   ),
                 ),
             ],

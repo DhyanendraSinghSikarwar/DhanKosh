@@ -4,6 +4,7 @@ import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_tile.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// Opens the add-account sheet (FR-13-05).
@@ -89,15 +90,18 @@ class _AddAccountSheetState extends ConsumerState<AddAccountSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Add account', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              t('Add account'),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 12),
             SegmentedButton<AccountKind>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: AccountKind.account,
-                  label: Text('Account'),
+                  label: Text(t('Account')),
                 ),
-                ButtonSegment(value: AccountKind.card, label: Text('Card')),
+                ButtonSegment(value: AccountKind.card, label: Text(t('Card'))),
               ],
               selected: {_kind},
               onSelectionChanged: (s) => setState(() => _kind = s.first),
@@ -106,19 +110,19 @@ class _AddAccountSheetState extends ConsumerState<AddAccountSheet> {
             TextField(
               key: const Key('add_bank'),
               controller: _bank,
-              decoration: const InputDecoration(labelText: 'Bank'),
+              decoration: InputDecoration(labelText: t('Bank')),
             ),
             TextField(
               key: const Key('add_last4'),
               controller: _last4,
               keyboardType: TextInputType.number,
               maxLength: 4,
-              decoration: const InputDecoration(labelText: 'Last 4 digits'),
+              decoration: InputDecoration(labelText: t('Last 4 digits')),
             ),
             if (!isCard)
               DropdownButtonFormField<AccountType>(
                 initialValue: _type,
-                decoration: const InputDecoration(labelText: 'Type'),
+                decoration: InputDecoration(labelText: t('Type')),
                 items: [
                   for (final t in _accountTypes)
                     DropdownMenuItem(
@@ -152,7 +156,7 @@ class _AddAccountSheetState extends ConsumerState<AddAccountSheet> {
             FilledButton(
               key: const Key('add_save'),
               onPressed: _save,
-              child: const Text('Save'),
+              child: Text(t('Save')),
             ),
           ],
         ),

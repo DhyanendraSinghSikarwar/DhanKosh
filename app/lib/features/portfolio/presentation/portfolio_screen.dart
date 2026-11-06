@@ -8,6 +8,7 @@ import 'package:hisaab/app/di/layout_providers.dart';
 import 'package:hisaab/app/di/net_worth_estimate_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/scope_bar.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/asset_class.dart';
 import 'package:hisaab/features/portfolio/domain/holding.dart';
 import 'package:hisaab/features/portfolio/domain/maturity_items.dart';
@@ -156,21 +157,22 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (holdings.isEmpty)
-            const SizedBox(
+            SizedBox(
               height: 220,
               child: EmptyState(
-                key: Key('portfolio_empty'),
+                key: const Key('portfolio_empty'),
                 icon: Icons.account_balance_wallet_outlined,
-                title: 'No holdings yet',
+                title: t('No holdings yet'),
                 hint: 'Add one or import a statement.',
               ),
             )
           else ...[
-            const Padding(
-              padding: EdgeInsets.fromLTRB(4, 6, 4, 10),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 6, 4, 10),
               child: Text(
-                'Holdings',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                t('Holdings'),
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ),
             _ClassChips(
@@ -199,16 +201,18 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           children: [
-            Flexible(child: Text('Portfolio', overflow: TextOverflow.ellipsis)),
-            BookTag(),
+            Flexible(
+              child: Text(t('Portfolio'), overflow: TextOverflow.ellipsis),
+            ),
+            const BookTag(),
           ],
         ),
         actions: [
           IconButton(
             key: const Key('portfolio-news'),
-            tooltip: 'Latest news',
+            tooltip: t('Latest news'),
             icon: Badge(
               smallSize: 8,
               isLabelVisible: !ref.watch(newsSeenProvider),
@@ -240,37 +244,37 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               }
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(
-                key: Key('shortcut-import'),
+              PopupMenuItem(
+                key: const Key('shortcut-import'),
                 value: 'import',
-                child: Text('Import statement'),
+                child: Text(t('Import statement')),
               ),
-              const PopupMenuItem(
-                key: Key('shortcut-holding'),
+              PopupMenuItem(
+                key: const Key('shortcut-holding'),
                 value: 'holding',
-                child: Text('Add holding'),
+                child: Text(t('Add holding')),
               ),
               PopupMenuItem(
                 key: const Key('shortcut-sip'),
                 value: 'sip',
                 enabled: widget.sipSheet != null,
-                child: const Text('Add SIP'),
+                child: Text(t('Add SIP')),
               ),
-              const PopupMenuItem(
-                key: Key('portfolio-settings'),
+              PopupMenuItem(
+                key: const Key('portfolio-settings'),
                 value: 'settings',
-                child: Text('Portfolio settings'),
+                child: Text(t('Portfolio settings')),
               ),
               if (widget.layoutEditor != null)
-                const PopupMenuItem(
-                  key: Key('portfolio-sections'),
+                PopupMenuItem(
+                  key: const Key('portfolio-sections'),
                   value: 'sections',
-                  child: Text('Edit sections'),
+                  child: Text(t('Edit sections')),
                 ),
-              const PopupMenuItem(
-                key: Key('nw-filter'),
+              PopupMenuItem(
+                key: const Key('nw-filter'),
                 value: 'filter',
-                child: Text('Include in net worth'),
+                child: Text(t('Include in net worth')),
               ),
             ],
           ),
@@ -282,7 +286,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        tooltip: 'Add holding',
+        tooltip: t('Add holding'),
         onPressed: () => _sheet(const HoldingSheet()),
         child: const Icon(Icons.add),
       ),

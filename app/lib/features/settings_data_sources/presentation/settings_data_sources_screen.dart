@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/scope_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart' show Book;
 import 'package:hisaab/features/settings_data_sources/presentation/bank_sms_card.dart'
     show hideAmountsKey, setHideAmounts;
@@ -102,17 +103,17 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Clear all data?'),
-        content: const Text('Deletes every transaction and account.'),
+        title: Text(t('Clear all data?')),
+        content: Text(t('Deletes every transaction and account.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: const Key('clear-confirm'),
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Clear'),
+            child: Text(t('Clear')),
           ),
         ],
       ),
@@ -136,20 +137,20 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
     final status = ref.watch(developerActionsProvider);
     final book = ref.watch(bookProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('More')),
+      appBar: AppBar(title: Text(t('More'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           _ProfileCard(onTap: () => context.push('/profile')),
           const SmsAccessBanner(),
           SettingsSection(
-            title: 'Book and accounts',
+            title: t('Book and accounts'),
             children: [
               SettingsRow(
                 key: const Key('book-row'),
                 badge: AppIcons.book,
-                title: 'Book',
-                subtitle: 'Applies to every tab',
+                title: t('Book'),
+                subtitle: t('Applies to every tab'),
                 trailing: AppDropdown<Book>(
                   key: const Key('book-dropdown'),
                   value: book,
@@ -162,14 +163,14 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
               SettingsRow(
                 key: const Key('accounts-row'),
                 badge: AppIcons.accounts,
-                title: 'Accounts',
-                subtitle: 'Banks, wallets and cards',
+                title: t('Accounts'),
+                subtitle: t('Banks, wallets and cards'),
                 onTap: () => context.push('/accounts'),
               ),
             ],
           ),
           SettingsSection(
-            title: 'Capture',
+            title: t('Capture'),
             children: [
               const BankSmsRow(),
               const PasteSmsRow(),
@@ -177,15 +178,15 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
               SettingsRow(
                 key: const Key('senders-tile'),
                 badge: AppIcons.senders,
-                title: 'Bank senders',
-                subtitle: 'SMS ids and mail domains',
+                title: t('Bank senders'),
+                subtitle: t('SMS ids and mail domains'),
                 onTap: () => context.push('/settings/senders'),
               ),
               SettingsRow(
                 key: const Key('email-tile'),
                 badge: AppIcons.email,
-                title: 'Email',
-                subtitle: 'Mailboxes and app passwords',
+                title: t('Email'),
+                subtitle: t('Mailboxes and app passwords'),
                 onTap: () => context.push('/settings/email'),
               ),
               if (notificationCard != null)
@@ -194,7 +195,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
             ],
           ),
           SettingsSection(
-            title: 'Money tools',
+            title: t('Money tools'),
             children: [
               if (billsTile != null) billsTile!,
               if (goalsTile != null) goalsTile!,
@@ -206,7 +207,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
             ],
           ),
           SettingsSection(
-            title: 'Alerts and activity',
+            title: t('Alerts and activity'),
             children: [
               if (alertsTile != null) alertsTile!,
               if (activityTile != null) activityTile!,
@@ -215,20 +216,20 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
             ],
           ),
           SettingsSection(
-            title: 'Appearance',
+            title: t('Appearance'),
             children: [
               if (customiseTile != null) customiseTile!,
               if (languageTile != null) languageTile!,
             ],
           ),
           SettingsSection(
-            title: 'Privacy and security',
+            title: t('Privacy and security'),
             children: [
               if (securityTile != null) securityTile!,
               SettingsRow(
                 badge: AppIcons.hideAmounts,
-                title: 'Hide amounts',
-                subtitle: 'Mask every number in the app',
+                title: t('Hide amounts'),
+                subtitle: t('Mask every number in the app'),
                 onTap: () => setHideAmounts(ref, value: !hide),
                 trailing: Switch(
                   key: hideAmountsKey,
@@ -239,15 +240,15 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
             ],
           ),
           SettingsSection(
-            title: 'Data',
+            title: t('Data'),
             children: [
               if (backupTile != null) backupTile!,
               if (dev) ...[
                 SettingsRow(
                   key: const Key('add-sample'),
                   badge: AppIcons.sample,
-                  title: 'Add sample data',
-                  subtitle: 'Dummy rows to try the app',
+                  title: t('Add sample data'),
+                  subtitle: t('Dummy rows to try the app'),
                   onTap: () => ref
                       .read(developerActionsProvider.notifier)
                       .addSampleData(),
@@ -255,8 +256,8 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
                 SettingsRow(
                   key: const Key('clear-all'),
                   badge: AppIcons.erase,
-                  title: 'Clear all data',
-                  subtitle: 'Deletes every transaction and account',
+                  title: t('Clear all data'),
+                  subtitle: t('Deletes every transaction and account'),
                   destructive: true,
                   onTap: () => _confirmClear(context, ref),
                 ),
@@ -268,7 +269,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
             Text(status, key: const Key('dev-status'), style: text.bodySmall),
           ],
           SettingsSection(
-            title: 'About',
+            title: t('About'),
             children: [
               if (supportTile != null) supportTile!,
               if (updatesTile != null) updatesTile!,
@@ -308,7 +309,7 @@ class _ProfileCard extends ConsumerWidget {
                       ?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  'Profile, photo, alternate names',
+                  t('Profile, photo, alternate names'),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

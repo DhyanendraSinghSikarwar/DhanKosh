@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/core/money/money.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -70,14 +71,14 @@ class _PasteSmsCardState extends ConsumerState<PasteSmsCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Paste a bank SMS',
+            t('Paste a bank SMS'),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           TextField(
             key: const Key('paste-sender'),
             controller: _sender,
-            decoration: const InputDecoration(labelText: 'Sender'),
+            decoration: InputDecoration(labelText: t('Sender')),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -85,13 +86,13 @@ class _PasteSmsCardState extends ConsumerState<PasteSmsCard> {
             controller: _body,
             minLines: 3,
             maxLines: 6,
-            decoration: const InputDecoration(labelText: 'Message'),
+            decoration: InputDecoration(labelText: t('Message')),
           ),
           const SizedBox(height: 8),
           FilledButton(
             key: const Key('paste-run'),
             onPressed: _busy ? null : _run,
-            child: const Text('Parse and add'),
+            child: Text(t('Parse and add')),
           ),
           if (_result != null) ...[
             const SizedBox(height: 8),

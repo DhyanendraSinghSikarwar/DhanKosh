@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/sip_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/recurring_transactions/domain/sip.dart';
 import 'package:hisaab/features/recurring_transactions/presentation/sip_setup_sheet.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
@@ -30,9 +31,10 @@ class SipSection extends ConsumerWidget {
         children: [
           const SectionLabel('SIPs'),
           if (sips.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text('No SIPs yet. Add one.', key: Key('sip-empty')),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child:
+                  Text(t('No SIPs yet. Add one.'), key: const Key('sip-empty')),
             ),
           for (final s in sips)
             ListTile(

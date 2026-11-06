@@ -8,6 +8,7 @@ import 'package:hisaab/features/analytics/domain/civil_date.dart';
 import 'package:hisaab/features/categorization/domain/category_detail.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_math.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/charts/bars_chart.dart';
 import 'package:hisaab/shared/widgets/charts/chart_card.dart';
@@ -37,22 +38,22 @@ class CategoryDetailScreen extends ConsumerWidget {
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('New sub-category'),
+        title: Text(t('New sub-category')),
         content: TextField(
           key: const Key('subcategory-name'),
           controller: c,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Name'),
+          decoration: InputDecoration(labelText: t('Name')),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(t('Cancel')),
           ),
           FilledButton(
             key: const Key('subcategory-save'),
             onPressed: () => Navigator.pop(ctx, c.text.trim()),
-            child: const Text('Add'),
+            child: Text(t('Add')),
           ),
         ],
       ),
@@ -67,7 +68,7 @@ class CategoryDetailScreen extends ConsumerWidget {
         .addSubcategory(parent: parent, name: name, icon: 'label');
     if (made == null && context.mounted) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Already exists')));
+          .showSnackBar(SnackBar(content: Text(t('Already exists'))));
     }
   }
 
@@ -88,15 +89,15 @@ class CategoryDetailScreen extends ConsumerWidget {
               key: const Key('category-add-sub'),
               onPressed: () => _addSub(context, ref, d),
               icon: const Icon(Icons.add),
-              label: const Text('Sub-category'),
+              label: Text(t('Sub-category')),
             ),
       body: d == null
-          ? const EmptyState(icon: Icons.category_outlined, title: 'Loading')
+          ? EmptyState(icon: Icons.category_outlined, title: t('Loading'))
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
               children: [
                 ChartCard(
-                  label: 'This month',
+                  label: t('This month'),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -117,11 +118,11 @@ class CategoryDetailScreen extends ConsumerWidget {
                 ),
                 if (d.subcategories.isNotEmpty)
                   ChartCard(
-                    label: 'Sub-categories',
+                    label: t('Sub-categories'),
                     child: _SubDonut(d: d, money: money, masked: masked),
                   ),
                 ChartCard(
-                  label: 'Last 12 months',
+                  label: t('Last 12 months'),
                   child: BarsChart(
                     key: const Key('category-trend'),
                     values: [for (final e in d.monthly) e.$2],
@@ -136,7 +137,7 @@ class CategoryDetailScreen extends ConsumerWidget {
                 ),
                 if (d.merchants.isNotEmpty)
                   ChartCard(
-                    label: 'Top merchants',
+                    label: t('Top merchants'),
                     child: Column(
                       children: [
                         for (final m in d.merchants)
@@ -148,9 +149,9 @@ class CategoryDetailScreen extends ConsumerWidget {
                     ),
                   ),
                 ChartCard(
-                  label: 'Transactions',
+                  label: t('Transactions'),
                   child: d.txs.isEmpty
-                      ? const Text('No transactions')
+                      ? Text(t('No transactions'))
                       : Column(
                           key: const Key('category-txs'),
                           children: [

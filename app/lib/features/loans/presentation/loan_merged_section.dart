@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/loans_providers.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 
 /// Accounts merged into a loan, each with Unmerge (FR-15-12).
 class LoanMergedSection extends ConsumerWidget {
@@ -18,7 +19,7 @@ class LoanMergedSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Merged', style: Theme.of(context).textTheme.titleSmall),
+        Text(t('Merged'), style: Theme.of(context).textTheme.titleSmall),
         for (final a in merged)
           ListTile(
             key: Key('merged-${a.id}'),
@@ -33,7 +34,7 @@ class LoanMergedSection extends ConsumerWidget {
                   ..invalidate(mergedLoanAccountsProvider(accountId))
                   ..invalidate(loanDuplicatesProvider);
               },
-              child: const Text('Unmerge'),
+              child: Text(t('Unmerge')),
             ),
           ),
         const SizedBox(height: 8),

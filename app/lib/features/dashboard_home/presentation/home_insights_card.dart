@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/analytics_providers.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
+import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
@@ -126,7 +127,7 @@ class _HomeInsightsCardState extends ConsumerState<HomeInsightsCard> {
                         _dismissed.add(open.title);
                         _open = null;
                       }),
-                      child: const Text('Dismiss'),
+                      child: Text(t('Dismiss')),
                     ),
                   ),
                 ],
