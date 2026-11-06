@@ -47,6 +47,10 @@ class AlertsChannel extends ChannelBase {
   /// DhanKosh, already copied to the cache; cleared once read (FR-05-26).
   Future<String?> takeSharedFile() => invoke<String>('takeSharedFile');
 
+  /// Text another app shared into DhanKosh (up to 1,000 characters), or null;
+  /// cleared once read (FR-08-27).
+  Future<String?> takeSharedText() => invoke<String>('takeSharedText');
+
   /// Blocks or allows screenshots and the recents preview (FLAG_SECURE,
   /// FR-25-23). True when an activity applied it now.
   Future<bool> setSecure({required bool on}) async =>

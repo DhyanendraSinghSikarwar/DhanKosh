@@ -290,6 +290,33 @@ void main() {
     );
     expect(calls, 1);
   });
+
+  test('live handler offers a message from an unaccepted sender (FR-38-07)',
+      () async {
+    final offered = <String>[];
+    var ingested = 0;
+    HandleLiveSms h({bool throws = false}) => HandleLiveSms(
+          settings: FakeSettings(),
+          accept: (sender) => sender == 'VM-HDFCBK-S',
+          ingest: (_) async {
+            ingested++;
+            return IngestOutcome.inserted;
+          },
+          onUnaccepted: (m) async {
+            offered.add(m.sender);
+            if (throws) throw StateError('queue down');
+          },
+        );
+    // A known bank is ingested and never offered.
+    expect(await h()(sms('VM-HDFCBK-S', 1)), IngestOutcome.inserted);
+    expect(offered, isEmpty);
+    // An unknown sender is offered, not ingested, and returns null as before.
+    expect(await h()(sms('VM-NEWBNK-S', 2)), isNull);
+    expect(offered, ['VM-NEWBNK-S']);
+    expect(ingested, 1);
+    // A failing queue never breaks the live path.
+    expect(await h(throws: true)(sms('VM-NEWBNK-S', 3)), isNull);
+  });
 }
 
 class _Spy implements SmsInboxSource {

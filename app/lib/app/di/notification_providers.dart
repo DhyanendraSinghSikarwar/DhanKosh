@@ -1,6 +1,7 @@
 import 'package:hisaab/app/di/lock_skipper_provider.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
+import 'package:hisaab/app/di/unrecognised_providers.dart';
 import 'package:hisaab/core/platform_channels/notifications_channel.dart';
 import 'package:hisaab/features/notification_ingestion/data/notification_settings_store.dart';
 import 'package:hisaab/features/notification_ingestion/data/notification_source_impl.dart';
@@ -47,6 +48,7 @@ NotificationEngine notificationEngine(Ref ref) {
       settings: ref.watch(notificationSettingsProvider),
       watched: ref.watch(watchedAppsProvider),
       ingest: ref.watch(ingestMessageProvider),
+      onUnparsed: ref.watch(notificationOfferProvider),
     ),
     activity: ref.watch(activityLoggerProvider),
   );

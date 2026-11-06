@@ -24,6 +24,7 @@ export 'src/extract/money.dart';
 export 'src/extract/reference_extractor.dart';
 export 'src/extract/type_classifier.dart';
 export 'src/free_text/free_text_parser.dart';
+export 'src/generic/generic_extractor.dart';
 export 'src/free_text/transaction_draft.dart';
 export 'src/hash/transaction_hasher.dart';
 export 'src/merchant/merchant_directory.dart';

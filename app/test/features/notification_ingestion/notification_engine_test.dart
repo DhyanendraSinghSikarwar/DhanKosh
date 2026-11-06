@@ -411,4 +411,62 @@ void main() {
     source.unavailable = true;
     expect((await engine.status()).health.readCount, 0);
   });
+
+  group('unreadable notifications reach the review queue (FR-38-06)', () {
+    late List<String> offered;
+    late HandleAppNotification withQueue;
+
+    setUp(() {
+      offered = [];
+      withQueue = HandleAppNotification(
+        settings: settings,
+        watched: watched,
+        ingest: IngestMessage(ledger: env.txs),
+        onUnparsed: (n, app) async =>
+            offered.add('${app.displayName}:${n.key}'),
+      );
+    });
+
+    test('an amount with no payment wording is offered', () async {
+      await settings.setEnabled(enabled: true);
+      final r = await withQueue(
+        pay(key: 'q1', parts: ['Completed: INR 250 to Ravi Kumar via UPI']),
+      );
+      expect(r.skip, NotificationSkip.parser);
+      expect(offered, ['PhonePe:q1']);
+    });
+
+    test('an OTP, a failure and an offer are never offered', () async {
+      await settings.setEnabled(enabled: true);
+      for (final parts in const [
+        ['482910 is your OTP to pay ₹500'],
+        ['Payment failed', '₹250 to Ravi Kumar could not be paid'],
+        ['You have won ₹50 cashback!', 'Scratch your card now'],
+      ]) {
+        await withQueue(pay(key: parts.first, parts: parts));
+      }
+      expect(offered, isEmpty);
+    });
+
+    test('a read payment is ingested, not offered', () async {
+      await settings.setEnabled(enabled: true);
+      final r = await withQueue(pay(key: 'ok'));
+      expect(r.outcome, IngestOutcome.inserted);
+      expect(offered, isEmpty);
+    });
+
+    test('a failing queue never changes the result', () async {
+      await settings.setEnabled(enabled: true);
+      final h = HandleAppNotification(
+        settings: settings,
+        watched: watched,
+        ingest: IngestMessage(ledger: env.txs),
+        onUnparsed: (_, __) async => throw StateError('queue down'),
+      );
+      final r = await h(
+        pay(key: 'q2', parts: ['Completed: INR 250 to Ravi Kumar via UPI']),
+      );
+      expect(r.skip, NotificationSkip.parser);
+    });
+  });
 }

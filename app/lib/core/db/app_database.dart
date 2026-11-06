@@ -23,6 +23,7 @@ import 'package:hisaab/core/db/tables/sips.dart';
 import 'package:hisaab/core/db/tables/statements.dart';
 import 'package:hisaab/core/db/tables/transaction_sources.dart';
 import 'package:hisaab/core/db/tables/transactions.dart';
+import 'package:hisaab/core/db/tables/unrecognised.dart';
 import 'package:hisaab/shared/log/app_logger.dart';
 import 'package:hisaab/shared/log/log_models.dart';
 
@@ -59,6 +60,8 @@ part 'app_database.g.dart';
     MfOrders,
     Goals,
     GoalContributions,
+    UnrecognisedMessages,
+    SenderPrefs,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -66,7 +69,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -133,6 +136,12 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(mfOrders);
             await m.createTable(goals);
             await m.createTable(goalContributions);
+          }
+          // v6 -> v7: unrecognised-message queue and learned senders (F-38).
+          // Additive.
+          if (from < 7) {
+            await m.createTable(unrecognisedMessages);
+            await m.createTable(senderPrefs);
           }
         },
         beforeOpen: (details) async {

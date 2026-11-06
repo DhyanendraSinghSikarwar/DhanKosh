@@ -18,6 +18,7 @@ import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/features/statement_import/data/channel_shared_file_source.dart';
 import 'package:hisaab/features/statement_import/domain/shared_file_source.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
+import 'package:hisaab/features/transactions_ledger/domain/add_draft.dart';
 
 import '../../support/test_env.dart';
 import '../../support/ui_harness.dart';
@@ -129,6 +130,49 @@ void main() {
       await settle(t);
       return (c, router, guard);
     }
+
+    // FR-08-27
+    testWidgets('shared text opens Add transaction pre-filled (no lock)',
+        (t) async {
+      AddDraft? seen;
+      await t.runAsync(() => env.settings.write(SettingKeys.appLock, false));
+      final router = GoRouter(
+        routes: [
+          GoRoute(path: '/', builder: (_, __) => const Text('home')),
+          GoRoute(
+            path: '/transactions/add',
+            builder: (_, state) {
+              seen = state.extra as AddDraft?;
+              return const Text('add');
+            },
+          ),
+        ],
+      );
+      final c = ProviderContainer(
+        overrides: [
+          settingsRepositoryProvider.overrideWithValue(env.settings),
+          appLockServiceProvider.overrideWithValue(_Lock()),
+          sharedFileSourceProvider.overrideWithValue(_Src(null)),
+          sharedTextSourceProvider.overrideWithValue(() async => '450 swiggy'),
+          screenGuardProvider.overrideWithValue(_Guard()),
+          routerProvider.overrideWithValue(router),
+        ],
+      );
+      addTearDown(c.dispose);
+      await t.pumpWidget(
+        UncontrolledProviderScope(
+          container: c,
+          child: MaterialApp.router(
+            routerConfig: router,
+            builder: (_, child) => DeviceHooks(child: child!),
+          ),
+        ),
+      );
+      await settle(t);
+      expect(find.text('add'), findsOneWidget);
+      expect(seen?.amountMinor, 45000);
+      expect(seen?.merchant, 'Swiggy');
+    });
 
     // FR-05-26
     testWidgets('no lock: file goes to the inbox and Statements opens',

@@ -9,6 +9,7 @@ import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
 import 'package:hisaab/app/di/sender_providers.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
+import 'package:hisaab/app/di/unrecognised_providers.dart';
 import 'package:hisaab/core/platform_channels/background_channel.dart';
 import 'package:hisaab/core/platform_channels/permissions_channel.dart';
 import 'package:hisaab/core/platform_channels/sms_channel.dart';
@@ -159,6 +160,7 @@ SmsEngine smsEngine(Ref ref) {
       settings: settings,
       accept: ingest.accepts,
       ingest: ingest.call,
+      onUnaccepted: ref.watch(liveSmsOfferProvider),
       activity: ref.watch(activityLoggerProvider),
     ),
     scan: () => scan(null),

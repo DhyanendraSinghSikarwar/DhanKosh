@@ -31,6 +31,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
     this.rulesTile,
     this.securityTile,
     this.activityTile,
+    this.unrecognisedTile,
     this.customiseTile,
     this.languageTile,
     this.newsTile,
@@ -75,6 +76,9 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
 
   /// Activity log entry (F-22), embedded by the app.
   final Widget? activityTile;
+
+  /// Unrecognised messages entry (F-38), composed in `app/router.dart`.
+  final Widget? unrecognisedTile;
 
   /// Customise entry (F-28), composed in `app/router.dart`.
   final Widget? customiseTile;
@@ -206,6 +210,7 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
             children: [
               if (alertsTile != null) alertsTile!,
               if (activityTile != null) activityTile!,
+              if (unrecognisedTile != null) unrecognisedTile!,
               if (diagnosticLogTile != null) diagnosticLogTile!,
             ],
           ),

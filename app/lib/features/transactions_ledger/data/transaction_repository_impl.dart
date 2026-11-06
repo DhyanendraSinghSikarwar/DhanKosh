@@ -547,6 +547,64 @@ class TransactionRepositoryImpl implements TransactionRepository {
     );
   }
 
+  // FR-38-11
+  @override
+  Future<IngestResult> addFromMessage({
+    required Source source,
+    required String sourceMessageId,
+    required String sender,
+    required String rawText,
+    required int amountMinor,
+    required TransactionType type,
+    required int timestamp,
+    String currency = 'INR',
+    int? accountId,
+    String? merchant,
+    String? upiId,
+    Category category = Category.other,
+    String? reference,
+    String? note,
+    Channel channel = Channel.other,
+  }) async {
+    final account = accountId == null ? null : await _accounts.byId(accountId);
+    return await ingest(
+      IngestItem(
+        parsed: ParsedTransaction(
+          amountMinor: amountMinor,
+          currency: currency,
+          type: type,
+          bankName: account?.bankName ?? sender,
+          accountLast4: account?.last4,
+          accountKind: account?.kind ?? AccountKind.account,
+          merchant: merchant,
+          upiId: upiId,
+          referenceNumber: reference,
+          channel: channel,
+          balanceMinor: null,
+          availableLimitMinor: null,
+          transactionTime: timestamp,
+          hasExplicitTime: false,
+          category: category,
+          source: source,
+          sender: sender,
+          messageTimestamp: timestamp,
+          confidence: 1,
+          transactionHash: TransactionHasher.hash(
+            amountMinor,
+            type,
+            account?.last4,
+            civilDateOf(timestamp, const Duration(hours: 5, minutes: 30)),
+            reference,
+          ),
+        ),
+        sourceMessageId: sourceMessageId,
+        rawText: rawText,
+        accountId: accountId,
+        note: note,
+      ),
+    );
+  }
+
   // --------------------------------------------------------------- edits
 
   Future<void> _patch(int id, TransactionsCompanion c) =>

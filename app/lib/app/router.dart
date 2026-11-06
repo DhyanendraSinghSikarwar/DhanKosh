@@ -67,7 +67,11 @@ import 'package:hisaab/features/theming_customisation/domain/section_layout.dart
 import 'package:hisaab/features/theming_customisation/presentation/customise_tile.dart';
 import 'package:hisaab/features/theming_customisation/presentation/section_layout_editor.dart';
 import 'package:hisaab/features/theming_customisation/presentation/theming_customisation_screen.dart';
+import 'package:hisaab/features/transactions_ledger/domain/add_draft.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/add_transaction_screen.dart';
+import 'package:hisaab/features/unrecognised_messages/presentation/learned_senders_screen.dart';
+import 'package:hisaab/features/unrecognised_messages/presentation/unrecognised_screen.dart';
+import 'package:hisaab/features/unrecognised_messages/presentation/unrecognised_tile.dart';
 import 'package:hisaab/shared/widgets/pill_navigation_bar.dart';
 
 Widget _sipSheet(BuildContext _) => const SipSetupSheet();
@@ -102,7 +106,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/transactions/add',
-        builder: (_, __) => const AddTransactionScreen(),
+        builder: (_, state) =>
+            AddTransactionScreen(draft: state.extra as AddDraft?),
       ),
       GoRoute(
         path: '/category/:id',
@@ -148,6 +153,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/review', builder: (_, __) => const DedupReviewScreen()),
+      GoRoute(
+        path: '/review/unrecognised',
+        builder: (_, __) => const UnrecognisedScreen(),
+        routes: [
+          GoRoute(
+            path: 'senders',
+            builder: (_, __) => const LearnedSendersScreen(),
+          ),
+        ],
+      ),
       GoRoute(
         path: '/bills',
         builder: (_, __) => RecurringTransactionsScreen(
@@ -300,6 +315,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   rulesTile: RulesTile(),
                   securityTile: SecurityTile(),
                   activityTile: ActivityTile(),
+                  unrecognisedTile: UnrecognisedTile(),
                   newsTile: NewsTile(),
                   supportTile: SupportTile(),
                   updatesTile: UpdatesTile(),

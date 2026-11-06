@@ -13,6 +13,12 @@ abstract final class SmsIds {
     return 'sms:$hex';
   }
 
+  /// Lower-case hex SHA-256 of [text] (UTF-8), for identities that must not
+  /// keep the text (FR-38-10).
+  static String sha256Hex(String text) => sha256(
+        Uint8List.fromList(utf8.encode(text)),
+      ).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+
   /// Pure-Dart SHA-256 (keeps the domain free of extra dependencies).
   static Uint8List sha256(Uint8List data) {
     const k = <int>[

@@ -6,7 +6,7 @@
 | Status | In progress (data layer, core UI, transfer/EMI pairing, Calendar, By merchant, multi-select done; OCR, gaps, own-transfer form, split pending) ; 2026-10-27 parity: By category, Card/Account chips, payee-account map and own-transfer form done; 2026-10-27 parity: screenshot OCR fill done (FR-08-26); gaps, own-transfer and split are other items ; 2026-10-31 mockups applied: source and view dropdowns, Book tag ; 2026-10-31 Transactions tab matched to approved mock |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-31 |
+| Last Updated | 2026-11-06 |
 
 ## 1. Description
 
@@ -180,6 +180,8 @@ Calendar segment (`TransactionsScreen.kt:225-244`): the day value is the sum of 
 - FR-08-24: The detail account picker offers "Remember for this payee"; the payee-to-account map (settings key `payee_account:<merchant key>`, no schema change) files later ingested rows of that payee under the chosen account.
 - FR-08-25: The Add screen has a Transfer mode (From, To, amount, date, note) that writes both legs through `TransactionRepository.addOwnTransfer`; a transfer into a card writes the bank leg with the card bill note so it counts once as a payment (FR-10-19).
 - FR-08-26: Add transaction shall offer "Fill from a screenshot": pick an image, read it on device with ML Kit Latin text recognition (`google_mlkit_text_recognition`, bundled model, offline), parse with `FreeTextParser.draft`, fill the form for review (amount, type, payee, reference, category, date, account guessed by last digits and bank) and never save by itself. States: scanning bar, "No amount found in that screenshot. Fill the details in yourself.", "Filled in from the screenshot. Check the details, then save.", "Couldn't read that image."
+- FR-08-27: Text another app shares into DhanKosh (`ACTION_SEND` `text/plain`, native cap 1,000 characters, taken once) opens Add transaction pre-filled, only after the app is unlocked. A bank message or receipt fills amount, direction, payee, reference, category and date through `FreeTextParser.draft` (a balance is never the amount); a short note (40 characters or fewer) with a bare number of 1 to 6 digits fills the amount and uses the other words as the payee ("450 swiggy"); a long sentence with a stray number fills no amount; a foreign-currency amount is not put in the rupee field; the whole text is kept as the note and shown above the form. Nothing is saved until Save.
+- FR-08-28: `TransactionRepository.addFromMessage` adds a payment the user confirmed from a message nothing could read, through the same `ingest` as the parsers with the message's own source and id, so dedup applies and the same message read later is skipped ([Unrecognised messages](38_unrecognised_messages_learned_senders.md) FR-38-11). The Add form opens from an `AddDraft` (every field optional, optional confirm callback).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -481,6 +483,7 @@ Still deferred: own-transfer form in the Add screen, `reclassifyCardBills` sweep
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Added `DeletedMessages` table block and table-ownership note; MessageView (3.10, FR-08-20); calendar captions/colour (3.11, FR-08-21); FR-08-22; TC-08-15..17 | Audit Gate gap, scan_3, scan_5, scan_6 |
+| 2026-11-06 | Added FR-08-27 (share text into the app, pre-filled Add) and FR-08-28 (`addFromMessage`, `AddDraft`); manifest `text/plain` share filter; `takeSharedText` on the alerts channel | Issue I-03 and I-02: share text in, and add a queued message with its provenance |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Package `sqlcipher_flutter_libs` replaced by the `sqlite3` 3.x SQLCipher build hook | Package obsolete after sqlite3 3.x; see ADR-0003 |
 | 2026-10-21 | Phase 1 data layer landed (tables transactions, transaction_sources, deleted_messages; `TransactionRepository` ingest/edit/delete/read streams) | Phase 1 |

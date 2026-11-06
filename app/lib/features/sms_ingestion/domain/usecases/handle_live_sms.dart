@@ -15,9 +15,11 @@ class HandleLiveSms {
     required SmsSettingsRepository settings,
     required bool Function(String sender) accept,
     required SmsIngest ingest,
+    Future<void> Function(InboxSms sms)? onUnaccepted,
     ActivityLogger? activity,
     AppLogger? log,
   })  : _log = log,
+        _onUnaccepted = onUnaccepted,
         _settings = settings,
         _activity = activity,
         _accept = accept,
@@ -26,6 +28,10 @@ class HandleLiveSms {
   final SmsSettingsRepository _settings;
   final bool Function(String) _accept;
   final SmsIngest _ingest;
+
+  /// Offered every message from a sender no parser accepts, e.g. to the review
+  /// queue for senders the user taught the app (FR-38-07). Never throws out.
+  final Future<void> Function(InboxSms sms)? _onUnaccepted;
   final ActivityLogger? _activity;
   final AppLogger? _log;
 
@@ -39,6 +45,11 @@ class HandleLiveSms {
     }
     if (!_accept(sms.sender)) {
       log.debug(LogCategory.sms, 'live.ignored', fields: {'why': 'sender'});
+      try {
+        await _onUnaccepted?.call(sms);
+      } on Object catch (e) {
+        log.warn(LogCategory.sms, 'live.offer_failed', fields: errorFields(e));
+      }
       return null;
     }
     final started = DateTime.now();

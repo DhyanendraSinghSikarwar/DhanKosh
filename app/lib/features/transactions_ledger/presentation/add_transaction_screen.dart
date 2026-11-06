@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
+import 'package:hisaab/features/transactions_ledger/domain/add_draft.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
 import 'package:hisaab/features/transactions_ledger/domain/screenshot_fill.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ocr_fill_card.dart';
@@ -21,8 +22,11 @@ final _accountsProvider = StreamProvider.autoDispose<List<Account>>(
 /// Manual entry: Spent / Received, amount, payee, account, category, date,
 /// reference, note (FR-08-11; Transfer deferred; screenshot fill FR-08-12).
 class AddTransactionScreen extends ConsumerStatefulWidget {
-  /// Creates the screen.
-  const AddTransactionScreen({super.key});
+  /// Creates the screen, optionally pre-filled from [draft].
+  const AddTransactionScreen({this.draft, super.key});
+
+  /// What to pre-fill, or null for a blank form.
+  final AddDraft? draft;
 
   @override
   ConsumerState<AddTransactionScreen> createState() => _AddState();
@@ -40,6 +44,26 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
   DateTime _when = DateTime.now();
   String? _error;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final d = widget.draft;
+    if (d == null) return;
+    final minor = d.amountMinor;
+    if (minor != null) {
+      final paise = (minor % 100).toString().padLeft(2, '0');
+      _amount.text =
+          minor % 100 == 0 ? '${minor ~/ 100}' : '${minor ~/ 100}.$paise';
+    }
+    if (d.type != null) _type = d.type!;
+    if (d.merchant != null) _payee.text = d.merchant!;
+    if (d.reference != null) _ref.text = d.reference!;
+    if (d.note != null) _note.text = d.note!;
+    if (d.category != null) _category = d.category!;
+    _accountId = d.accountId;
+    if (d.when != null) _when = d.when!;
+  }
 
   @override
   void dispose() {
@@ -122,16 +146,30 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
       }
       return;
     }
-    final result = await ref.read(transactionRepositoryProvider).addManual(
-          amountMinor: money.minor,
-          type: _type,
-          timestamp: _when.millisecondsSinceEpoch,
-          accountId: _accountId,
-          merchant: clean(_payee).isEmpty ? null : clean(_payee),
-          category: _category,
-          reference: clean(_ref).isEmpty ? null : clean(_ref),
-          note: clean(_note).isEmpty ? null : clean(_note),
-        );
+    final onConfirm = widget.draft?.onConfirm;
+    final result = onConfirm != null
+        ? await onConfirm(
+            AddFormValues(
+              amountMinor: money.minor,
+              type: _type,
+              timestamp: _when.millisecondsSinceEpoch,
+              accountId: _accountId,
+              merchant: clean(_payee).isEmpty ? null : clean(_payee),
+              category: _category,
+              reference: clean(_ref).isEmpty ? null : clean(_ref),
+              note: clean(_note).isEmpty ? null : clean(_note),
+            ),
+          )
+        : await ref.read(transactionRepositoryProvider).addManual(
+              amountMinor: money.minor,
+              type: _type,
+              timestamp: _when.millisecondsSinceEpoch,
+              accountId: _accountId,
+              merchant: clean(_payee).isEmpty ? null : clean(_payee),
+              category: _category,
+              reference: clean(_ref).isEmpty ? null : clean(_ref),
+              note: clean(_note).isEmpty ? null : clean(_note),
+            );
     if (!mounted) return;
     final msg = switch (result.outcome) {
       IngestOutcome.merged => 'Merged with an existing transaction',
@@ -150,10 +188,20 @@ class _AddState extends ConsumerState<AddTransactionScreen> {
   Widget build(BuildContext context) {
     final accounts = ref.watch(_accountsProvider).value ?? const [];
     return Scaffold(
-      appBar: AppBar(title: const Text('Add transaction')),
+      appBar: AppBar(title: Text(widget.draft?.heading ?? 'Add transaction')),
       body: ListView(
         padding: const EdgeInsets.all(14),
         children: [
+          if (widget.draft?.sourceText case final text?)
+            AppCard(
+              key: const Key('add_source_text'),
+              child: Text(
+                text,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           OcrFillCard(accounts: accounts, onFill: _applyFill),
           const SectionLabel(
             'Amount',

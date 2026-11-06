@@ -39,3 +39,4 @@ One line per feature file. Each file is the single source of truth for its featu
 - [35_diagnostic_log.md](35_diagnostic_log.md) - **Diagnostic Log**: on-device sanitised log file, viewer and manual export for debugging (In Progress)
 - [36_goals_roundups_salary_plan.md](36_goals_roundups_salary_plan.md) - **Savings Goals, Round-ups & Salary Plan**: goals with projection, virtual round-up tracker, salary split plan (In Progress)
 - [37_charts_catalogue.md](37_charts_catalogue.md) - **Charts Catalogue**: every Kotlin chart, its screen, shared components and Flutter status (In Progress)
+- [38_unrecognised_messages_learned_senders.md](38_unrecognised_messages_learned_senders.md) - **Unrecognised Messages & Learned Senders**: generic reader, review queue, learned senders, Add from a message (In Progress)

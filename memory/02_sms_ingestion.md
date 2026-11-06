@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1: native, data, parser wiring, engine, Data sources UI, headless background drain, nightly scan and off-isolate parse implemented; the new Kotlin is not compiled or run on a device; Home progress pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-11-06 |
 
 ## 1. Description
 
@@ -199,6 +199,7 @@ Generic fallback (`GenericBankParser.canHandle` for SMS): header is in `CARD_ISS
 | FR-02-18 | Own-phone-number tails must not create accounts (guard supplied by [Onboarding and permissions](01_onboarding_permissions.md)); the SMS pipeline passes it to ingest. |
 | FR-02-19 | Never log or persist SMS bodies of rejected messages; activity entries carry only counts and error class names. |
 | FR-02-20 | Re-ingesting a message already processed (by `(source, messageId)` or tombstone) is a no-op reported as skipped (idempotent rescans). |
+| FR-02-21 | A live SMS from a sender no parser accepts is offered to the review queue, which keeps it only for a sender the user taught the app ([Unrecognised messages](38_unrecognised_messages_learned_senders.md) FR-38-07). The user's own "find missed messages" scan reads the inbox for senders no parser accepts. A failing queue never changes the live path. |
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -511,6 +512,7 @@ Phase 1 status (2026-10-21): native + Dart data/domain, parser wiring, live engi
 | Date | Change | Reason |
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
+| 2026-11-06 | Added FR-02-21 (unaccepted live SMS offered to the review queue) | Issue I-02: payments from a bank no parser knew were dropped silently |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Lender parsers 16 -> 17 and listed banks ~55 -> 51 (verified against `LenderParser.kt`, `IndianBanks.kt`) | Audit Gate gap, scan_N |
 | 2026-10-21 | Phase 1 native SMS channel + Dart data/domain landed | Phase 1 |

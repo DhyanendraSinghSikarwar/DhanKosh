@@ -26,6 +26,28 @@ abstract interface class TransactionRepository {
     String? note,
   });
 
+  /// Adds a payment the user confirmed from a message nothing could read
+  /// (F-38, FR-38-11). It goes through the same ingest as the parsers, with
+  /// the message's own source and id, so dedup applies and the same message
+  /// read later by a parser is not booked a second time.
+  Future<IngestResult> addFromMessage({
+    required Source source,
+    required String sourceMessageId,
+    required String sender,
+    required String rawText,
+    required int amountMinor,
+    required TransactionType type,
+    required int timestamp,
+    String currency = 'INR',
+    int? accountId,
+    String? merchant,
+    String? upiId,
+    Category category = Category.other,
+    String? reference,
+    String? note,
+    Channel channel = Channel.other,
+  });
+
   /// FR-08-13: two linked TRANSFER legs (`xfer-out:` / `xfer-in:` sources);
   /// one account may be null when the other side is not tracked. Returns the
   /// leg ids. A later bank message for the same payment folds into the leg.

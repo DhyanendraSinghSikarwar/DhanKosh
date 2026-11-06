@@ -37,9 +37,19 @@ class HandleAppNotification {
     required NotificationSettingsRepository settings,
     required IngestMessage ingest,
     required WatchedAppsRepository watched,
+    Future<void> Function(AppNotification n, PaymentApp app)? onUnparsed,
   })  : _settings = settings,
         _watched = watched,
+        _onUnparsed = onUnparsed,
         _ingest = ingest;
+
+  /// Offered a watched app's notification that carried an amount but no
+  /// payment wording (FR-38-06), so it can reach the review queue instead of
+  /// being lost. Never throws out.
+  final Future<void> Function(AppNotification n, PaymentApp app)? _onUnparsed;
+
+  /// Parser reasons that mean "might be a payment in words we do not know".
+  static const _unparsedReasons = {'no payment wording', 'no amount'};
 
   final NotificationSettingsRepository _settings;
   final WatchedAppsRepository _watched;
@@ -88,11 +98,18 @@ class HandleAppNotification {
       source: Source.app,
       messageId: NotificationIds.of(n),
     );
-    return switch (d.parse) {
-      Parsed() => NotificationResult.ingested(d.outcome),
-      Rejected(:final reason) ||
-      NotATransaction(:final reason) =>
-        NotificationResult.skipped(NotificationSkip.parser, reason),
-    };
+    switch (d.parse) {
+      case Parsed():
+        return NotificationResult.ingested(d.outcome);
+      case Rejected(:final reason) || NotATransaction(:final reason):
+        if (_unparsedReasons.contains(reason)) {
+          try {
+            await _onUnparsed?.call(n, app);
+          } on Object {
+            // The queue is a convenience; the skip is still reported.
+          }
+        }
+        return NotificationResult.skipped(NotificationSkip.parser, reason);
+    }
   }
 }

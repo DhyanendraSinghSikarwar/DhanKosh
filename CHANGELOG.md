@@ -8,6 +8,8 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
 
 ### Added
+- Unrecognised messages (More): payments no bank format matched wait for you with a "Looks like" line; add one in a tap and the app learns the sender. A watched payment app's notification that carries only an amount reaches it too, and "Find missed messages" looks through your inbox.
+- Share text into DhanKosh (a UPI receipt, a forwarded bank message, or a note such as "450 swiggy") and Add transaction opens pre-filled.
 - Calendar in Transactions shows the month total, a small amount in each day and the selected day's total.
 - Watched apps screen (More, Payment-app notifications): switch any built-in app off, and add any other app that notifies your phone so its payments are tracked too.
 

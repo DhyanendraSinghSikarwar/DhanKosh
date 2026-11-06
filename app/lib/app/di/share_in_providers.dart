@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hisaab/core/platform_channels/alerts_channel.dart';
 import 'package:hisaab/features/security_privacy/data/channel_screen_guard.dart';
 import 'package:hisaab/features/security_privacy/domain/screen_guard.dart';
 import 'package:hisaab/features/statement_import/data/channel_shared_file_source.dart';
@@ -8,6 +9,11 @@ import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
 /// Files shared into the app (F-05).
 final sharedFileSourceProvider = Provider<SharedFileSource>(
   (ref) => const ChannelSharedFileSource(),
+);
+
+/// Text another app shared into DhanKosh, taken once (F-08, FR-08-27).
+final sharedTextSourceProvider = Provider<Future<String?> Function()>(
+  (ref) => () => const AlertsChannel().takeSharedText(),
 );
 
 /// Screenshot blocking (F-25).

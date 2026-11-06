@@ -132,6 +132,11 @@ class AlertsBridge(context: Context) {
                     pendingShared = null
                     result.success(path)
                 }
+                "takeSharedText" -> {
+                    val text = pendingSharedText
+                    pendingSharedText = null
+                    result.success(text)
+                }
                 "setSecure" -> {
                     val on = call.argument<Boolean>("on") ?: false
                     app.getSharedPreferences(WINDOW_PREFS, Context.MODE_PRIVATE)
@@ -164,6 +169,10 @@ class AlertsBridge(context: Context) {
         @Volatile
         private var pendingShared: String? = null
 
+        /** Text another app shared (FR-08-27); capped, taken once, never logged. */
+        private var pendingSharedText: String? = null
+        private const val MAX_SHARED_TEXT = 1000
+
         /** Set by MainActivity: applies or clears FLAG_SECURE on its window. */
         @Volatile
         var secureHandler: ((Boolean) -> Unit)? = null
@@ -178,6 +187,16 @@ class AlertsBridge(context: Context) {
             if (intent == null) return
             val action = intent.action
             if (action != Intent.ACTION_SEND && action != Intent.ACTION_VIEW) return
+            // Plain text (a UPI receipt, a forwarded bank message, a note): no file.
+            if (action == Intent.ACTION_SEND && intent.type?.startsWith("text/plain") == true) {
+                if (intent.getBooleanExtra(EXTRA_SHARED_DONE, false)) return
+                val text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()?.trim()
+                if (!text.isNullOrEmpty()) {
+                    intent.putExtra(EXTRA_SHARED_DONE, true)
+                    pendingSharedText = text.take(MAX_SHARED_TEXT)
+                    return
+                }
+            }
             val uri: Uri? = if (action == Intent.ACTION_SEND) {
                 if (Build.VERSION.SDK_INT >= 33) {
                     intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)

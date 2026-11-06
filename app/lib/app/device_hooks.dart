@@ -7,10 +7,13 @@ import 'package:hisaab/app/di/share_in_providers.dart';
 import 'package:hisaab/app/router.dart';
 import 'package:hisaab/features/security_privacy/presentation/lock_controller.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
+import 'package:hisaab/features/transactions_ledger/domain/shared_text_draft.dart';
 
 /// Native hooks on start and resume: applies the screenshot block (FR-25-23)
 /// and hands a file shared from another app to the Statements screen once the
-/// app is unlocked (FR-05-26, FR-05-27). Never throws.
+/// app is unlocked (FR-05-26, FR-05-27). Text shared from another app opens
+/// Add transaction pre-filled, also only once unlocked (FR-08-27). Never
+/// throws.
 class DeviceHooks extends ConsumerStatefulWidget {
   /// Wraps [child].
   const DeviceHooks({required this.child, super.key});
@@ -25,6 +28,7 @@ class DeviceHooks extends ConsumerStatefulWidget {
 class _DeviceHooksState extends ConsumerState<DeviceHooks>
     with WidgetsBindingObserver {
   PickedFile? _pending;
+  String? _pendingText;
 
   @override
   void initState() {
@@ -63,9 +67,19 @@ class _DeviceHooksState extends ConsumerState<DeviceHooks>
   Future<void> _take() async {
     try {
       final f = await ref.read(sharedFileSourceProvider).take();
-      if (f == null || !mounted) return;
-      _pending = f;
-      _deliver();
+      if (f != null && mounted) {
+        _pending = f;
+        _deliver();
+      }
+    } on Object {
+      // Share-in never breaks the app.
+    }
+    try {
+      final text = await ref.read(sharedTextSourceProvider)();
+      if (text != null && mounted) {
+        _pendingText = text;
+        _deliver();
+      }
     } on Object {
       // Share-in never breaks the app.
     }
@@ -74,7 +88,8 @@ class _DeviceHooksState extends ConsumerState<DeviceHooks>
   /// FR-05-27: nothing is imported while the lock is up.
   void _deliver() {
     final f = _pending;
-    if (f == null || !mounted) return;
+    final text = _pendingText;
+    if ((f == null && text == null) || !mounted) return;
     final enabled = ref.read(appLockEnabledProvider);
     if (!enabled.hasValue) return;
     if ((enabled.value ?? false) &&
@@ -82,10 +97,20 @@ class _DeviceHooksState extends ConsumerState<DeviceHooks>
       return;
     }
     _pending = null;
-    ref.read(sharedInboxProvider.notifier).put(f);
+    _pendingText = null;
     final router = ref.read(routerProvider);
-    final at = router.routerDelegate.currentConfiguration.last.matchedLocation;
-    if (at != '/statements') unawaited(router.push<void>('/statements'));
+    if (f != null) {
+      ref.read(sharedInboxProvider.notifier).put(f);
+      final at =
+          router.routerDelegate.currentConfiguration.last.matchedLocation;
+      if (at != '/statements') unawaited(router.push<void>('/statements'));
+    }
+    if (text != null) {
+      final draft = SharedTextDraft.of(text, now: DateTime.now());
+      if (draft != null) {
+        unawaited(router.push<void>('/transactions/add', extra: draft));
+      }
+    }
   }
 
   @override
