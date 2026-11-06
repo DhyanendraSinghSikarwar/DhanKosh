@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import com.hisaab.alerts.AlertsBridge
+import com.hisaab.notifications.NotificationsBridge
 import io.flutter.FlutterInjector
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
@@ -50,6 +51,8 @@ object HeadlessRunner {
             val messenger = engine.dartExecutor.binaryMessenger
             // Not detached: the engine is destroyed, and detaching would clear the UI sink.
             SmsChannels(app).attach(messenger, withLive = false)
+            // Notification queue drain while the app is closed (FR-04-21).
+            NotificationsBridge(app).attach(messenger, withLive = false)
             AlertsBridge(app).attach(messenger)
             BackgroundBridge(app, task) { ok -> main.post { job.finish(ok) } }.attach(messenger)
             main.postDelayed({ job.finish(false) }, TIMEOUT_MS)

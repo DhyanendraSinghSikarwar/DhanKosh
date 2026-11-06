@@ -16,6 +16,10 @@ object BackgroundScheduler {
     const val TASK_SMS_DRAIN = "sms.drain"
     const val UNIQUE_SMS_DRAIN = "sms-live-drain"
 
+    /** Payment-app notifications that arrived while no Dart listener was attached (FR-04-21). */
+    const val TASK_NOTIF_DRAIN = "notifications.drain"
+    const val UNIQUE_NOTIF_DRAIN = "notifications-live-drain"
+
     private fun data(task: String) = Data.Builder().putString(KEY_TASK, task).build()
 
     /**

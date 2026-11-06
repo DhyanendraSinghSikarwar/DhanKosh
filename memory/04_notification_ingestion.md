@@ -6,7 +6,7 @@
 | Status | In progress (Phase 2: Kotlin listener, channel, Dart engine, Data sources card and tests done; 32-app built-in list and user-managed Watched apps done; native code uncompiled and untested on device; payee-account memory, repair job, activity entries, app-lock skip pending) |
 | Priority | P1 |
 | Phase | 2 |
-| Last Updated | 2026-11-05 |
+| Last Updated | 2026-11-06 |
 
 ## 1. Description
 
@@ -279,6 +279,9 @@ Skipped:
 | FR-04-16 | Data sources card shows On / Needs access / Off, a toggle, opens system listener settings when access is missing, and re-reads access on resume; show the warning row when disabled. |
 | FR-04-17 | Never persist or log notification text; the activity log holds counts and generic reasons only. |
 | FR-04-18 | The skip-lock flag is set before opening system notification-listener settings. |
+| FR-04-21 | A notification that arrives while no Dart listener is attached MUST be ingested without waiting for the app to open: native queues it and schedules the `notifications.drain` WorkManager job (unique `notifications-live-drain`, appended), which starts the headless engine, drains the queue through the same pipeline and then runs the alert check so "Spent ₹X at Y" is posted. The notifications channel therefore needs only a `Context` and is attached in the headless engine without the live stream. |
+| FR-04-22 | The native listener MUST record when the system bound and unbound it, the post time and count of watched-app notifications handed over, and the queue length (times and counts only, never text), and expose them as `health`. The Data sources card shows one line from it: waiting for Android to connect, listening, or the time of the last payment notification read, plus how many wait to be added. |
+| FR-04-23 | Two payment-app notifications of one amount on one day are two payments unless the second is a re-post within 2 minutes naming no different payee ([Dedup and review](07_dedup_review.md) FR-07-17, FR-07-18). |
 | FR-04-19 | Ship the built-in apps of sections 3.2 and 3.2.1 and let the user switch any of them off. The effective allow-list is `(built-ins minus disabled) + added`; it is pushed to native whenever it changes and at every start. A built-in that is switched off MUST NOT be read. |
 | FR-04-20 | While the switch is on, record for every unwatched app only its package name, launcher label, last post time and a count, capped at 60 apps, without touching the notification's extras. Offer those apps on a Watched apps screen; adding one makes it read like a built-in, as a UPI app under that label, and the choice survives a restart. Adding an app MUST NOT relax the rejection rules of FR-04-06 and FR-04-07. |
 
@@ -546,6 +549,10 @@ android/app/src/main/kotlin/.../notify/
 | TC-04-22 | unit | FR-04-20 | Added apps reload from the key-value store into `effectivePackages` after a restart. |
 | TC-04-23 | unit | FR-04-20 | `seenApps` returns the native list and `forgetSeen` clears it; with the native side missing both are no-ops and `seenApps` is empty. |
 | TC-04-24 | widget | FR-04-19 | Watched apps screen lists the built-ins (PhonePe, slice); switching PhonePe off persists and removes it from the pushed list. |
+| TC-04-26 | unit | FR-04-23 | Two ₹50 notifications to different people, then a third through another app, give three rows and none flagged; a status and a receipt 40 s apart naming one payee give one row. |
+| TC-04-27 | unit | FR-04-22 | `status()` carries the health; bound only while the latest bind is newer than the latest unbind; native missing gives empty health. |
+| TC-04-28 | widget | FR-04-22 | The card says it is waiting while Android has not bound the listener, and shows "5 min ago" and "2 waiting" when it has. |
+| TC-04-29 | unit | FR-04-21 | The standard background registry has `notifications.drain`. |
 | TC-04-25 | widget | FR-04-20 | Empty seen list shows the "Nothing yet" line; a seen app's Watch button adds it, pushes it to native and moves it under "Apps you added". |
 
 Fixtures: all rows of section 2.8, plus WhatsApp notifications with `category=msg`, `channelId='individual_chat_defaults'`.
@@ -598,4 +605,5 @@ Deviations: setting off drops natively before any text is read (stricter than th
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 2 notification ingestion landed | Phase 2 |
+| 2026-11-06 | Added FR-04-21 (background drain while the app is closed), FR-04-22 (listener health line) and FR-04-23 (same-amount payments kept apart); native notifications bridge now Context-based and attached in the headless engine | A PhonePe payment with no SMS only appeared at the next app open, and a second same-amount payment in a day was flagged and left out of totals (issue I-01) |
 | 2026-11-05 | Added FR-04-19 and FR-04-20: 12 more built-in apps (32 total), per-app switches, and a Watched apps screen that offers any app which notified the phone. New `watched_apps_store.dart`, `watched_apps_screen.dart`, native seen-apps list, channel methods `seenPackages`/`forgetSeen`; sections 2, 3.2.1, 3.9, 6, 7, 8, 9, 10, 11, 15, 16, 17 updated | Payments from apps outside the frozen 19-package list were dropped silently and the user had no way to see or change that, so notification-only payments went untracked |

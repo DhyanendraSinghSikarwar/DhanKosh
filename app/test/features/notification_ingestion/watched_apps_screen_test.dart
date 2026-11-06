@@ -40,6 +40,8 @@ class _Source implements NotificationSource {
   }) async =>
       this.packages = packages;
   @override
+  Future<NotificationHealth> health() async => const NotificationHealth();
+  @override
   Future<List<UnwatchedApp>> seenApps() async => seen;
   @override
   Future<void> forgetSeen() async {}

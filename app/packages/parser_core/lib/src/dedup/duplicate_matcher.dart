@@ -30,6 +30,10 @@ abstract final class DuplicateMatcher {
   /// Rounded payment-app amounts: 4 hours.
   static const int roundedWindowMillis = 4 * 60 * 60 * 1000;
 
+  /// One payment can be announced twice by payment apps (a status, then a
+  /// receipt) within seconds; further apart it is another payment: 2 minutes.
+  static const int appRepostWindowMillis = 2 * 60 * 1000;
+
   static const _looseSources = {'APP', 'SCREENSHOT', 'MANUAL'};
   static const _statement = 'STATEMENT';
 
@@ -41,6 +45,7 @@ abstract final class DuplicateMatcher {
     Duration utcOffset = const Duration(hours: 5, minutes: 30),
   }) async {
     final txSource = sourceKey(tx.source);
+    final txIsApp = txSource == 'APP';
     final ref = tx.referenceNumber;
     if (ref != null) {
       for (final s in await lookup.byReference(ref)) {
@@ -51,7 +56,14 @@ abstract final class DuplicateMatcher {
       }
     }
     final h = await lookup.byHash(tx.transactionHash);
-    if (h != null) {
+    if (h != null && txIsApp && ref == null && h.sources.contains('APP')) {
+      // A payment-app notification names no account and usually no reference,
+      // so its hash is only amount, direction and day: two ₹50 payments in a
+      // day, to different people, share it. Between two notifications only a
+      // re-post within seconds is the same payment; the scan below still
+      // matches it against a bank message.
+      if (_appRepost(h, tx)) return Duplicate(h.id, MatchReason.hash);
+    } else if (h != null) {
       // Without a reference the hash is only amount + account + day, so two
       // purchases of the same amount on one card in a day collide. Across
       // sources that is the same transaction; from the same source it may be
@@ -106,6 +118,19 @@ abstract final class DuplicateMatcher {
       final bothHaveAccount = cLast4 != null && tLast4 != null;
       final sameAccount = bothHaveAccount && last4Match(cLast4, tLast4);
       if (bothHaveAccount && !sameAccount) continue;
+
+      // Two payment-app notifications for one amount are two payments unless
+      // the second is a re-post within seconds. The same payee within half an
+      // hour is left to the user; anything else is simply another payment.
+      if (txIsApp && c.sources.contains('APP')) {
+        if (_appRepost(c, tx)) return Duplicate(c.id, MatchReason.fuzzy);
+        if (review == null &&
+            (c.transactionTime - tx.transactionTime).abs() <= windowMillis &&
+            _samePayee(c.merchant, tx.merchant)) {
+          review = (c, 'Same amount and merchant within 30 minutes');
+        }
+        continue;
+      }
 
       final sameMerchant = c.merchant != null &&
           tx.merchant != null &&
@@ -226,6 +251,20 @@ abstract final class DuplicateMatcher {
     }
     return best;
   }
+
+  /// A second notification for the same payment: seconds apart and not naming
+  /// a different payee.
+  static bool _appRepost(StoredTransaction c, ParsedTransaction tx) =>
+      (c.transactionTime - tx.transactionTime).abs() <= appRepostWindowMillis &&
+      merchantsAgree(c.merchant, tx.merchant);
+
+  /// Both name a real payee and it is the same one.
+  static bool _samePayee(String? a, String? b) =>
+      a != null &&
+      b != null &&
+      !GenericPhrases.isGeneric(a) &&
+      !GenericPhrases.isGeneric(b) &&
+      merchantsAgree(a, b);
 
   static final _nonAlnum = RegExp('[^a-z0-9]+');
 

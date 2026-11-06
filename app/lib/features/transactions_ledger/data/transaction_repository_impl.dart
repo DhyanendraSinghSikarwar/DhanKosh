@@ -112,13 +112,22 @@ class TransactionRepositoryImpl implements TransactionRepository {
       if (leg != null) decision = DedupDuplicate(leg, DuplicateReason.fuzzy);
     }
 
-    // Unique-hash race: a stored row with this hash absorbs the message.
+    // Unique-hash race: a stored row with this hash absorbs the message. The
+    // exception is a payment-app notification, which has no account and
+    // usually no reference: its hash is only amount, direction and day, so a
+    // second payment of that amount shares it. The matcher has already judged
+    // it another payment, so it is stored under a hash of its own (FR-04-23).
+    var newHash = p.transactionHash;
     if (decision is DedupNew) {
       final same = candidates
           .where((c) => c.transactionHash == p.transactionHash)
           .toList();
       if (same.isNotEmpty) {
-        decision = DedupDuplicate(same.first.id, DuplicateReason.hash);
+        if (p.source == Source.app && p.referenceNumber == null) {
+          newHash = '${p.transactionHash}#$src:${item.sourceMessageId}';
+        } else {
+          decision = DedupDuplicate(same.first.id, DuplicateReason.hash);
+        }
       }
     }
 
@@ -153,7 +162,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
           p,
           item,
           accountId,
-          hash: p.transactionHash,
+          hash: newHash,
           rule: rule,
         );
     }

@@ -24,6 +24,37 @@ class UnwatchedApp {
   final int count;
 }
 
+/// What the native listener reports about itself: times and counts, never
+/// notification text (FR-04-22).
+class NotificationHealth {
+  /// Creates a [NotificationHealth].
+  const NotificationHealth({
+    this.connectedAt = 0,
+    this.disconnectedAt = 0,
+    this.lastReadAt = 0,
+    this.readCount = 0,
+    this.queued = 0,
+  });
+
+  /// When the system last bound the listener, epoch ms; 0 = never.
+  final int connectedAt;
+
+  /// When the system last unbound it, epoch ms; 0 = never.
+  final int disconnectedAt;
+
+  /// Post time of the latest watched-app notification handed over; 0 = none.
+  final int lastReadAt;
+
+  /// Watched-app notifications handed over so far.
+  final int readCount;
+
+  /// Notifications waiting natively to be ingested.
+  final int queued;
+
+  /// Bound now: the latest bind is newer than the latest unbind.
+  bool get connected => connectedAt > 0 && connectedAt >= disconnectedAt;
+}
+
 /// Native notification listener bridge.
 abstract interface class NotificationSource {
   /// Notifications arriving while the engine runs.
@@ -46,6 +77,9 @@ abstract interface class NotificationSource {
     required bool enabled,
     required List<String> packages,
   });
+
+  /// Listener bind state and counts (FR-04-22).
+  Future<NotificationHealth> health();
 
   /// Apps that posted notifications but are not watched (FR-04-20).
   Future<List<UnwatchedApp>> seenApps();

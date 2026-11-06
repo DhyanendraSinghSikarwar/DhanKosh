@@ -39,6 +39,31 @@ class _State extends ConsumerState<NotificationAccessCard>
     }
   }
 
+  static String _ago(int ms) {
+    final d =
+        DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ms));
+    if (d.inMinutes < 1) return 'just now';
+    if (d.inHours < 1) return '${d.inMinutes} min ago';
+    if (d.inDays < 1) return '${d.inHours} h ago';
+    return '${d.inDays} d ago';
+  }
+
+  /// One line that tells a missing payment from a dead listener (FR-04-22).
+  static String? _health(NotificationSourceStatus s) {
+    if (s.state != NotificationState.on) return null;
+    final h = s.health;
+    final parts = <String>[
+      if (!h.connected)
+        'Waiting for Android to connect. If this stays, turn access off and on.'
+      else if (h.lastReadAt > 0)
+        'Last payment notification read ${_ago(h.lastReadAt)}.'
+      else
+        'Listening. No payment notification read yet.',
+      if (h.queued > 0) '${h.queued} waiting to be added.',
+    ];
+    return parts.join(' ');
+  }
+
   static String _label(NotificationState s) => switch (s) {
         NotificationState.on => 'On',
         NotificationState.needsAccess => 'Needs access',
@@ -90,6 +115,14 @@ class _State extends ConsumerState<NotificationAccessCard>
                 style: text.bodySmall,
               ),
             ],
+          ],
+          if (_health(s) case final line?) ...[
+            const SizedBox(height: 4),
+            Text(
+              line,
+              key: const Key('notif-health'),
+              style: text.bodySmall,
+            ),
           ],
           if (!s.enabled) ...[
             const SizedBox(height: 8),

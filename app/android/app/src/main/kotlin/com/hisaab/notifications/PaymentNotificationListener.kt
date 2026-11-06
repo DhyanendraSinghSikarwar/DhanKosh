@@ -46,6 +46,7 @@ class PaymentNotificationListener : NotificationListenerService() {
         if (sbn.packageName in CHAT_APPS &&
             !isChatPayment(n.category, hasMessages, channel, parts)
         ) return
+        NotificationStore.markRead(applicationContext, sbn.postTime)
         NotificationStore.deliver(
             applicationContext,
             mapOf(
@@ -90,9 +91,15 @@ class PaymentNotificationListener : NotificationListenerService() {
         null
     }
 
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        NotificationStore.markConnected(applicationContext)
+    }
+
     /** Ask the system to rebind after the process was killed (reliability, memory 04 section 6). */
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
+        NotificationStore.markDisconnected(applicationContext)
         if (Build.VERSION.SDK_INT >= 24) {
             try {
                 requestRebind(ComponentName(this, PaymentNotificationListener::class.java))

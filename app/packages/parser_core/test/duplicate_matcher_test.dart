@@ -443,6 +443,93 @@ void main() {
     );
   });
 
+  group('payment-app notifications only (FR-04-23)', () {
+    ParsedTransaction pay(String to, int minutes, {String amount = '₹50'}) =>
+        _notification(
+          amount,
+          title: 'Paid $amount',
+          body: 'to $to',
+          at: _t0 + minutes * _minute,
+        );
+
+    test('two payments of one amount to different people are both kept',
+        () async {
+      final store = _Store();
+      final d = await _ingest(store, [
+        pay('Ravi Kumar', 0),
+        pay('Asha Devi', 10),
+        pay('Imran Khan', 400),
+      ]);
+      expect(d[0], const NewTransaction());
+      expect(d[1], const NewTransaction());
+      expect(d[2], const NewTransaction());
+      expect(store.rows.length, 3);
+    });
+
+    test('the same payee again within half an hour is left to the user',
+        () async {
+      final d = await _ingest(_Store(), [
+        pay('Ravi Kumar', 0),
+        pay('Ravi Kumar', 10),
+      ]);
+      expect(d[1], isA<PossibleDuplicate>());
+    });
+
+    test('a status and a receipt seconds apart are one payment', () async {
+      final store = _Store();
+      final d = await _ingest(store, [
+        pay('Ravi Kumar', 0),
+        _notification(
+          '₹50',
+          title: 'Payment successful',
+          body: '₹50 paid to Ravi Kumar',
+          at: _t0 + 40 * 1000,
+        ),
+      ]);
+      expect(d[1], isA<Duplicate>());
+      expect(store.rows.length, 1);
+    });
+
+    test('seconds apart but a different payee is another payment', () async {
+      final d = await _ingest(_Store(), [
+        pay('Ravi Kumar', 0),
+        _notification(
+          '₹50',
+          title: 'Paid ₹50',
+          body: 'to Asha Devi',
+          at: _t0 + 30 * 1000,
+        ),
+      ]);
+      expect(d[1], const NewTransaction());
+    });
+
+    test('payments that name nobody, minutes apart, are separate', () async {
+      final d = await _ingest(_Store(), [
+        _notification('₹20', title: 'Paid ₹20', body: 'UPI', at: _t0),
+        _notification(
+          '₹20',
+          title: 'Paid ₹20',
+          body: 'UPI',
+          at: _t0 + 5 * _minute,
+        ),
+      ]);
+      expect(d[1], const NewTransaction());
+    });
+
+    test('a different payment never merges into a bank row it already holds',
+        () async {
+      final store = _Store();
+      final d = await _ingest(store, [
+        _sms(_smsWithRef),
+        pay('Swiggy', 2, amount: '₹450'),
+        pay('Zomato', 120, amount: '₹450'),
+      ]);
+      expect(d[1], isA<Duplicate>());
+      expect(d[2], const NewTransaction());
+      expect(store.rows.length, 2);
+    });
+  });
+
   test('merchantsAgree and last4Match helpers', () {
     expect(DuplicateMatcher.merchantsAgree(null, 'Swiggy'), isTrue);
     expect(DuplicateMatcher.merchantsAgree('View Details', 'Swiggy'), isTrue);

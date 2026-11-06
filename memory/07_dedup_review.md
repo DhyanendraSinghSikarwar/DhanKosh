@@ -6,7 +6,7 @@
 | Status | In progress (matcher and data layer done; Review screen with Compare screen (differences highlighted, Merge / Keep separate / Split) and Split on Transaction detail done; manual merge via ledger multi-select; undo toast pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-11-06 |
 
 ## 1. Description
 
@@ -158,6 +158,8 @@ Keep stored values, fill gaps from the message:
 - FR-07-07: Ingest shall follow the nine steps of 2.4 inside one write transaction per batch and be idempotent per `(source, sourceMessageId)`.
 - FR-07-08: Flagged rows shall be stored with hash `"<hash>#<SOURCE>:<messageId>"`, `needsReview`, `duplicateOfId`, `reviewReason`, and be excluded from balances, loans, recurring, tax income, insights and totals.
 - FR-07-09: Merge shall follow the field rules of 2.5 (paise fill, weak merchant, longer last4, explicit time, balance-time rule, category fill).
+- FR-07-17: Two payment-app notifications (source APP) for one amount are two payments, not a duplicate and not a review, unless the second is a re-post: within 2 minutes (`appRepostWindowMillis`) and not naming a different payee (`merchantsAgree`). The same real payee within 30 minutes but more than 2 is a possible duplicate for the user to decide. Anything else is a new row. This replaces the Kotlin "same source, no reference, same hash" review for APP only, because a notification has no account and usually no reference, so its hash is only amount, direction and day and two ₹50 payments in a day collided (FR-04-23).
+- FR-07-18: A new row whose hash is already taken by an APP row without a reference is stored under `"<hash>#<SOURCE>:<messageId>"` (as flagged rows are) so the unique index holds; it is not absorbed into the other row.
 - FR-07-10: The Possible duplicates screen shall list each flagged pair with reason, both rows, both messages and the actions Compare / Keep both / Merge, with the "All clear" empty state.
 - FR-07-11: The Compare screen shall show the nine comparison rows with differing values highlighted and actions Keep both / Merge into one.
 - FR-07-12: `mergeFlagged` and `keepSeparate` shall behave as in 2.6.
@@ -407,6 +409,7 @@ Done: FR-07-11 (`compare_rows.dart` pure field diff, `CompareScreen` pushed from
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Linked `deleted_messages` and `transaction_sources` to 08 as definition owner; FR-07-17 (shared MessageView) | Audit Gate gap, scan_3, scan_6 |
+| 2026-11-06 | Added FR-07-17 and FR-07-18: payment-app notifications of one amount are separate payments unless a re-post within 2 minutes; a hash collision no longer absorbs a different APP payment | A second same-amount PhonePe payment in a day was flagged and kept out of totals, so notification-only payments looked untracked (issue I-01) |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 1 data layer landed (`DedupPolicy` (reference/hash/fuzzy/rounded rules), merge rules, flagged-row actions) | Phase 1 |
 | 2026-10-21 | Phase 1 Dart port landed in app/packages/parser_core: DuplicateMatcher and TransactionHasher | Phase 1 |

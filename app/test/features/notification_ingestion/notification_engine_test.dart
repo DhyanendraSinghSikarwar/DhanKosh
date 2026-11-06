@@ -26,6 +26,7 @@ class FakeNotificationSource implements NotificationSource {
   bool unavailable = false;
   List<UnwatchedApp> seen = const [];
   int forgot = 0;
+  NotificationHealth healthNow = const NotificationHealth();
 
   @override
   Stream<AppNotification> get live => controller.stream;
@@ -51,6 +52,12 @@ class FakeNotificationSource implements NotificationSource {
     if (unavailable) throw StateError('no native');
     this.enabled = enabled;
     this.packages = packages;
+  }
+
+  @override
+  Future<NotificationHealth> health() async {
+    if (unavailable) throw StateError('no native');
+    return healthNow;
   }
 
   @override
@@ -339,5 +346,69 @@ void main() {
     source.unavailable = true;
     expect(await engine.seenApps(), isEmpty);
     await engine.forgetSeen();
+  });
+
+  test('two payments of one amount on one day are both recorded (FR-04-23)',
+      () async {
+    await engine.setEnabled(enabled: true);
+    final first = await handle(
+      pay(key: 'a', parts: ['Paid ₹50', 'to Ravi Kumar']),
+    );
+    final second = await handle(
+      pay(key: 'b', parts: ['Paid ₹50', 'to Asha Devi']),
+    );
+    final third = await handle(
+      pay(
+        pkg: 'com.google.android.apps.nbu.paisa.user',
+        key: 'c',
+        parts: ['You paid ₹50', 'to Imran Khan'],
+      ),
+    );
+    expect(first.outcome, IngestOutcome.inserted);
+    expect(second.outcome, IngestOutcome.inserted);
+    expect(third.outcome, IngestOutcome.inserted);
+    expect(await env.count('transactions'), 3);
+    final flagged = await env.db
+        .customSelect(
+          'SELECT COUNT(*) AS c FROM transactions WHERE needs_review = 1',
+        )
+        .getSingle();
+    expect(flagged.read<int>('c'), 0);
+  });
+
+  test('the same payment announced twice in seconds is one row (FR-04-23)',
+      () async {
+    await engine.setEnabled(enabled: true);
+    await handle(pay(key: 'a', parts: ['Paid ₹50', 'to Ravi Kumar']));
+    final again = await handle(
+      pay(key: 'b', parts: ['Payment successful', '₹50 paid to Ravi Kumar']),
+    );
+    expect(again.outcome, IngestOutcome.merged);
+    expect(await env.count('transactions'), 1);
+  });
+
+  test('status carries the listener health (FR-04-22)', () async {
+    await engine.setEnabled(enabled: true);
+    source.healthNow = const NotificationHealth(
+      connectedAt: 2000,
+      disconnectedAt: 1000,
+      lastReadAt: 3000,
+      readCount: 4,
+      queued: 1,
+    );
+    final s = await engine.status();
+    expect(s.health.connected, isTrue);
+    expect(s.health.queued, 1);
+    expect(s.health.readCount, 4);
+
+    source.healthNow = const NotificationHealth(
+      connectedAt: 1000,
+      disconnectedAt: 2000,
+    );
+    expect((await engine.status()).health.connected, isFalse);
+    expect(const NotificationHealth().connected, isFalse);
+
+    source.unavailable = true;
+    expect((await engine.status()).health.readCount, 0);
   });
 }

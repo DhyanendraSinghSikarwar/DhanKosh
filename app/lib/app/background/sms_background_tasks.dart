@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/alerts_providers.dart';
 import 'package:hisaab/app/di/email_providers.dart';
+import 'package:hisaab/app/di/notification_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/security_providers.dart';
@@ -86,6 +87,20 @@ Future<bool> smsNightlyTask({ProviderContainer Function()? create}) =>
 Future<bool> alertsCheckTask({ProviderContainer Function()? create}) =>
     _withContainer(
       (c) async {
+        await c.read(alertsEngineProvider).run();
+        return true;
+      },
+      create: create,
+    );
+
+/// Payment-app notifications that arrived while the app was closed: drain the
+/// native queue through the same pipeline as the foreground, then run the
+/// alert check so "Spent ₹X at Y" is posted now and not at the next launch
+/// (FR-04-21). The engine's own drain never throws.
+Future<bool> notificationsDrainTask({ProviderContainer Function()? create}) =>
+    _withContainer(
+      (c) async {
+        await c.read(notificationEngineProvider).drain();
         await c.read(alertsEngineProvider).run();
         return true;
       },

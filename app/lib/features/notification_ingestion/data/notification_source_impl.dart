@@ -57,6 +57,18 @@ class NotificationSourceImpl implements NotificationSource {
       _channel.configure(enabled: enabled, packages: packages);
 
   @override
+  Future<NotificationHealth> health() async {
+    final h = await _channel.health();
+    return NotificationHealth(
+      connectedAt: h.connectedAt,
+      disconnectedAt: h.disconnectedAt,
+      lastReadAt: h.lastReadAt,
+      readCount: h.readCount,
+      queued: h.queued,
+    );
+  }
+
+  @override
   Future<List<UnwatchedApp>> seenApps() async => [
         for (final a in await _channel.seenPackages())
           UnwatchedApp(

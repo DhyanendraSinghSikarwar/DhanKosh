@@ -1,6 +1,7 @@
 package com.hisaab.notifications
 
 import android.content.Context
+import com.hisaab.sms.BackgroundScheduler
 import io.flutter.plugin.common.EventChannel
 import org.json.JSONArray
 import org.json.JSONObject
@@ -16,6 +17,10 @@ object NotificationStore {
     private const val KEY_ENABLED = "enabled"
     private const val KEY_PACKAGES = "packages"
     private const val KEY_SEEN = "seen"
+    private const val KEY_CONNECTED_AT = "connected_at"
+    private const val KEY_DISCONNECTED_AT = "disconnected_at"
+    private const val KEY_LAST_READ_AT = "last_read_at"
+    private const val KEY_READ_COUNT = "read_count"
     private const val MAX_QUEUE = 200
     private const val MAX_SEEN = 60
 
@@ -107,6 +112,54 @@ object NotificationStore {
             }
         }
         enqueue(context, message)
+        // No Dart listener (app closed): wake a headless engine to ingest the queue now, as for
+        // SMS, instead of leaving the payment unseen until the app is next opened (FR-04-21).
+        try {
+            BackgroundScheduler.oneOff(
+                context,
+                BackgroundScheduler.UNIQUE_NOTIF_DRAIN,
+                BackgroundScheduler.TASK_NOTIF_DRAIN,
+                false,
+            )
+        } catch (e: Exception) {
+            // The queue is kept; Dart drains it on the next app start or resume.
+        }
+    }
+
+    /** The system bound the listener (FR-04-22). */
+    fun markConnected(context: Context) {
+        prefs(context).edit().putLong(KEY_CONNECTED_AT, System.currentTimeMillis()).apply()
+    }
+
+    /** The system unbound the listener (FR-04-22). */
+    fun markDisconnected(context: Context) {
+        prefs(context).edit().putLong(KEY_DISCONNECTED_AT, System.currentTimeMillis()).apply()
+    }
+
+    /** A watched app's notification was handed over: time and count only (FR-04-22). */
+    fun markRead(context: Context, postTime: Long) {
+        val p = prefs(context)
+        p.edit()
+            .putLong(KEY_LAST_READ_AT, postTime)
+            .putInt(KEY_READ_COUNT, p.getInt(KEY_READ_COUNT, 0) + 1)
+            .apply()
+    }
+
+    /** Listener health for the Data sources card; no notification text (FR-04-22). */
+    fun health(context: Context): Map<String, Any?> {
+        val p = prefs(context)
+        val queued = try {
+            JSONArray(p.getString(KEY_QUEUE, "[]")).length()
+        } catch (e: Exception) {
+            0
+        }
+        return mapOf(
+            "connectedAt" to p.getLong(KEY_CONNECTED_AT, 0L),
+            "disconnectedAt" to p.getLong(KEY_DISCONNECTED_AT, 0L),
+            "lastReadAt" to p.getLong(KEY_LAST_READ_AT, 0L),
+            "readCount" to p.getInt(KEY_READ_COUNT, 0),
+            "queued" to queued,
+        )
     }
 
     @Synchronized

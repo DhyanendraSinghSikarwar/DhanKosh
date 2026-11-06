@@ -1,6 +1,7 @@
 package com.hisaab.notifications
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
@@ -9,41 +10,54 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
-/** Platform channels `notifications` and `notifications_live`. Names mirror channel_names.dart. */
-class NotificationsBridge(private val activity: Activity) {
+/**
+ * Platform channels `notifications` and `notifications_live`. Names mirror channel_names.dart.
+ * Needs only a [Context], so the same handlers serve the UI engine and the headless engine that
+ * ingests notifications while the app is closed (FR-04-21).
+ */
+class NotificationsBridge(context: Context) {
+    private val context = context
     private var channel: MethodChannel? = null
     private var liveChannel: EventChannel? = null
 
-    fun attach(messenger: BinaryMessenger) {
+    /** [withLive] is false in the headless engine: nothing listens there. */
+    fun attach(messenger: BinaryMessenger, withLive: Boolean = true) {
         channel = MethodChannel(messenger, "com.hisaab/notifications").also {
             it.setMethodCallHandler { call, result -> onCall(call, result) }
         }
-        liveChannel = EventChannel(messenger, "com.hisaab/notifications_live").also {
-            it.setStreamHandler(object : EventChannel.StreamHandler {
-                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                    NotificationStore.sink = events
-                }
+        if (withLive) {
+            liveChannel = EventChannel(messenger, "com.hisaab/notifications_live").also {
+                it.setStreamHandler(object : EventChannel.StreamHandler {
+                    override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                        NotificationStore.sink = events
+                    }
 
-                override fun onCancel(arguments: Any?) {
-                    NotificationStore.sink = null
-                }
-            })
+                    override fun onCancel(arguments: Any?) {
+                        NotificationStore.sink = null
+                    }
+                })
+            }
         }
     }
 
+    /** UI engine only: a headless engine must never clear the UI engine's sink. */
     fun detach() {
         channel?.setMethodCallHandler(null)
-        liveChannel?.setStreamHandler(null)
-        NotificationStore.sink = null
+        channel = null
+        if (liveChannel != null) {
+            liveChannel?.setStreamHandler(null)
+            liveChannel = null
+            NotificationStore.sink = null
+        }
     }
 
     private fun hasAccess(): Boolean {
         val flat = Settings.Secure.getString(
-            activity.contentResolver,
+            context.contentResolver,
             "enabled_notification_listeners",
         ) ?: return false
         return flat.split(":").any {
-            it.startsWith(activity.packageName + "/") || it.startsWith(activity.packageName + ":")
+            it.startsWith(context.packageName + "/") || it.startsWith(context.packageName + ":")
         }
     }
 
@@ -52,19 +66,22 @@ class NotificationsBridge(private val activity: Activity) {
             "isAccessEnabled" -> result.success(hasAccess())
             "sdkInt" -> result.success(Build.VERSION.SDK_INT)
             "openAccessSettings" -> {
-                activity.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                if (context !is Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
                 result.success(null)
             }
-            "drainPending" -> result.success(NotificationStore.drain(activity))
-            "seenPackages" -> result.success(NotificationStore.seen(activity))
+            "drainPending" -> result.success(NotificationStore.drain(context))
+            "seenPackages" -> result.success(NotificationStore.seen(context))
             "forgetSeen" -> {
-                NotificationStore.forgetSeen(activity)
+                NotificationStore.forgetSeen(context)
                 result.success(null)
             }
+            "health" -> result.success(NotificationStore.health(context))
             "configure" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: false
                 val packages = call.argument<List<String>>("packages") ?: emptyList()
-                NotificationStore.configure(activity, enabled, packages)
+                NotificationStore.configure(context, enabled, packages)
                 result.success(null)
             }
             else -> result.notImplemented()

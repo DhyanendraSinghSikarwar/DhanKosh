@@ -6,6 +6,9 @@ abstract final class BackgroundTasks {
   /// Drain the native live-SMS queue and ingest it (FR-02-01).
   static const smsDrain = 'sms.drain';
 
+  /// Drain the native payment-app notification queue and ingest it (FR-04-21).
+  static const notificationsDrain = 'notifications.drain';
+
   /// Nightly 14-day inbox re-read (FR-02-14).
   static const smsNightly = 'sms.nightly';
 
@@ -14,6 +17,9 @@ abstract final class BackgroundTasks {
 
   /// Unique work name for [smsDrain].
   static const smsDrainUnique = 'sms-live-drain';
+
+  /// Unique work name for [notificationsDrain] (Kotlin `BackgroundScheduler`).
+  static const notificationsDrainUnique = 'notifications-live-drain';
 
   /// Unique work name for [smsNightly] (`nightly-sync` in the Kotlin app).
   static const nightlyUnique = 'nightly-sync';

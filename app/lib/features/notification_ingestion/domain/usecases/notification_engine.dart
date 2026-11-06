@@ -29,6 +29,7 @@ class NotificationSourceStatus {
     this.enabled = false,
     this.hasAccess = false,
     this.sdkInt = 0,
+    this.health = const NotificationHealth(),
   });
 
   /// `app_notifications`.
@@ -39,6 +40,9 @@ class NotificationSourceStatus {
 
   /// Android API level; 0 when unknown.
   final int sdkInt;
+
+  /// Listener bind state and counts (FR-04-22).
+  final NotificationHealth health;
 
   /// Derived state.
   NotificationState get state => !enabled
@@ -180,9 +184,18 @@ class NotificationEngine {
         enabled: enabled,
         hasAccess: await _source.hasAccess(),
         sdkInt: await _source.sdkInt(),
+        health: await _healthOrEmpty(),
       );
     } on Object {
       return NotificationSourceStatus(enabled: enabled);
+    }
+  }
+
+  Future<NotificationHealth> _healthOrEmpty() async {
+    try {
+      return await _source.health();
+    } on Object {
+      return const NotificationHealth();
     }
   }
 

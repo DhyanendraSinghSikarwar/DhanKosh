@@ -35,6 +35,18 @@ void main() {
       expect(r.has(BackgroundTasks.smsDrain), isTrue);
       expect(r.has(BackgroundTasks.smsNightly), isTrue);
     });
+
+    test(
+        'standard registry drains notifications while the app is closed '
+        '(FR-04-21)', () {
+      final r = BackgroundRegistry.standard();
+      expect(r.has(BackgroundTasks.notificationsDrain), isTrue);
+      expect(BackgroundTasks.notificationsDrain, 'notifications.drain');
+      expect(
+        BackgroundTasks.notificationsDrainUnique,
+        'notifications-live-drain',
+      );
+    });
   });
 
   group('runBackgroundTask', () {

@@ -61,6 +61,46 @@ class RawNotification {
   final String? channelId;
 }
 
+/// What the native listener reports about itself: times and counts only, never
+/// notification text (FR-04-22).
+class ListenerHealth {
+  /// Creates a [ListenerHealth].
+  const ListenerHealth({
+    this.connectedAt = 0,
+    this.disconnectedAt = 0,
+    this.lastReadAt = 0,
+    this.readCount = 0,
+    this.queued = 0,
+  });
+
+  /// Parses a native map.
+  factory ListenerHealth.fromMap(Map<Object?, Object?> m) => ListenerHealth(
+        connectedAt: (m['connectedAt'] as num?)?.toInt() ?? 0,
+        disconnectedAt: (m['disconnectedAt'] as num?)?.toInt() ?? 0,
+        lastReadAt: (m['lastReadAt'] as num?)?.toInt() ?? 0,
+        readCount: (m['readCount'] as num?)?.toInt() ?? 0,
+        queued: (m['queued'] as num?)?.toInt() ?? 0,
+      );
+
+  /// When the system last bound the listener, epoch ms; 0 = never.
+  final int connectedAt;
+
+  /// When the system last unbound it, epoch ms; 0 = never.
+  final int disconnectedAt;
+
+  /// Post time of the latest watched-app notification handed over; 0 = none.
+  final int lastReadAt;
+
+  /// Watched-app notifications handed over so far.
+  final int readCount;
+
+  /// Notifications waiting natively to be ingested.
+  final int queued;
+
+  /// Bound now: the latest bind is newer than the latest unbind.
+  bool get connected => connectedAt > 0 && connectedAt >= disconnectedAt;
+}
+
 /// An app that posted notifications while it was not watched (FR-04-20).
 /// Package name, label and times only; its notification text is never read.
 class SeenApp {
@@ -141,6 +181,12 @@ class NotificationsChannel extends ChannelBase {
       for (final e in list ?? const <Object?>[])
         SeenApp.fromMap(e! as Map<Object?, Object?>),
     ];
+  }
+
+  /// Listener bind state and counts (FR-04-22).
+  Future<ListenerHealth> health() async {
+    final m = await invoke<Map<Object?, Object?>>('health');
+    return m == null ? const ListenerHealth() : ListenerHealth.fromMap(m);
   }
 
   /// Clears the seen-apps list (FR-04-20).
