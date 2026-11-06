@@ -8,6 +8,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
 
 ### Added
+- Low-balance alert per account (account menu): set a level and get one notification a day while the balance stays below it.
 - Rename a payee (transaction detail, Shown as): the new name appears on every transaction of that payee.
 - Leave a transaction out of totals (transaction detail, Totals): it stays in the list and keeps the account balance right, but no spend, budget or report counts it.
 - A message from a sender you taught DhanKosh now raises a "Spent ₹X at Y?" notification with Add and Not a payment.

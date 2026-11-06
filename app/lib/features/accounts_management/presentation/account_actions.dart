@@ -111,6 +111,29 @@ Future<void> setBalance(
   await repo.setManualBalance(a.id, m.minor, nowMs);
 }
 
+/// Sets or clears the low-balance alert threshold (FR-13-23).
+Future<void> setLowBalance(
+  BuildContext context,
+  AccountRepository repo,
+  Account a,
+) async {
+  final v = await _prompt(
+    context,
+    title: t('Alert when balance is below'),
+    hint: '0.00',
+    keyboard: const TextInputType.numberWithOptions(decimal: true),
+    removeLabel: a.lowBalanceMinor == null ? null : t('Turn off'),
+  );
+  if (v == null) return;
+  if (v.isEmpty) {
+    await repo.setLowBalance(a.id, null);
+    return;
+  }
+  final m = parseMoney(v);
+  if (m == null || m.minor <= 0) return;
+  await repo.setLowBalance(a.id, m.minor);
+}
+
 /// Confirms, then deletes; true when deleted (FR-13-11).
 Future<bool> confirmDelete(
   BuildContext context,

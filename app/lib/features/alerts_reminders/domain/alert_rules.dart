@@ -175,6 +175,34 @@ abstract final class AlertRules {
     return out;
   }
 
+  /// "Balance low" for accounts with a threshold (FR-13-23): once per account
+  /// per day while the balance stays below it.
+  static List<AlertDecision> lowBalanceAccountAlerts({
+    required List<LowBalanceInput> accounts,
+    required DateTime today,
+    required Set<String> alerted,
+  }) {
+    final out = <AlertDecision>[];
+    for (final a in accounts) {
+      if (a.balanceMinor >= a.thresholdMinor) continue;
+      final key = 'lowbal:${a.id}:${_date(today)}';
+      if (alerted.contains(key)) continue;
+      out.add(
+        AlertDecision(
+          kind: AlertKind.lowBalanceAccount,
+          key: key,
+          channel: AlertChannel.budgetsBills,
+          notificationId: AlertText.stableId(key),
+          title: '${a.label} balance is low',
+          body: '${AlertText.money(a.balanceMinor)} left, below '
+              '${AlertText.money(a.thresholdMinor)}.',
+          link: 'hisaab://account/${a.id}',
+        ),
+      );
+    }
+    return out;
+  }
+
   /// Insurance renewal alerts (FR-21-07): non-monthly policies due in 0..7
   /// days, once per (insurer, due date). Wording fix: "in 1 day" (memory 21
   /// Open Question 6).

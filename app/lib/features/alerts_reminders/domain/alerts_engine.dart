@@ -118,6 +118,7 @@ class AlertsEngine {
       for (final check in <Future<List<AlertDecision>> Function()>[
         () => _budgetDecisions(settings, ist),
         () => _billDecisions(today),
+        () => _lowBalanceDecisions(today),
         () => _cardDecisions(settings, today),
         () => _newTxDecisions(settings),
         () => _renewalDecisions(today),
@@ -437,6 +438,32 @@ class AlertsEngine {
     }
     return AlertRules.lowBalanceBillAlerts(
       bills: bills,
+      today: today,
+      alerted: await _alerted.all(),
+    );
+  }
+
+  Future<List<AlertDecision>> _lowBalanceDecisions(DateTime today) async {
+    final ms = today.millisecondsSinceEpoch - _istOffsetMs;
+    final rows = await _accounts
+        .watchWithActivity(monthStartMs: ms, monthEndMs: ms + 86400000)
+        .first;
+    final inputs = <LowBalanceInput>[
+      for (final r in rows)
+        if (r.account.lowBalanceMinor != null &&
+            !r.account.hidden &&
+            r.account.mergedIntoId == null &&
+            r.currentBalanceMinor != null)
+          LowBalanceInput(
+            id: r.account.id,
+            label: r.account.label,
+            balanceMinor: r.currentBalanceMinor!,
+            thresholdMinor: r.account.lowBalanceMinor!,
+          ),
+    ];
+    if (inputs.isEmpty) return const [];
+    return AlertRules.lowBalanceAccountAlerts(
+      accounts: inputs,
       today: today,
       alerted: await _alerted.all(),
     );

@@ -33,6 +33,7 @@ class AccountAdminRepositoryImpl implements AccountAdminRepository {
         hidden: r.hidden,
         usage: enumFromDb(AccountUsage.values, r.usage, AccountUsage.personal),
         mergedIntoId: r.mergedIntoId,
+        lowBalanceMinor: r.lowBalanceMinor,
       );
 
   Future<void> _patch(int id, AccountsCompanion c) =>

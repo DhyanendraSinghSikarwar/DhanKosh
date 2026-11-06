@@ -27,6 +27,7 @@ enum AlertKind {
   weeklySummary,
   updateAvailable,
   learnedSender,
+  lowBalanceAccount,
 }
 
 /// A notification button (FR-21-03, FR-21-10).
@@ -261,4 +262,19 @@ class WeekSpend {
 
   /// Spend in [topCategory], paise.
   final int topCategoryMinor;
+}
+
+/// An account with a low-balance threshold (FR-13-23).
+class LowBalanceInput {
+  const LowBalanceInput({
+    required this.id,
+    required this.label,
+    required this.balanceMinor,
+    required this.thresholdMinor,
+  });
+
+  final int id;
+  final String label;
+  final int balanceMinor;
+  final int thresholdMinor;
 }

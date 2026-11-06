@@ -16,7 +16,17 @@ import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:parser_core/parser_core.dart';
 
-enum _Action { edit, rename, type, balance, merge, hide, ignore, delete }
+enum _Action {
+  edit,
+  rename,
+  type,
+  balance,
+  lowBalance,
+  merge,
+  hide,
+  ignore,
+  delete
+}
 
 /// Account detail (route `/accounts/:id`): balance, estimated flag, this
 /// month's spend, recent activity, actions (FR-13-06, 10, 11, 17 basics).
@@ -63,6 +73,8 @@ class AccountDetailScreen extends ConsumerWidget {
                     a,
                     unlockSheet: unlockSheet,
                   );
+                case _Action.lowBalance:
+                  await setLowBalance(context, repo, a);
                 case _Action.merge:
                   final done = await mergeAccountInto(
                     context,
@@ -113,6 +125,10 @@ class AccountDetailScreen extends ConsumerWidget {
               PopupMenuItem(
                 value: _Action.balance,
                 child: Text(t('Set balance')),
+              ),
+              PopupMenuItem(
+                value: _Action.lowBalance,
+                child: Text(t('Low-balance alert')),
               ),
               PopupMenuItem(
                 value: _Action.merge,

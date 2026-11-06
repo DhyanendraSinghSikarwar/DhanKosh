@@ -34,6 +34,9 @@ abstract interface class AccountRepository {
   Future<void> rename(int id, String? nickname);
   Future<void> setType(int id, AccountType? type);
   Future<void> setManualBalance(int id, int? balanceMinor, int? at);
+
+  /// Alert when the balance falls below [minor]; null turns it off (FR-13-23).
+  Future<void> setLowBalance(int id, int? minor);
   Future<void> setHidden(int id, {required bool hidden});
 
   /// Display-only merge; null target unmerges (FR-13-08).

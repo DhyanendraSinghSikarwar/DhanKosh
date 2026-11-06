@@ -63,6 +63,6 @@ void main() {
     expect(await db.select(db.goals).get(), hasLength(1));
     expect(await db.select(db.sips).get(), hasLength(1));
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.read<int>('user_version'), 10);
+    expect(v.read<int>('user_version'), 11);
   });
 }

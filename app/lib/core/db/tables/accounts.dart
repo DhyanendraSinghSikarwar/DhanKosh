@@ -29,6 +29,9 @@ class Accounts extends Table {
   IntColumn get loanStartDay => integer().nullable()();
   IntColumn get mergedIntoId => integer().nullable()();
 
+  /// Alert when the balance falls below this, paise (FR-13-23).
+  IntColumn get lowBalanceMinor => integer().nullable()();
+
   @override
   List<Set<Column>> get uniqueKeys => [
         {bankName, last4},

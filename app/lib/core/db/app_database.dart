@@ -73,7 +73,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -153,6 +153,8 @@ class AppDatabase extends _$AppDatabase {
           if (from < 9) await m.addColumn(transactions, transactions.excluded);
           // v9 -> v10: merchant aliases (FR-09-20). Additive.
           if (from < 10) await m.createTable(merchantAliases);
+          // v10 -> v11: accounts.low_balance_minor (FR-13-23). Additive.
+          if (from < 11) await m.addColumn(accounts, accounts.lowBalanceMinor);
         },
         beforeOpen: (details) async {
           AppLog.instance.info(

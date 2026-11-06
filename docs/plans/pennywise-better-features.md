@@ -63,7 +63,7 @@ Status is kept in section 5.
 |---|---|
 | W1 | Done (FR-10-24, schema v9) |
 | W2 | Done (FR-09-20, schema v10); backup of aliases left out |
-| W3 | Pending |
+| W3 | Done (FR-13-23, schema v11); backup of the threshold left out |
 | W4 | Pending |
 | W5 | Pending |
 | W6..W18 | Pending |

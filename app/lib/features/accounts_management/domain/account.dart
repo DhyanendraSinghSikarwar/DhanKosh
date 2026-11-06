@@ -58,6 +58,7 @@ class Account {
     this.hidden = false,
     this.usage = AccountUsage.personal,
     this.mergedIntoId,
+    this.lowBalanceMinor,
   });
 
   final int id;
@@ -78,6 +79,9 @@ class Account {
   final bool hidden;
   final AccountUsage usage;
   final int? mergedIntoId;
+
+  /// Alert below this balance, paise (FR-13-23).
+  final int? lowBalanceMinor;
 
   /// `nickname ?: "bank ••last4"`.
   String get label => nickname ?? '$bankName ••$last4';

@@ -36,6 +36,7 @@ class AccountRepositoryImpl implements AccountRepository {
         hidden: r.hidden,
         usage: enumFromDb(AccountUsage.values, r.usage, AccountUsage.personal),
         mergedIntoId: r.mergedIntoId,
+        lowBalanceMinor: r.lowBalanceMinor,
       );
 
   @override
@@ -182,6 +183,10 @@ class AccountRepositoryImpl implements AccountRepository {
           accountType: Value(type == null ? null : enumToDb(type)),
         ),
       );
+
+  @override
+  Future<void> setLowBalance(int id, int? minor) =>
+      _patch(id, AccountsCompanion(lowBalanceMinor: Value(minor)));
 
   @override
   Future<void> setManualBalance(int id, int? balanceMinor, int? at) => _patch(
