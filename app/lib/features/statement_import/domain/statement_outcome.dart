@@ -133,8 +133,9 @@ abstract interface class StatementOutcomeStore {
 
 /// Tells the user a statement needs its password (FR-05-11).
 abstract interface class StatementLockedNotifier {
-  /// Posts the "password protected" notice for statement [id].
-  Future<void> notify(int id, {String? bank});
+  /// Posts the "password protected" notice for statement [id]; [subject] is
+  /// the mail's subject line (FR-05-30).
+  Future<void> notify(int id, {String? bank, String? subject});
 }
 
 /// A statement with what its import did (FR-05-20).

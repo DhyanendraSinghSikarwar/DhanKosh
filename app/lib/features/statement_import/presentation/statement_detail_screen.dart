@@ -6,6 +6,7 @@ import 'package:hisaab/core/money/money_formatter.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 import 'package:hisaab/features/statement_import/domain/statement_outcome.dart';
 import 'package:hisaab/features/statement_import/presentation/import_result_text.dart';
+import 'package:hisaab/features/statement_import/presentation/statement_mail_sheet.dart';
 
 /// One statement: bank, period, rows imported or merged, account effect,
 /// holdings and the holdings-mismatch warning (FR-05-18, FR-05-20).
@@ -63,6 +64,9 @@ class _State extends ConsumerState<StatementDetailScreen> {
           final t = s.totals;
           final rows = <(String, String)>[
             ('File', s.fileName),
+            if (s.source == StatementSource.email &&
+                (s.subject?.trim().isNotEmpty ?? false))
+              ('Email subject', s.subject!.trim()),
             if (s.bankName != null)
               (
                 'Bank',
@@ -118,6 +122,16 @@ class _State extends ConsumerState<StatementDetailScreen> {
                         : 'Balance applied',
                   ),
                   trailing: Text(_m(e.amountMinor)),
+                ),
+              if (hasMail(s))
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: OutlinedButton.icon(
+                    key: const Key('statement-view-mail'),
+                    onPressed: () => showStatementMail(context, s),
+                    icon: const Icon(Icons.mail_outline),
+                    label: const Text('View email'),
+                  ),
                 ),
               if (s.filePath != null && s.status != StatementStatus.locked)
                 Padding(

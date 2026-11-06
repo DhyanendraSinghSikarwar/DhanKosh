@@ -30,7 +30,8 @@ Date Transaction Description Amount (in Rs.)
 class _Notifier implements StatementLockedNotifier {
   final ids = <int>[];
   @override
-  Future<void> notify(int id, {String? bank}) async => ids.add(id);
+  Future<void> notify(int id, {String? bank, String? subject}) async =>
+      ids.add(id);
 }
 
 void main() {

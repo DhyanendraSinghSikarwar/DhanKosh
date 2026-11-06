@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/features/statement_import/domain/import_result.dart';
+import 'package:hisaab/features/statement_import/domain/statement.dart';
+import 'package:hisaab/features/statement_import/presentation/statement_mail_sheet.dart';
 
 /// Asks for a statement's password once (FR-05-12). Pops the
 /// [ImportResult] when the statement opened, else stays with an error.
@@ -10,8 +12,13 @@ class UnlockStatementSheet extends ConsumerStatefulWidget {
   const UnlockStatementSheet({
     required this.statementId,
     required this.fileName,
+    this.statement,
     super.key,
   });
+
+  /// The stored statement, when known: its email subject says what kind of
+  /// statement is asking for a password (FR-05-30).
+  final Statement? statement;
 
   /// Row to unlock.
   final int statementId;
@@ -28,6 +35,14 @@ class _State extends ConsumerState<UnlockStatementSheet> {
   bool _remember = false;
   bool _busy = false;
   String? _error;
+
+  String? get _subject {
+    final st = widget.statement;
+    final t = st?.subject?.trim();
+    return st != null && st.source == StatementSource.email && t != null
+        ? (t.isEmpty ? null : t)
+        : null;
+  }
 
   @override
   void dispose() {
@@ -72,7 +87,32 @@ class _State extends ConsumerState<UnlockStatementSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Unlock statement', style: text.titleMedium),
-          Text(widget.fileName, style: text.bodySmall),
+          if (_subject case final subject?) ...[
+            Text(
+              subject,
+              key: const Key('unlock-subject'),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: text.titleSmall,
+            ),
+            Text(
+              '${widget.fileName} · from ${widget.statement!.sender}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: text.bodySmall,
+            ),
+          ] else
+            Text(widget.fileName, style: text.bodySmall),
+          if (widget.statement case final st? when hasMail(st))
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('unlock-view-mail'),
+                onPressed: () => showStatementMail(context, st),
+                icon: const Icon(Icons.mail_outline, size: 18),
+                label: const Text('View email'),
+              ),
+            ),
           const SizedBox(height: 12),
           TextField(
             key: const Key('unlock-password'),

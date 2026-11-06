@@ -6,7 +6,7 @@
 | Status | In progress (Phase 3 + hardening: import pipeline, UI, account balance/limit, deposits, detail screen, mismatch warning, emailed attachments and locked notice done; Kotlin PdfBox bridge and APK not run on a device; MF-order/NPS email-body steps and XLSX entry caps pending; 2026-10-26: share-in of PDF, CSV and XLSX from other apps added in Dart and Kotlin, Kotlin not compiled or run) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-11-06 |
 
 ## 1. Description
 
@@ -328,6 +328,7 @@ PDF: any `RuntimeException` -> Unreadable; locked with no matching password -> s
 | FR-05-20 | Statement detail shows summary card variants, added vs matched counts, account effect, "Read again" when the stored file exists, holdings list, email section and transactions. |
 | FR-05-21 | Keep statement bytes in app-private, non-backed-up storage named by SHA-256 prefix; never upload. |
 | FR-05-22 | Enforce limits: XLSX 40 MB per entry / 80 MB total; amount > 0; description >= 2 chars; dates within [received-2y, received+1d]. |
+| FR-05-30 | When a statement asks for a password, the unlock sheet shows the subject line of the email it came from (up to three lines, with the sender and file name) so the user knows what kind of statement it is, and a "View email" button opens the mail: subject, sender, time and the text kept (`emailText`, up to 4,000 characters; "No text was kept" when empty). Every emailed statement has the same View email button in the Statements list, which also shows the subject under the file name, and on the statement detail screen, which adds an "Email subject" row. A statement imported from a file or shared in has no mail, so nothing is shown for it. The locked-statement notification carries the subject with any amount removed (one line, 70 characters). |
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -749,6 +750,7 @@ Hardening 2026-10-22 (app layer, `statement_import`): FR-05-07 done: `ApplyState
 | Date | Change | Reason |
 |---|---|---|
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
+| 2026-11-06 | Added FR-05-30: the unlock sheet, the Statements list and the detail screen show the source mail's subject, and View email opens the mail; the locked notification carries a figure-free subject | Owner request: while asking for a password it must show what kind of statement it is (issue I-10) |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-19 | Added 3.9.1 holdings side effects of the email-body pipeline, 3.9.2 MfOrderParser rules, 3.9.3 PortfolioSummary rules; FR-05-23..25, TC-05-21..23 | Audit Gate gap, scan_2 |
 | 2026-10-21 | Phase 3 data layer landed | Phase 3 |

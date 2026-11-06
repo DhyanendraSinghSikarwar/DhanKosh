@@ -444,10 +444,13 @@ abstract final class AlertRules {
     );
   }
 
-  /// Password-protected statement notice (FR-21-12); never shows figures.
+  /// Password-protected statement notice (FR-21-12); never shows figures. The
+  /// mail's [subject] says what kind of statement it is (FR-05-30); amounts in
+  /// it are removed.
   static AlertDecision statementLockedAlert({
     required int statementId,
     String? bank,
+    String? subject,
   }) =>
       AlertDecision(
         kind: AlertKind.statementLocked,
@@ -457,7 +460,7 @@ abstract final class AlertRules {
         title: (bank == null || bank.isEmpty)
             ? 'Statement needs a password'
             : '$bank statement needs a password',
-        body: 'Tap to unlock it.',
+        body: AlertText.safeSubject(subject) ?? 'Tap to unlock it.',
         link: 'hisaab://statements?unlock=$statementId',
       );
 

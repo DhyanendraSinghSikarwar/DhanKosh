@@ -6,7 +6,7 @@
 | Status | In progress (rules done; posting engine, native `alerts` channel, Alerts settings screen and launch-route handling landed but native Kotlin unverified on device; card reminders, untracked-change alerts, new-transaction/balance/statement notifications, action buttons and AlertsWorker scheduling pending; 2026-10-26: weekly summary (rule, engine check, toggle) added); 2026-10-27 parity: Card reminders, new-transaction alerts with category buttons and action routes (FR-21-22..25); untracked-change alerts still pending; Kotlin buttons uncompiled |
 | Priority | P1 |
 | Phase | 4 |
-| Last Updated | 2026-10-31 |
+| Last Updated | 2026-11-06 |
 
 ## 1. Description
 
@@ -161,7 +161,7 @@ Scaffold "Notifications & alerts" with cards:
 9. FR-21-09: Card reminders follow `CardDueReminderPlan` (stages 5, 2, 0, overdue; only the most urgent stage; none after 7 days overdue; none if paid or snoozed) and are cancelled when the bill is no longer billed or paid.
 10. FR-21-10: The reminder carries "Mark paid" and "Remind tomorrow" actions that persist `paid` or `snoozed` state without opening the app, and cancel the notification.
 11. FR-21-11: Reminder state (sent stages, paid, snoozed) is stored per card and due date and pruned 120 days after the due date.
-12. FR-21-12: A statement-locked notification (channel `statements`, id 4000 + id) shows only issuer and file name (title "<bank> statement needs a password", body "Tap to unlock it.") and opens the unlock dialog.
+12. FR-21-12 (body from 2026-11-06: the mail's subject with amounts removed, one line of 70 characters, else "Tap to unlock it."; [Statement import](05_statement_import.md) FR-05-30): A statement-locked notification (channel `statements`, id 4000 + id) shows only issuer and file name (title "<bank> statement needs a password", body "Tap to unlock it.") and opens the unlock dialog.
 13. FR-21-13: `AlertsWorker` runs once a day (unique, keep-existing) and executes card reminders, upcoming/renewals, budgets and gaps, each isolated so one failure does not stop the rest; the app also runs card reminders at start.
 14. FR-21-14: Alert de-duplication keys (`budget:`, `bill:`, `renewal:`, `gap:`) are persisted (cap 300 most recent) and checked before sending.
 15. FR-21-15: Tapping any alert deep-links to the matching screen (`hisaab://transaction/<id>`, `budgets`, `bills`, `account/<id>`, `statements?unlock=<id>`).
@@ -512,6 +512,7 @@ FR status additions: done FR-21-05, 06, 07 (posted), 14, 16, 17 (no resume re-ch
 
 | Date | Change | Reason |
 |---|---|---|
+| 2026-11-06 | Statement-locked notification body carries the mail subject with amounts removed | Owner request I-10: say what kind of statement needs a password |
 | 2026-10-17 | Created from hisaab_apk 2.9.8 analysis | Initial |
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 4 data layer landed | Phase 4 |

@@ -167,4 +167,89 @@ void main() {
     expect(find.text('Unlock statement'), findsNothing);
     expect(find.text('3 added, 1 merged.'), findsOneWidget);
   });
+
+  // FR-05-30: the mail's subject says what kind of statement is locked.
+  group('email statements (FR-05-30)', () {
+    final mail = Statement(
+      id: 7,
+      key: 'm1#pdf0',
+      source: StatementSource.email,
+      sender: 'estatement@examplebank.in',
+      fileName: 'stmt.pdf',
+      receivedAt: DateTime(2026, 11, 3, 9, 5).millisecondsSinceEpoch,
+      status: StatementStatus.locked,
+      processedAt: 7,
+      transactionCount: 0,
+      holdingCount: 0,
+      totals: const StatementTotals(),
+      subject: 'Example Bank Credit Card Statement - card ending 4821',
+      emailText: 'Dear Customer, your statement is attached. '
+          'The password is the first four letters of your name and your DOB.',
+    );
+
+    testWidgets('the unlock sheet shows the subject and can open the mail',
+        (t) async {
+      await pump(t, [mail]);
+      // The list row itself names the kind of statement.
+      expect(
+        find.textContaining('Credit Card Statement - card ending 4821'),
+        findsOneWidget,
+      );
+      await t.tap(find.byKey(const Key('statement-7')));
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('unlock-subject')), findsOneWidget);
+      expect(
+        t.widget<Text>(find.byKey(const Key('unlock-subject'))).data,
+        contains('card ending 4821'),
+      );
+      expect(find.textContaining('estatement@examplebank.in'), findsWidgets);
+
+      await t.tap(find.byKey(const Key('unlock-view-mail')));
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('mail-subject')), findsOneWidget);
+      expect(find.byKey(const Key('mail-body')), findsOneWidget);
+      expect(find.textContaining('first four letters'), findsOneWidget);
+    });
+
+    testWidgets('each emailed statement has a View email button', (t) async {
+      await pump(t, [mail, ...rows]);
+      expect(find.byKey(const Key('statement-mail-7')), findsOneWidget);
+      // A statement imported from a file has no mail to show.
+      expect(find.byKey(const Key('statement-mail-1')), findsNothing);
+      await t.tap(find.byKey(const Key('statement-mail-7')));
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('mail-body')), findsOneWidget);
+    });
+
+    testWidgets('a file statement shows only its file name', (t) async {
+      await pump(t, rows);
+      await t.tap(find.byKey(const Key('statement-2')));
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('unlock-subject')), findsNothing);
+      expect(find.byKey(const Key('unlock-view-mail')), findsNothing);
+      expect(find.text('locked.pdf'), findsWidgets);
+    });
+
+    testWidgets('a mail with no kept text says so', (t) async {
+      const bare = Statement(
+        id: 8,
+        key: 'm2#pdf0',
+        source: StatementSource.email,
+        sender: 'a@b.in',
+        fileName: 's.pdf',
+        receivedAt: 1,
+        status: StatementStatus.parsed,
+        processedAt: 1,
+        transactionCount: 2,
+        holdingCount: 0,
+        totals: StatementTotals(),
+        subject: 'Your statement',
+      );
+      await pump(t, [bare]);
+      await t.tap(find.byKey(const Key('statement-mail-8')));
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('mail-empty')), findsOneWidget);
+      expect(find.byKey(const Key('mail-subject')), findsOneWidget);
+    });
+  });
 }

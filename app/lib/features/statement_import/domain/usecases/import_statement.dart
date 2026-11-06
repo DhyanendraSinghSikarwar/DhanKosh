@@ -475,7 +475,7 @@ class ImportStatement {
         statement.id,
     };
     // FR-05-11: an emailed statement can arrive while the app is closed.
-    if (origin != null) await _notifier?.notify(id);
+    if (origin != null) await _notifier?.notify(id, subject: origin.subject);
     return id;
   }
 

@@ -57,4 +57,19 @@ abstract final class AlertText {
     }
     return 1000000 + h % 2000000000;
   }
+
+  static final RegExp _amountInSubject =
+      RegExp(r'(?:₹|\bRs\.?|\bINR)\s*[\d,]+(?:\.\d+)?', caseSensitive: false);
+
+  /// A mail subject safe for a lock screen: amounts removed, one line, cut to
+  /// 70 characters; null when nothing is left (FR-05-30).
+  static String? safeSubject(String? subject) {
+    if (subject == null) return null;
+    final t = subject
+        .replaceAll(_amountInSubject, '…')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (t.isEmpty) return null;
+    return t.length <= 70 ? t : '${t.substring(0, 69)}…';
+  }
 }

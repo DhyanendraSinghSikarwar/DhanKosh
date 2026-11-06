@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/share_in_providers.dart';
 import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/features/statement_import/domain/import_result.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
 import 'package:hisaab/features/statement_import/presentation/import_result_text.dart';
+import 'package:hisaab/features/statement_import/presentation/statement_mail_sheet.dart';
 import 'package:hisaab/features/statement_import/presentation/unlock_statement_sheet.dart';
 
 /// Imported statements: list with status, locked banner, import and delete
@@ -57,11 +59,18 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
     if (r is ImportLocked) await _unlock(r.statementId, file.name);
   }
 
-  Future<void> _unlock(int id, String name) async {
+  Future<void> _unlock(int id, String name, [Statement? known]) async {
+    // The row may not be in the list yet when it was just imported.
+    final st = known ?? await ref.read(statementRepositoryProvider).byId(id);
+    if (!mounted) return;
     final r = await showModalBottomSheet<ImportResult>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => UnlockStatementSheet(statementId: id, fileName: name),
+      builder: (_) => UnlockStatementSheet(
+        statementId: id,
+        fileName: name,
+        statement: st,
+      ),
     );
     if (r != null && mounted) _say(importResultText(r));
   }
@@ -90,7 +99,17 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
     if (ok ?? false) await ref.read(importStatementProvider).delete(s.id);
   }
 
-  static String _subtitle(Statement s) => switch (s.status) {
+  static String _subtitle(Statement s) {
+    final base = _status(s);
+    final subject = s.subject?.trim();
+    return s.source == StatementSource.email &&
+            subject != null &&
+            subject.isNotEmpty
+        ? '$subject\n$base'
+        : base;
+  }
+
+  static String _status(Statement s) => switch (s.status) {
         StatementStatus.locked => 'Locked',
         StatementStatus.unreadable => 'Unreadable',
         StatementStatus.empty => 'Nothing found',
@@ -127,7 +146,7 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
         if (s.id == link && s.isLocked) {
           _deepLinked = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) unawaited(_unlock(s.id, s.fileName));
+            if (mounted) unawaited(_unlock(s.id, s.fileName, s));
           });
         }
       }
@@ -172,15 +191,32 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
                           color: s.isLocked ? scheme.error : null,
                         ),
                         title: Text(s.fileName, maxLines: 1),
-                        subtitle: Text(_subtitle(s)),
+                        subtitle: Text(
+                          _subtitle(s),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        isThreeLine: _subtitle(s).contains('\n'),
                         onTap: s.isLocked
-                            ? () => _unlock(s.id, s.fileName)
+                            ? () => _unlock(s.id, s.fileName, s)
                             : () => _open(s),
-                        trailing: IconButton(
-                          key: Key('statement-delete-${s.id}'),
-                          tooltip: 'Delete',
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () => _delete(s),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (hasMail(s))
+                              IconButton(
+                                key: Key('statement-mail-${s.id}'),
+                                tooltip: 'View email',
+                                icon: const Icon(Icons.mail_outline),
+                                onPressed: () => showStatementMail(context, s),
+                              ),
+                            IconButton(
+                              key: Key('statement-delete-${s.id}'),
+                              tooltip: 'Delete',
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => _delete(s),
+                            ),
+                          ],
                         ),
                       );
                     },

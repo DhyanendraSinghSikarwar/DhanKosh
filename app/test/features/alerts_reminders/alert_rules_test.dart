@@ -551,6 +551,23 @@ void main() {
       );
     });
 
+    test('statement locked shows the mail subject, without amounts (FR-05-30)',
+        () {
+      final d = AlertRules.statementLockedAlert(
+        statementId: 3,
+        bank: 'Example Bank',
+        subject: 'Credit Card Statement - Total due Rs 12,345.67 by 20 Nov',
+      );
+      expect(d.body, 'Credit Card Statement - Total due … by 20 Nov');
+      expect(d.body, isNot(contains('12,345')));
+      expect(
+        AlertRules.statementLockedAlert(statementId: 3, subject: '   ').body,
+        'Tap to unlock it.',
+      );
+      expect(AlertText.safeSubject(null), isNull);
+      expect(AlertText.safeSubject('a' * 200)!.length, 70);
+    });
+
     test('money text: en-IN grouping', () {
       expect(AlertText.money(r(123456)), '₹1,23,456');
       expect(AlertText.money(99), '₹0');

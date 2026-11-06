@@ -106,5 +106,5 @@ Exclude-from-analytics, merchant alias, budget impact; tags; quick add; subscrip
 | I-06 | Pending |
 | I-07 | Pending |
 | I-08 | Pending |
-| I-10 | Pending |
+| I-10 | Done (FR-05-30) |
 | I-11 to I-25 | Pending |

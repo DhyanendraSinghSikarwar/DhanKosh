@@ -14,11 +14,15 @@ class AlertStatementLockedNotifier implements StatementLockedNotifier {
   final ActivityLogger? _activity;
 
   @override
-  Future<void> notify(int id, {String? bank}) async {
+  Future<void> notify(int id, {String? bank, String? subject}) async {
     try {
       if (!await _poster.areEnabled()) return;
       final ok = await _poster.post(
-        AlertRules.statementLockedAlert(statementId: id, bank: bank),
+        AlertRules.statementLockedAlert(
+          statementId: id,
+          bank: bank,
+          subject: subject,
+        ),
       );
       if (ok) {
         await _activity?.record(
