@@ -29,6 +29,7 @@ enum AlertKind {
   learnedSender,
   lowBalanceAccount,
   dailySummary,
+  billReminder,
 }
 
 /// A notification button (FR-21-03, FR-21-10).
@@ -114,6 +115,7 @@ class AlertSettings {
     this.cardDueReminders = true,
     this.weeklySummary = false,
     this.dailySummary = false,
+    this.billReminders = true,
     this.updateAvailable = true,
   });
 
@@ -125,6 +127,9 @@ class AlertSettings {
 
   /// Evening recap of today, off by default (FR-21-29).
   final bool dailySummary;
+
+  /// Reminders for bills due tomorrow, on by default (FR-21-30).
+  final bool billReminders;
 
   final bool transactionNotifications;
 
@@ -250,6 +255,9 @@ const weeklySummaryKey = SettingKey<bool>('weekly_summary_alert', false);
 /// Setting key of the daily summary toggle (FR-21-29).
 const dailySummaryKey = SettingKey<bool>('daily_summary_alert', false);
 
+/// Setting key of the bill reminders toggle (FR-21-30).
+const billRemindersKey = SettingKey<bool>('bill_reminders_alert', true);
+
 /// Setting key of the update-available toggle (FR-31-34).
 const updateAlertKey = SettingKey<bool>('update_alert', true);
 
@@ -285,4 +293,26 @@ class LowBalanceInput {
   final String label;
   final int balanceMinor;
   final int thresholdMinor;
+}
+
+/// A bill the user declared (own item or loan EMI) that may need a reminder
+/// (FR-21-30).
+class BillReminderInput {
+  const BillReminderInput({
+    required this.name,
+    required this.amountMinor,
+    required this.nextDue,
+    required this.categoryName,
+    this.accountId,
+    this.paid = false,
+  });
+
+  final String name;
+  final int amountMinor;
+  final DateTime nextDue;
+  final String categoryName;
+  final int? accountId;
+
+  /// Already paid for this cycle (seen in the ledger).
+  final bool paid;
 }

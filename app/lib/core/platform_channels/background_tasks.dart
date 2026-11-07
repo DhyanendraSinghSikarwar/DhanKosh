@@ -21,6 +21,9 @@ abstract final class BackgroundTasks {
   /// Unique work name for [notificationsDrain] (Kotlin `BackgroundScheduler`).
   static const notificationsDrainUnique = 'notifications-live-drain';
 
+  /// Unique work name of the 09:00 bill-reminder job (FR-21-30).
+  static const billRemindersUnique = 'bill-reminders';
+
   /// Unique work name of the evening daily-summary job (FR-21-29).
   static const dailySummaryUnique = 'daily-summary';
 

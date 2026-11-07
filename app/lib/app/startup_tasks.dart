@@ -7,8 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
 import 'package:hisaab/app/router.dart';
+import 'package:hisaab/core/platform_channels/background_channel.dart';
+import 'package:hisaab/core/platform_channels/background_tasks.dart';
 import 'package:hisaab/core/platform_channels/notifications_channel.dart';
 import 'package:hisaab/features/news_support_updates/presentation/whats_new_sheet.dart';
+import 'package:hisaab/features/sms_ingestion/domain/nightly_schedule.dart';
 import 'package:hisaab/shared/log/app_logger.dart';
 import 'package:hisaab/shared/log/log_models.dart';
 
@@ -83,8 +86,27 @@ class _StartupTasksState extends ConsumerState<StartupTasks>
         unawaited(ref.read(smsEngineProvider).ensureNightly());
       }
       unawaited(ref.read(updateControllerProvider.notifier).check());
+      unawaited(_scheduleBillReminders());
     } on Object {
       // Background chores never break the app.
+    }
+  }
+
+  /// Keeps the daily 09:00 job that runs the alert check, for bill reminders
+  /// (FR-21-30). A job already queued is kept, so this is cheap and safe.
+  Future<void> _scheduleBillReminders() async {
+    if (!Platform.isAndroid) return;
+    try {
+      await const BackgroundChannel().schedulePeriodic(
+        uniqueName: BackgroundTasks.billRemindersUnique,
+        task: BackgroundTasks.alertsCheck,
+        intervalMinutes: Duration.minutesPerDay,
+        initialDelayMinutes:
+            nextNightlyDelay(DateTime.now(), hour: 9, minute: 0).inMinutes,
+        requiresBatteryNotLow: false,
+      );
+    } on Object {
+      // Reminders then wait for the next time the app is opened.
     }
   }
 

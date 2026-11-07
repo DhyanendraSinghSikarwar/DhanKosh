@@ -594,6 +594,54 @@ abstract final class AlertRules {
     );
   }
 
+  /// Reminder for a declared bill due today or tomorrow that is not paid yet
+  /// (FR-21-30): once per (name, due date), from 08:00, with Mark paid and
+  /// Skip this time.
+  static List<AlertDecision> billReminders({
+    required List<BillReminderInput> bills,
+    required DateTime today,
+    required int hour,
+    required AlertSettings settings,
+    required Set<String> alerted,
+  }) {
+    if (!settings.billReminders || hour < 8) return const [];
+    final out = <AlertDecision>[];
+    for (final b in bills) {
+      final days = daysBetween(today, b.nextDue);
+      if (b.paid || days < 0 || days > 1) continue;
+      final key = 'billrem:${b.name}:${_date(b.nextDue)}';
+      if (alerted.contains(key)) continue;
+      final payload = {
+        'name': b.name,
+        'amount': '${b.amountMinor}',
+        'category': b.categoryName,
+        if (b.accountId != null) 'accountId': '${b.accountId}',
+        'key': key,
+      };
+      out.add(
+        AlertDecision(
+          kind: AlertKind.billReminder,
+          key: key,
+          channel: AlertChannel.budgetsBills,
+          notificationId: AlertText.stableId(key),
+          title: '${b.name} ${AlertText.money(b.amountMinor)} due '
+              '${days == 0 ? 'today' : 'tomorrow'}',
+          body: 'Not paid yet.',
+          link: 'hisaab://bills',
+          actions: [
+            AlertAction(id: 'billPaid', label: 'Mark paid', payload: payload),
+            AlertAction(
+              id: 'billSkip',
+              label: 'Skip this time',
+              payload: payload,
+            ),
+          ],
+        ),
+      );
+    }
+    return out;
+  }
+
   /// Evening recap (FR-21-29): today's spend and how many payments still wait
   /// for a category. Silent on a day with neither, and before 21:00.
   static AlertDecision? dailySummary({

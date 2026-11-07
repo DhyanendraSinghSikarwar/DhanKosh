@@ -8,6 +8,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
 
 ### Added
+- Bill reminders (Alerts, on by default): the day before a bill or EMI you added is due, a notification with Mark paid and Skip this time.
 - Daily summary (Alerts, off by default): at about 9 pm, today's spend and how many payments still need a category.
 - Low-balance alert per account (account menu): set a level and get one notification a day while the balance stays below it.
 - Rename a payee (transaction detail, Shown as): the new name appears on every transaction of that payee.

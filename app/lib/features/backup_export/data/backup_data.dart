@@ -3,7 +3,7 @@ import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/accounts_management/domain/account_admin_repository.dart';
 import 'package:hisaab/features/accounts_management/domain/account_repository.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_models.dart'
-    show dailySummaryKey, weeklySummaryKey;
+    show billRemindersKey, dailySummaryKey, weeklySummaryKey;
 import 'package:hisaab/features/backup_export/domain/full_backup.dart';
 import 'package:hisaab/features/categorization/domain/category_repository.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
@@ -93,6 +93,7 @@ final backupSettings = <SettingKey<Object>>[
   SecuritySettings.blockScreenshots,
   weeklySummaryKey,
   dailySummaryKey,
+  billRemindersKey,
 ];
 
 String _sipKey(SipItem x) => [

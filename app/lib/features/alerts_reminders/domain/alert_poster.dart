@@ -36,6 +36,9 @@ abstract interface class AlertSettingsRepository {
   /// Turns the weekly summary on or off (FR-21-21).
   Future<void> setWeeklySummary({required bool value});
 
+  /// Turns bill reminders on or off (FR-21-30).
+  Future<void> setBillReminders({required bool value});
+
   /// Turns the evening daily summary on or off (FR-21-29).
   Future<void> setDailySummary({required bool value});
 

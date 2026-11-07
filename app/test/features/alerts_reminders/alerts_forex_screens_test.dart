@@ -39,6 +39,7 @@ void main() {
       200,
     );
     expect(find.byKey(const Key('alerts-percent-help')), findsOneWidget);
+    await t.scrollUntilVisible(find.text('95%'), 200);
     await t.tap(find.text('95%'));
     await settle(t);
     // FR-21-21: weekly summary is off until the user turns it on.

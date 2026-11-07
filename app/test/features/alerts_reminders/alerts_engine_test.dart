@@ -57,6 +57,9 @@ class FakeSettings implements AlertSettingsRepository {
   Stream<AlertSettings> watch() => Stream.value(value);
 
   @override
+  Future<void> setBillReminders({required bool value}) async {}
+
+  @override
   Future<void> setDailySummary({required bool value}) async =>
       this.value = AlertSettings(
         transactionNotifications: this.value.transactionNotifications,

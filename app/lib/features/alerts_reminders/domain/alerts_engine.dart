@@ -14,6 +14,7 @@ import 'package:hisaab/features/credit_cards/domain/card_models.dart';
 import 'package:hisaab/features/credit_cards/domain/card_reminder_plan.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_repository.dart';
 import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
+import 'package:hisaab/features/recurring_transactions/domain/bills_view.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_repository.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
@@ -46,6 +47,7 @@ class AlertsEngine {
     Future<List<CardLimit>> Function()? cards,
     CardReminderStateStore? cardState,
     Future<String?> Function()? updateVersion,
+    Future<List<Recurring>> Function()? bills,
     String installedVersion = '0.0.0',
     int Function()? nowMs,
   })  : _budgets = budgets,
@@ -59,6 +61,7 @@ class AlertsEngine {
         _cards = cards,
         _cardState = cardState,
         _updateVersion = updateVersion,
+        _bills = bills,
         _installed = installedVersion,
         _nowMs = nowMs ?? (() => DateTime.now().millisecondsSinceEpoch);
 
@@ -66,6 +69,7 @@ class AlertsEngine {
   final RecurringRepository _recurring;
   final AccountRepository _accounts;
   final AlertedKeyStore _alerted;
+  final Future<List<Recurring>> Function()? _bills;
   final AlertPoster _poster;
   final AlertSettingsRepository _settings;
   final TransactionRepository? _txs;
@@ -120,6 +124,7 @@ class AlertsEngine {
         () => _budgetDecisions(settings, ist),
         () => _billDecisions(today),
         () => _lowBalanceDecisions(today),
+        () => _billReminderDecisions(settings, today, ist.hour),
         () => _cardDecisions(settings, today),
         () => _newTxDecisions(settings),
         () => _renewalDecisions(today),
@@ -467,6 +472,40 @@ class AlertsEngine {
     return AlertRules.lowBalanceBillAlerts(
       bills: bills,
       today: today,
+      alerted: await _alerted.all(),
+    );
+  }
+
+  Future<List<AlertDecision>> _billReminderDecisions(
+    AlertSettings settings,
+    DateTime today,
+    int hour,
+  ) async {
+    final source = _bills;
+    if (source == null || !settings.billReminders || hour < 8) return const [];
+    final inputs = <BillReminderInput>[];
+    for (final r in await source()) {
+      // Only what the user declared: own items and loan EMIs.
+      if (r.income || (r.manualId == null && r.loanKey == null)) continue;
+      // The account is a soft reference; use it only while it exists.
+      final id = r.accountId;
+      final acc = id == null ? null : await _accounts.byId(id);
+      inputs.add(
+        BillReminderInput(
+          name: r.name,
+          amountMinor: r.amountMinor,
+          nextDue: r.nextDue,
+          categoryName: r.category.name,
+          accountId: acc?.id,
+          paid: BillsView.paid(r, today),
+        ),
+      );
+    }
+    return AlertRules.billReminders(
+      bills: inputs,
+      today: today,
+      hour: hour,
+      settings: settings,
       alerted: await _alerted.all(),
     );
   }

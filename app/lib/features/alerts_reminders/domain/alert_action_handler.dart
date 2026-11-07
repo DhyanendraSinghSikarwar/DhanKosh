@@ -2,6 +2,7 @@ import 'package:hisaab/features/activity_log/domain/activity_logger.dart';
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_poster.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alert_rules.dart';
+import 'package:hisaab/features/alerts_reminders/domain/alert_text.dart';
 import 'package:hisaab/features/alerts_reminders/domain/card_reminder_state_store.dart';
 import 'package:hisaab/features/analytics/domain/civil_date.dart';
 import 'package:hisaab/features/credit_cards/domain/card_due_repository.dart';
@@ -74,6 +75,28 @@ class AlertActionHandler {
             notified: false,
           ),
         );
+        return true;
+      case 'billPaid':
+        // "Mark paid" on a bill reminder: the user says it was paid, so it
+        // is booked as their own manual payment (FR-21-30).
+        final amount = int.tryParse(query['amount'] ?? '');
+        final name = query['name'];
+        if (amount == null || amount <= 0 || name == null) return false;
+        final cat = Category.values
+            .where((c) => c.name == query['category'])
+            .firstOrNull;
+        await _txs.addManual(
+          amountMinor: amount,
+          type: TransactionType.debit,
+          timestamp: _nowMs(),
+          accountId: int.tryParse(query['accountId'] ?? ''),
+          merchant: name,
+          category: cat ?? Category.other,
+        );
+        await _poster.cancel(AlertText.stableId(query['key'] ?? ''));
+        return true;
+      case 'billSkip':
+        await _poster.cancel(AlertText.stableId(query['key'] ?? ''));
         return true;
       case 'unrecNot':
         // "Not a payment" on a learned sender's alert (FR-38-13).

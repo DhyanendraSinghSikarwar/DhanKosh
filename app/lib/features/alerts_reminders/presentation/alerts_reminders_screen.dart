@@ -136,6 +136,16 @@ class _AlertsRemindersScreenState extends ConsumerState<AlertsRemindersScreen>
                 ),
                 const Divider(height: 1),
                 SwitchListTile(
+                  key: const Key('alerts-bills'),
+                  contentPadding: EdgeInsets.zero,
+                  secondary: const IconBadge(AppIcons.activity, size: 36),
+                  title: Text(t('Bill reminders')),
+                  subtitle: Text(t('Your bills and EMIs, the day before')),
+                  value: s.billReminders,
+                  onChanged: (v) => unawaited(repo.setBillReminders(value: v)),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
                   key: const Key('alerts-daily'),
                   contentPadding: EdgeInsets.zero,
                   secondary: const IconBadge(AppIcons.activity, size: 36),

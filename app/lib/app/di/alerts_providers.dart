@@ -1,3 +1,4 @@
+import 'package:hisaab/app/di/bills_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -76,6 +77,7 @@ AlertsEngine alertsEngine(Ref ref) => AlertsEngine(
       cards: () => ref.read(cardDueServiceProvider).watchCards().first,
       cardState: ref.watch(cardReminderStateStoreProvider),
       installedVersion: appVersion,
+      bills: () => ref.read(billsProvider.future),
       updateVersion: () async {
         // Daily-throttled check, then the newest version it found (FR-31-34).
         await ref.read(updateCheckerProvider).check();

@@ -65,5 +65,5 @@ Status is kept in section 5.
 | W2 | Done (FR-09-20, schema v10); backup of aliases left out |
 | W3 | Done (FR-13-23, schema v11); backup of the threshold left out |
 | W4 | Done (FR-21-29); the Sort buttons are not added, tap opens Transactions |
-| W5 | Pending |
+| W5 | Done (FR-21-30) |
 | W6..W18 | Pending |
