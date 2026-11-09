@@ -11,6 +11,11 @@ abstract final class CardBill {
   /// Label of the note and merchant a recognised bill payment carries.
   static const label = 'Credit card bill';
 
+  // Words between "to" and "credit card" that make the card the instrument
+  // ("to Swiggy using SBI Credit Card"), not the payee.
+  static const _w =
+      r'(?:(?!(?:using|via|with|from|through|thru|by|on|at|for)\b)[A-Za-z&.]+\s+)';
+
   static const _banks =
       r'(?:axis|hdfc|icici|sbi|kotak|idfc|yes|rbl|indusind|amex|citi|hsbc|au|bob|pnb|federal|standard\s+chartered|sc)';
 
@@ -19,7 +24,9 @@ abstract final class CardBill {
     r'\b(?:credit\s*card|cc)\s*(?:bill|bil|dues?|payment|pymt|pmt|repayment|outstanding)\b|'
             r'\bcard\s+(?:bill|dues?)\s+(?:payment|paid|pymt)\b|'
             r'\btowards\s+(?:your\s+)?(?:[A-Za-z&.]+\s+){0,3}credit\s*card\b|'
-            r'\bto\s+(?!your\b)(?:[A-Za-z&.]+\s+){0,3}credit\s*card\s+(?:no\.?\s*)?(?:x+|\*+)\d{4}\b|'
+            r'\bto\s+(?!your\b)' +
+        _w +
+        r'{0,3}credit\s*card\s+(?:no\.?\s*)?(?:x+|\*+)\d{4}\b|'
             r'\b' +
         _banks +
         r'\s*(?:bank\s+)?(?:credit\s+)?card\s+(?:bill|payment|pymt|dues?)\b|'
@@ -51,7 +58,9 @@ abstract final class CardBill {
   };
 
   static final RegExp _paidToCard = rx(
-    r'\b(?:paid|sent|payment)\b.{0,40}?\bto\s+(?!your\b)(?:[A-Za-z&.]+\s+){0,3}credit\s*cards?\b',
+    r'\b(?:paid|sent|payment)\b.{0,40}?\bto\s+(?!your\b)' +
+        _w +
+        r'{0,3}credit\s*cards?\b',
   );
   static final _nameNoise = RegExp('[^a-z0-9&.* ]+');
   static final _spaces = RegExp(r'\s+');

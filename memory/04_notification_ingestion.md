@@ -6,7 +6,7 @@
 | Status | In progress (Phase 2: Kotlin listener, channel, Dart engine, Data sources card and tests done; 32-app built-in list and user-managed Watched apps done; native code uncompiled and untested on device; payee-account memory, repair job, activity entries, app-lock skip pending) |
 | Priority | P1 |
 | Phase | 2 |
-| Last Updated | 2026-11-06 |
+| Last Updated | 2026-11-09 |
 
 ## 1. Description
 
@@ -283,6 +283,7 @@ Skipped:
 | FR-04-22 | The native listener MUST record when the system bound and unbound it, the post time and count of watched-app notifications handed over, and the queue length (times and counts only, never text), and expose them as `health`. The Data sources card shows one line from it: waiting for Android to connect, listening, or the time of the last payment notification read, plus how many wait to be added. |
 | FR-04-23 | Two payment-app notifications of one amount on one day are two payments unless the second is a re-post within 2 minutes naming no different payee ([Dedup and review](07_dedup_review.md) FR-07-17, FR-07-18). |
 | FR-04-24 | A watched app's notification the strict reader skips as "no payment wording" or "no amount" is offered to the review queue ([Unrecognised messages](38_unrecognised_messages_learned_senders.md) FR-38-06) so it is not lost; OTP, failure, offer and reminder skips are never offered; a failing queue never changes the result. |
+| FR-04-25 | A payment-app notification "Paid X to Shop using SBI Credit Card ending 1234" is a spend on that card, not a card bill (the card is the instrument unless it is the payee); a masked number with bullets ("Axis Bank ••4321") names the account; a stated balance or available limit in the notification updates the account or card like a bank message does. |
 | FR-04-19 | Ship the built-in apps of sections 3.2 and 3.2.1 and let the user switch any of them off. The effective allow-list is `(built-ins minus disabled) + added`; it is pushed to native whenever it changes and at every start. A built-in that is switched off MUST NOT be read. |
 | FR-04-20 | While the switch is on, record for every unwatched app only its package name, launcher label, last post time and a count, capped at 60 apps, without touching the notification's extras. Offer those apps on a Watched apps screen; adding one makes it read like a built-in, as a UPI app under that label, and the choice survives a restart. Adding an app MUST NOT relax the rejection rules of FR-04-06 and FR-04-07. |
 
@@ -610,3 +611,4 @@ Deviations: setting off drops natively before any text is read (stricter than th
 | 2026-11-06 | Added FR-04-24 (unreadable notifications reach the review queue) | Issue I-02: a PhonePe notification with only an amount was lost |
 | 2026-11-06 | Added FR-04-21 (background drain while the app is closed), FR-04-22 (listener health line) and FR-04-23 (same-amount payments kept apart); native notifications bridge now Context-based and attached in the headless engine | A PhonePe payment with no SMS only appeared at the next app open, and a second same-amount payment in a day was flagged and left out of totals (issue I-01) |
 | 2026-11-05 | Added FR-04-19 and FR-04-20: 12 more built-in apps (32 total), per-app switches, and a Watched apps screen that offers any app which notified the phone. New `watched_apps_store.dart`, `watched_apps_screen.dart`, native seen-apps list, channel methods `seenPackages`/`forgetSeen`; sections 2, 3.2.1, 3.9, 6, 7, 8, 9, 10, 11, 15, 16, 17 updated | Payments from apps outside the frozen 19-package list were dropped silently and the user had no way to see or change that, so notification-only payments went untracked |
+| 2026-11-09 | FR-04-25 card and account from notifications | Owner-reported issue |

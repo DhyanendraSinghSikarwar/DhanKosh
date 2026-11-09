@@ -11,15 +11,16 @@ import 'package:hisaab/features/statement_import/domain/statement.dart';
 import 'package:hisaab/features/statement_import/domain/statement_repository.dart';
 import 'package:parser_core/parser_core.dart' show AccountKind;
 
-/// True for a credit card account (FR-14-01): a card, not a debit card, typed
-/// credit card or untyped with a stated limit.
+/// True for a credit card account (FR-14-01): a card that is not a debit or
+/// prepaid card. A card whose messages never stated a limit (an SBI Card
+/// spend alert, say) is still a credit card (FR-14-29).
 bool isCreditCardAccount(Account a) =>
     a.kind == AccountKind.card &&
     !a.isDebitCard &&
+    a.accountType != AccountType.prepaidCard &&
     !a.hidden &&
     a.mergedIntoId == null &&
-    (a.accountType == AccountType.creditCard ||
-        (a.accountType == null && a.availableLimitMinor != null));
+    (a.accountType == AccountType.creditCard || a.accountType == null);
 
 /// Works out every credit card's figures from the ledger (read only), the
 /// recorded notices, statements and overrides (FR-14-01..05, FR-14-16).

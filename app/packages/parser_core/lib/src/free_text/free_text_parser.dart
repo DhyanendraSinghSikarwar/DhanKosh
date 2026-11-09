@@ -1,5 +1,6 @@
 import 'package:parser_core/src/extract/account_extractor.dart';
 import 'package:parser_core/src/extract/amount_extractor.dart';
+import 'package:parser_core/src/extract/balance_extractor.dart';
 import 'package:parser_core/src/extract/channel_detector.dart';
 import 'package:parser_core/src/extract/date_time_extractor.dart';
 import 'package:parser_core/src/extract/generic_phrases.dart';
@@ -176,8 +177,18 @@ class FreeTextParser {
       time: postedAt,
       hasExplicitTime: false,
     );
+    final parsed =
+        toParsed(draft, outType, source, appName, postedAt, confidence: 0.55);
+    // A stated balance or limit ("Avl Bal ₹12,000", "Available limit ₹40,000")
+    // updates the account or card it names (FR-04-25).
+    final wholeLower = whole.toLowerCase();
+    final inr = money.currency == 'INR';
+    final balance = inr ? BalanceExtractor.balance(whole, wholeLower) : null;
+    final limit = inr ? BalanceExtractor.limit(whole, wholeLower) : null;
     return NotificationRead(
-      toParsed(draft, outType, source, appName, postedAt, confidence: 0.55),
+      balance == null && limit == null
+          ? parsed
+          : parsed.copyWith(balanceMinor: balance, availableLimitMinor: limit),
       null,
     );
   }
@@ -298,7 +309,9 @@ class FreeTextParser {
     'PhonePe', 'Google Pay', 'Paytm', 'BHIM', 'BHIM SBI Pay', 'CRED',
     'super.money', 'Navi', 'WhatsApp Pay', 'Amazon Pay', 'MobiKwik', //
   };
-  static final _fieldSplit = RegExp(r'[\r\n]+|\s[•·|]\s|[•·]');
+  // A bullet before digits is a masked number ("Axis Bank ••4321"), not a
+  // separator.
+  static final _fieldSplit = RegExp(r'[\r\n]+|\s[•·|]\s|[•·](?![•·\d])');
   // Sentence end, but not the dot of "Dr." or "Mr.".
   static final _sentence = RegExp(
     r'(?<!\b(?:Mr|Mrs|Ms|Dr|Smt|Shri|Sri)\.)(?<=[.!?])\s+',

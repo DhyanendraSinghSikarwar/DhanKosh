@@ -426,4 +426,77 @@ void main() {
       expect(d, isA<NewTransaction>());
     });
   });
+
+  group('income told twice (FR-07-23)', () {
+    test('an SMS and an email for one credit, one without the account, ask',
+        () async {
+      final s = _Store();
+      await s.add(
+        _tx(amount: 5000000, type: TransactionType.credit, merchant: 'ACME'),
+      );
+      final d = await s.add(
+        _tx(
+          amount: 5000000,
+          type: TransactionType.credit,
+          source: Source.email,
+          last4: null,
+          at: 3 * _hour,
+        ),
+      );
+      expect(d, isA<PossibleDuplicate>());
+      expect(
+        (d as PossibleDuplicate).reason,
+        'Same income amount and day, from SMS and email',
+      );
+    });
+
+    test('printed times a minute apart, another day, or another payee: two',
+        () async {
+      Future<DedupDecision> second({
+        int at = 3 * _hour,
+        bool e1 = false,
+        bool e2 = false,
+        String? m2,
+      }) async {
+        final s = _Store();
+        await s.add(
+          _tx(
+            amount: 5000000,
+            type: TransactionType.credit,
+            merchant: 'ACME',
+            explicit: e1,
+          ),
+        );
+        return await s.add(
+          _tx(
+            amount: 5000000,
+            type: TransactionType.credit,
+            source: Source.email,
+            last4: null,
+            merchant: m2,
+            at: at,
+            explicit: e2,
+          ),
+        );
+      }
+
+      expect(await second(e1: true, e2: true), isA<NewTransaction>());
+      expect(await second(at: 20 * _hour), isNot(isA<Duplicate>()));
+      expect(await second(m2: 'GLOBEX'), isA<NewTransaction>());
+    });
+
+    test('a debit is left alone', () async {
+      final s = _Store();
+      await s.add(_tx(amount: 5000000, merchant: 'ACME'));
+      final d = await s.add(
+        _tx(
+          amount: 5000000,
+          source: Source.email,
+          last4: null,
+          at: 3 * _hour,
+        ),
+      );
+      expect(d, isA<NewTransaction>());
+    });
+  });
 }

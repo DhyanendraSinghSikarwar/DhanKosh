@@ -71,6 +71,19 @@ class CardView {
             : (limit - (card.position.totalMinor ?? 0)).clamp(0, limit));
   }
 
+  /// The limit split for the Home bar (FR-14-30): billed (red), unbilled
+  /// (orange) and what is left (green); the three add up to the limit. Null
+  /// without a limit. Whatever is used and not billed counts as unbilled.
+  ({int billed, int unbilled, int left})? get limitBar {
+    final limit = limitMinor;
+    final avail = availableMinor;
+    if (limit == null || limit <= 0 || avail == null) return null;
+    final used = (limit - avail).clamp(0, limit);
+    final billed = (card.billedMinor ?? 0).clamp(0, used);
+    final unbilled = used - billed;
+    return (billed: billed, unbilled: unbilled, left: limit - used);
+  }
+
   /// Share of the limit used, 0..1; null without a limit.
   double? get usedFraction {
     final limit = limitMinor;

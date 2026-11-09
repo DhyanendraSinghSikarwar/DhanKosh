@@ -63,7 +63,7 @@ class AccountRepositoryImpl implements AccountRepository {
 
     final type = tx.isDebitCard
         ? AccountType.debitCard
-        : (tx.accountKind == AccountKind.card && tx.availableLimitMinor != null)
+        : tx.accountKind == AccountKind.card
             ? AccountType.creditCard
             : null;
 

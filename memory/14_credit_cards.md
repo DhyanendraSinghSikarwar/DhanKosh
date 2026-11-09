@@ -6,7 +6,7 @@
 | Status | In progress (data/domain, message parser, SMS/email notice ingest, `/cards` screen, Edit amounts sheet, Home strip, cycle spend, statement history, paid verification and late flag done; reminders worker and notification actions, forex markup field done; card page with limit override done) |
 | Priority | P0 |
 | Phase | 3 (statements + portfolio); card due SMS/email recording can start in Phase 2; reminders in Phase 2 |
-| Last Updated | 2026-10-31 |
+| Last Updated | 2026-11-09 |
 
 ## 1. Description
 
@@ -192,6 +192,8 @@ Card page and Home card (approved Home mockups, 2026-10-31):
 - FR-14-26: Edit on the card page overrides statement balance, unbilled, minimum due (stored as FR-14-07 overrides) and the limit. The limit override is stored on-device in the settings key `card_limit_overrides` (`bank:last4=paise;...`, `CardLimitOverrides`); a value equal to the statement's limit clears it. Reset all clears every override. Available limit with an edited limit is `max(0, limit - billed - unbilled)`.
 - FR-14-27: Edited figures carry an "edited" tag on the card page and the hero; Edit has Cancel (discard) and Save.
 - FR-14-28: The Bills calendar page lists the month's (or the selected day's) card dues with Mark paid (`BillsCardDues`, composed by the router).
+- FR-14-29: A card that is not a debit or prepaid card is a credit card even when its messages never state a limit (an SBI Card spend alert): it is typed credit card on its first message and appears in Home, Cards and the cards screen (`isCreditCardAccount`).
+- FR-14-30: The Home Credit cards card shows one bar per card with a stated limit: green is the limit left, orange the unbilled spends, red the billed amount, each in proportion, with the three amounts under the bar (`CardView.limitBar`, `CardLimitBar`). Used but not billed counts as unbilled.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -526,3 +528,5 @@ FR-14-15 UI done in the account edit sheet (cards only): "Forex markup %" 0..20 
 | 2026-10-27 | Per-card forex markup field (FR-14-15) | Kotlin parity |
 | 2026-10-31 | Card page `/cards/:id`, limit override, Book-filtered Home Credit cards card, card dues on the Bills calendar (FR-14-23..28) | Approved Home mockups |
 | 2026-10-31 | Home matched to approved mock: Credit cards card rows (IconBadge, name and last digits, due and compact limit, whole-rupee amount, limit-used bar, (i) note); card page with gradient header, Auto tag, Overview rows, upcoming, transactions, history and Back bar; Bills calendar shows violet card-due dots (`cardDueDatesProvider`) and card dues as rows with Mark paid chip | Home matched to approved mock |
+| 2026-11-09 | FR-14-29 card without a limit is a credit card | Owner-reported issue |
+| 2026-11-09 | FR-14-30 home limit bar | Owner-reported issue |

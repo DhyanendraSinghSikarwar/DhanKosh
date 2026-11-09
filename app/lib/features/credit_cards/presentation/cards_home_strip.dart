@@ -5,6 +5,7 @@ import 'package:hisaab/app/di/home_cards_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/features/credit_cards/domain/card_view.dart';
 import 'package:hisaab/features/credit_cards/presentation/card_due_format.dart';
+import 'package:hisaab/features/credit_cards/presentation/card_limit_bar.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -105,7 +106,6 @@ class _CardRow extends ConsumerWidget {
     final c = view.card;
     final due = c.dueDay;
     final owed = view.dueMinor;
-    final used = view.usedFraction;
     final limit = view.limitMinor;
     final soon =
         !c.paid && owed > 0 && due != null && daysToDue(due, nowMs) <= 7;
@@ -199,18 +199,9 @@ class _CardRow extends ConsumerWidget {
                 ),
               ],
             ),
-            if (used != null) ...[
+            if (view.limitBar != null) ...[
               const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: LinearProgressIndicator(
-                  key: Key('home_card_used_${c.id}'),
-                  value: used,
-                  minHeight: 6,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  color: used > 0.4 ? AppIcons.amber : AppIcons.mint,
-                ),
-              ),
+              CardLimitBar(view: view, masked: masked),
             ],
           ],
         ),

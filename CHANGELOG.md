@@ -5,6 +5,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 ## [Unreleased]
 
 ### Added
+- Home credit cards: each card has one bar — green for the limit left, orange for unbilled spends, red for the billed amount.
 - More > Groups: bundle transactions (a trip, an event) and see what the group cost; add a transaction to groups from its detail.
 - More > People and splits: share a payment equally or by amount (Split with people on the transaction detail), and track who owes you or whom you owe until it is paid back.
 - Split into categories (transaction detail): one payment counted in several categories in category lists and budgets.
@@ -31,6 +32,9 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Watched apps screen (More, Payment-app notifications): switch any built-in app off, and add any other app that notifies your phone so its payments are tracked too.
 
 ### Fixed
+- A credit card is listed (Home, Cards) from its first spend message even when no limit is stated, so SBI Card spends show their card.
+- An income told twice, as an SMS and an email, is now held for you to merge instead of being counted twice.
+- A payment-app notification "Paid X to Shop using SBI Credit Card ending 1234" is a spend on that card, not a card bill; masked numbers like "••4321" and balances or limits in notifications are read.
 - Back button: when the phone brings the app back onto an inner page (or you open a link, shortcut or notification), Back now goes to Home instead of closing the app, and Back from another tab goes to Home first.
 - More names are read from messages: titles such as Mr, Mrs and M/S are dropped, "Merchant:", "Payee:" and "Beneficiary NAME" are read, "Dr. to X" and "Money Transfer" have a direction, and a UPI id is no longer glued to the reference before it.
 - A clear payment-app notification is now added to Transactions at once instead of waiting in Unrecognised messages.

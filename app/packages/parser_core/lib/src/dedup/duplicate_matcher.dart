@@ -259,7 +259,7 @@ abstract final class DuplicateMatcher {
         if (review == null &&
             gap <= lateMailWindowMillis &&
             crossSource &&
-            sameAccount &&
+            (sameAccount || (accountless && tx.type.direction == 'IN')) &&
             _mailAgainstMessage(c, tx) &&
             _namedPayeesAgree(c.merchant, tx.merchant)) {
           review = (c, 'Same amount from SMS and email on consecutive days');
@@ -292,6 +292,20 @@ abstract final class DuplicateMatcher {
       } else if (crossSource && sameAccount) {
         review =
             (c, 'Same amount and account on the same day, from SMS and email');
+      } else if (crossSource &&
+          accountless &&
+          tx.type.direction == 'IN' &&
+          !loose &&
+          !_timesDiffer(c, tx) &&
+          civilDateOf(c.transactionTime, utcOffset) ==
+              civilDateOf(tx.transactionTime, utcOffset) &&
+          (c.merchant == null ||
+              tx.merchant == null ||
+              merchantsAgree(c.merchant, tx.merchant))) {
+        // Income often arrives as an SMS and an email, one without the
+        // account digits: same amount, same day, no conflicting payee or
+        // printed time. Worth asking, never a silent second row (FR-07-23).
+        review = (c, 'Same income amount and day, from SMS and email');
       }
     }
     final rounded = await _roundedAppMatch(tx, lookup, utcOffset);

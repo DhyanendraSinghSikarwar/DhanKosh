@@ -48,7 +48,7 @@ abstract final class AccountExtractor {
     r'(?:\b(a/c|ac|acct|account)|(card))(?:\s*(?:no|number|num)\.?)?(?:\s*(?:ending|ends)(?:\s+(?:with|in))?)?'
     r'\s*[:.\-]?\s*(?:\d{0,6}[x*#.][x*#.\s]*)?(\d{3,6})\b',
   );
-  static final RegExp _masked = rx(r'(?<![\w*])[x*]{2,}(\d{3,4})\b');
+  static final RegExp _masked = rx(r'(?<![\w*•●])[x*•●]{2,}(\d{3,4})\b');
   static final RegExp _cardWord = rx(r'\bcard\b');
 
   /// Some issuers print only two digits: "SBI Corporate Card number ending
