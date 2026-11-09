@@ -7,6 +7,7 @@ import 'package:hisaab/app/lock_gate.dart';
 import 'package:hisaab/app/router.dart';
 import 'package:hisaab/app/startup_tasks.dart';
 import 'package:hisaab/app/theme/app_theme.dart';
+import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/onboarding_permissions/presentation/app_lifecycle_gate.dart';
 import 'package:hisaab/features/theming_customisation/domain/appearance.dart';
@@ -21,6 +22,8 @@ class HisaabApp extends ConsumerWidget {
     final lang = ref.watch(languageProvider.select((s) => s.active));
     // Every date the app writes follows this (FR-28-31).
     AppDates.style = a.dateStyle;
+    final cycle = ref.watch(cycleDayProvider).value ?? 1;
+    MonthRange.cycleDay = cycle;
     return MaterialApp.router(
       title: t('DhanKosh'),
       debugShowCheckedModeBanner: false,
@@ -45,7 +48,7 @@ class HisaabApp extends ConsumerWidget {
         );
         // Re-keyed on language so every `t()` call site rebuilds (FR-29-03).
         return KeyedSubtree(
-          key: ValueKey('${lang.code}-${a.dateStyle.name}'),
+          key: ValueKey('${lang.code}-${a.dateStyle.name}-$cycle'),
           child: MediaQuery(
             data: mq.copyWith(
               textScaler: TextScaler.linear(scale),

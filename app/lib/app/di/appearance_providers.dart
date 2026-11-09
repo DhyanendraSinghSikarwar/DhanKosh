@@ -36,3 +36,8 @@ final languageProvider = NotifierProvider<LanguageController, LanguageState>(
     ),
   ),
 );
+
+/// Day the budget month starts on (FR-10-25).
+final cycleDayProvider = StreamProvider<int>(
+  (ref) => ref.watch(settingsRepositoryProvider).watch(AppearanceKeys.cycleDay),
+);

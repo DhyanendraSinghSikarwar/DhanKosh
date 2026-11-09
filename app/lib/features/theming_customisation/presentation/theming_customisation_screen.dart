@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/appearance_providers.dart';
+import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/theme/palettes.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/theming_customisation/domain/appearance.dart';
@@ -81,6 +84,34 @@ class ThemingCustomisationScreen extends ConsumerWidget {
                   selected: {a.dateStyle},
                   onSelectionChanged: (v) =>
                       _save(ref, a.copyWith(dateStyle: v.first)),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        t('Budget month starts on day'),
+                        style: text.labelLarge,
+                      ),
+                    ),
+                    DropdownButton<int>(
+                      key: const Key('cycle-day-selector'),
+                      value: ref.watch(cycleDayProvider).value ?? 1,
+                      items: [
+                        for (var d = 1; d <= 31; d++)
+                          DropdownMenuItem(value: d, child: Text('$d')),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) {
+                          unawaited(
+                            ref
+                                .read(settingsRepositoryProvider)
+                                .write(AppearanceKeys.cycleDay, v),
+                          );
+                        }
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Text(t('Text size'), style: text.labelLarge),

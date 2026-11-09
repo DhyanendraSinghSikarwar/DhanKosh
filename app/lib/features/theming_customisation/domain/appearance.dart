@@ -162,6 +162,9 @@ abstract final class AppearanceKeys {
   static const textScalePct = SettingKey<int>('text_scale_pct', 100);
   static const reduceMotion = SettingKey<bool>('reduce_motion', false);
   static const dateStyle = SettingKey<String>('date_style', 'auto');
+
+  /// Day each budget month starts on, 1 to 31 (FR-10-25).
+  static const cycleDay = SettingKey<int>('budget_cycle_day', 1);
 }
 
 /// Appearance persistence port.
