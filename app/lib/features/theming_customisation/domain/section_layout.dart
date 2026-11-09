@@ -76,6 +76,7 @@ abstract final class SectionLayout {
     SectionDef('insights', 'Insights'),
     SectionDef('categories', 'Spend by category'),
     SectionDef('recent', 'Recent transactions'),
+    SectionDef('safe', 'Safe to spend', hiddenByDefault: true),
   ];
   static const List<SectionDef> _analytics = [
     SectionDef('categories', 'Spend by category'),

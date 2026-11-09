@@ -5,7 +5,7 @@ List<String> ids(List<SectionSlot> l) => [for (final s in l) s.id];
 
 void main() {
   // TC-28-05 (FR-28-16)
-  test('defaults: eight home sections in mock order, all visible', () {
+  test('defaults: nine home sections in mock order, Safe to spend hidden', () {
     final d = SectionLayout.defaults('home');
     expect(ids(d), [
       'spent',
@@ -16,8 +16,10 @@ void main() {
       'insights',
       'categories',
       'recent',
+      'safe',
     ]);
     expect(SectionLayout.visibleIds(d), contains('budgets'));
+    expect(SectionLayout.visibleIds(d), isNot(contains('safe')));
     expect(ids(SectionLayout.defaults('analytics')).length, 5);
     expect(
       SectionLayout.visibleIds(SectionLayout.defaults('portfolio')).length,
@@ -42,22 +44,23 @@ void main() {
       'cards',
       'insights',
       'categories',
+      'safe',
     ]);
-    expect(l.last.visible, isTrue);
-    expect(l.map((s) => s.order), [for (var i = 0; i < 8; i++) i]);
+    expect(l.last.visible, isFalse);
+    expect(l.map((s) => s.order), [for (var i = 0; i < 9; i++) i]);
   });
 
   test('resolve falls back to defaults on bad or empty input', () {
     expect(ids(SectionLayout.resolve('home', '{oops')).first, 'spent');
     expect(ids(SectionLayout.resolve('home', '')).first, 'spent');
-    expect(ids(SectionLayout.resolve('home', null)).length, 8);
+    expect(ids(SectionLayout.resolve('home', null)).length, 9);
   });
 
   // TC-28-07 (FR-28-15)
   test('reorder moves a section and renumbers', () {
     final l = SectionLayout.reorder(SectionLayout.defaults('home'), 0, 2);
     expect(ids(l).take(3), ['cashflow', 'budgets', 'spent']);
-    expect(l.map((s) => s.order), [for (var i = 0; i < 8; i++) i]);
+    expect(l.map((s) => s.order), [for (var i = 0; i < 9; i++) i]);
   });
 
   test('setVisible toggles one section', () {
@@ -75,7 +78,7 @@ void main() {
       final l = SectionLayout.apply('home', p.shown);
       expect(SectionLayout.visibleIds(l), p.shown, reason: p.name);
       expect(ids(l).take(p.shown.length), p.shown);
-      expect(l.length, 8);
+      expect(l.length, 9);
     }
     expect(SectionLayout.presets.map((p) => p.name), [
       'Minimal',

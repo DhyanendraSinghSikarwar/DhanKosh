@@ -6,7 +6,7 @@
 | Status | In progress (Phase 1 core Home plus Fold adoption; layout-driven sections, greeting header, sync button and pill, Spent change and running line, category donut with drill, cash flow split bar, Upcoming, Insights, Mark paid done; notification bell sheet, collapsed header, permission prompts pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-10-31 |
+| Last Updated | 2026-11-09 |
 
 ## 1. Description
 
@@ -160,7 +160,7 @@ Safe-to-spend maths remains in `HomeViewModel.build` though no widget shows it: 
 20. FR-17-20: Widgets render nothing or a "Loading…" placeholder until their data has loaded; empty states use the exact texts listed in section 2.
 21. FR-17-21: Insight dismissal is session-only (by title) and never persisted.
 22. FR-17-22: The first-run Home migration hides `budgets`, places `spent` first and removes `networth` from the saved home order (once).
-23. FR-17-23: Home never shows a "Safe to spend" block; no `safe` section key exists in the rebuilt Home (see section 10; backlog: [34_planned_insights_backlog.md](34_planned_insights_backlog.md)).
+23. FR-17-23: (superseded by FR-17-48) Home never shows a "Safe to spend" block; no `safe` section key exists in the rebuilt Home (see section 10; backlog: [34_planned_insights_backlog.md](34_planned_insights_backlog.md)).
 24. FR-17-24: The More hub per-entry subtitles and footer ("You're all caught up", "DhanKosh v{version}") are owned by [26_settings_data_sources.md](26_settings_data_sources.md) FR-26-23, not by Home.
 25. FR-17-25: A Needs attention card lists, in order and only when non-empty: duplicates to review (`/review`), bills due within 7 days (`/bills`, single bill by name, else "{n} bills due"), locked or unreadable statements (`/statements`), credit cards unpaid with a due date within 7 days (`/cards`). Rows show names and counts, never amounts; each row is tappable; the card is hidden when no row exists. Replaces the single "to review" notice.
 26. FR-17-26: A Net worth card (`HomeNetWorthCard`, no longer placed on Home, FR-17-45) shows the following. It shows `NetWorthService` net (assets minus liabilities, all books), the change against the newest recorded point before today (falling back to the only point; percent in tenths by integer math, omitted when the previous value is not positive), and opens `/portfolio`. Amounts are masked with hide-amounts. The value counts up once (600 ms) and is static when masked, when reduce-motion is on and under `flutter test`. With no accounts or holdings it shows "Add accounts to see net worth" with one action to `/accounts`.
@@ -185,6 +185,7 @@ Safe-to-spend maths remains in `HomeViewModel.build` though no widget shows it: 
 45. FR-17-45: Home no longer shows the Net worth card (supersedes the placement in FR-17-26); `HomeNetWorthCard` stays in the codebase for reuse and Net worth lives on Portfolio ([16_portfolio.md](16_portfolio.md)). The layout id `networth` is not a registered section, so Customise is unaffected.
 46. FR-17-46: Spend by category (FR-17-35) is always drawn last on Home, after the accounts strip, while the `categories` section is visible; an (i) button (`home_categories_info`) reveals the note that it includes card purchases and so differs from the cash-basis Spent figure (ADR-0011); tapping a slice or a legend row opens that category's sub-category donut and the back control returns.
 47. FR-17-47: Home rows use the shared coloured icon set (`AppIcons`, `IconBadge`): Upcoming rows, card rows, insights tags.
+48. FR-17-48: Safe to spend (ADR-0012) is an optional Home section `safe`, hidden by default and switched on in Customise. It shows "₹X a day" and "₹Y for N days, after ₹Z of bills": liquid balance minus unpaid bills, EMIs and card dues before month end, capped by the budget left when budgets exist, divided by the days left including today; never below zero. Without a known balance it asks for one. This replaces FR-17-23.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -587,3 +588,4 @@ Pending: user name/avatar, Book/Period chips, cards, cashflow, upcoming, insight
 | 2026-10-31 | Book chips removed from Home with a Book tag by the name; eye, refresh (progress sheet) and bell in the header; Upcoming More ›; Credit cards card replaces Net worth on Home; Spend by category last with (i) note; coloured icons (FR-17-40..47) | Approved Home mockups |
 | 2026-10-31 | Home matched to approved mock: single-row header (name and Book tag left; eye, refresh, bell and overflow menu with Add, Accounts, Edit right; Done check while editing); compact dismissible Read bank SMS row; default order Spent, Cash flow, Budgets (visible), Upcoming, Credit cards, Insights, Spend by category, then Needs attention, Goals, Recent, Accounts; every card is a filled radius-20 card with SectionLabel header and 12 px gaps; whole-rupee hero figures; spent chart with axis labels and legend; cash flow Income/Saved with split bar and legend; budget rings; Insights as chips with tap-to-open detail and Dismiss; donut with centre total and percentage rows; refresh sheet with gradient bar and step rows; shared `mock_kit.dart` | User review: tabs not as approved |
 | 2026-10-31 | Removed the Accounts strip, the Goals card and the Income / Expenses / Saved row from the Spent card; the Book tag now shows only for Business | User review of the applied mock |
+| 2026-11-09 | FR-17-48 optional Safe to spend section (ADR-0012); FR-17-23 superseded | PennyWise comparison, W7 |

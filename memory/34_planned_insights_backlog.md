@@ -124,7 +124,7 @@ All items are Proposed and none is committed. Each is a stub to be expanded in i
 - FR-34-08 (Proposed, conflicts with scope rule): Split and lend. Same source and conflict as FR-34-07.
 - FR-34-09 (Proposed, conflicts with scope rule): Credit score. Same source and conflict as FR-34-07; would need an outside data source, which conflicts with the on-device-only principle.
 - FR-34-10 (Proposed): Outlook sign-in through Microsoft OAuth as an alternative to the app password. Source: `doc/PLAN.md:21`, `FEATURES.md:216`; needs an Azure app registration; must keep the rule that no financial data leaves the device without consent ([03](03_email_ingestion.md), [25](25_security_privacy.md)).
-- FR-34-11 (Proposed): Safe to spend today. Re-introduce the Home block as an optional, hideable section using the rule in section 3.1 (item 11), or drop it. Source: `ui/home/HomeWidgets.kt:256-287`, [17](17_dashboard_home.md) line 116 and Open Question 4.
+- FR-34-11 (Done 2026-11-09, ADR-0012, FR-17-48): Safe to spend today. Re-introduce the Home block as an optional, hideable section using the rule in section 3.1 (item 11), or drop it. Source: `ui/home/HomeWidgets.kt:256-287`, [17](17_dashboard_home.md) line 116 and Open Question 4.
 - FR-34-12 (Proposed, negative requirement): The Flutter app does not add the unused libraries in section 3.3 (Haze, Coil, ColorPicker, Compose Charts, JetBrains Markdown) or their Flutter equivalents unless a feature needs them.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)

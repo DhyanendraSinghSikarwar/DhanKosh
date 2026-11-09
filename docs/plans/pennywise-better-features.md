@@ -67,4 +67,5 @@ Status is kept in section 5.
 | W4 | Done (FR-21-29); the Sort buttons are not added, tap opens Transactions |
 | W5 | Done (FR-21-30) |
 | W6 | Done for the main screens (FR-28-31); calendar, budgets, bills, portfolio, statements still use the Auto form |
-| W7..W18 | Pending |
+| W7 | Done (FR-17-48, ADR-0012) |
+| W8..W18 | Pending |

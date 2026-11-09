@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
+import 'package:hisaab/app/di/budget_providers.dart';
 import 'package:hisaab/app/di/phase3_providers.dart';
 import 'package:hisaab/app/di/portfolio_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
@@ -9,12 +10,16 @@ import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/app/di/updates_providers.dart';
 import 'package:hisaab/core/utils/combine_latest.dart';
 import 'package:hisaab/core/utils/ist.dart';
+import 'package:hisaab/features/accounts_management/presentation/account_providers.dart';
 import 'package:hisaab/features/activity_log/domain/inbox_logic.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_attention.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_charts.dart';
+import 'package:hisaab/features/dashboard_home/domain/home_logic.dart';
+import 'package:hisaab/features/dashboard_home/domain/safe_to_spend.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_providers.dart';
 import 'package:hisaab/features/news_support_updates/domain/update_keys.dart';
 import 'package:hisaab/features/news_support_updates/domain/version_compare.dart';
+import 'package:hisaab/features/recurring_transactions/domain/bills_view.dart';
 import 'package:hisaab/features/search_filters/domain/ledger_view_state.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
@@ -176,4 +181,41 @@ final homeUpcomingProvider = Provider<List<UpcomingRow>>((ref) {
           kind: UpcomingKind.card,
         ),
   ];
+});
+
+/// Safe to spend today (FR-17-48, ADR-0012): liquid balance minus unpaid
+/// bills, EMIs and card dues before month end, capped by the budget left.
+final safeToSpendProvider = Provider<SafeToSpendResult?>((ref) {
+  final nowMs = DateTime.now().millisecondsSinceEpoch;
+  final today = Ist.dateOf(nowMs);
+  final todayDay = Ist.dayOf(nowMs);
+  final monthEnd = DateTime.utc(today.year, today.month + 1, 0);
+  final accounts = ref.watch(accountsWithActivityProvider).value ?? const [];
+  final bills = ref.watch(billsProvider).value ?? const [];
+  final cards = ref.watch(cardLimitsProvider).value ?? const [];
+  final uses =
+      ref.watch(budgetUsesProvider(MonthRange.of(DateTime.now()))).value;
+  var due = 0;
+  for (final b in bills) {
+    if (b.income || b.nextDue.isAfter(monthEnd) || BillsView.paid(b, today)) {
+      continue;
+    }
+    due += b.amountMinor;
+  }
+  for (final c in cards) {
+    final d = c.dueDay;
+    if (!c.paid && c.owedMinor > 0 && d != null && d >= todayDay) {
+      due += c.owedMinor;
+    }
+  }
+  int? budgetLeft;
+  if (uses != null && uses.isNotEmpty) {
+    budgetLeft = uses.fold<int>(0, (s, u) => s + u.leftMinor);
+  }
+  return SafeToSpend.compute(
+    liquidMinor: liquidBalanceMinor(accounts),
+    billsMinor: due,
+    daysLeft: monthEnd.day - today.day + 1,
+    budgetLeftMinor: budgetLeft,
+  );
 });

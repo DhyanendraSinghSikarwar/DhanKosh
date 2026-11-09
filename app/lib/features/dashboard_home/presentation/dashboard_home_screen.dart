@@ -11,6 +11,7 @@ import 'package:hisaab/features/dashboard_home/presentation/home_header.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_insights_card.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_providers.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_recent_list.dart';
+import 'package:hisaab/features/dashboard_home/presentation/home_safe_to_spend_card.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_sms_card.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_spent_card.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_upcoming_card.dart';
@@ -67,6 +68,7 @@ class _DashboardHomeScreenState extends ConsumerState<DashboardHomeScreen> {
         'categories' => const HomeCategoriesCard(),
         'recent' => HomeRecentList(txs: recent, masked: masked),
         'budgets' => const HomeBudgetsCard(),
+        'safe' => const HomeSafeToSpendCard(),
         _ => null,
       };
 

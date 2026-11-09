@@ -8,6 +8,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
 
 ### Added
+- Safe to spend (Home, off until you turn it on in Customise): what you can spend each day this month after your bills, within your budgets.
 - Date format (Customise): choose 7 Nov 2026, dd/mm/yyyy, mm/dd/yyyy or yyyy-mm-dd. It applies to the main screens now; the rest follow later.
 - Bill reminders (Alerts, on by default): the day before a bill or EMI you added is due, a notification with Mark paid and Skip this time.
 - Daily summary (Alerts, off by default): at about 9 pm, today's spend and how many payments still need a category.
