@@ -4,6 +4,8 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
+## [0.0.8] - 2026-11-09
+
 ### Added
 - More > Groups: bundle transactions (a trip, an event) and see what the group cost; add a transaction to groups from its detail.
 - More > People and splits: share a payment equally or by amount (Split with people on the transaction detail), and track who owes you or whom you owe until it is paid back.
