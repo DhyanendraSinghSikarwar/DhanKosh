@@ -84,20 +84,30 @@ class CategoryGroup {
 /// category on its own side (FR-08-23, ADR-0011).
 List<CategoryGroup> groupByCategory(Iterable<LedgerTx> rows) {
   final map = <Category, List<LedgerTx>>{};
+  final partOf = <(Category, int), int>{};
   for (final t in rows) {
     if (t.needsReview || t.excluded) continue;
     final spend =
         t.type == TransactionType.debit && t.category != Category.transfer;
     final refund =
         t.type == TransactionType.credit && t.category == Category.refund;
-    if (spend || refund) map.putIfAbsent(t.category, () => []).add(t);
+    if (spend && t.parts.isNotEmpty) {
+      // A split payment counts in each of its parts' categories (FR-41-03).
+      for (final p in t.parts) {
+        map.putIfAbsent(p.category, () => []).add(t);
+        partOf[(p.category, t.id)] = p.amountMinor;
+      }
+    } else if (spend || refund) {
+      map.putIfAbsent(t.category, () => []).add(t);
+    }
   }
   final out = <CategoryGroup>[];
   for (final e in map.entries) {
     var acc = 0;
     var card = 0;
     for (final t in e.value) {
-      final v = (inrOf(t) ?? 0) * (t.type == TransactionType.debit ? 1 : -1);
+      final v = (partOf[(e.key, t.id)] ?? inrOf(t) ?? 0) *
+          (t.type == TransactionType.debit ? 1 : -1);
       if (t.accountKind == AccountKind.card) {
         card += v;
       } else {

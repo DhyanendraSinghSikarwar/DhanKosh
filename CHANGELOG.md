@@ -8,6 +8,9 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
 
 ### Added
+- More > Groups: bundle transactions (a trip, an event) and see what the group cost; add a transaction to groups from its detail.
+- More > People and splits: share a payment equally or by amount (Split with people on the transaction detail), and track who owes you or whom you owe until it is paid back.
+- Split into categories (transaction detail): one payment counted in several categories in category lists and budgets.
 - Receipts: attach a photo to a transaction (camera or gallery) from its detail screen, view it full screen, replace or remove it.
 - Regular payments can add themselves: switch on Add automatically for a bill or income you entered (rent, salary) and it is booked on its due day even if no message arrives.
 - Budget month start day (Customise): if you are paid on the 25th, choose 25 and the month on Home, Transactions and Budgets runs 25th to 24th.

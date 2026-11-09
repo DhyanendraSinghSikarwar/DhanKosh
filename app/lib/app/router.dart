@@ -46,6 +46,9 @@ import 'package:hisaab/features/news_support_updates/presentation/updates_tile.d
 import 'package:hisaab/features/notification_ingestion/presentation/notification_access_card.dart';
 import 'package:hisaab/features/notification_ingestion/presentation/watched_apps_screen.dart';
 import 'package:hisaab/features/onboarding_permissions/presentation/welcome_screen.dart';
+import 'package:hisaab/features/people_split/presentation/people_screen.dart';
+import 'package:hisaab/features/people_split/presentation/people_tile.dart';
+import 'package:hisaab/features/people_split/presentation/person_detail_screen.dart';
 import 'package:hisaab/features/portfolio/presentation/portfolio_screen.dart';
 import 'package:hisaab/features/profile/presentation/bank_details_sheet.dart';
 import 'package:hisaab/features/profile/presentation/profile_screen.dart';
@@ -70,8 +73,12 @@ import 'package:hisaab/features/theming_customisation/domain/section_layout.dart
 import 'package:hisaab/features/theming_customisation/presentation/customise_tile.dart';
 import 'package:hisaab/features/theming_customisation/presentation/section_layout_editor.dart';
 import 'package:hisaab/features/theming_customisation/presentation/theming_customisation_screen.dart';
+import 'package:hisaab/features/transaction_groups/presentation/group_detail_screen.dart';
+import 'package:hisaab/features/transaction_groups/presentation/groups_screen.dart';
+import 'package:hisaab/features/transaction_groups/presentation/groups_tile.dart';
 import 'package:hisaab/features/transactions_ledger/domain/add_draft.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/add_transaction_screen.dart';
+import 'package:hisaab/features/transactions_ledger/presentation/ledger_tx_tile.dart';
 import 'package:hisaab/features/unrecognised_messages/presentation/learned_senders_screen.dart';
 import 'package:hisaab/features/unrecognised_messages/presentation/unrecognised_screen.dart';
 import 'package:hisaab/features/unrecognised_messages/presentation/unrecognised_tile.dart';
@@ -204,6 +211,32 @@ final routerProvider = Provider<GoRouter>((ref) {
             AlertActionScreen(query: state.uri.queryParameters),
       ),
       GoRoute(
+        path: '/groups',
+        builder: (_, __) => const GroupsScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (_, state) => GroupDetailScreen(
+              id: int.parse(state.pathParameters['id']!),
+              rowBuilder: (tx, {required masked}) =>
+                  LedgerTxTile(tx: tx, masked: masked),
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/people',
+        builder: (_, __) => const PeopleScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (_, state) => PersonDetailScreen(
+              id: int.parse(state.pathParameters['id']!),
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
         path: '/settings/alerts',
         builder: (_, __) => const AlertsRemindersScreen(),
       ),
@@ -324,6 +357,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                   backupTile: BackupTile(),
                   taxTile: TaxTile(),
                   rulesTile: RulesTile(),
+                  groupsTile: GroupsTile(),
+                  peopleTile: PeopleTile(),
                   securityTile: SecurityTile(),
                   activityTile: ActivityTile(),
                   unrecognisedTile: UnrecognisedTile(),

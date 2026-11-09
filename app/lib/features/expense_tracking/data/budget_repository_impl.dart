@@ -51,10 +51,18 @@ class BudgetRepositoryImpl implements BudgetRepository {
         ..where((t) => t.category.equals(enumToDb(category))))
       .go();
 
-  static const _sql =
-      'SELECT category, SUM(inr_minor) AS total FROM transactions '
-      "WHERE type IN ('DEBIT','INVESTMENT') AND inr_minor IS NOT NULL AND excluded = 0 "
-      'AND timestamp BETWEEN ?1 AND ?2 GROUP BY category ORDER BY total DESC';
+  // A split payment counts in each part's category (FR-41-03).
+  static const _sql = 'SELECT category, SUM(v) AS total FROM ( '
+      'SELECT category, inr_minor AS v FROM transactions '
+      "WHERE type IN ('DEBIT','INVESTMENT') AND inr_minor IS NOT NULL "
+      'AND excluded = 0 AND timestamp BETWEEN ?1 AND ?2 '
+      'AND id NOT IN (SELECT transaction_id FROM tx_parts) '
+      'UNION ALL '
+      'SELECT p.category AS category, p.amount_minor AS v FROM tx_parts p '
+      'JOIN transactions t ON t.id = p.transaction_id '
+      "WHERE t.type IN ('DEBIT','INVESTMENT') AND t.excluded = 0 "
+      'AND t.timestamp BETWEEN ?1 AND ?2 '
+      ') GROUP BY category ORDER BY total DESC';
 
   Map<Category, int> _fold(List<MapEntry<Category?, int>> rows) => {
         for (final e in rows)
@@ -73,7 +81,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
       _db.customSelect(
         _sql,
         variables: [Variable.withInt(fromMs), Variable.withInt(toMs)],
-        readsFrom: {_db.transactions},
+        readsFrom: {_db.transactions, _db.txParts},
       ).map(
         (r) => MapEntry(
           enumFromDbOrNull(Category.values, r.read<String>('category')),

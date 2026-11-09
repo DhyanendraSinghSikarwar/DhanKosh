@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hisaab/app/di/groups_people_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/theme/app_theme.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
@@ -11,10 +12,13 @@ import 'package:hisaab/features/accounts_management/domain/account_repository.da
 import 'package:hisaab/features/categorization/domain/category_repository.dart';
 import 'package:hisaab/features/categorization/domain/custom_category.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
+import 'package:hisaab/features/people_split/domain/people.dart';
+import 'package:hisaab/features/transaction_groups/domain/tx_group.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
+import 'package:hisaab/features/transactions_ledger/domain/tx_part.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -185,6 +189,9 @@ class FakeTxRepo implements TransactionRepository {
   Future<void> setNote(int id, String? note) async => notes.add((id, note));
 
   @override
+  Future<void> setParts(int id, List<TxPart> parts) async {}
+
+  @override
   Future<void> setReceipt(int id, String? fileName) async {}
 
   @override
@@ -350,6 +357,8 @@ Future<void> pumpLedgerApp(
         categoryRepositoryProvider
             .overrideWithValue(categories ?? FakeCategoryRepo()),
         hideAmountsProvider.overrideWith((ref) => Stream.value(false)),
+        txGroupRepositoryProvider.overrideWithValue(_NoGroups()),
+        peopleRepositoryProvider.overrideWithValue(_NoPeople()),
         settingsRepositoryProvider.overrideWithValue(FakeSettings()),
       ],
       child: MaterialApp.router(
@@ -359,4 +368,28 @@ Future<void> pumpLedgerApp(
     ),
   );
   await tester.pump();
+}
+
+/// Groups and people stand-ins for screens that only show the rows (no real
+/// database streams, which leave timers behind in widget tests).
+class _NoGroups implements TxGroupRepository {
+  @override
+  Stream<List<TxGroup>> watchAll() => Stream.value(const []);
+
+  @override
+  Future<Set<int>> groupIdsOf(int txId) async => {};
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+class _NoPeople implements PeopleRepository {
+  @override
+  Stream<List<Person>> watchAll() => Stream.value(const []);
+
+  @override
+  Future<Map<int, int>> sharesOf(int transactionId) async => {};
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
 }

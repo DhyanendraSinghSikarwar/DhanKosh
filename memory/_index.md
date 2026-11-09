@@ -40,3 +40,6 @@ One line per feature file. Each file is the single source of truth for its featu
 - [36_goals_roundups_salary_plan.md](36_goals_roundups_salary_plan.md) - **Savings Goals, Round-ups & Salary Plan**: goals with projection, virtual round-up tracker, salary split plan (In Progress)
 - [37_charts_catalogue.md](37_charts_catalogue.md) - **Charts Catalogue**: every Kotlin chart, its screen, shared components and Flutter status (In Progress)
 - [38_unrecognised_messages_learned_senders.md](38_unrecognised_messages_learned_senders.md) - **Unrecognised Messages & Learned Senders**: generic reader, review queue, learned senders, Add from a message (In Progress)
+- [39_transaction_groups.md](39_transaction_groups.md) - **Transaction Groups**: bundle payments, see what a trip cost (Done)
+- [40_people_split.md](40_people_split.md) - **Split with People**: share a payment, track who owes what (Done)
+- [41_category_split.md](41_category_split.md) - **Category Split**: one payment in several categories (Done)

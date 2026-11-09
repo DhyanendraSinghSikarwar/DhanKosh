@@ -17,6 +17,7 @@ class LedgerFilter {
     this.maxMinor,
     this.accountKind,
     this.usage,
+    this.groupId,
   });
 
   final TxKind kind;
@@ -45,6 +46,9 @@ class LedgerFilter {
   /// Book scope by account usage, `PERSONAL` or `BUSINESS` (FR-20-24). Rows
   /// without an account belong to the personal book.
   final String? usage;
+
+  /// Only the transactions in this group (FR-39-02).
+  final int? groupId;
 }
 
 /// Totals for a period; review rows and rows without an INR value excluded.

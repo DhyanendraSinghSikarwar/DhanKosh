@@ -11,6 +11,7 @@ import 'package:hisaab/core/db/tables/custom_subcategories.dart';
 import 'package:hisaab/core/db/tables/deleted_messages.dart';
 import 'package:hisaab/core/db/tables/forex_rates.dart';
 import 'package:hisaab/core/db/tables/goals.dart';
+import 'package:hisaab/core/db/tables/groups_people.dart';
 import 'package:hisaab/core/db/tables/holdings.dart';
 import 'package:hisaab/core/db/tables/ignored_accounts.dart';
 import 'package:hisaab/core/db/tables/loan_links.dart';
@@ -69,6 +70,11 @@ part 'app_database.g.dart';
     MerchantAliases,
     Tags,
     TransactionTags,
+    TxGroups,
+    TxGroupMembers,
+    People,
+    PersonEntries,
+    TxParts,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -76,7 +82,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -159,6 +165,14 @@ class AppDatabase extends _$AppDatabase {
           // v10 -> v11: accounts.low_balance_minor (FR-13-23). Additive.
           if (from < 11) await m.addColumn(accounts, accounts.lowBalanceMinor);
           // v11 -> v12: tags and transaction_tags (FR-08-29). Additive.
+          // v14 -> v15: groups, people and category parts (F-39..F-41).
+          if (from < 15) {
+            await m.createTable(txGroups);
+            await m.createTable(txGroupMembers);
+            await m.createTable(people);
+            await m.createTable(personEntries);
+            await m.createTable(txParts);
+          }
           // v13 -> v14: transactions.receipt (FR-08-31). Additive.
           if (from < 14) await m.addColumn(transactions, transactions.receipt);
           // v12 -> v13: recurring.auto_post (ADR-0013). Additive.

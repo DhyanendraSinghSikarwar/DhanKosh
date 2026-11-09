@@ -2,12 +2,14 @@ import 'package:hisaab/core/db/app_database.dart';
 import 'package:hisaab/core/db/enum_codec.dart';
 import 'package:hisaab/features/dedup_review/domain/dedup_policy.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:hisaab/features/transactions_ledger/domain/tx_part.dart';
 import 'package:parser_core/parser_core.dart';
 
 LedgerTx toLedgerTx(
   TransactionRow r, {
   String? alias,
   List<String> tags = const [],
+  List<TxPart> parts = const [],
 }) =>
     LedgerTx(
       id: r.id,
@@ -40,6 +42,7 @@ LedgerTx toLedgerTx(
       alias: alias,
       tags: tags,
       receipt: r.receipt,
+      parts: parts,
       createdAt: r.createdAt,
       inrMinor: r.inrMinor,
     );

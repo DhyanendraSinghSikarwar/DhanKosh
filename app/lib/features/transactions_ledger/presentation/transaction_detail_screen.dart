@@ -9,6 +9,7 @@ import 'package:hisaab/features/categorization/domain/category_choice.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:hisaab/features/transactions_ledger/presentation/category_split_sheet.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_category_style.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_tx_tile.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/receipt_actions.dart';
@@ -17,6 +18,7 @@ import 'package:hisaab/shared/ui/app_dates.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
 import 'package:hisaab/shared/widgets/section_label.dart';
+import 'package:parser_core/parser_core.dart';
 
 /// Opens the category picker for a row (supplied by the app shell, which
 /// binds the categorization sheet; features never import each other).
@@ -40,6 +42,29 @@ final _accountLabelProvider =
   return a?.label;
 });
 
+/// A row another feature adds to the detail screen.
+class DetailAction {
+  /// Creates a row.
+  const DetailAction({
+    required this.label,
+    required this.value,
+    required this.tag,
+    required this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final String tag;
+  final VoidCallback onTap;
+}
+
+/// Builds the extra rows for one transaction.
+typedef DetailActions = List<DetailAction> Function(
+  BuildContext context,
+  WidgetRef ref,
+  LedgerTx tx,
+);
+
 /// Transaction detail: fields, category and note edit, source messages,
 /// delete (FR-08-09, FR-08-10, FR-09-05, FR-09-06, FR-09-08, FR-09-09).
 class TransactionDetailScreen extends ConsumerWidget {
@@ -47,8 +72,13 @@ class TransactionDetailScreen extends ConsumerWidget {
   const TransactionDetailScreen({
     required this.id,
     required this.pickCategory,
+    this.extraActions,
     super.key,
   });
+
+  /// Rows other features add to the detail (groups, splits), composed in
+  /// `app/` so features stay apart.
+  final DetailActions? extraActions;
 
   /// Row id.
   final int id;
@@ -83,7 +113,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                 icon: Icons.search_off,
                 title: t('Transaction not found'),
               )
-            : _Body(tt, pickCategory),
+            : _Body(tt, pickCategory, extraActions),
       ),
     );
   }
@@ -121,9 +151,10 @@ class TransactionDetailScreen extends ConsumerWidget {
 }
 
 class _Body extends ConsumerWidget {
-  const _Body(this.tt, this.pickCategory);
+  const _Body(this.tt, this.pickCategory, this.extraActions);
   final LedgerTx tt;
   final CategoryPicker pickCategory;
+  final DetailActions? extraActions;
 
   void _refresh(WidgetRef ref) => ref.invalidate(_txProvider(tt.id));
 
@@ -459,6 +490,23 @@ class _Body extends ConsumerWidget {
                   tt.alias ?? 'Same as payee',
                   tag: 'detail_alias',
                   onTap: () => _editAlias(context, ref),
+                ),
+              for (final a in extraActions?.call(context, ref, tt) ??
+                  const <DetailAction>[])
+                _Row(a.label, a.value, tag: a.tag, onTap: a.onTap),
+              if (tt.currency == 'INR' &&
+                  tt.type == TransactionType.debit &&
+                  tt.accountKind == AccountKind.account)
+                _Row(
+                  'Split into categories',
+                  tt.parts.isEmpty
+                      ? 'Add'
+                      : tt.parts.map((p) => p.category.label).join(', '),
+                  tag: 'detail_split_categories',
+                  onTap: () async {
+                    await showCategorySplitSheet(context, ref, tt);
+                    _refresh(ref);
+                  },
                 ),
               _Row(
                 'Tags',

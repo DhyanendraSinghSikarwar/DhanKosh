@@ -2,6 +2,7 @@ import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:hisaab/features/transactions_ledger/domain/tx_part.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// The single ledger write path (FR-08-17). Nothing else writes
@@ -81,6 +82,11 @@ abstract interface class TransactionRepository {
   /// Attaches the receipt photo [fileName] (a file in the app's receipts
   /// folder) to [id]; null removes it (FR-08-31).
   Future<void> setReceipt(int id, String? fileName);
+
+  /// Splits [id] into category [parts] (FR-41-02); an empty list removes the
+  /// split. Throws [ArgumentError] when the parts do not add up, or when the
+  /// payment is not in rupees.
+  Future<void> setParts(int id, List<TxPart> parts);
 
   /// Every tag in use, most used first.
   Future<List<String>> allTags();

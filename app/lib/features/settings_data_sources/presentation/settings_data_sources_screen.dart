@@ -30,6 +30,8 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
     this.backupTile,
     this.taxTile,
     this.rulesTile,
+    this.groupsTile,
+    this.peopleTile,
     this.securityTile,
     this.activityTile,
     this.unrecognisedTile,
@@ -71,6 +73,12 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
 
   /// Rules entry (F-09), composed in `app/router.dart`.
   final Widget? rulesTile;
+
+  /// Groups of transactions (F-39).
+  final Widget? groupsTile;
+
+  /// People and splits (F-40).
+  final Widget? peopleTile;
 
   /// Security & privacy entry (F-25), embedded by the app.
   final Widget? securityTile;
@@ -202,6 +210,8 @@ class SettingsDataSourcesScreen extends ConsumerWidget {
               if (loansTile != null) loansTile!,
               if (taxTile != null) taxTile!,
               if (rulesTile != null) rulesTile!,
+              if (groupsTile != null) groupsTile!,
+              if (peopleTile != null) peopleTile!,
               if (forexTile != null) forexTile!,
               if (newsTile != null) newsTile!,
             ],

@@ -17,6 +17,7 @@ import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/domain/transaction_repository.dart';
 import 'package:hisaab/features/transactions_ledger/domain/transfer_pairing.dart';
+import 'package:hisaab/features/transactions_ledger/domain/tx_part.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// The single ledger write path (FR-08-17, FR-07-07).
@@ -761,6 +762,47 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Future<void> setReceipt(int id, String? fileName) =>
       _patch(id, TransactionsCompanion(receipt: Value(fileName)));
 
+  // FR-41-02
+  @override
+  Future<void> setParts(int id, List<TxPart> parts) async {
+    final r = await (_db.select(_db.transactions)
+          ..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    if (r == null) return;
+    if (parts.isNotEmpty) {
+      if (r.currency != 'INR') throw ArgumentError('Only rupee payments');
+      final err = TxPart.validate(r.amountMinor, parts);
+      if (err != null) throw ArgumentError(err);
+    }
+    await _db.transaction(() async {
+      await (_db.delete(_db.txParts)..where((t) => t.transactionId.equals(id)))
+          .go();
+      for (final p in parts) {
+        await _db.into(_db.txParts).insert(
+              TxPartsCompanion.insert(
+                transactionId: id,
+                category: enumToDb(p.category),
+                amountMinor: p.amountMinor,
+              ),
+            );
+      }
+    });
+    _db.markTablesUpdated({_db.transactions});
+  }
+
+  Future<Map<int, List<TxPart>>> _partMap() async {
+    final out = <int, List<TxPart>>{};
+    for (final r in await _db.select(_db.txParts).get()) {
+      out.putIfAbsent(r.transactionId, () => []).add(
+            TxPart(
+              enumFromDb(Category.values, r.category, Category.other),
+              r.amountMinor,
+            ),
+          );
+    }
+    return out;
+  }
+
   @override
   Future<List<String>> allTags() async => [
         for (final r in await _db.customSelect(
@@ -1072,6 +1114,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
       r,
       alias: alias,
       tags: (await _tagMap())[r.id] ?? const [],
+      parts: (await _partMap())[r.id] ?? const [],
     );
   }
 
@@ -1128,6 +1171,12 @@ class TransactionRepositoryImpl implements TransactionRepository {
               _db.transactionSources.source.isIn(f.sources.map(enumToDb)),
             ),
         ),
+      if (f.groupId != null)
+        t.id.isInQuery(
+          _db.selectOnly(_db.txGroupMembers)
+            ..addColumns([_db.txGroupMembers.transactionId])
+            ..where(_db.txGroupMembers.groupId.equals(f.groupId!)),
+        ),
       if (f.banks.isNotEmpty) t.bankName.isIn(f.banks),
       if (f.minMinor != null) t.amountMinor.isBiggerOrEqualValue(f.minMinor!),
       if (f.maxMinor != null) t.amountMinor.isSmallerOrEqualValue(f.maxMinor!),
@@ -1178,12 +1227,14 @@ class TransactionRepositoryImpl implements TransactionRepository {
     return q.watch().asyncMap((rows) async {
       final aliases = await _aliases();
       final tags = await _tagMap();
+      final parts = await _partMap();
       return [
         for (final r in rows)
           toLedgerTx(
             r,
             alias: aliases[MerchantRule.keyOf(r.merchant, r.upiId)],
             tags: tags[r.id] ?? const [],
+            parts: parts[r.id] ?? const [],
           ),
       ];
     });

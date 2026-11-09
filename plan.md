@@ -208,6 +208,9 @@ GIF reference of every existing screen: [assets_reference/_screens_index.md](ass
 | 36 | Savings Goals, Round-ups & Salary Plan | [36_goals_roundups_salary_plan.md](memory/36_goals_roundups_salary_plan.md) | P2 | 5 | In Progress |
 | 37 | Charts Catalogue | [37_charts_catalogue.md](memory/37_charts_catalogue.md) | P1 | 5 | In Progress |
 | 38 | Unrecognised Messages & Learned Senders | [38_unrecognised_messages_learned_senders.md](memory/38_unrecognised_messages_learned_senders.md) | P1 | 5 | In Progress |
+| 39 | Transaction Groups | [39_transaction_groups.md](memory/39_transaction_groups.md) | P2 | 5 | Done |
+| 40 | Split with People | [40_people_split.md](memory/40_people_split.md) | P2 | 5 | Done |
+| 41 | Category Split | [41_category_split.md](memory/41_category_split.md) | P2 | 5 | Done |
 
 ## 13. Roadmap / Milestones
 

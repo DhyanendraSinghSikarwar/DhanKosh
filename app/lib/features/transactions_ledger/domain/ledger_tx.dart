@@ -1,3 +1,4 @@
+import 'package:hisaab/features/transactions_ledger/domain/tx_part.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// One ledger row. Money in paise, times in epoch ms (FR-08).
@@ -33,6 +34,7 @@ class LedgerTx {
     this.alias,
     this.tags = const [],
     this.receipt,
+    this.parts = const [],
     this.inrMinor,
   });
 
@@ -73,6 +75,9 @@ class LedgerTx {
 
   /// File name of the receipt photo, if one is attached (FR-08-31).
   final String? receipt;
+
+  /// The category parts of a split payment; empty when not split (FR-41-01).
+  final List<TxPart> parts;
   final int createdAt;
   final int? inrMinor;
 

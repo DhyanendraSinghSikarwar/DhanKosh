@@ -74,4 +74,6 @@ Status is kept in section 5.
 | W11 | Done for screens using MonthRange (FR-10-25); alerts, summaries, widget and PDF reports still calendar months |
 | W12 | Done (FR-12-22, ADR-0013, schema v13) |
 | W17 | Receipts done (FR-08-31, schema v14); groups, category split and people split not built |
-| W13..W16, W18 | Pending |
+| W17b | Done: groups (F-39), split with people (F-40), category split (F-41); in More and on the transaction detail |
+| W16 | Skipped: DhanKosh already has merchant rules (exact/contains) and monthly budgets; multi-condition rules and budget groups are not built |
+| W13, W14, W15, W18 | Pending |
