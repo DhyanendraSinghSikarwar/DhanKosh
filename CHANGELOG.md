@@ -4,11 +4,6 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
-## [0.0.7] - 2026-10-31
-
-### Changed
-- Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
-
 ### Added
 - More > Groups: bundle transactions (a trip, an event) and see what the group cost; add a transaction to groups from its detail.
 - More > People and splits: share a payment equally or by amount (Split with people on the transaction detail), and track who owes you or whom you owe until it is paid back.
@@ -33,7 +28,6 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Statements asking for a password now show the subject line of the email they came from, and every emailed statement has a View email button that opens the mail.
 - Unrecognised messages (More): payments no bank format matched wait for you with a "Looks like" line; add one in a tap and the app learns the sender. A watched payment app's notification that carries only an amount reaches it too, and "Find missed messages" looks through your inbox.
 - Share text into DhanKosh (a UPI receipt, a forwarded bank message, or a note such as "450 swiggy") and Add transaction opens pre-filled.
-- Calendar in Transactions shows the month total, a small amount in each day and the selected day's total.
 - Watched apps screen (More, Payment-app notifications): switch any built-in app off, and add any other app that notifies your phone so its payments are tracked too.
 
 ### Fixed
@@ -48,8 +42,18 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - A payment that only produces an app notification (PhonePe and others) is now added right away, even with the app closed, instead of at the next time you open it.
 - Two payments of the same amount on one day through payment apps are both recorded; the second used to be held back for review and left out of totals.
 - Data sources shows whether the notification listener is connected and when it last read a payment notification.
-- Insights on Home and Analysis hide rupee figures when amounts are hidden.
 - Payments that only produce an app notification and no bank SMS are now tracked for 12 more apps — slice, Jupiter, Fi Money, Airtel Thanks, MyJio, Bajaj Finserv, PayZapp, BHIM Baroda Pay, IDFC FIRST Bank, bob World, Canara ai1 and Fed Mobile — and for any other app you add yourself.
+
+## [0.0.7] - 2026-10-31
+
+### Changed
+- Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
+
+### Added
+- Calendar in Transactions shows the month total, a small amount in each day and the selected day's total.
+
+### Fixed
+- Insights on Home and Analysis hide rupee figures when amounts are hidden.
 
 ## [0.0.6] - 2026-10-31
 
