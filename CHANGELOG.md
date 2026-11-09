@@ -8,6 +8,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
 
 ### Added
+- Price-change alert: when a repeating payment such as a subscription is charged a different amount, you get a notification with the old and new price.
 - Quick add: long-press the DhanKosh icon for Add transaction, or open a link like hisaab://app/transactions/add?amount=450&merchant=chai to start a pre-filled entry.
 - Tags: label a transaction (#trip, #work), see the tags in the list, and find them from the search box.
 - Safe to spend (Home, off until you turn it on in Customise): what you can spend each day this month after your bills, within your budgets.

@@ -30,6 +30,7 @@ enum AlertKind {
   lowBalanceAccount,
   dailySummary,
   billReminder,
+  priceChange,
 }
 
 /// A notification button (FR-21-03, FR-21-10).

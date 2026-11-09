@@ -15,6 +15,7 @@ import 'package:hisaab/features/credit_cards/domain/card_reminder_plan.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_repository.dart';
 import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/recurring_transactions/domain/bills_view.dart';
+import 'package:hisaab/features/recurring_transactions/domain/price_change.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_repository.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
@@ -124,6 +125,7 @@ class AlertsEngine {
         () => _budgetDecisions(settings, ist),
         () => _billDecisions(today),
         () => _lowBalanceDecisions(today),
+        () => _priceDecisions(settings, today),
         () => _billReminderDecisions(settings, today, ist.hour),
         () => _cardDecisions(settings, today),
         () => _newTxDecisions(settings),
@@ -505,6 +507,25 @@ class AlertsEngine {
       bills: inputs,
       today: today,
       hour: hour,
+      settings: settings,
+      alerted: await _alerted.all(),
+    );
+  }
+
+  Future<List<AlertDecision>> _priceDecisions(
+    AlertSettings settings,
+    DateTime today,
+  ) async {
+    final txs = _txs;
+    if (txs == null || !settings.billReminders) return const [];
+    final from = today.subtract(const Duration(days: 130));
+    final rows = await txs
+        .watch(
+          LedgerFilter(fromMs: from.millisecondsSinceEpoch - _istOffsetMs),
+        )
+        .first;
+    return AlertRules.priceChangeAlerts(
+      changes: PriceChanges.detect(rows, today),
       settings: settings,
       alerted: await _alerted.all(),
     );

@@ -6,7 +6,7 @@
 | Status | In progress (rules done; posting engine, native `alerts` channel, Alerts settings screen and launch-route handling landed but native Kotlin unverified on device; card reminders, untracked-change alerts, new-transaction/balance/statement notifications, action buttons and AlertsWorker scheduling pending; 2026-10-26: weekly summary (rule, engine check, toggle) added); 2026-10-27 parity: Card reminders, new-transaction alerts with category buttons and action routes (FR-21-22..25); untracked-change alerts still pending; Kotlin buttons uncompiled |
 | Priority | P1 |
 | Phase | 4 |
-| Last Updated | 2026-11-06 |
+| Last Updated | 2026-11-09 |
 
 ## 1. Description
 
@@ -180,6 +180,7 @@ Scaffold "Notifications & alerts" with cards:
 28. FR-21-28: The Alerts screen says which notifications need action ("Only alerts that need action notify. The rest go to the Activity log."), each switch has a one-line subtitle, and the budget control notes that only "used up" notifies.
 29. FR-21-29: Daily summary (opt-in, setting `daily_summary_alert`, default off; Alerts screen switch "Daily summary"). A daily job at about 21:00 local (`daily-summary`, runs the alert check) posts "Today: ₹X spent" with "N payments · M to categorise" once per day (key `daily:<date>`, Budgets & bills channel, opens Transactions). Nothing is posted before 21:00, on a day with no spend and nothing to categorise, or when off. Today's spend uses the cash-basis total (left-out rows excluded); the job is cancelled when the switch is turned off. Saved in the backup settings.
 30. FR-21-30: Bill reminders (setting `bill_reminders_alert`, default on; Alerts switch "Bill reminders"). A daily job at about 09:00 local (`bill-reminders`, re-requested at every app start) runs the alert check. From 08:00 it posts "<name> ₹X due tomorrow" (or "today") once per (name, due date) for bills the user declared (own recurring items and loan EMIs) that the ledger does not already show as paid this cycle. Buttons: Mark paid books a manual debit of that amount, payee and category on the bill's account (the account is used only if it still exists); Skip this time books nothing. Detected (undeclared) subscriptions get no reminder.
+31. FR-21-31: Price-change alert: "<name> now ₹X" with "Was ₹Y. Price went up/down." once per charge (key `price:<txId>`, Budgets & bills channel, opens the transaction). It follows the Bill reminders switch.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -528,3 +529,4 @@ FR status additions: done FR-21-05, 06, 07 (posted), 14, 16, 17 (no resume re-ch
 | 2026-10-31 | Notifications reduced to actionable ones (new tx, card bill, statement password, low balance, renewal, untracked, budget used up); balance updated, category saved and budget-percent warning go to the Activity log; one-line texts; FR-21-27, FR-21-28, TC-21-17 | Action-only notifications, rest in the Activity log |
 | 2026-11-06 | FR-21-29 daily summary notification | PennyWise comparison, W4 |
 | 2026-11-06 | FR-21-30 bill reminders with Mark paid / Skip | PennyWise comparison, W5 |
+| 2026-11-09 | FR-21-31 price-change alert | PennyWise comparison, W10 |

@@ -6,6 +6,7 @@ import 'package:hisaab/features/expense_tracking/domain/budget.dart';
 import 'package:hisaab/features/expense_tracking/domain/budget_math.dart';
 import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/news_support_updates/domain/version_compare.dart';
+import 'package:hisaab/features/recurring_transactions/domain/price_change.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:parser_core/parser_core.dart';
 
@@ -636,6 +637,34 @@ abstract final class AlertRules {
               payload: payload,
             ),
           ],
+        ),
+      );
+    }
+    return out;
+  }
+
+  /// "Netflix now ₹649 (was ₹499)" when a repeating payment's price changed
+  /// (FR-21-31); once per charge. Uses the bill-reminders switch.
+  static List<AlertDecision> priceChangeAlerts({
+    required List<PriceChange> changes,
+    required AlertSettings settings,
+    required Set<String> alerted,
+  }) {
+    if (!settings.billReminders) return const [];
+    final out = <AlertDecision>[];
+    for (final c in changes) {
+      final key = 'price:${c.txId}';
+      if (alerted.contains(key)) continue;
+      out.add(
+        AlertDecision(
+          kind: AlertKind.priceChange,
+          key: key,
+          channel: AlertChannel.budgetsBills,
+          notificationId: AlertText.stableId(key),
+          title: '${c.name} now ${AlertText.money(c.newMinor)}',
+          body: 'Was ${AlertText.money(c.oldMinor)}. '
+              '${c.newMinor > c.oldMinor ? 'Price went up.' : 'Price went down.'}',
+          link: 'hisaab://transaction/${c.txId}',
         ),
       );
     }
