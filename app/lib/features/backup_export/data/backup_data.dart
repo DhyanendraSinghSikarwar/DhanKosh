@@ -199,6 +199,7 @@ class BackupData {
         'review': t.needsReview,
         'note': t.note,
         'excluded': t.excluded,
+        'tags': t.tags,
         'inr': t.inrMinor,
         'sources': [
           for (final s in sources)
@@ -710,6 +711,10 @@ class BackupData {
             subject: s['subject'] as String?,
             note: t['note'] as String?,
             excluded: t['excluded'] == true,
+            tags: [
+              for (final g in (t['tags'] as List?) ?? const <Object?>[])
+                if (g is String) g,
+            ],
           ),
         );
       }

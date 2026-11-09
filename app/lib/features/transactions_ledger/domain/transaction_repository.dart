@@ -71,6 +71,13 @@ abstract interface class TransactionRepository {
   Future<void> setSubcategory(int id, String? subcategory);
   Future<void> setNote(int id, String? note);
 
+  /// Replaces the tags of [id] (FR-08-29): trimmed, no duplicates ignoring
+  /// case, at most 10, each up to 30 characters.
+  Future<void> setTags(int id, List<String> tags);
+
+  /// Every tag in use, most used first.
+  Future<List<String>> allTags();
+
   /// Shows [alias] instead of the payee's name on every row of that payee;
   /// null or blank removes it (FR-09-20).
   Future<void> setMerchantAlias(int id, String? alias);

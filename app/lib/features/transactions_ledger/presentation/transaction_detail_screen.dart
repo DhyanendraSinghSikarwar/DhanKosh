@@ -224,6 +224,63 @@ class _Body extends ConsumerWidget {
     _refresh(ref);
   }
 
+  Future<void> _editTags(BuildContext context, WidgetRef ref) async {
+    final repo = ref.read(transactionRepositoryProvider);
+    final known = await repo.allTags();
+    if (!context.mounted) return;
+    final c = TextEditingController(text: tt.tags.join(', '));
+    final text = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t('Tags')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              key: const Key('tags_field'),
+              controller: c,
+              autofocus: true,
+              decoration: InputDecoration(hintText: t('trip, work')),
+            ),
+            if (known.isNotEmpty)
+              Wrap(
+                spacing: 6,
+                children: [
+                  for (final k in known.take(8))
+                    ActionChip(
+                      label: Text(k),
+                      onPressed: () {
+                        final cur = [
+                          for (final s in c.text.split(','))
+                            if (s.trim().isNotEmpty) s.trim(),
+                        ];
+                        if (!cur.contains(k)) cur.add(k);
+                        c.text = cur.join(', ');
+                      },
+                    ),
+                ],
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(t('Cancel')),
+          ),
+          FilledButton(
+            key: const Key('tags_save'),
+            onPressed: () => Navigator.pop(ctx, c.text),
+            child: Text(t('Save')),
+          ),
+        ],
+      ),
+    );
+    if (text == null) return;
+    await repo.setTags(tt.id, text.split(','));
+    _refresh(ref);
+  }
+
   Future<void> _editAlias(BuildContext context, WidgetRef ref) async {
     final c = TextEditingController(text: tt.alias ?? '');
     final name = await showDialog<String>(
@@ -399,6 +456,12 @@ class _Body extends ConsumerWidget {
                   tag: 'detail_alias',
                   onTap: () => _editAlias(context, ref),
                 ),
+              _Row(
+                'Tags',
+                tt.tags.isEmpty ? 'Add' : tt.tags.map((g) => '#$g').join(' '),
+                tag: 'detail_tags',
+                onTap: () => _editTags(context, ref),
+              ),
               _Row(
                 'Totals',
                 tt.excluded ? 'Left out' : 'Counted',

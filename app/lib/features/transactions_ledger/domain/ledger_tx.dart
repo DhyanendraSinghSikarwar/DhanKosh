@@ -31,6 +31,7 @@ class LedgerTx {
     this.note,
     this.excluded = false,
     this.alias,
+    this.tags = const [],
     this.inrMinor,
   });
 
@@ -65,6 +66,9 @@ class LedgerTx {
 
   /// The name the user chose for this payee, if any (FR-09-20).
   final String? alias;
+
+  /// The user's tags on this row (FR-08-29).
+  final List<String> tags;
   final int createdAt;
   final int? inrMinor;
 

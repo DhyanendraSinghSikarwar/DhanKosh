@@ -10,6 +10,7 @@ class IngestItem {
     this.accountId,
     this.note,
     this.excluded = false,
+    this.tags = const [],
     this.phoneLast4s = const {},
   });
 
@@ -26,6 +27,9 @@ class IngestItem {
 
   /// Restored as left out of totals (FR-10-24).
   final bool excluded;
+
+  /// Restored tags (FR-08-29).
+  final List<String> tags;
   final Set<String> phoneLast4s;
 }
 

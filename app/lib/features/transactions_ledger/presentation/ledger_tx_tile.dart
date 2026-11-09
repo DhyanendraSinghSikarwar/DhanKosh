@@ -130,6 +130,7 @@ class LedgerTxTile extends StatelessWidget {
                       bank,
                       if (tx.needsReview) 'Needs review',
                       if (tx.excluded) 'Excluded',
+                      ...tx.tags.map((g) => '#$g'),
                     ].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

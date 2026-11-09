@@ -23,6 +23,7 @@ import 'package:hisaab/core/db/tables/recurring_items.dart';
 import 'package:hisaab/core/db/tables/settings.dart';
 import 'package:hisaab/core/db/tables/sips.dart';
 import 'package:hisaab/core/db/tables/statements.dart';
+import 'package:hisaab/core/db/tables/tags.dart';
 import 'package:hisaab/core/db/tables/transaction_sources.dart';
 import 'package:hisaab/core/db/tables/transactions.dart';
 import 'package:hisaab/core/db/tables/unrecognised.dart';
@@ -66,6 +67,8 @@ part 'app_database.g.dart';
     SenderPrefs,
     IgnoredAccounts,
     MerchantAliases,
+    Tags,
+    TransactionTags,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -73,7 +76,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -155,6 +158,11 @@ class AppDatabase extends _$AppDatabase {
           if (from < 10) await m.createTable(merchantAliases);
           // v10 -> v11: accounts.low_balance_minor (FR-13-23). Additive.
           if (from < 11) await m.addColumn(accounts, accounts.lowBalanceMinor);
+          // v11 -> v12: tags and transaction_tags (FR-08-29). Additive.
+          if (from < 12) {
+            await m.createTable(tags);
+            await m.createTable(transactionTags);
+          }
         },
         beforeOpen: (details) async {
           AppLog.instance.info(

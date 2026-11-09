@@ -68,4 +68,5 @@ Status is kept in section 5.
 | W5 | Done (FR-21-30) |
 | W6 | Done for the main screens (FR-28-31); calendar, budgets, bills, portfolio, statements still use the Auto form |
 | W7 | Done (FR-17-48, ADR-0012) |
-| W8..W18 | Pending |
+| W8 | Done (FR-08-29, schema v12); tag filter is the search box, no tag chips in the filter sheet |
+| W9..W18 | Pending |

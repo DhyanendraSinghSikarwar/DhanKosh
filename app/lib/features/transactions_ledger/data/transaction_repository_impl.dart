@@ -178,6 +178,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
         );
     }
 
+    if (outcome == IngestOutcome.inserted && item.tags.isNotEmpty) {
+      await setTags(txId, item.tags);
+    }
+
     final accountForPair = outcome == IngestOutcome.inserted
         ? (await (_db.select(_db.transactions)..where((t) => t.id.equals(txId)))
                 .getSingle())
@@ -708,6 +712,74 @@ class TransactionRepositoryImpl implements TransactionRepository {
           a.merchantKey: a.alias,
       };
 
+  // FR-08-29
+  static List<String> cleanTags(List<String> raw) {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final r in raw) {
+      var t = r.trim().replaceAll(RegExp('^#+'), '').trim();
+      if (t.length > 30) t = t.substring(0, 30);
+      if (t.isEmpty || !seen.add(t.toLowerCase())) continue;
+      out.add(t);
+      if (out.length == 10) break;
+    }
+    return out;
+  }
+
+  @override
+  Future<void> setTags(int id, List<String> tags) async {
+    await _db.transaction(() async {
+      await (_db.delete(_db.transactionTags)
+            ..where((t) => t.transactionId.equals(id)))
+          .go();
+      for (final name in cleanTags(tags)) {
+        await _db.into(_db.tags).insert(
+              TagsCompanion.insert(name: name),
+              mode: InsertMode.insertOrIgnore,
+            );
+        final tag = await (_db.select(_db.tags)
+              ..where((t) => t.name.equals(name)))
+            .getSingle();
+        await _db.into(_db.transactionTags).insert(
+              TransactionTagsCompanion.insert(
+                transactionId: id,
+                tagId: tag.id,
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+      }
+      await _db.customStatement(
+        'DELETE FROM tags WHERE id NOT IN '
+        '(SELECT tag_id FROM transaction_tags)',
+      );
+    });
+    _db.markTablesUpdated({_db.transactions});
+  }
+
+  @override
+  Future<List<String>> allTags() async => [
+        for (final r in await _db.customSelect(
+          'SELECT g.name AS name FROM tags g '
+          'JOIN transaction_tags x ON x.tag_id = g.id '
+          'GROUP BY g.id ORDER BY COUNT(*) DESC, g.name',
+          readsFrom: {_db.tags, _db.transactionTags},
+        ).get())
+          r.read<String>('name'),
+      ];
+
+  Future<Map<int, List<String>>> _tagMap() async {
+    final out = <int, List<String>>{};
+    final rows = await _db.customSelect(
+      'SELECT x.transaction_id AS id, g.name AS name FROM transaction_tags x '
+      'JOIN tags g ON g.id = x.tag_id ORDER BY g.name',
+      readsFrom: {_db.tags, _db.transactionTags},
+    ).get();
+    for (final r in rows) {
+      out.putIfAbsent(r.read<int>('id'), () => []).add(r.read<String>('name'));
+    }
+    return out;
+  }
+
   @override
   Future<void> setExcluded(List<int> ids, {required bool excluded}) async {
     for (final id in ids) {
@@ -991,7 +1063,11 @@ class TransactionRepositoryImpl implements TransactionRepository {
     if (r == null) return null;
     final key = MerchantRule.keyOf(r.merchant, r.upiId);
     final alias = key == null ? null : (await _aliases())[key];
-    return toLedgerTx(r, alias: alias);
+    return toLedgerTx(
+      r,
+      alias: alias,
+      tags: (await _tagMap())[r.id] ?? const [],
+    );
   }
 
   @override
@@ -1064,6 +1140,16 @@ class TransactionRepositoryImpl implements TransactionRepository {
             t.note.contains(q) |
             t.referenceNumber.contains(q) |
             t.upiId.contains(q) |
+            t.id.isInQuery(
+              _db.selectOnly(_db.transactionTags).join([
+                innerJoin(
+                  _db.tags,
+                  _db.tags.id.equalsExp(_db.transactionTags.tagId),
+                ),
+              ])
+                ..addColumns([_db.transactionTags.transactionId])
+                ..where(_db.tags.name.contains(q.replaceAll('#', ''))),
+            ) |
             (labels.isEmpty ? const Constant(false) : t.category.isIn(labels)) |
             (RegExp(r'^\d+$').hasMatch(digits)
                 ? CustomExpression<bool>(
@@ -1086,11 +1172,13 @@ class TransactionRepositoryImpl implements TransactionRepository {
     if (limit != null) q.limit(limit);
     return q.watch().asyncMap((rows) async {
       final aliases = await _aliases();
+      final tags = await _tagMap();
       return [
         for (final r in rows)
           toLedgerTx(
             r,
             alias: aliases[MerchantRule.keyOf(r.merchant, r.upiId)],
+            tags: tags[r.id] ?? const [],
           ),
       ];
     });
