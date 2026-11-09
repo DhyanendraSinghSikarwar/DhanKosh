@@ -72,4 +72,5 @@ Status is kept in section 5.
 | W9 | Done for link and launcher shortcut (FR-08-30); Quick Settings tile not built |
 | W10 | Done for price-change detection and alert (FR-12-21, FR-21-31); active / hidden / ended states not built |
 | W11 | Done for screens using MonthRange (FR-10-25); alerts, summaries, widget and PDF reports still calendar months |
-| W12..W18 | Pending |
+| W12 | Done (FR-12-22, ADR-0013, schema v13) |
+| W13..W18 | Pending |

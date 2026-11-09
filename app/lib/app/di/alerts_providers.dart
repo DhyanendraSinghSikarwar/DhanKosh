@@ -15,6 +15,7 @@ import 'package:hisaab/features/alerts_reminders/domain/alert_poster.dart';
 import 'package:hisaab/features/alerts_reminders/domain/alerts_engine.dart';
 import 'package:hisaab/features/forex_rates/domain/forex_rate.dart';
 import 'package:hisaab/features/news_support_updates/domain/update_keys.dart';
+import 'package:hisaab/features/recurring_transactions/domain/recurring_auto_post.dart';
 import 'package:hisaab/features/sms_ingestion/domain/nightly_schedule.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -78,6 +79,10 @@ AlertsEngine alertsEngine(Ref ref) => AlertsEngine(
       cardState: ref.watch(cardReminderStateStoreProvider),
       installedVersion: appVersion,
       bills: () => ref.read(billsProvider.future),
+      autoPost: RecurringAutoPost(
+        ref.watch(recurringRepositoryProvider),
+        ref.watch(transactionRepositoryProvider),
+      ).run,
       updateVersion: () async {
         // Daily-throttled check, then the newest version it found (FR-31-34).
         await ref.read(updateCheckerProvider).check();

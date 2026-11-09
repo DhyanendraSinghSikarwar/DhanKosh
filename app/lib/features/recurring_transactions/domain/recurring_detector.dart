@@ -124,6 +124,7 @@ abstract final class RecurringDetector {
           manualId: m.id,
           income: m.income,
           yearly: m.frequency == RecurringFrequency.yearly,
+          autoPost: m.autoPost,
         ),
     ];
     final names = {for (final r in mine) r.name.toLowerCase()};

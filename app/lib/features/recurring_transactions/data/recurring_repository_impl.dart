@@ -27,6 +27,7 @@ class RecurringRepositoryImpl implements RecurringRepository {
         category: enumFromDb(Category.values, r.category, Category.other),
         accountId: r.accountId,
         createdAt: r.createdAt,
+        autoPost: r.autoPost,
       );
 
   RecurringItemsCompanion _companion(RecurringDraft d, {int? createdAt}) =>
@@ -41,6 +42,7 @@ class RecurringRepositoryImpl implements RecurringRepository {
         ),
         category: Value(enumToDb(d.category)),
         accountId: Value(d.accountId),
+        autoPost: Value(d.autoPost),
         createdAt: createdAt == null ? const Value.absent() : Value(createdAt),
       );
 

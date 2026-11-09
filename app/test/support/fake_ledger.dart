@@ -262,6 +262,7 @@ class FakeTxRepo implements TransactionRepository {
     Category category = Category.other,
     String? reference,
     String? note,
+    String? sourceMessageId,
   }) async {
     manual.add({
       'amountMinor': amountMinor,

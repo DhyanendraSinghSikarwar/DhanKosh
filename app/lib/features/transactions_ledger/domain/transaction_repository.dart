@@ -24,6 +24,9 @@ abstract interface class TransactionRepository {
     Category category = Category.other,
     String? reference,
     String? note,
+
+    /// A fixed id makes the add idempotent (regular-payment auto-post).
+    String? sourceMessageId,
   });
 
   /// Adds a payment the user confirmed from a message nothing could read

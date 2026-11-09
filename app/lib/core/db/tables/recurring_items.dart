@@ -24,4 +24,7 @@ class RecurringItems extends Table {
   /// Soft reference to `accounts.id`, no FK.
   IntColumn get accountId => integer().nullable()();
   IntColumn get createdAt => integer()();
+
+  /// Books itself on the due day (ADR-0013).
+  BoolColumn get autoPost => boolean().withDefault(const Constant(false))();
 }

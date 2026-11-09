@@ -42,6 +42,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
   late final TextEditingController _day;
   late bool _income;
   late bool _yearly;
+  late bool _autoPost;
   late int _month;
   late Category _category;
   String? _error;
@@ -57,6 +58,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
     _day = TextEditingController(text: s == null ? '' : '${s.dayOfMonth}');
     _income = s?.income ?? false;
     _yearly = s?.yearly ?? false;
+    _autoPost = s?.autoPost ?? false;
     _month = s?.nextDue.month ?? DateTime.now().month;
     _category = s?.category ?? Category.bills;
   }
@@ -89,6 +91,7 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
       month: _yearly ? _month : null,
       category: _category,
       accountId: widget.source?.accountId,
+      autoPost: _autoPost,
     );
     final err = d.validate();
     if (err != null) {
@@ -215,6 +218,15 @@ class _RecurringSheetState extends ConsumerState<RecurringSheet> {
                   DropdownMenuItem(value: c, child: Text(c.label)),
               ],
               onChanged: (v) => setState(() => _category = v ?? _category),
+            ),
+            SwitchListTile(
+              key: const Key('rec-auto'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(t('Add automatically')),
+              subtitle:
+                  Text(t('Books it on the due day, even with no message')),
+              value: _autoPost,
+              onChanged: (v) => setState(() => _autoPost = v),
             ),
             if (_error != null)
               Padding(

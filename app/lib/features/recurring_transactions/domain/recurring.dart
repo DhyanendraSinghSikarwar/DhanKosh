@@ -20,6 +20,7 @@ class Recurring {
     this.income = false,
     this.yearly = false,
     this.loanKey,
+    this.autoPost = false,
   });
 
   final String name;
@@ -36,6 +37,9 @@ class Recurring {
   final bool income;
   final bool yearly;
   final String? loanKey;
+
+  /// A user item that books itself on the due day (ADR-0013).
+  final bool autoPost;
 }
 
 /// A persisted user item (FR-12-03).
@@ -52,6 +56,7 @@ class RecurringItem {
     required this.createdAt,
     this.month,
     this.accountId,
+    this.autoPost = false,
   });
 
   final int id;
@@ -68,6 +73,9 @@ class RecurringItem {
   final Category category;
   final int? accountId;
   final int createdAt;
+
+  /// Books itself on the due day (ADR-0013).
+  final bool autoPost;
 }
 
 /// Input for adding or editing an item.
@@ -82,6 +90,7 @@ class RecurringDraft {
     this.income = false,
     this.month,
     this.accountId,
+    this.autoPost = false,
   });
 
   final String name;
@@ -92,6 +101,9 @@ class RecurringDraft {
   final int? month;
   final Category category;
   final int? accountId;
+
+  /// Books itself on the due day (ADR-0013).
+  final bool autoPost;
 
   /// Null when valid, else a short reason (day 1..31, month 1..12 for yearly,
   /// name and positive amount).

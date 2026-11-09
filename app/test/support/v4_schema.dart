@@ -70,6 +70,12 @@ Future<void> dropV11(AppDatabase db) async {
 
 /// Drops everything added in schema v12 so a test can fake a v11 file.
 Future<void> dropV12(AppDatabase db) async {
+  await dropV13(db);
   await db.customStatement('DROP TABLE transaction_tags');
   await db.customStatement('DROP TABLE tags');
+}
+
+/// Drops everything added in schema v13 so a test can fake a v12 file.
+Future<void> dropV13(AppDatabase db) async {
+  await db.customStatement('ALTER TABLE recurring DROP COLUMN auto_post');
 }

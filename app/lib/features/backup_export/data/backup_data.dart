@@ -322,6 +322,7 @@ class BackupData {
             'month': r.month,
             'category': enumToDb(r.category),
             'account': r.accountId == null ? null : accKey[r.accountId],
+            'auto': r.autoPost,
           },
       ],
       'holdings': [
@@ -772,6 +773,7 @@ class BackupData {
             Category.other,
           ),
           accountId: known[r['account']]?.id,
+          autoPost: r['auto'] == true,
         ),
       );
       bump('recurring items');

@@ -30,6 +30,7 @@ abstract final class BillsView {
           income: r.income,
           yearly: r.yearly,
           loanKey: l.key,
+          autoPost: r.autoPost,
         );
       } else {
         out.add(

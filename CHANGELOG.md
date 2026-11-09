@@ -8,6 +8,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Home no longer shows the Accounts card, the Goals card or the Income / Expenses / Saved row; the Book tag shows only for Business.
 
 ### Added
+- Regular payments can add themselves: switch on Add automatically for a bill or income you entered (rent, salary) and it is booked on its due day even if no message arrives.
 - Budget month start day (Customise): if you are paid on the 25th, choose 25 and the month on Home, Transactions and Budgets runs 25th to 24th.
 - Price-change alert: when a repeating payment such as a subscription is charged a different amount, you get a notification with the old and new price.
 - Quick add: long-press the DhanKosh icon for Add transaction, or open a link like hisaab://app/transactions/add?amount=450&merchant=chai to start a pre-filled entry.

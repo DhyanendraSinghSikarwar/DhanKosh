@@ -183,6 +183,7 @@ SIP tracker (Fold adoption, [ADR-0010](../docs/adr/0010-fold-ideas-adoption-rule
 - FR-12-19: The user shall add, edit and delete SIPs (frequency daily / weekly / monthly, name, amount, day of month or weekday) through a stepped sheet: frequency, amount, review, confirm; an existing SIP opens at review and each line is editable in place. A user SIP replaces a detected one of the same fund name and keeps its recorded total; without records its total is amount x instalments due since the start day.
 - FR-12-20: The SIP list (name, amount, frequency, next date, total invested, "Detected" tag) shall show on the Bills screen and on Portfolio; tapping a row opens the setup sheet at review.
 - FR-12-21: A repeating payment whose newest charge (last 10 days) differs by 5 to 100 per cent from a price that was stable (within 2 per cent over at least two earlier months, at least three charges in 130 days) is a price change (`PriceChanges.detect`, ignores review, left-out and duplicate rows). Informational; the user's own bills are not edited.
+- FR-12-22: Auto-post (ADR-0013): a user item with the switch "Add automatically" (column `recurring.auto_post`, schema v13, default off) books one manual transaction for its latest passed due date (not before the item was created, at most 35 days old) at 09:00 IST, with its amount, payee, category and account, when the alert check runs (daily 09:00 job, app open). Id `recurring:<item>:<date>` makes it once per date; a deleted row stays deleted; later bank messages merge into it through dedup. Detected items and loan EMIs are never auto-posted. Saved in the backup.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -502,3 +503,4 @@ abstract interface class RecurringRepository {
 | 2026-10-26 | SIP tracker: detection (weekly, monthly, quarterly), stepped add/edit, list on Bills and Portfolio, schema v6 `sips` | Fold adoption |
 | 2026-10-31 | Bills calendar restyled to the approved mock: month stepper above a Monday-first grid of rounded day tiles with coloured dots (EMI amber, card due violet, Bill red, Income mint, Insurance teal), "All of <month>" list of the month's occurrences with day badge and Total, Show all for a day | Home matched to approved mock |
 | 2026-11-09 | FR-12-21 price change detection | PennyWise comparison, W10 |
+| 2026-11-09 | FR-12-22 auto-post | PennyWise comparison, W12 (ADR-0013) |

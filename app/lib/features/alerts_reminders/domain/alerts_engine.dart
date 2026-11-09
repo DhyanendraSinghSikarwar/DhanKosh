@@ -49,6 +49,7 @@ class AlertsEngine {
     CardReminderStateStore? cardState,
     Future<String?> Function()? updateVersion,
     Future<List<Recurring>> Function()? bills,
+    Future<int> Function(DateTime today)? autoPost,
     String installedVersion = '0.0.0',
     int Function()? nowMs,
   })  : _budgets = budgets,
@@ -63,6 +64,7 @@ class AlertsEngine {
         _cardState = cardState,
         _updateVersion = updateVersion,
         _bills = bills,
+        _autoPost = autoPost,
         _installed = installedVersion,
         _nowMs = nowMs ?? (() => DateTime.now().millisecondsSinceEpoch);
 
@@ -71,6 +73,7 @@ class AlertsEngine {
   final AccountRepository _accounts;
   final AlertedKeyStore _alerted;
   final Future<List<Recurring>> Function()? _bills;
+  final Future<int> Function(DateTime today)? _autoPost;
   final AlertPoster _poster;
   final AlertSettingsRepository _settings;
   final TransactionRepository? _txs;
@@ -121,6 +124,12 @@ class AlertsEngine {
         isUtc: true,
       );
       final today = DateTime.utc(ist.year, ist.month, ist.day);
+      // Regular payments the user asked to add themselves (ADR-0013).
+      try {
+        await _autoPost?.call(today);
+      } on Object {
+        // A failed auto-post never stops the alert checks.
+      }
       for (final check in <Future<List<AlertDecision>> Function()>[
         () => _budgetDecisions(settings, ist),
         () => _billDecisions(today),

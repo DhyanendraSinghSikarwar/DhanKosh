@@ -531,9 +531,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
     Category category = Category.other,
     String? reference,
     String? note,
+    String? sourceMessageId,
   }) async {
     final account = accountId == null ? null : await _accounts.byId(accountId);
-    final id =
+    final id = sourceMessageId ??
         'manual:$timestamp-${Random().nextInt(1 << 31).toRadixString(36)}';
     final bank = account?.bankName ?? 'Cash / other';
     return await ingest(
