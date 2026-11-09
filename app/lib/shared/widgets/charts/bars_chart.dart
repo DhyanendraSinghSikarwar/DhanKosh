@@ -1,6 +1,7 @@
 // Painters take plain constructor arguments.
 // ignore_for_file: avoid_positional_boolean_parameters
 import 'package:flutter/material.dart';
+import 'package:hisaab/shared/widgets/charts/chart_sizing.dart';
 import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 
 /// Single-series bars (daily spend, category by month); paise.
@@ -38,7 +39,7 @@ class BarsChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = ChartStyle.of(context);
     return SizedBox(
-      height: height,
+      height: ChartSizing.height(context, height),
       width: double.infinity,
       child: CustomPaint(
         painter: _BarsPainter(

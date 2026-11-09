@@ -48,11 +48,18 @@ class CardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The label gives way (ellipsis) before the row can overflow on a small
+    // phone or with a large font (FR-37-13).
     return Row(
       children: [
-        SectionLabel(label),
-        if (info != null) ...[const SizedBox(width: 6), info!],
-        const Spacer(),
+        Expanded(
+          child: Row(
+            children: [
+              Flexible(child: SectionLabel(label)),
+              if (info != null) ...[const SizedBox(width: 6), info!],
+            ],
+          ),
+        ),
         if (trailing != null) trailing!,
       ],
     );

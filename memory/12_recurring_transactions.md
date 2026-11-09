@@ -184,6 +184,7 @@ SIP tracker (Fold adoption, [ADR-0010](../docs/adr/0010-fold-ideas-adoption-rule
 - FR-12-20: The SIP list (name, amount, frequency, next date, total invested, "Detected" tag) shall show on the Bills screen and on Portfolio; tapping a row opens the setup sheet at review.
 - FR-12-21: A repeating payment whose newest charge (last 10 days) differs by 5 to 100 per cent from a price that was stable (within 2 per cent over at least two earlier months, at least three charges in 130 days) is a price change (`PriceChanges.detect`, ignores review, left-out and duplicate rows). Informational; the user's own bills are not edited.
 - FR-12-22: Auto-post (ADR-0013): a user item with the switch "Add automatically" (column `recurring.auto_post`, schema v13, default off) books one manual transaction for its latest passed due date (not before the item was created, at most 35 days old) at 09:00 IST, with its amount, payee, category and account, when the alert check runs (daily 09:00 job, app open). Id `recurring:<item>:<date>` makes it once per date; a deleted row stays deleted; later bank messages merge into it through dedup. Detected items and loan EMIs are never auto-posted. Saved in the backup.
+- FR-12-23: A user bill or income already paid for its due date (a matching payment from 15 days before it up to today: same payee name, or same amount, category and account) shows its next due date instead and is no longer "coming up" (`RecurringDetector.paymentFor`). Applies to Bills, Upcoming and reminders.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -504,3 +505,4 @@ abstract interface class RecurringRepository {
 | 2026-10-31 | Bills calendar restyled to the approved mock: month stepper above a Monday-first grid of rounded day tiles with coloured dots (EMI amber, card due violet, Bill red, Income mint, Insurance teal), "All of <month>" list of the month's occurrences with day badge and Total, Show all for a day | Home matched to approved mock |
 | 2026-11-09 | FR-12-21 price change detection | PennyWise comparison, W10 |
 | 2026-11-09 | FR-12-22 auto-post | PennyWise comparison, W12 (ADR-0013) |
+| 2026-11-09 | FR-12-23 paid bills move on | Owner-reported issue |

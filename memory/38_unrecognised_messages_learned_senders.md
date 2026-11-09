@@ -6,7 +6,7 @@
 | Status | In Progress (generic reader, encrypted queue, learned senders, queue and Learned senders screens, live and notification hooks, inbox scan done; "Spent X at Y?" alert and native verification pending) |
 | Priority | P1 |
 | Phase | 5 |
-| Last Updated | 2026-11-06 |
+| Last Updated | 2026-11-09 |
 
 ## 1. Description
 Some messages are real payments that no bank format recognises: a new bank, a changed wording, a payment app whose notification says only an amount. Until now they were dropped without a trace. This feature keeps the ones that look like payments in a review queue, shows what each looks like ("Looks like: ₹1,250 debit · Zomato · ••4821") and lets the user add it with one tap. After one confirmation the sender is learned and its later messages are offered straight away.
@@ -70,6 +70,7 @@ N/A - the Kotlin app has no such feature. Designed from a study of how a competi
 | FR-38-11 | Add books through the ledger's `addFromMessage` with the message's source and id; dedup applies; the same message read later is skipped; the queue row is marked added with the transaction id. |
 | FR-38-12 | The Add form can be opened pre-filled from a draft (amount, type, payee, reference, category, account, date, note) with an optional confirm callback; shared text uses the same draft (see [Transactions ledger](08_transactions_ledger.md) FR-08-27). |
 | FR-38-13 | "Spent ₹X at Y?" alert for a learned sender's message, tap opens Add pre-filled; Add and Not a payment actions. Done: `AlertRules.learnedSenderAlert`, `AlertKind.learnedSender`, `hisaab://unrecognised/<id>` opens the list, `unrecNot` dismisses (notification id base 600000). Posted from `liveSmsOffer` only when the sender is learned. Tap/Add open the list, not the form. |
+| FR-38-14 | A payment-app notification the strict parser could not read, that states its direction and scores at least 70 (`GenericExtractor.autoBookAt`), is added to the ledger at once through the same path as Add (result `booked`), so it shows in Transactions without a tap; a vague or direction-guessed one still waits in the queue. How soon it appears depends on Android waking the background job, which can be late on a phone in battery saver. |
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 - Offline and on-device; the queue lives in the SQLCipher database.
@@ -175,3 +176,4 @@ Landed 2026-11-06 (issue I-02). Reader, queue, learned senders, screens, hooks a
 |---|---|---|
 | 2026-11-06 | Created: generic reader, review queue, learned senders, Learned senders screen, live and notification hooks, inbox scan | Payments no parser recognised were dropped silently (issue I-02, from the PennyWise comparison) |
 | 2026-11-06 | FR-38-13 done: "Spent ₹X at Y?" alert for learned senders | Issue I-02b |
+| 2026-11-09 | FR-38-14 auto-book clear notifications | Owner-reported issue |

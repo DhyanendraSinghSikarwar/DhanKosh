@@ -109,9 +109,12 @@ abstract final class MerchantNormalizer {
     return MerchantDirectory.lookup(upper, upper.split(' '))?.category;
   }
 
+  static final RegExp _titleStart =
+      rx(r'^(?:M/S|MR|MRS|MS|MISS|DR|SHRI|SMT|SRI)\.?\s+');
+
   /// Cleans a raw merchant string; null when nothing name-like is left.
   static String? clean(String raw) {
-    var s = raw.toUpperCase();
+    var s = raw.toUpperCase().replaceFirst(_titleStart, '');
     if (s.contains('@')) return fromVpa(s);
     if (!_ifsc.hasMatch(s.trim())) {
       final m = _nameThenId.firstMatch(s.trim());

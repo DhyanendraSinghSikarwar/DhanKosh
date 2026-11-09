@@ -26,8 +26,12 @@ UnrecognisedRepository unrecognisedRepository(Ref ref) =>
 
 /// Decides what is worth queueing.
 @Riverpod(keepAlive: true)
-OfferUnrecognised offerUnrecognised(Ref ref) =>
-    OfferUnrecognised(ref.watch(unrecognisedRepositoryProvider));
+OfferUnrecognised offerUnrecognised(Ref ref) => OfferUnrecognised(
+      ref.watch(unrecognisedRepositoryProvider),
+      autoAdd: (m, c) async {
+        await ref.read(addFromUnrecognisedProvider)(m, c);
+      },
+    );
 
 /// Adds a queued message through the ledger.
 @Riverpod(keepAlive: true)

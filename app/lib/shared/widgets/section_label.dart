@@ -18,6 +18,8 @@ class SectionLabel extends StatelessWidget {
       padding: padding,
       child: Text(
         text.toUpperCase(),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: scheme.onSurfaceVariant,
           fontSize: 11,

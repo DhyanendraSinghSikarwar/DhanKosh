@@ -7,6 +7,7 @@ import 'package:hisaab/features/income_tracking/domain/cash_flow.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
+import 'package:hisaab/shared/widgets/charts/chart_sizing.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
 
 /// Income and cash flow: income vs spend, saved, savings rate (F-11,
@@ -123,7 +124,10 @@ class IncomeTrackingScreen extends ConsumerWidget {
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(height: 160, child: _FlowChart(flows: flows)),
+                  SizedBox(
+                    height: ChartSizing.height(context, 160),
+                    child: _FlowChart(flows: flows),
+                  ),
                 ],
               ),
             ),

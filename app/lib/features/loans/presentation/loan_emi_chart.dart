@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:hisaab/features/loans/domain/amortization.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
+import 'package:hisaab/shared/widgets/charts/chart_sizing.dart';
 
 /// Stacked bars of principal and interest per EMI (yearly sums beyond 24
 /// instalments), with the paid share highlighted by the legend (B13).
@@ -44,7 +45,7 @@ class LoanEmiChart extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         SizedBox(
-          height: 160,
+          height: ChartSizing.height(context, 160),
           child: BarChart(
             key: const Key('loan-emi-chart'),
             BarChartData(

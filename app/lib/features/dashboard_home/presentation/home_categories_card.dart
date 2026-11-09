@@ -8,6 +8,7 @@ import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/charts/chart_sizing.dart';
 import 'package:hisaab/shared/widgets/mock_kit.dart';
 import 'package:hisaab/shared/widgets/section_label.dart';
 import 'package:parser_core/parser_core.dart' show Category;
@@ -100,8 +101,8 @@ class _HomeCategoriesCardState extends ConsumerState<HomeCategoriesCard> {
           Row(
             children: [
               SizedBox(
-                width: 140,
-                height: 140,
+                width: ChartSizing.square(context, 140),
+                height: ChartSizing.square(context, 140),
                 child: Stack(
                   alignment: Alignment.center,
                   children: [

@@ -15,6 +15,7 @@ import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/widgets/charts/chart_card.dart';
 import 'package:hisaab/shared/widgets/charts/chart_legend.dart';
+import 'package:hisaab/shared/widgets/charts/chart_sizing.dart';
 import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 import 'package:hisaab/shared/widgets/charts/donut_chart.dart';
 import 'package:hisaab/shared/widgets/charts/line_chart_view.dart';
@@ -642,7 +643,7 @@ class SavingsRateCard extends StatelessWidget {
           KeyedSubtree(
             key: const Key('analytics-savings-line'),
             child: LineChartView(
-              height: 100,
+              height: ChartSizing.height(context, 100),
               minY: bottom,
               maxY: top,
               series: [

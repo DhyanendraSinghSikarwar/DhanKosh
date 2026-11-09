@@ -5,13 +5,13 @@ import 'package:parser_core/src/text/rx.dart';
 /// (FR-06-07, FR-06-11).
 abstract final class TypeClassifier {
   static final RegExp _debit = rx(
-    r'\b(?:debited|debit\s+(?:by|for|of|alert|transaction)|spent|(?:fuel\s+|card\s+)?spend\s+of|a\s+charge\s+of\b.{0,40}?\bwas\s+made|withdrawn|withdrawal|paid|sent|purchased?|deducted|charged|'
+    r'\b(?:debited|debit\s+(?:by|for|of|alert|transaction)|spent|(?:fuel\s+|card\s+)?spend\s+of|dr\.?\s+(?:to|for|at)|money\s+transfer|a\s+charge\s+of\b.{0,40}?\bwas\s+made|withdrawn|withdrawal|paid|sent|purchased?|deducted|charged|'
     r'transferred\s+to|txn\s+of|used\s+(?:for|at|on)|thank\s+you\s+for\s+using|'
     // Card alerts: "Transaction of Rs.899 on Kotak Credit Card".
     r'(?:transaction|trxn|txn)\s+(?:of\s+)?(?:INR|USD|EUR|GBP|AED|SGD)|transaction\s+alert\s+on\s+(?:your\s+)?(?:\w+\s+){0,4}card|made\s+a\s+(?:transaction|purchase|payment))\b',
   );
   static final RegExp _credit = rx(
-    r'\b(?:credited|credit\s+(?:by|of|alert|with|transaction)|received|deposited|refund(?:ed)?|reversed|reversal)\b',
+    r'\b(?:credited|credit\s+(?:by|of|alert|with|transaction)|cr\.?\s+(?:from|by)|received|deposited|refund(?:ed)?|reversed|reversal)\b',
   );
 
   /// A credit-card bill payment or a move between the user's own accounts:

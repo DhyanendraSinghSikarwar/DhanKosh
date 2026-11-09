@@ -17,6 +17,7 @@ import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/recurring_transactions/domain/bills_view.dart';
 import 'package:hisaab/features/recurring_transactions/domain/price_change.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring.dart';
+import 'package:hisaab/features/recurring_transactions/domain/recurring_detector.dart';
 import 'package:hisaab/features/recurring_transactions/domain/recurring_repository.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
@@ -457,14 +458,28 @@ class AlertsEngine {
     return d.isBefore(today) ? at(today.year, today.month + 1) : d;
   }
 
+  /// The last 45 days of ledger rows, to see what is already paid.
+  Future<List<LedgerTx>> _recentTxs(DateTime today) async {
+    final txs = _txs;
+    if (txs == null) return const [];
+    final from = today.subtract(const Duration(days: 45));
+    return await txs
+        .watch(LedgerFilter(fromMs: from.millisecondsSinceEpoch - _istOffsetMs))
+        .first;
+  }
+
   Future<List<AlertDecision>> _billDecisions(DateTime today) async {
     final items = (await _recurring.all()).where((r) => !r.income).toList();
     if (items.isEmpty) return const [];
     final accounts = {
       for (final a in await _accounts.watchVisible().first) a.id: a,
     };
+    final recent = await _recentTxs(today);
     final bills = <BillDueInput>[];
     for (final r in items) {
+      // Already paid for this due date: no "coming up" notice (FR-21-32).
+      final due = _nextDue(r, today);
+      if (RecurringDetector.paymentFor(r, due, today, recent) != null) continue;
       var acc = r.accountId == null ? null : accounts[r.accountId];
       if (acc?.mergedIntoId != null) acc = accounts[acc!.mergedIntoId];
       bills.add(
@@ -567,11 +582,19 @@ class AlertsEngine {
   }
 
   Future<List<AlertDecision>> _renewalDecisions(DateTime today) async {
+    final recent = await _recentTxs(today);
     final policies = <RenewalInput>[
       for (final r in await _recurring.all())
         if (!r.income &&
             r.frequency == RecurringFrequency.yearly &&
-            r.category == Category.insurance)
+            r.category == Category.insurance &&
+            RecurringDetector.paymentFor(
+                  r,
+                  _nextDue(r, today),
+                  today,
+                  recent,
+                ) ==
+                null)
           RenewalInput(
             insurer: r.name,
             kindLabel: r.name,

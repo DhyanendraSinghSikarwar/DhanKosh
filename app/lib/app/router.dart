@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -385,40 +387,80 @@ class _ScaffoldWithNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: shell,
-      bottomNavigationBar: PillNavigationBar(
-        selectedIndex: shell.currentIndex,
-        onDestinationSelected: (i) =>
-            shell.goBranch(i, initialLocation: i == shell.currentIndex),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: t('Home'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.receipt_long_outlined),
-            selectedIcon: const Icon(Icons.receipt_long),
-            label: t('Transactions'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.pie_chart_outline),
-            selectedIcon: const Icon(Icons.pie_chart),
-            label: t('Portfolio'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.insights_outlined),
-            selectedIcon: const Icon(Icons.insights),
-            label: t('Analysis'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.menu),
-            selectedIcon: const Icon(Icons.menu_open),
-            label: t('More'),
-          ),
-        ],
+    // Back from another tab goes to Home first; only Home lets the app leave
+    // (FR-17-49).
+    return PopScope(
+      canPop: shell.currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) shell.goBranch(0);
+      },
+      child: Scaffold(
+        body: shell,
+        bottomNavigationBar: PillNavigationBar(
+          selectedIndex: shell.currentIndex,
+          onDestinationSelected: (i) =>
+              shell.goBranch(i, initialLocation: i == shell.currentIndex),
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: t('Home'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.receipt_long_outlined),
+              selectedIcon: const Icon(Icons.receipt_long),
+              label: t('Transactions'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.pie_chart_outline),
+              selectedIcon: const Icon(Icons.pie_chart),
+              label: t('Portfolio'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.insights_outlined),
+              selectedIcon: const Icon(Icons.insights),
+              label: t('Analysis'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.menu),
+              selectedIcon: const Icon(Icons.menu_open),
+              label: t('More'),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+const _tabRoots = {
+  '/home',
+  '/transactions',
+  '/portfolio',
+  '/analysis',
+  '/more',
+};
+
+/// Opens [location] with Home underneath, so Back always has somewhere to go
+/// (FR-17-49). A tab root or an unknown place just opens.
+void openWithBack(GoRouter router, String location) {
+  final path = Uri.parse(location).path;
+  if (_tabRoots.contains(path) || path == '/welcome' || path == '/loading') {
+    router.go(location);
+    return;
+  }
+  router.go('/home');
+  unawaited(router.push<void>(location));
+}
+
+/// After a cold start or a restore that lands on one inner page with nothing
+/// below it, puts Home underneath (FR-17-49). Returns whether it did.
+bool ensureBackStack(GoRouter router) {
+  final uri = router.routerDelegate.currentConfiguration.uri;
+  if (router.canPop() || _tabRoots.contains(uri.path)) return false;
+  if (uri.path == '/welcome' || uri.path == '/loading' || uri.path == '/') {
+    return false;
+  }
+  openWithBack(router, uri.toString());
+  return true;
 }

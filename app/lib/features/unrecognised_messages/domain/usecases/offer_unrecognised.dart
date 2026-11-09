@@ -1,5 +1,6 @@
 import 'package:hisaab/features/unrecognised_messages/domain/unrecognised_message.dart';
 import 'package:hisaab/features/unrecognised_messages/domain/unrecognised_repository.dart';
+import 'package:hisaab/features/unrecognised_messages/domain/usecases/add_from_unrecognised.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// What [OfferUnrecognised] did with a message.
@@ -9,6 +10,9 @@ enum OfferResult {
 
   /// Queued from a sender the user taught the app: worth an alert.
   queuedFromLearned,
+
+  /// A clear payment-app notification, added to the ledger at once.
+  booked,
 
   /// Not queued: nothing that looks like a payment, or already seen.
   skipped,
@@ -25,9 +29,13 @@ enum OfferResult {
 /// assumed and marked.
 class OfferUnrecognised {
   /// Creates the use case.
-  const OfferUnrecognised(this._repo);
+  const OfferUnrecognised(this._repo, {this.autoAdd});
 
   final UnrecognisedRepository _repo;
+
+  /// Adds a clear notification to the ledger (FR-38-14); null queues all.
+  final Future<void> Function(UnrecognisedMessage m, ConfirmedPayment c)?
+      autoAdd;
 
   /// Offers an SMS.
   Future<OfferResult> sms(
@@ -55,11 +63,39 @@ class OfferUnrecognised {
   }
 
   /// Offers a payment-app notification the strict parser rejected.
+  ///
+  /// A notification that states its direction and scores at least
+  /// [GenericExtractor.autoBookAt] is added to the ledger at once, so the
+  /// payment shows in Transactions without a tap (FR-38-14). The rest wait in
+  /// the queue.
   Future<OfferResult> notification(NewUnrecognised m) async {
-    if (GenericExtractor.readLoose(m.sender, m.body) == null) {
-      return OfferResult.skipped;
-    }
+    final s = GenericExtractor.readLoose(m.sender, m.body);
+    if (s == null) return OfferResult.skipped;
     final id = await _repo.offer(m);
-    return id == null ? OfferResult.skipped : OfferResult.queued;
+    if (id == null) return OfferResult.skipped;
+    final add = autoAdd;
+    if (add != null &&
+        !s.directionGuessed &&
+        s.confidence >= GenericExtractor.autoBookAt) {
+      final row = await _repo.byId(id);
+      if (row != null) {
+        await add(
+          row,
+          ConfirmedPayment(
+            amountMinor: s.amountMinor,
+            type: s.type,
+            timestamp: m.receivedAt,
+            currency: s.currency,
+            merchant: s.merchant,
+            upiId: s.upiId,
+            category: s.category,
+            reference: s.reference,
+            channel: s.channel,
+          ),
+        );
+        return OfferResult.booked;
+      }
+    }
+    return OfferResult.queued;
   }
 }

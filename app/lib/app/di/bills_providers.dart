@@ -89,6 +89,7 @@ Future<List<Recurring>> bills(Ref ref) async {
     RecurringDetector.detect(txs, today),
     mine,
     today,
+    txs: txs,
   );
   return BillsView.withLoans(merged, loans.loans);
 }

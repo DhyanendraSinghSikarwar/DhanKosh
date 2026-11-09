@@ -84,6 +84,11 @@ void main() {
   // FR-17-06, FR-17-12, FR-17-19
   for (final dark in [false, true]) {
     testWidgets('home with data (dark=$dark)', (t) async {
+      // A phone-width, tall screen: charts keep their design size (390 dp).
+      t.view
+        ..physicalSize = const Size(390, 2400)
+        ..devicePixelRatio = 1;
+      addTearDown(t.view.reset);
       await seed(t);
       final visited = <String>[];
       await pumpApp(t, env, _routes(visited), dark: dark);
@@ -100,11 +105,7 @@ void main() {
       );
       expect(find.text('Swiggy'), findsOneWidget);
       expect(find.byKey(const Key('home_balance')), findsNothing);
-      await t.scrollUntilVisible(
-        find.text('Swiggy'),
-        -200,
-        scrollable: find.byType(Scrollable).first,
-      );
+      await t.ensureVisible(find.text('Swiggy'));
       await t.tap(find.text('Swiggy'));
       await settle(t);
       expect(visited, ['/transaction/1']);

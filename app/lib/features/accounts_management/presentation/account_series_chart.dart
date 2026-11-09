@@ -9,6 +9,7 @@ import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_filter.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
+import 'package:hisaab/shared/widgets/charts/chart_sizing.dart';
 import 'package:intl/intl.dart';
 
 /// Spend and income lines per month with a 6 months / Year / All time switch
@@ -79,7 +80,7 @@ class _State extends ConsumerState<AccountSeriesChart> {
         const SizedBox(height: 8),
         if (empty)
           SizedBox(
-            height: 80,
+            height: ChartSizing.height(context, 80),
             child: Center(
               child: Text(
                 t('Nothing moved in this period.'),
@@ -91,7 +92,7 @@ class _State extends ConsumerState<AccountSeriesChart> {
           Semantics(
             label: t('Spend and income by month'),
             child: SizedBox(
-              height: 160,
+              height: ChartSizing.height(context, 160),
               child: LineChart(
                 LineChartData(
                   gridData: const FlGridData(show: false),

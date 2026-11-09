@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
+import 'package:hisaab/shared/widgets/charts/chart_sizing.dart';
 
 /// Running spend line, this month against last month (FR-17-06, B4):
 /// dashed grid, compact y labels (0..max), x labels 1/10/20/31 and an end
@@ -57,7 +58,7 @@ class HomeSpentChart extends StatelessWidget {
       label: t('Spend this month against last month'),
       child: SizedBox(
         key: const Key('home_spent_chart'),
-        height: 130,
+        height: ChartSizing.height(context, 130),
         child: LineChart(
           LineChartData(
             minX: 1,

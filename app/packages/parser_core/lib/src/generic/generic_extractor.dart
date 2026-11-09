@@ -93,6 +93,10 @@ abstract final class GenericExtractor {
   /// Base score: an amount and a direction.
   static const baseConfidence = 50;
 
+  /// The score at which a payment app's notification with a stated direction
+  /// is booked without waiting for the user (FR-38-14).
+  static const autoBookAt = 70;
+
   /// The score at which the suggestion line is shown for an unknown sender.
   static const suggestAt = 60;
 

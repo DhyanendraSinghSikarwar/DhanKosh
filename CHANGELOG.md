@@ -35,6 +35,11 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Watched apps screen (More, Payment-app notifications): switch any built-in app off, and add any other app that notifies your phone so its payments are tracked too.
 
 ### Fixed
+- Back button: when the phone brings the app back onto an inner page (or you open a link, shortcut or notification), Back now goes to Home instead of closing the app, and Back from another tab goes to Home first.
+- More names are read from messages: titles such as Mr, Mrs and M/S are dropped, "Merchant:", "Payee:" and "Beneficiary NAME" are read, "Dr. to X" and "Money Transfer" have a direction, and a UPI id is no longer glued to the reference before it.
+- A clear payment-app notification is now added to Transactions at once instead of waiting in Unrecognised messages.
+- Charts and donuts scale to the phone's screen, shrinking on small phones and never taking more than a third of the height.
+- A bill or income you already paid is no longer shown or notified as coming up; its next due date shows instead.
 - A statement no longer creates a made-up account from a payee bank or number in a transaction line (an Axis statement with "YES BANK" in a row was booked under HDFC Bank ••6810). If you already have such an account, delete it from its menu.
 - More Indian senders are read and named: India Post Payments Bank (`IPBMSG`), Jio Payments Bank, Federal Bank's Fi and Scapia, Bandhan, Utkarsh, Kerala Bank, Greater Bank, OneCard, American Express, Jupiter, CRED SMS and others. Amex "a charge was made" and OneCard "fuel spend" alerts are now read, Greater Bank credits are no longer shown as debits, and a loan-recovery credit is no longer income.
 - Duplicate detection is stricter and smarter: references that differ only by a prefix match, stated balances tell two same-amount payments apart, two apps reporting one payment merge, and a late email merges into its SMS.

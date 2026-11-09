@@ -104,29 +104,86 @@ abstract final class RecurringDetector {
     return here.isBefore(today) ? inMonth(today.year, today.month + 1) : here;
   }
 
+  /// How far before the due date a payment still counts for it (FR-12-23).
+  static const paidWindowDays = 15;
+
+  /// The date of a payment in [txs] that settles [m] for [due], or null.
+  /// It must fall in the [paidWindowDays] before [due] up to [today], go the
+  /// right way (out for a bill, in for income), and match by name (the
+  /// payee holds the item's name, or the reverse) or by amount (within 2 per
+  /// cent) with the same category and account.
+  static DateTime? paymentFor(
+    RecurringItem m,
+    DateTime due,
+    DateTime today,
+    List<LedgerTx> txs,
+  ) {
+    final from = due.subtract(const Duration(days: paidWindowDays));
+    final name = m.name.trim().toLowerCase();
+    DateTime? best;
+    for (final t in txs) {
+      if (t.needsReview || t.excluded || t.duplicateOfId != null) continue;
+      final out = t.type == TransactionType.debit ||
+          t.type == TransactionType.investment;
+      if (m.income ? t.type != TransactionType.credit : !out) continue;
+      final d = _date(t);
+      if (d.isBefore(from) || d.isAfter(today)) continue;
+      final payee = (t.merchant ?? t.upiId ?? '').trim().toLowerCase();
+      final byName = name.length >= 3 &&
+          payee.length >= 3 &&
+          (payee.contains(name) || name.contains(payee));
+      final byAmount = t.category == m.category &&
+          (m.accountId == null || t.accountId == m.accountId) &&
+          (t.amountMinor - m.amountMinor).abs() * 50 <= m.amountMinor;
+      if ((byName || byAmount) && (best == null || d.isAfter(best))) best = d;
+    }
+    return best;
+  }
+
+  /// The due date after [due]: next month, or next year for a yearly item.
+  static DateTime advance(RecurringItem m, DateTime due) {
+    if (m.frequency == RecurringFrequency.yearly) {
+      final len = Ist.lengthOfMonth(due.year + 1, due.month);
+      return DateTime.utc(
+        due.year + 1,
+        due.month,
+        m.dayOfMonth < len ? m.dayOfMonth : len,
+      );
+    }
+    return _nextMonthDay(due, m.dayOfMonth);
+  }
+
   /// FR-12-04: user items replace detected ones with the same lower-cased
   /// name; sorted by next due.
   static List<Recurring> withManual(
     List<Recurring> detected,
     List<RecurringItem> manual,
-    DateTime today,
-  ) {
-    final mine = [
-      for (final m in manual)
+    DateTime today, {
+    List<LedgerTx> txs = const [],
+  }) {
+    final mine = <Recurring>[];
+    for (final m in manual) {
+      var due = nextDueOf(m, today);
+      // Already paid for this due date: show the next one (FR-12-23).
+      final paid = paymentFor(m, due, today, txs);
+      if (paid != null) due = advance(m, due);
+      mine.add(
         Recurring(
           name: m.name,
           amountMinor: m.amountMinor,
           dayOfMonth: m.dayOfMonth,
           category: m.category,
           accountId: m.accountId,
-          nextDue: nextDueOf(m, today),
+          nextDue: due,
+          lastPaid: paid,
           occurrences: 0,
           manualId: m.id,
           income: m.income,
           yearly: m.frequency == RecurringFrequency.yearly,
           autoPost: m.autoPost,
         ),
-    ];
+      );
+    }
     final names = {for (final r in mine) r.name.toLowerCase()};
     return [
       ...mine,

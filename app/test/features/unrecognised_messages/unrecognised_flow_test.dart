@@ -147,6 +147,39 @@ void main() {
       );
     });
 
+    test('a clear notification is booked at once; a vague one waits', () async {
+      final booked = <ConfirmedPayment>[];
+      final auto = OfferUnrecognised(
+        repo,
+        autoAdd: (m, c) async => booked.add(c),
+      );
+      final clear = await auto.notification(
+        const NewUnrecognised(
+          source: UnrecognisedSource.app,
+          sender: 'PhonePe',
+          sourceMessageId: 'app:clear',
+          body: 'Paid INR 250 to Ravi Kumar via UPI. Ref 612345678901',
+          receivedAt: 1000000,
+        ),
+      );
+      expect(clear, OfferResult.booked);
+      expect(booked.single.amountMinor, 25000);
+      expect(booked.single.type, TransactionType.debit);
+      expect(booked.single.merchant, 'Ravi Kumar');
+
+      final vague = await auto.notification(
+        const NewUnrecognised(
+          source: UnrecognisedSource.app,
+          sender: 'PhonePe',
+          sourceMessageId: 'app:vague',
+          body: 'Completed: INR 90 via UPI',
+          receivedAt: 1000001,
+        ),
+      );
+      expect(vague, OfferResult.queued);
+      expect(booked, hasLength(1));
+    });
+
     test('a payment app notification with only an amount is queued', () async {
       final r = await offer.notification(
         const NewUnrecognised(

@@ -31,6 +31,7 @@ abstract final class MerchantExtractor {
   static const _body = r"[A-Z0-9][A-Z0-9 &'*_\-/@.]{0,50}?";
   static const _end =
       r'(?=\s+(?:on|dated|ref|refno|rrn|utr|upi|imps|neft|via|for|using|with|avl|avbl|bal|not|if|from|at|thru|through|and|txn|info|call|is|has|was)\b|\s*[.,;:(|!]|\s+-|$)';
+  static const _title = r'(?:(?:mr|mrs|ms|miss|dr|shri|smt|sri|m/s)\.?\s+)?';
   static const _notAName =
       r'(?!(?:your|you|the|a/c|ac|acct|account|card|mobile|vpa|beneficiary|neft|imps|upi|rtgs|inr|usd|a|an|block|dispute|report|ur|u|inform|avoid|know)\b)';
 
@@ -46,8 +47,13 @@ abstract final class MerchantExtractor {
     ['vpa'],
   );
   static final _beneficiary = Guarded(
-    r'\bbeneficiary(?:\s+name)?\s*[:\-]\s*(' + _body + ')' + _end,
-    ['beneficiary'],
+    r'\b(?:beneficiary(?:\s+name)?|merchant(?:\s+name)?|payee(?:\s+name)?|sender(?:\s+name)?|remitter)(?:\s*[:\-]\s*|\s+)' +
+        _notAName +
+        '(' +
+        _body +
+        ')' +
+        _end,
+    ['beneficiary', 'merchant', 'payee', 'sender', 'remitter'],
   );
   static final _at = Guarded(
     r'\bat\s+' + _notAName + '(' + _body + ')' + _end,
@@ -60,6 +66,7 @@ abstract final class MerchantExtractor {
   static final _to = Guarded(
     r'\b(?:trf\s+to|transferred\s+to|paid\s+to|sent\s+to|to)\s+' +
         _notAName +
+        _title +
         '(' +
         _body +
         ')' +
@@ -67,7 +74,7 @@ abstract final class MerchantExtractor {
     ['to '],
   );
   static final _from = Guarded(
-    r'\b(?:from|by)\s+' + _notAName + '(' + _body + ')' + _end,
+    r'\b(?:from|by)\s+' + _notAName + _title + '(' + _body + ')' + _end,
     ['from ', 'by '],
   );
   static final _towards = Guarded(
@@ -134,7 +141,7 @@ abstract final class MerchantExtractor {
         final candidate = _valid(m.group(1));
         if (candidate == null) continue;
         return identical(g, _vpa)
-            ? RawMerchant(null, candidate)
+            ? RawMerchant(null, _cleanVpa(candidate))
             : RawMerchant(candidate, _vpaIn(candidate));
       }
     }
@@ -157,7 +164,32 @@ abstract final class MerchantExtractor {
 
   static String? _vpaIn(String s) {
     final m = findFrom(_vpa.regex, s);
-    return m?.group(1);
+    final v = m?.group(1);
+    return v == null ? null : _cleanVpa(v);
+  }
+
+  static final RegExp _refPrefix = rx(r'^(?:upi|imps|neft|rtgs)[-/]\d{6,}[-/]');
+  static final RegExp _digitRun = rx(r'\d{6,}');
+
+  /// A UPI id glued to what the bank wrote before it
+  /// (`UPI-612345678901-SHOP-shop@icici`): keep the id itself, the part after
+  /// the last separator that follows a reference or a payee name.
+  static String _cleanVpa(String v) {
+    var s = v.replaceFirst(_refPrefix, '');
+    final at = s.indexOf('@');
+    if (at < 0) return s;
+    final local = s.substring(0, at);
+    if (local.contains('-') &&
+        (_digitRun.hasMatch(local) || _refPrefix.hasMatch(v))) {
+      s = '${local.substring(local.lastIndexOf('-') + 1)}${s.substring(at)}';
+    } else if (local.contains('-')) {
+      // "SHOP-shop@icici": a name then the id; the id has no capitals.
+      final parts = local.split('-');
+      if (parts.length > 1 && parts.first == parts.first.toUpperCase()) {
+        s = '${parts.last}${s.substring(at)}';
+      }
+    }
+    return s;
   }
 
   static String? _valid(String? s) {

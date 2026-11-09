@@ -5,6 +5,7 @@ import 'package:hisaab/features/analytics/domain/analytics_models.dart';
 import 'package:hisaab/features/analytics/domain/ledger_math.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/charts/chart_card.dart';
+import 'package:hisaab/shared/widgets/charts/chart_sizing.dart';
 import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 import 'package:hisaab/shared/widgets/charts/line_chart_view.dart';
 
@@ -329,7 +330,7 @@ class CashProjectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           LineChartView(
-            height: 130,
+            height: ChartSizing.height(context, 130),
             minY: c.lowest < 0 ? -niceMax(-c.lowest.toDouble()) : 0,
             series: [
               LineSeries(

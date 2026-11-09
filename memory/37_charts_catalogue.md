@@ -6,7 +6,7 @@
 | Status | In Progress (Analysis charts C1, C3, C4, C5, C9, C10, C11, C13 built 2026-10-27; Home, Portfolio, Account, Loan charts pending) |
 | Priority | P1 |
 | Phase | 5 |
-| Last Updated | 2026-10-31 |
+| Last Updated | 2026-11-09 |
 
 ## 1. Description
 The Kotlin app draws about twenty charts across Home, Analysis, Portfolio, Account detail and Loan detail. Their data and rules live in the owning feature files; this file is the one place that lists every chart, where it appears, how it behaves and whether the Flutter app has it. It exists so chart work is planned once and the shared chart components are built once.
@@ -80,6 +80,7 @@ A daily-spend "Safe to spend" ring exists in `HomeWidgets.kt:273` but is not in 
 10. FR-37-10: Loan detail shows next EMIs as stacked principal and interest bars.
 11. FR-37-11: Every chart exposes a semantic label (category, amount, percent) and an empty state; no chart draws with fewer than two points.
 12. FR-37-12: Charts use theme tokens, not fixed colours, so every palette stays legible in light, dark and pure-black modes.
+13. FR-37-13: Charts fit the phone: every chart height and donut size is scaled by the screen width (390 dp as drawn, 0.8 to 1.4 times), a chart never takes more than a third of the screen height, and a donut never more than 45 per cent of the width so its legend keeps room (`ChartSizing`).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 - Aggregation runs outside the build method; a chart redraws only when its series changes.
@@ -167,3 +168,4 @@ Analysis charts built 2026-10-27 in `features/analytics/presentation/analytics_c
 | 2026-10-27 | Created from the Kotlin chart audit | Kotlin parity audit |
 | 2026-10-27 | C1, C3, C4, C5, C9, C10, C11, C13 built (FR-37-02..06); status table updated | Kotlin parity |
 | 2026-10-31 | Analysis charts restyled to the approved mock (mint, blue, amber, violet palette, dashed grid, y and x labels, end dots, legends): shared `LineChartView`, `BarsChart`, `DonutChart`, `ChartLegend`, `ChartCard` in `shared/widgets/charts`; `StackedBarsChart`, `PairBarsChart`, `SankeyChart`, `FanChart`, `DivergeBar` under analytics; new Daily spend line/bars, Income against spend bars, 30-day cash line (C12) | Analysis matched to approved mock |
+| 2026-11-09 | FR-37-13 responsive charts | Owner-reported issue |

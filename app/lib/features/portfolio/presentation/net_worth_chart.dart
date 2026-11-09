@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/portfolio/domain/net_worth.dart';
 import 'package:hisaab/features/portfolio/presentation/compact_money.dart';
+import 'package:hisaab/shared/widgets/charts/chart_sizing.dart';
 
 const _months = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
@@ -27,7 +28,7 @@ class NetWorthChart extends StatelessWidget {
     final muted = TextStyle(fontSize: 10, color: scheme.onSurfaceVariant);
     if (points.length < 2) {
       return SizedBox(
-        height: 120,
+        height: ChartSizing.height(context, 120),
         child: Center(
           child: Text(
             t('History builds up day by day'),
@@ -55,7 +56,7 @@ class NetWorthChart extends StatelessWidget {
     return Semantics(
       label: t('Net worth history chart'),
       child: SizedBox(
-        height: 150,
+        height: ChartSizing.height(context, 150),
         child: LineChart(
           LineChartData(
             minY: minY,

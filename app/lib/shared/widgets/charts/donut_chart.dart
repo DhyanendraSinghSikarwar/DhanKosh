@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:hisaab/shared/widgets/charts/chart_sizing.dart';
 import 'package:hisaab/shared/widgets/charts/chart_style.dart';
 
 /// One donut slice.
@@ -47,7 +48,7 @@ class DonutChart extends StatelessWidget {
   /// Width and height.
   final double size;
 
-  int? _hit(Offset o) {
+  int? _hit(Offset o, double size) {
     final c = Offset(size / 2, size / 2);
     final r = size / 2 - 12;
     final d = o - c;
@@ -67,15 +68,16 @@ class DonutChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = ChartStyle.of(context);
+    final side = ChartSizing.square(context, size);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapUp: (d) {
-        final i = _hit(d.localPosition);
+        final i = _hit(d.localPosition, side);
         if (i != null) onTap?.call(i);
       },
       child: SizedBox(
-        width: size,
-        height: size,
+        width: side,
+        height: side,
         child: CustomPaint(
           painter: _DonutPainter(
             parts,

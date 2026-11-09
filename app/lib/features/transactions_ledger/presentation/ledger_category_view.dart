@@ -8,6 +8,7 @@ import 'package:hisaab/features/transactions_ledger/presentation/ledger_tx_tile.
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/app_icons.dart';
+import 'package:hisaab/shared/widgets/charts/chart_sizing.dart';
 
 /// Spends by category: donut, then a row per category with an
 /// account / card-purchase bar (FR-08-23, ADR-0011); a row expands to its
@@ -51,8 +52,8 @@ class _LedgerCategoryViewState extends State<LedgerCategoryView> {
       child: Column(
         children: [
           SizedBox(
-            height: 150,
-            width: 150,
+            height: ChartSizing.square(context, 150),
+            width: ChartSizing.square(context, 150),
             child: Stack(
               alignment: Alignment.center,
               children: [

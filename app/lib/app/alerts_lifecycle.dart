@@ -25,7 +25,15 @@ class _AlertsLifecycleState extends ConsumerState<AlertsLifecycle>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_run()));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Opened straight onto an inner page (restore, link): keep Back working.
+      try {
+        ensureBackStack(ref.read(routerProvider));
+      } on Object {
+        // Navigation never breaks start-up.
+      }
+      unawaited(_run());
+    });
   }
 
   @override
@@ -53,7 +61,11 @@ class _AlertsLifecycleState extends ConsumerState<AlertsLifecycle>
 
   void _open(GoRouter router, String route) {
     final match = router.configuration.findMatch(Uri.parse(route));
-    router.go(match.isError ? '/home' : route);
+    if (match.isError) {
+      router.go('/home');
+    } else {
+      openWithBack(router, route);
+    }
   }
 
   @override
