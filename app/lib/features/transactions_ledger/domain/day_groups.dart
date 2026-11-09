@@ -1,5 +1,6 @@
 import 'package:hisaab/features/expense_tracking/domain/spend_calc.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 
 /// Spent / income for the rows shown (FR-20-18, ADR-0011): cash basis, so
 /// card purchases are left out ([cardMinor]) and card bill payments count;
@@ -68,22 +69,6 @@ List<DayGroup> groupByDay(List<LedgerTx> rows) {
   return out;
 }
 
-const _wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const _mo = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
 /// Today / Yesterday / "EEE, d MMM yyyy" (FR-08-02).
 String dayLabel(DateTime day, DateTime now) {
   final today = DateTime.utc(now.year, now.month, now.day);
@@ -91,5 +76,5 @@ String dayLabel(DateTime day, DateTime now) {
       today.difference(DateTime.utc(day.year, day.month, day.day)).inDays;
   if (diff == 0) return 'Today';
   if (diff == 1) return 'Yesterday';
-  return '${_wd[day.weekday - 1]}, ${day.day} ${_mo[day.month - 1]} ${day.year}';
+  return AppDates.format(day, weekday: true);
 }

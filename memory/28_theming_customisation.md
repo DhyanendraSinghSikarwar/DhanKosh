@@ -6,7 +6,7 @@
 | Status | In progress (Phase 5: 22 palettes (plus Mint default, pill nav and filled cards, 2026-10-31) ported verbatim, mode/pure-black/text size, Customise Appearance section and More tile done; layout store, Tab sections card, Home presets and Home/Portfolio edit mode done; Analysis consuming the store pending; Net worth card, backdrop, reduce-motion pending); 2026-10-27 parity: backdrop wash and glows (FR-28-08) and reduce motion (FR-28-10, FR-28-27) done |
 | Priority | P1 |
 | Phase | 0 (theme engine, tokens, text scale) and 5 (Customise screen polish, presets) |
-| Last Updated | 2026-10-31 |
+| Last Updated | 2026-11-09 |
 
 ## 1. Description
 
@@ -234,6 +234,7 @@ DataStore `app_settings`: `theme` (SYSTEM / LIGHT / DARK, default SYSTEM), `them
 - FR-28-28: The bottom bar is a floating rounded pill (`PillNavigationBar`: margin, `surfaceContainerHigh`, stadium indicator in `primaryContainer`, small labels, selected icon in `primary`).
 - FR-28-29: A 23rd palette `PaletteId.mint` ('DhanKosh Mint', first of Classic) is the default; dark tokens: primary `8FD19E`, primaryContainer `1F4D4A`, surface `0B0E0D`, surfaceContainer `1A1F1E`, surfaceContainerHigh `222827`, outlineVariant `2A312F`, onSurface `E8EEEA`, onSurfaceVariant `8C9893`, tertiary `7FA9E6`, error `E8837C`; a light counterpart is defined in `app/theme/palette_mint.dart`.
 - FR-28-30: `SectionLabel` (shared) renders uppercase, 11 px, letter-spaced, muted section headings.
+- FR-28-31: Date format (Customise, "Date format"; setting `date_style`): Auto (7 Nov 2026), dd/mm/yyyy, mm/dd/yyyy or yyyy-mm-dd. Dates written through `AppDates.format` follow it at once (transaction detail, list day headers, Activity log, review and compare screens, gap card, backup times, unrecognised list); short forms drop the year. Time stays 12-hour. Dates built by hand elsewhere (calendar, budgets, bills, portfolio, statements) keep the Auto form until they are moved to `AppDates`.
 - FR-28-27: A Reduce motion switch in Customise shall skip decorative motion (page transitions, spring and count-up) even when the phone allows it; effective value is `setting || system disableAnimations`, applied through `MediaQuery.disableAnimations`.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
@@ -518,3 +519,4 @@ Layout store landed 2026-10-27: `features/theming_customisation/domain/section_l
 | 2026-10-27 | Backdrop and reduce motion: `app/theme/backdrop.dart` (`BackdropTheme` extension, `BackdropPainter`, `Backdrop`, `BackdropPageTransitionsBuilder`); `AppTheme.build(backdrop: true)` makes scaffolds transparent and paints the backdrop under each page via the page transition builder (so route overlaps stay clean); off on pure black | Kotlin parity |
 | 2026-10-31 | Mockup look: Mint palette default, card and nav styling (FR-28-28..30; 23 palettes, Classic group 11; filled radius-20 cards without border; `PillNavigationBar`; `SectionLabel`) | Match approved mockups |
 | 2026-10-31 | Home default sections reordered to Spent, Cash flow, Budgets, Upcoming, Credit cards, Insights, Spend by category, Recent; Budgets visible by default; Everything preset follows the same order | Home matched to approved mock |
+| 2026-11-09 | FR-28-31 date format setting | PennyWise comparison, W6 |

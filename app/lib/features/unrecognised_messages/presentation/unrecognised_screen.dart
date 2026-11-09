@@ -15,9 +15,9 @@ import 'package:hisaab/features/unrecognised_messages/domain/unrecognised_messag
 import 'package:hisaab/features/unrecognised_messages/domain/usecases/add_from_unrecognised.dart';
 import 'package:hisaab/features/unrecognised_messages/presentation/unrecognised_providers.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
-import 'package:intl/intl.dart';
 import 'package:parser_core/parser_core.dart' hide Money;
 
 /// Messages that look like payments but matched no bank format: Add opens the
@@ -234,8 +234,10 @@ class _MessageCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final repo = ref.read(unrecognisedRepositoryProvider);
     final s = _suggestion;
-    final when = DateFormat('d MMM, h:mm a').format(
+    final when = AppDates.format(
       DateTime.fromMillisecondsSinceEpoch(message.receivedAt),
+      year: false,
+      time: true,
     );
     final body = masked ? message.body.replaceAll(_digits, '•') : message.body;
     final theme = Theme.of(context);

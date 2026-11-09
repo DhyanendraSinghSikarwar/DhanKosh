@@ -4,7 +4,7 @@ import 'package:hisaab/app/di/backup_providers.dart';
 import 'package:hisaab/features/backup_export/presentation/encrypted_backup_section.dart';
 import 'package:hisaab/features/backup_export/presentation/reports_section.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
-import 'package:intl/intl.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 
 /// Backup & Export (F-24): CSV export and import.
 class BackupExportScreen extends ConsumerStatefulWidget {
@@ -123,7 +123,7 @@ class _State extends ConsumerState<BackupExportScreen> {
             key: const Key('backup-last'),
             last == 0
                 ? 'No export yet'
-                : 'Last export ${DateFormat('d MMM y, h:mm a').format(DateTime.fromMillisecondsSinceEpoch(last))}',
+                : 'Last export ${AppDates.format(DateTime.fromMillisecondsSinceEpoch(last), time: true)}',
           ),
           const SizedBox(height: 16),
           const Text(

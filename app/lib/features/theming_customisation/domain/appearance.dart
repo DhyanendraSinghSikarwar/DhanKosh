@@ -1,4 +1,5 @@
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 
 /// Theme mode choice (FR-28-01).
 enum ThemeModeChoice {
@@ -113,6 +114,7 @@ class AppearanceSettings {
     this.pureBlack = false,
     this.textSize = TextSize.standard,
     this.reduceMotion = false,
+    this.dateStyle = DateStyle.auto,
   });
 
   /// Mode.
@@ -130,6 +132,9 @@ class AppearanceSettings {
   /// Skip decorative motion even when the phone allows it (FR-28-10).
   final bool reduceMotion;
 
+  /// How dates are written (FR-28-31).
+  final DateStyle dateStyle;
+
   /// Copy with changes.
   AppearanceSettings copyWith({
     ThemeModeChoice? mode,
@@ -137,6 +142,7 @@ class AppearanceSettings {
     bool? pureBlack,
     TextSize? textSize,
     bool? reduceMotion,
+    DateStyle? dateStyle,
   }) =>
       AppearanceSettings(
         mode: mode ?? this.mode,
@@ -144,6 +150,7 @@ class AppearanceSettings {
         pureBlack: pureBlack ?? this.pureBlack,
         textSize: textSize ?? this.textSize,
         reduceMotion: reduceMotion ?? this.reduceMotion,
+        dateStyle: dateStyle ?? this.dateStyle,
       );
 }
 
@@ -154,6 +161,7 @@ abstract final class AppearanceKeys {
   static const pureBlack = SettingKey<bool>('pure_black', false);
   static const textScalePct = SettingKey<int>('text_scale_pct', 100);
   static const reduceMotion = SettingKey<bool>('reduce_motion', false);
+  static const dateStyle = SettingKey<String>('date_style', 'auto');
 }
 
 /// Appearance persistence port.

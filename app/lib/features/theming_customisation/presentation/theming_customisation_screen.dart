@@ -5,6 +5,7 @@ import 'package:hisaab/app/theme/palettes.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/theming_customisation/domain/appearance.dart';
 import 'package:hisaab/features/theming_customisation/presentation/section_layout_card.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 
 /// Customise screen: Appearance section (F-28, FR-28-11..13).
@@ -64,6 +65,22 @@ class ThemingCustomisationScreen extends ConsumerWidget {
                   title: Text(t('Reduce motion')),
                   value: a.reduceMotion,
                   onChanged: (v) => _save(ref, a.copyWith(reduceMotion: v)),
+                ),
+                const SizedBox(height: 8),
+                Text(t('Date format'), style: text.labelLarge),
+                const SizedBox(height: 8),
+                SegmentedButton<DateStyle>(
+                  key: const Key('date-style-selector'),
+                  segments: [
+                    for (final s in DateStyle.values)
+                      ButtonSegment(
+                        value: s,
+                        label: Text(s == DateStyle.auto ? t(s.label) : s.label),
+                      ),
+                  ],
+                  selected: {a.dateStyle},
+                  onSelectionChanged: (v) =>
+                      _save(ref, a.copyWith(dateStyle: v.first)),
                 ),
                 const SizedBox(height: 8),
                 Text(t('Text size'), style: text.labelLarge),

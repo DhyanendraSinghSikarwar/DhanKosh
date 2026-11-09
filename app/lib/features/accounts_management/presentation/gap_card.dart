@@ -9,8 +9,8 @@ import 'package:hisaab/features/accounts_management/domain/untracked_gap.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
-import 'package:intl/intl.dart';
 import 'package:parser_core/parser_core.dart';
 
 /// Untracked-change card of one account (FR-13-15): Add transaction, Assign
@@ -50,7 +50,7 @@ class _GapCardState extends ConsumerState<GapCard> {
     final what = g.card
         ? (g.moneyLeft ? '$amt of limit used' : '$amt of limit freed')
         : (g.moneyLeft ? '$amt left' : '$amt came in');
-    final fmt = DateFormat('d MMM');
+    String fmtDate(DateTime d) => AppDates.format(d, year: false);
     final svc = ref.read(untrackedGapServiceProvider);
     return AppCard(
       key: Key('gap_${g.key}'),
@@ -64,8 +64,8 @@ class _GapCardState extends ConsumerState<GapCard> {
           ),
           Text(
             '$what with no message, '
-            '${fmt.format(DateTime.fromMillisecondsSinceEpoch(g.fromTime))} to '
-            '${fmt.format(DateTime.fromMillisecondsSinceEpoch(g.toTime))}',
+            '${fmtDate(DateTime.fromMillisecondsSinceEpoch(g.fromTime))} to '
+            '${fmtDate(DateTime.fromMillisecondsSinceEpoch(g.toTime))}',
             key: const Key('gap_summary'),
           ),
           for (var i = 0; i < _candidates.length; i++)

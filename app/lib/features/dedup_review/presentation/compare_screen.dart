@@ -9,8 +9,8 @@ import 'package:hisaab/features/dedup_review/domain/compare_rows.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
-import 'package:intl/intl.dart';
 
 /// Side-by-side New vs Existing with differences highlighted, and Merge /
 /// Keep separate / Split (FR-07-11, FR-07-13).
@@ -67,8 +67,10 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
             fresh,
             existing,
             money: (m, c) => formatMoney(Money(m, currency: c), masked: masked),
-            when: (ms) => DateFormat('d MMM yyyy, h:mm a')
-                .format(DateTime.fromMillisecondsSinceEpoch(ms)),
+            when: (ms) => AppDates.format(
+              DateTime.fromMillisecondsSinceEpoch(ms),
+              time: true,
+            ),
           );
     return Scaffold(
       appBar: AppBar(title: Text(t('Compare'))),

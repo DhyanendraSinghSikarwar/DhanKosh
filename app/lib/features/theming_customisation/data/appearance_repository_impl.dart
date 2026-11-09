@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:hisaab/features/settings_data_sources/domain/settings_repository.dart';
 import 'package:hisaab/features/theming_customisation/domain/appearance.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 
 /// [AppearanceRepository] over the settings store (FR-28-12, FR-28-21).
 class AppearanceRepositoryImpl implements AppearanceRepository {
@@ -52,6 +53,11 @@ class AppearanceRepositoryImpl implements AppearanceRepository {
                 ),
           )
           ..add(
+            _store.watch(AppearanceKeys.dateStyle).listen(
+                  (v) => emit(cur.copyWith(dateStyle: DateStyle.of(v))),
+                ),
+          )
+          ..add(
             _store.watch(AppearanceKeys.textScalePct).listen(
                   (v) => emit(cur.copyWith(textSize: TextSize.of(v / 100))),
                 ),
@@ -68,6 +74,7 @@ class AppearanceRepositoryImpl implements AppearanceRepository {
     await _store.write(AppearanceKeys.palette, s.palette.name);
     await _store.write(AppearanceKeys.pureBlack, s.pureBlack);
     await _store.write(AppearanceKeys.reduceMotion, s.reduceMotion);
+    await _store.write(AppearanceKeys.dateStyle, s.dateStyle.name);
     await _store.write(
       AppearanceKeys.textScalePct,
       (s.textSize.factor * 100).round(),

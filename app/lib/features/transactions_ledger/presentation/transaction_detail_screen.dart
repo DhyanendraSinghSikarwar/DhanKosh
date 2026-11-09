@@ -12,10 +12,10 @@ import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_category_style.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_tx_tile.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
 import 'package:hisaab/shared/widgets/section_label.dart';
-import 'package:intl/intl.dart';
 
 /// Opens the category picker for a row (supplied by the app shell, which
 /// binds the categorization sheet; features never import each other).
@@ -299,9 +299,10 @@ class _Body extends ConsumerWidget {
     final last4 = tt.accountLast4;
     final fallbackAccount =
         last4 == null ? tt.bankName : '${tt.bankName} ••$last4';
-    final when = DateFormat(
-      tt.hasExplicitTime ? 'd MMM yyyy, h:mm a' : 'd MMM yyyy',
-    ).format(DateTime.fromMillisecondsSinceEpoch(tt.timestamp));
+    final when = AppDates.format(
+      DateTime.fromMillisecondsSinceEpoch(tt.timestamp),
+      time: tt.hasExplicitTime,
+    );
     return ListView(
       padding: const EdgeInsets.all(14),
       children: [

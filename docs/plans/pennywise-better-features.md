@@ -66,4 +66,5 @@ Status is kept in section 5.
 | W3 | Done (FR-13-23, schema v11); backup of the threshold left out |
 | W4 | Done (FR-21-29); the Sort buttons are not added, tap opens Transactions |
 | W5 | Done (FR-21-30) |
-| W6..W18 | Pending |
+| W6 | Done for the main screens (FR-28-31); calendar, budgets, bills, portfolio, statements still use the Auto form |
+| W7..W18 | Pending |

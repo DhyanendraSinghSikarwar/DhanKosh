@@ -5,7 +5,7 @@ import 'package:hisaab/features/backup_export/domain/backup_errors.dart';
 import 'package:hisaab/features/backup_export/domain/full_backup.dart';
 import 'package:hisaab/features/backup_export/domain/passphrase_strength.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
-import 'package:intl/intl.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 
 /// Encrypted full backup and restore (FR-24-17..27): the only way to recover
 /// data on a new phone.
@@ -129,7 +129,7 @@ class _State extends ConsumerState<EncryptedBackupSection> {
           key: const Key('full-backup-last'),
           last == 0
               ? 'No encrypted backup yet'
-              : 'Last backup ${DateFormat('d MMM y, h:mm a').format(DateTime.fromMillisecondsSinceEpoch(last))}',
+              : 'Last backup ${AppDates.format(DateTime.fromMillisecondsSinceEpoch(last), time: true)}',
         ),
       ],
     );
@@ -262,7 +262,7 @@ class _SummaryDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final made = opened.createdAt == 0
         ? ''
-        : ' from ${DateFormat('d MMM y').format(DateTime.fromMillisecondsSinceEpoch(opened.createdAt))}';
+        : ' from ${AppDates.format(DateTime.fromMillisecondsSinceEpoch(opened.createdAt))}';
     return AlertDialog(
       title: Text(t('Restore backup?')),
       content: Column(

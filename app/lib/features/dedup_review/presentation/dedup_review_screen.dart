@@ -7,9 +7,9 @@ import 'package:hisaab/features/dedup_review/presentation/compare_screen.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:hisaab/shared/widgets/empty_state.dart';
-import 'package:intl/intl.dart';
 
 final StreamProvider<List<ReviewPair>> _pairsProvider =
     StreamProvider.autoDispose<List<ReviewPair>>(
@@ -151,8 +151,10 @@ class _Side extends StatelessWidget {
             style: theme.textTheme.titleMedium,
           ),
           Text(
-            DateFormat('d MMM, h:mm a').format(
+            AppDates.format(
               DateTime.fromMillisecondsSinceEpoch(tt.timestamp),
+              year: false,
+              time: true,
             ),
             style: theme.textTheme.bodySmall,
           ),

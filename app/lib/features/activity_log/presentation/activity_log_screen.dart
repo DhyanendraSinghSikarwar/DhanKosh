@@ -9,6 +9,7 @@ import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart
 import 'package:hisaab/features/activity_log/domain/inbox_logic.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
+import 'package:hisaab/shared/ui/app_dates.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
 import 'package:intl/intl.dart';
 
@@ -83,7 +84,7 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
     final diff = today.difference(day).inDays;
     if (diff == 0) return 'Today';
     if (diff == 1) return 'Yesterday';
-    return DateFormat('EEE, d MMM yyyy').format(d);
+    return AppDates.format(d, weekday: true);
   }
 
   @override
@@ -272,7 +273,7 @@ class _SyncCard extends StatelessWidget {
   final DateTime? next;
 
   static String _t(DateTime? d, String none) =>
-      d == null ? none : DateFormat('d MMM yyyy, h:mm a').format(d);
+      d == null ? none : AppDates.format(d, time: true);
 
   @override
   Widget build(BuildContext context) => AppCard(
