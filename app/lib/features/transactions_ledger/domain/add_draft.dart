@@ -92,3 +92,37 @@ class AddDraft {
   /// so the caller keeps the message's identity (FR-38-11).
   final Future<IngestResult> Function(AddFormValues values)? onConfirm;
 }
+
+/// A quick-add link such as `hisaab://app/transactions/add?amount=450&
+/// merchant=chai&category=food` (FR-08-30): launcher shortcut, home-screen
+/// link or another app. Every parameter is optional; bad ones are ignored.
+AddDraft? addDraftFromLink(Map<String, String> q) {
+  if (q.isEmpty) return null;
+  final raw = (q['amount'] ?? '').replaceAll(',', '').trim();
+  final rupees = double.tryParse(raw);
+  final minor = rupees == null || rupees <= 0 ? null : (rupees * 100).round();
+  final type = switch ((q['type'] ?? '').toLowerCase()) {
+    'in' || 'credit' || 'income' => TransactionType.credit,
+    'out' || 'debit' || 'spent' => TransactionType.debit,
+    _ => null,
+  };
+  final cat = Category.values
+      .where((c) => c.name == (q['category'] ?? '').trim())
+      .firstOrNull;
+  final merchant = (q['merchant'] ?? '').trim();
+  final note = (q['note'] ?? '').trim();
+  if (minor == null &&
+      type == null &&
+      cat == null &&
+      merchant.isEmpty &&
+      note.isEmpty) {
+    return null;
+  }
+  return AddDraft(
+    amountMinor: minor,
+    type: type,
+    category: cat,
+    merchant: merchant.isEmpty ? null : merchant,
+    note: note.isEmpty ? null : note,
+  );
+}

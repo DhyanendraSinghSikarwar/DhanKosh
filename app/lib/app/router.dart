@@ -109,8 +109,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/transactions/add',
-        builder: (_, state) =>
-            AddTransactionScreen(draft: state.extra as AddDraft?),
+        builder: (_, state) => AddTransactionScreen(
+          draft: state.extra as AddDraft? ??
+              addDraftFromLink(state.uri.queryParameters),
+        ),
       ),
       GoRoute(
         path: '/category/:id',

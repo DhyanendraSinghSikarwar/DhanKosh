@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DhanKosh</string>
+    <string name="shortcut_add_short">Add</string>
+    <string name="shortcut_add_long">Add transaction</string>
 </resources>

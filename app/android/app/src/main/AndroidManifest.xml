@@ -46,6 +46,19 @@
                 <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
                 <data android:mimeType="application/vnd.ms-excel" />
             </intent-filter>
+            <!-- Quick add: hisaab://app/transactions/add?amount=450 (F-08, FR-08-30). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="hisaab" android:host="app" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="true" />
             <!-- Share text into the app: opens Add transaction pre-filled (F-08, FR-08-27). -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
