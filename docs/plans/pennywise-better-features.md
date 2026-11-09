@@ -73,4 +73,5 @@ Status is kept in section 5.
 | W10 | Done for price-change detection and alert (FR-12-21, FR-21-31); active / hidden / ended states not built |
 | W11 | Done for screens using MonthRange (FR-10-25); alerts, summaries, widget and PDF reports still calendar months |
 | W12 | Done (FR-12-22, ADR-0013, schema v13) |
-| W13..W18 | Pending |
+| W17 | Receipts done (FR-08-31, schema v14); groups, category split and people split not built |
+| W13..W16, W18 | Pending |

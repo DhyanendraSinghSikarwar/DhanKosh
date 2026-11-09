@@ -76,7 +76,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -159,6 +159,8 @@ class AppDatabase extends _$AppDatabase {
           // v10 -> v11: accounts.low_balance_minor (FR-13-23). Additive.
           if (from < 11) await m.addColumn(accounts, accounts.lowBalanceMinor);
           // v11 -> v12: tags and transaction_tags (FR-08-29). Additive.
+          // v13 -> v14: transactions.receipt (FR-08-31). Additive.
+          if (from < 14) await m.addColumn(transactions, transactions.receipt);
           // v12 -> v13: recurring.auto_post (ADR-0013). Additive.
           // The table is created whole for databases older than v4.
           if (from >= 4 && from < 13) {

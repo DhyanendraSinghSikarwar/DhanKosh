@@ -32,6 +32,7 @@ class LedgerTx {
     this.excluded = false,
     this.alias,
     this.tags = const [],
+    this.receipt,
     this.inrMinor,
   });
 
@@ -69,6 +70,9 @@ class LedgerTx {
 
   /// The user's tags on this row (FR-08-29).
   final List<String> tags;
+
+  /// File name of the receipt photo, if one is attached (FR-08-31).
+  final String? receipt;
   final int createdAt;
   final int? inrMinor;
 

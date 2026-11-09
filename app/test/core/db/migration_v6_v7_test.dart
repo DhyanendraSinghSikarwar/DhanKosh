@@ -54,6 +54,6 @@ void main() {
     expect(await db.select(db.unrecognisedMessages).get(), hasLength(1));
     expect(await db.select(db.senderPrefs).get(), hasLength(1));
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.read<int>('user_version'), 13);
+    expect(v.read<int>('user_version'), 14);
   });
 }

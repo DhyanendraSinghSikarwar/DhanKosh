@@ -11,6 +11,7 @@ import 'package:hisaab/features/localization/domain/language.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ledger_tx.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_category_style.dart';
 import 'package:hisaab/features/transactions_ledger/presentation/ledger_tx_tile.dart';
+import 'package:hisaab/features/transactions_ledger/presentation/receipt_actions.dart';
 import 'package:hisaab/shared/providers/amount_masking.dart';
 import 'package:hisaab/shared/ui/app_dates.dart';
 import 'package:hisaab/shared/widgets/app_card.dart';
@@ -106,6 +107,9 @@ class TransactionDetailScreen extends ConsumerWidget {
       ),
     );
     if (ok != true) return;
+    await ReceiptActions.deleteFile(
+      (await ref.read(transactionRepositoryProvider).byId(id))?.receipt,
+    );
     await ref.read(transactionRepositoryProvider).deleteTransactions([id]);
     if (!context.mounted) return;
     if (context.canPop()) {
@@ -461,6 +465,15 @@ class _Body extends ConsumerWidget {
                 tt.tags.isEmpty ? 'Add' : tt.tags.map((g) => '#$g').join(' '),
                 tag: 'detail_tags',
                 onTap: () => _editTags(context, ref),
+              ),
+              _Row(
+                'Receipt',
+                tt.receipt == null ? 'Add' : 'View',
+                tag: 'detail_receipt',
+                onTap: () async {
+                  await ReceiptActions.view(context, ref, tt);
+                  _refresh(ref);
+                },
               ),
               _Row(
                 'Totals',

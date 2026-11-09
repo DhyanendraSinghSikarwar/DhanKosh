@@ -78,6 +78,10 @@ abstract interface class TransactionRepository {
   /// case, at most 10, each up to 30 characters.
   Future<void> setTags(int id, List<String> tags);
 
+  /// Attaches the receipt photo [fileName] (a file in the app's receipts
+  /// folder) to [id]; null removes it (FR-08-31).
+  Future<void> setReceipt(int id, String? fileName);
+
   /// Every tag in use, most used first.
   Future<List<String>> allTags();
 

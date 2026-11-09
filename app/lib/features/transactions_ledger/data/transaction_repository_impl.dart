@@ -758,6 +758,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
+  Future<void> setReceipt(int id, String? fileName) =>
+      _patch(id, TransactionsCompanion(receipt: Value(fileName)));
+
+  @override
   Future<List<String>> allTags() async => [
         for (final r in await _db.customSelect(
           'SELECT g.name AS name FROM tags g '

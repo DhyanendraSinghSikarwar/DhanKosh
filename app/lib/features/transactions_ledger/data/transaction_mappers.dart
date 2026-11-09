@@ -39,6 +39,7 @@ LedgerTx toLedgerTx(
       excluded: r.excluded,
       alias: alias,
       tags: tags,
+      receipt: r.receipt,
       createdAt: r.createdAt,
       inrMinor: r.inrMinor,
     );

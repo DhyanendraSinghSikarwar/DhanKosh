@@ -184,6 +184,7 @@ Calendar segment (`TransactionsScreen.kt:225-244`): the day value is the sum of 
 - FR-08-28: `TransactionRepository.addFromMessage` adds a payment the user confirmed from a message nothing could read, through the same `ingest` as the parsers with the message's own source and id, so dedup applies and the same message read later is skipped ([Unrecognised messages](38_unrecognised_messages_learned_senders.md) FR-38-11). The Add form opens from an `AddDraft` (every field optional, optional confirm callback).
 - FR-08-29: Tags (detail row "Tags"; tables `tags` and `transaction_tags`, schema v12). Free-text labels, at most 10 per transaction, each up to 30 characters, no duplicates ignoring case; a leading # is dropped. They show as #tag in list rows, the search box finds a tag by name (with or without #), the encrypted backup carries them, and a tag nobody uses is removed. Deleting a transaction removes its links.
 - FR-08-30: Quick add by link. `hisaab://app/transactions/add?amount=450&merchant=chai&category=food&type=in` opens Add pre-filled (every parameter optional, bad ones ignored). A launcher long-press shortcut "Add transaction" (`res/xml/shortcuts.xml`) opens the same screen empty. Not built: a Quick Settings tile and a one-tap sheet over other apps.
+- FR-08-31: Receipts (detail row "Receipt"; column `transactions.receipt`, schema v14). One photo per transaction from the camera or gallery, resized to at most 1920 px at quality 85, kept in the app's own `receipts` folder; full-screen view with Replace and Remove. Deleting the transaction from its detail screen deletes the photo. Photos are not in the encrypted backup, and deleting rows in bulk leaves their files.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -499,3 +500,4 @@ Still deferred: own-transfer form in the Add screen, `reclassifyCardBills` sweep
 | 2026-10-31 | Calendar shows the month total, a compact amount in each day cell and the selected day's total above its rows; Book tag only for Business | User review of the applied mock |
 | 2026-11-09 | FR-08-29 tags | PennyWise comparison, W8 |
 | 2026-11-09 | FR-08-30 quick add link and launcher shortcut | PennyWise comparison, W9 |
+| 2026-11-09 | FR-08-31 receipt photo per transaction | PennyWise comparison, W17 |

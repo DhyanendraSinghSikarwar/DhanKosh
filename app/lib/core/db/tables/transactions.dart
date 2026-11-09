@@ -45,5 +45,9 @@ class Transactions extends Table {
   IntColumn get inrMinor => integer().nullable()();
 
   /// Left out of every total but still moves the balance (FR-10-24).
+  /// File name of the receipt photo in the app's `receipts` folder
+  /// (FR-08-31).
+  TextColumn get receipt => text().nullable()();
+
   BoolColumn get excluded => boolean().withDefault(const Constant(false))();
 }

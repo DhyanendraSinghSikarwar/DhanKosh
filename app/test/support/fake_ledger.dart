@@ -185,6 +185,9 @@ class FakeTxRepo implements TransactionRepository {
   Future<void> setNote(int id, String? note) async => notes.add((id, note));
 
   @override
+  Future<void> setReceipt(int id, String? fileName) async {}
+
+  @override
   Future<void> setTags(int id, List<String> tags) async {}
 
   @override
