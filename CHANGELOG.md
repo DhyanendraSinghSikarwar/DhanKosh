@@ -4,6 +4,8 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
+## [0.0.8] - 2026-11-09
+
 ### Added
 - Statements: a Review import screen lists each row (new, matches existing, possible duplicate, already imported) before anything is saved; untick rows you do not want.
 - Accounts: money moved to or from another of your own accounts is an internal transfer (not spend or income); another person's account is never listed.
