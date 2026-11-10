@@ -6,7 +6,7 @@
 | Status | In progress (Phase 3 + hardening: import pipeline, UI, account balance/limit, deposits, detail screen, mismatch warning, emailed attachments and locked notice done; Kotlin PdfBox bridge and APK not run on a device; MF-order/NPS email-body steps and XLSX entry caps pending; 2026-10-26: share-in of PDF, CSV and XLSX from other apps added in Dart and Kotlin, Kotlin not compiled or run) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-11-06 |
+| Last Updated | 2026-11-10 |
 
 ## 1. Description
 
@@ -333,6 +333,7 @@ PDF: any `RuntimeException` -> Unreadable; locked with no matching password -> s
 | FR-05-29 | The balance check compares the statement's closing balance (last row with a balance for an oldest-first file, first for newest-first, decided by the dates, or by the arithmetic when all rows share a day) with the app's balance at the end of that day (newest typed or reported figure moved by the transactions between its time and that day, forwards or backwards; none for a card). It shows statement, app and the signed difference, "Matches" only to the paisa. The running balances are also checked row by row; when they do not add up the screen says how many rows break and the statement's balance is not offered. "Use statement balance" writes the figure dated the end of the statement's last day and never overwrites a newer reported or typed balance. |
 | FR-05-31 | The column mapping screen (`/statements/map`, from the Statements menu "Import spreadsheet, match columns", or from the "Match columns" action after a sheet DhanKosh read as empty) shows the header-row stepper, a preview of the header and five rows with column letters, the pickers, a sample of five parsed rows with "N rows, M skipped" and the continuity line, an account picker (pre-selected when the lines above the header name exactly one account's digits), and Import. The confirmed layout is saved by header signature (`stmt_layouts`, newest 40) and pre-fills the next file; "Forget saved layouts" clears them. Per sheet reading with limits: a sheet over 20,000 rows is refused, never cut short; at most 200 columns kept; sheets are kept apart and the one with a header is chosen. |
 | FR-05-32 | A statement's bank and account number are read only from the lines above its first dated row (and the sender for the bank). A row's narration ("UPI/.../HDFC BANK", "to A/c XX6810") names the payee's side and never creates or picks an account; with no header the account stays unknown. |
+| FR-05-33 | A statement row carries the UPI, IMPS or NEFT reference found in its narration and hashes with it, so the same payment from an SMS or email meets the row by hash or reference whichever arrives first and is stored once; one statement row matches at most one message, and a refund never merges with its spend. |
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -770,3 +771,4 @@ Hardening 2026-10-22 (app layer, `statement_import`): FR-05-07 done: `ApplyState
 | 2026-10-22 | Statements: balances/limits, detail, mismatch, email attachments, locked alert | Hardening |
 | 2026-10-26 | Share-in of PDF/CSV/XLSX from other apps (FR-05-26, FR-05-27, TC-05-24) | Fold adoption |
 | 2026-11-06 | FR-05-32: bank and last 4 come from the statement header, not from row narrations | An Axis statement row naming YES BANK / HDFC created a non-existing HDFC Bank account |
+| 2026-11-10 | FR-05-33: statement rows carry the narration's reference and a reference-including hash; ledger tests for statement and SMS in both orders | PennyWise comparison: same payment from statement and SMS must be handled once |

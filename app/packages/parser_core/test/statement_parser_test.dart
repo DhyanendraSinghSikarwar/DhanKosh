@@ -20,10 +20,44 @@ void main() {
       25-05-2026 UPI/P2P/512345678901/ASHA/HDFC BANK/to A/c XX6810 150.00 4,450.38
     ''');
     final r = parser.parse(text, 'Statement', receivedAt);
+    expect(r.transactions, hasLength(2));
     expect(r.bankName, 'Axis Bank');
     expect(r.last4, '2345');
     expect(r.transactions.every((t) => t.bankName == 'Axis Bank'), isTrue);
     expect(r.transactions.every((t) => t.accountLast4 == '2345'), isTrue);
+  });
+
+  test('rows carry the UPI, IMPS or NEFT reference of their narration', () {
+    final text = dedent('''
+      Axis Bank Account Statement
+      Account No: 9170XXXXXX2345
+      Date Particulars Chq Dr Cr Balance
+      24-05-2026 UPI/P2M/072283649940/RAJENDRA KUMAWAT /Paymen/YES BANK 20.00 4,600.38
+      26-05-2026 NEFT-HDFCN52026052612345-ACME CORP LTD-SALARY 55,000.00 59,600.38
+      27-05-2026 IMPS/P2A/614712345678/RAVI KUMAR/SBIN 700.00 58,900.38
+      28-05-2026 ATM-CASH/123456/MUMBAI 2,000.00 56,900.38
+    ''');
+    final r = parser.parse(text, 'Statement', receivedAt);
+    expect(
+      r.transactions.map((t) => t.referenceNumber),
+      ['072283649940', 'HDFCN52026052612345', '614712345678', null],
+    );
+    // The same payment's SMS hashes the same, so the two meet without a
+    // fuzzy guess (FR-05-33).
+    final day = civilDateOf(
+      r.transactions.first.transactionTime,
+      const Duration(hours: 5, minutes: 30),
+    );
+    expect(
+      r.transactions.first.transactionHash,
+      TransactionHasher.hash(
+        2000,
+        TransactionType.debit,
+        '2345',
+        day,
+        '072283649940',
+      ),
+    );
   });
 
   test('no header: the statement account is left unknown, not guessed', () {

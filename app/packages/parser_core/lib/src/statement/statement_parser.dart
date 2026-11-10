@@ -6,6 +6,7 @@ import 'package:parser_core/src/extract/account_extractor.dart';
 import 'package:parser_core/src/extract/channel_detector.dart';
 import 'package:parser_core/src/extract/merchant_extractor.dart';
 import 'package:parser_core/src/extract/money.dart';
+import 'package:parser_core/src/extract/reference_extractor.dart';
 import 'package:parser_core/src/hash/transaction_hasher.dart';
 import 'package:parser_core/src/merchant/merchant_normalizer.dart';
 import 'package:parser_core/src/model/holding.dart';
@@ -595,6 +596,11 @@ class StatementParser {
         description,
       );
       final at = noonOf(date, config.utcOffset);
+      // The UPI, IMPS or NEFT reference printed in the narration is what ties
+      // this row to the SMS or email for the same payment (FR-05-33).
+      final reference = ReferenceExtractor.normalize(
+        ReferenceExtractor.extract(description, description.toLowerCase()),
+      );
       out.add(
         (
           ParsedTransaction(
@@ -609,7 +615,7 @@ class StatementParser {
                     ? description.substring(0, 40)
                     : description),
             upiId: null,
-            referenceNumber: null,
+            referenceNumber: reference,
             channel: channel,
             balanceMinor: balance,
             availableLimitMinor: null,
@@ -621,7 +627,7 @@ class StatementParser {
             messageTimestamp: receivedAt,
             confidence: 0.7,
             transactionHash:
-                TransactionHasher.hash(amount, type, last4, date, null),
+                TransactionHasher.hash(amount, type, last4, date, reference),
           ),
           line,
         ),

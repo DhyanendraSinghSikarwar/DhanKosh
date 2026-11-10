@@ -10,6 +10,7 @@ import 'package:parser_core/src/parse_result.dart';
 import 'package:parser_core/src/parser_config.dart';
 import 'package:parser_core/src/registry/bank_parser.dart';
 import 'package:parser_core/src/registry/sender_keys.dart';
+import 'package:parser_core/src/rules/balance_notice.dart';
 import 'package:parser_core/src/statement/card_due.dart';
 import 'package:parser_core/src/text/rx.dart';
 
@@ -115,6 +116,17 @@ class ParserRegistry {
       return parser.depositStatus(body, sender, timestamp, source);
     }
     return null;
+  }
+
+  /// A bank's balance-only message (FR-06-27), or null.
+  BalanceNotice? balanceNotice(String body, String sender, int timestamp) {
+    final parser = resolve(sender);
+    if (parser == null ||
+        parser is GenericBankParser ||
+        parser is LenderParser) {
+      return null;
+    }
+    return BalanceNoticeParser.parse(body, parser.bankName, timestamp);
   }
 
   /// What a card issuer's "statement generated / bill due" message says (total

@@ -5,6 +5,8 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 ## [Unreleased]
 
 ### Added
+- Balance-only bank messages ("available balance is ...") now update the balance of an account you already have.
+- Statement rows carry their UPI/IMPS/NEFT reference, so a statement and an SMS or email of the same payment are stored once, in either order.
 - Home credit cards: each card has one bar — green for the limit left, orange for unbilled spends, red for the billed amount.
 - More > Groups: bundle transactions (a trip, an event) and see what the group cost; add a transaction to groups from its detail.
 - More > People and splits: share a payment equally or by amount (Split with people on the transaction detail), and track who owes you or whom you owe until it is paid back.

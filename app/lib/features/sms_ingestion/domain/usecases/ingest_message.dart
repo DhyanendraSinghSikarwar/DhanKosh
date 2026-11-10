@@ -275,6 +275,15 @@ class IngestMessage {
     // outstanding, FD/RD/PPF booking or maturity). Mail only when it is not
     // also a transaction.
     final accounts = _accounts;
+    if (accounts != null && !hasTransaction) {
+      // FR-06-27: "available balance is ..." with no payment.
+      final b = _active.balanceNotice(message.body, message.sender, at);
+      if (b != null &&
+          !(await _tails?.call() ?? const {}).contains(b.last4) &&
+          await accounts.applyBalanceNotice(b)) {
+        stored = true;
+      }
+    }
     if (accounts != null && (source == Source.sms || !hasTransaction)) {
       final st = _active.loanStatus(message.body, message.sender, at, source);
       if (st != null &&

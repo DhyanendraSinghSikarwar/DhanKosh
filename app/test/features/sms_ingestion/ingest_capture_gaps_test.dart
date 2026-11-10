@@ -9,7 +9,7 @@ import 'package:hisaab/features/sms_ingestion/domain/entities/inbox_sms.dart';
 import 'package:hisaab/features/sms_ingestion/domain/usecases/ingest_message.dart';
 import 'package:hisaab/features/statement_import/data/statement_account_store_impl.dart';
 import 'package:hisaab/features/statement_import/domain/usecases/apply_statement_accounts.dart';
-import 'package:parser_core/parser_core.dart' show Source;
+import 'package:parser_core/parser_core.dart' show AccountKind, Source;
 
 import '../../support/test_env.dart';
 
@@ -209,6 +209,33 @@ void main() {
       );
       expect(d.outcome.name, 'rejected');
       expect(await env.count('accounts'), 0);
+    });
+  });
+
+  group('balance-only message (FR-06-27)', () {
+    const body = 'Your available balance in account ending XX5152 is '
+        'Rs. 1,155.70 as on 20-OCT-26';
+
+    Future<Object?> stored() async => (await env.db
+            .customSelect(
+              "SELECT latest_balance_minor b FROM accounts WHERE last4='5152'",
+            )
+            .get())
+        .map((r) => r.data['b'])
+        .singleOrNull;
+
+    test('never creates an account', () async {
+      final d = await ingest.detail(sms(body, 'VM-HDFCBK-S'));
+      expect(d.outcome.name, 'rejected');
+      expect(await env.count('accounts'), 0);
+    });
+
+    test('updates the balance of a known account', () async {
+      await StatementAccountStoreImpl(env.db)
+          .insert('HDFC Bank', '5152', kind: AccountKind.account);
+      final d = await ingest.detail(sms(body, 'VM-HDFCBK-S'));
+      expect(d.outcome.name, 'inserted');
+      expect(await stored(), 115570);
     });
   });
 }

@@ -75,6 +75,20 @@ class ApplyStatementAccounts {
     );
   }
 
+  /// Applies a bank's "available balance is ..." message to the account it
+  /// names, only when that account already exists; a newer figure replaces an
+  /// older one (FR-06-27). True when an account was updated.
+  Future<bool> applyBalanceNotice(pc.BalanceNotice n) async {
+    final existing = await _store.find(n.bank, n.last4);
+    if (existing == null) return false;
+    await _store.updateBalance(
+      existing.id,
+      at: n.at,
+      balanceMinor: n.balanceMinor,
+    );
+    return true;
+  }
+
   /// Applies deposit and loan statuses; returns how many accounts changed.
   Future<int> applyDeposits(List<pc.LoanStatus> statuses) async {
     var n = 0;

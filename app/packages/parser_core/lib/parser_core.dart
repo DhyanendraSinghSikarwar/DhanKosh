@@ -38,6 +38,7 @@ export 'src/parser_config.dart';
 export 'src/registry/bank_parser.dart';
 export 'src/registry/parser_registry.dart';
 export 'src/registry/sender_keys.dart';
+export 'src/rules/balance_notice.dart';
 export 'src/rules/card_bill.dart';
 export 'src/rules/rejection_rules.dart';
 export 'src/statement/api.dart';

@@ -143,4 +143,70 @@ void main() {
     // The two apps are two sources of one row, so Split stays possible.
     expect(await env.count('transaction_sources'), 2);
   });
+
+  group('statement and SMS for one payment (FR-05-33)', () {
+    // A statement row has only a date (noon) and a narration reference.
+    const noon = _t0 + 2 * 60 * _min;
+
+    test('SMS first, then the statement row with the same reference', () async {
+      await env.ingest(_tx(amount: 2000, ref: '072283649940'), id: 'sms1');
+      final r = await env.ingest(
+        _tx(
+          amount: 2000,
+          ref: '072283649940',
+          source: Source.statement,
+          at: noon - _t0,
+        ),
+        id: 'stmt1',
+      );
+      expect(r.outcome, IngestOutcome.merged);
+      expect(await env.count('transactions'), 1);
+    });
+
+    test('statement first, then the late SMS', () async {
+      await env.ingest(
+        _tx(
+          amount: 2000,
+          ref: '072283649940',
+          source: Source.statement,
+          at: noon - _t0,
+        ),
+        id: 'stmt1',
+      );
+      final r =
+          await env.ingest(_tx(amount: 2000, ref: '072283649940'), id: 'sms1');
+      expect(r.outcome, IngestOutcome.merged);
+      expect(await env.count('transactions'), 1);
+    });
+
+    test('two identical statement rows meet one SMS: one match, one new',
+        () async {
+      await env.ingest(_tx(amount: 2000), id: 'sms1');
+      final a = await env.ingest(
+        _tx(amount: 2000, source: Source.statement, at: noon - _t0),
+        id: 'stmt1',
+      );
+      final b = await env.ingest(
+        _tx(amount: 2000, source: Source.statement, at: noon - _t0),
+        id: 'stmt2',
+      );
+      expect(a.outcome, IngestOutcome.merged);
+      expect(b.outcome, isNot(IngestOutcome.merged));
+      expect(await env.count('transactions'), 2);
+    });
+
+    test('a refund the same day is not swallowed by the debit', () async {
+      await env.ingest(_tx(amount: 2000, ref: 'A1'), id: 'sms1');
+      final r = await env.ingest(
+        _tx(
+          amount: 2000,
+          type: TransactionType.credit,
+          source: Source.statement,
+          at: noon - _t0,
+        ),
+        id: 'stmt1',
+      );
+      expect(r.outcome, IngestOutcome.inserted);
+    });
+  });
 }
