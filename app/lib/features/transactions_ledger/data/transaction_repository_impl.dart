@@ -60,7 +60,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
         return IngestReport(results);
       });
 
-  Future<IngestResult> _ingestOne(IngestItem item, RuleSet rules) async {
+  Future<IngestResult> _ingestOne(IngestItem input, RuleSet rules) async {
+    var item = input;
     final src = enumToDb(item.parsed.source);
 
     // FR-07-07 step 3 / FR-08-22: processed ids and tombstones.
@@ -106,8 +107,28 @@ class TransactionRepositoryImpl implements TransactionRepository {
       }
     }
 
-    // FR-09-10: merchant rule (never for transfers).
+    // FR-13-25: money sent to or received from another of the user's own
+    // accounts is an internal transfer, not spend or income.
     var p = item.parsed;
+    if (await _isOwnCounterparty(p, item.phoneLast4s)) {
+      p = p.copyWith(
+        type: TransactionType.transfer,
+        category: Category.transfer,
+      );
+      item = IngestItem(
+        parsed: p,
+        sourceMessageId: item.sourceMessageId,
+        rawText: item.rawText,
+        subject: item.subject,
+        accountId: item.accountId,
+        note: item.note ?? TransferPairing.selfNote,
+        excluded: item.excluded,
+        tags: item.tags,
+        phoneLast4s: item.phoneLast4s,
+      );
+    }
+
+    // FR-09-10: merchant rule (never for transfers).
     final rule = rules.ruleFor(
       merchant: p.merchant,
       upiId: p.upiId,
@@ -845,6 +866,38 @@ class TransactionRepositoryImpl implements TransactionRepository {
 
   // FR-08-24: payee -> account map, in the settings table (no schema change).
   static const _payeePrefix = 'payee_account:';
+
+  /// Whether the other party of [p] is one of the user's accounts: its stated
+  /// digits match exactly one own account of a different number, or the payee
+  /// UPI number ends in the user's own phone digits.
+  Future<bool> _isOwnCounterparty(
+    ParsedTransaction p,
+    Set<String> ownTails,
+  ) async {
+    if (p.type != TransactionType.debit && p.type != TransactionType.credit) {
+      return false;
+    }
+    if (p.accountKind != AccountKind.account) return false;
+    final upi = p.upiId;
+    if (upi != null && ownTails.isNotEmpty) {
+      final local = upi.split('@').first;
+      if (RegExp(r'^\d{10}$').hasMatch(local) &&
+          ownTails.contains(local.substring(6))) {
+        return true;
+      }
+    }
+    final other = p.counterpartyLast4;
+    if (other == null || other == p.accountLast4) return false;
+    final own = await (_db.select(_db.accounts)
+          ..where(
+            (t) =>
+                t.last4.equals(other) &
+                t.kind.equals(enumToDb(AccountKind.account)) &
+                t.mergedIntoId.isNull(),
+          ))
+        .get();
+    return own.length == 1;
+  }
 
   Future<int?> _payeeAccount(String? merchant, String? upiId) async {
     final key = MerchantRule.keyOf(merchant, upiId);

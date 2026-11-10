@@ -399,6 +399,10 @@ class FreeTextParser {
     r'\b(?:utr|rrn|upi\s+ref(?:erence)?(?:\s+(?:no|id))?)\W{0,4}(\d{10,22})\b',
   );
   static final RegExp _vpa = rx(r'\b[a-z0-9][\w.\-]{1,}@[a-z][a-z0-9]{1,20}\b');
+
+  /// Display names of the banks this reader recognises in free text.
+  static Iterable<String> get bankNames => _banks.map((b) => b.$2);
+
   static final List<(RegExp, String)> _banks = [
     (rx(r'\bHDFC\b'), 'HDFC Bank'),
     (rx(r'\bICICI\b'), 'ICICI Bank'),

@@ -35,6 +35,7 @@ ParsedTransaction parsed({
   Category category = Category.food,
   bool debitCard = false,
   String currency = 'INR',
+  String? counterparty,
 }) =>
     ParsedTransaction(
       amountMinor: amountMinor,
@@ -58,4 +59,5 @@ ParsedTransaction parsed({
       confidence: 0.9,
       transactionHash: testHash(amountMinor, type, last4, time, ref),
       isDebitCard: debitCard,
+      counterpartyLast4: counterparty,
     );

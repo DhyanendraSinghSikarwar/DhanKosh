@@ -156,6 +156,16 @@ class AccountAdminRepositoryImpl implements AccountAdminRepository {
           final kind = r.read<String>('account_kind');
           final k = '$bank|$last4';
           var id = cache[k];
+          if (id == null && !AccountGuard.mayCreate(bank, last4)) {
+            final found = await (_db.select(_db.accounts)
+                  ..where(
+                    (t) => t.bankName.equals(bank) & t.last4.equals(last4),
+                  ))
+                .getSingleOrNull();
+            if (found == null) continue;
+            id = found.id;
+            cache[k] = id;
+          }
           if (id == null) {
             final found = await (_db.select(_db.accounts)
                   ..where(
@@ -176,5 +186,37 @@ class AccountAdminRepositoryImpl implements AccountAdminRepository {
           out.add(OrphanRow(r.read<int>('id'), id));
         }
         return out;
+      });
+
+  @override
+  Future<int> removeWrongAccounts(Set<String> ownTails) =>
+      _db.transaction(() async {
+        final rows = await (_db.select(_db.accounts)
+              ..where(
+                (t) =>
+                    t.nickname.isNull() &
+                    t.manualBalanceMinor.isNull() &
+                    t.latestBalanceMinor.isNull() &
+                    t.availableLimitMinor.isNull() &
+                    t.mergedIntoId.isNull() &
+                    t.linkedAccountId.isNull(),
+              ))
+            .get();
+        var n = 0;
+        for (final a in rows) {
+          final type = a.accountType;
+          if (type != null &&
+              type != enumToDb(AccountType.creditCard) &&
+              type != enumToDb(AccountType.debitCard)) {
+            continue;
+          }
+          final wrong = !AccountGuard.isKnownBank(a.bankName) ||
+              ownTails.contains(a.last4);
+          if (!wrong) continue;
+          await (_db.delete(_db.accounts)..where((t) => t.id.equals(a.id)))
+              .go();
+          n++;
+        }
+        return n;
       });
 }

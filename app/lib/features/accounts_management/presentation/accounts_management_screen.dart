@@ -28,6 +28,7 @@ class AccountsManagementScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(removeWrongAccountsProvider);
     final masked = ref.watch(hideAmountsProvider).value ?? true;
     final list = ref.watch(accountsWithActivityProvider);
     final hidden = ref.watch(hiddenAccountsProvider).value ?? const [];

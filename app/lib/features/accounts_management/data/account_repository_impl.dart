@@ -87,7 +87,10 @@ class AccountRepositoryImpl implements AccountRepository {
       }).toList();
       return matches.length == 1 ? matches.single.id : null;
     }
-    if (phoneLast4s.contains(last4)) return null;
+    // FR-13-24: only a known bank's own digits make an account.
+    if (!AccountGuard.mayCreate(tx.bankName, last4, ownTails: phoneLast4s)) {
+      return null;
+    }
 
     await _db.into(_db.accounts).insert(
           AccountsCompanion.insert(

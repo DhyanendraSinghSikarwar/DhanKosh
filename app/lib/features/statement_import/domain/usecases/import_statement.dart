@@ -497,12 +497,14 @@ class ImportStatement {
     final result = await Isolate.run(
       () => _parseOnWorker((text, file.name, now)),
     );
+    final tails = await _accounts?.ownTails() ?? const <String>{};
     final items = <IngestItem>[
       for (var i = 0; i < result.transactions.length; i++)
         IngestItem(
           parsed: result.transactions[i],
           sourceMessageId: 'stmt:$key:$i',
           rawText: i < result.lines.length ? result.lines[i] : null,
+          phoneLast4s: tails,
         ),
     ];
     final report = items.isEmpty

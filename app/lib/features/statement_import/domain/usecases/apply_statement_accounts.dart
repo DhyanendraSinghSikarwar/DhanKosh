@@ -9,9 +9,16 @@ import 'package:parser_core/parser_core.dart' as pc;
 /// deposit accounts (FR-05-17). Only a newer figure replaces an older one.
 class ApplyStatementAccounts {
   /// Creates the use case.
-  const ApplyStatementAccounts(this._store);
+  const ApplyStatementAccounts(
+    this._store, {
+    Future<Set<String>> Function()? ownTails,
+  }) : _tails = ownTails;
 
   final StatementAccountStore _store;
+  final Future<Set<String>> Function()? _tails;
+
+  /// Last four digits of the user's own phone numbers.
+  Future<Set<String>> ownTails() async => await _tails?.call() ?? const {};
 
   static const _istOffsetMs = 19800000;
 
@@ -55,6 +62,16 @@ class ApplyStatementAccounts {
                 .reduce((a, b) => a > b ? a : b)
             : receivedAt;
     final existing = await _store.find(bank, last4);
+    // FR-13-24: a statement never makes an account of an unknown bank name or
+    // of the tail of the user's own phone number.
+    if (existing == null &&
+        !pc.AccountGuard.mayCreate(
+          bank,
+          last4,
+          ownTails: await _tails?.call() ?? const {},
+        )) {
+      return AccountEffect.none;
+    }
     final id = existing?.id ??
         await _store.insert(bank, last4, kind: r.kind) ??
         (await _store.find(bank, last4))?.id;

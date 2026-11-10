@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hisaab/features/accounts_management/data/account_admin_repository_impl.dart';
 import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/categorization/domain/merchant_rule.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
@@ -236,6 +237,68 @@ void main() {
     expect(totals.count, 1);
   });
 
+  // FR-13-25
+  group('own-account counterparty', () {
+    Future<void> own() async {
+      await env.ingest(
+        parsed(
+          bank: 'ICICI Bank',
+          last4: '5678',
+          type: TransactionType.credit,
+          merchant: 'Salary',
+          category: Category.salary,
+          amountMinor: 100,
+          ref: 'SAL000111',
+          time: t0 - 3 * day,
+        ),
+      );
+    }
+
+    test('money sent to another own account is an internal transfer', () async {
+      await own();
+      final r = await env.ingest(
+        parsed(counterparty: '5678', amountMinor: 500000, ref: '612345678901'),
+      );
+      final row = (await env.txs.byId(r.transactionId!))!;
+      expect(row.type, TransactionType.transfer);
+      expect(row.note, 'Self transfer between your accounts');
+    });
+
+    test('the other leg arriving later is a transfer as well', () async {
+      await own();
+      await env.ingest(
+        parsed(counterparty: '5678', amountMinor: 500000, ref: '612345678901'),
+      );
+      final r = await env.ingest(
+        parsed(
+          bank: 'ICICI Bank',
+          last4: '5678',
+          type: TransactionType.credit,
+          merchant: null,
+          amountMinor: 500000,
+          ref: null,
+          time: t0 + 10 * minute,
+          category: Category.other,
+        ),
+      );
+      expect(
+        (await env.txs.byId(r.transactionId!))!.type,
+        TransactionType.transfer,
+      );
+    });
+
+    test('a stranger account is never listed or made a transfer', () async {
+      final r = await env.ingest(
+        parsed(counterparty: '9999', amountMinor: 500000, ref: '612345678902'),
+      );
+      expect(
+        (await env.txs.byId(r.transactionId!))!.type,
+        TransactionType.debit,
+      );
+      expect(await env.count('accounts'), 1);
+    });
+  });
+
   // FR-13-01..03
   group('ensureAccount', () {
     test('no last4 means no account', () async {
@@ -273,6 +336,23 @@ void main() {
         ),
       );
       expect((await env.txs.byId(r.transactionId!))!.accountId, isNull);
+    });
+
+    test('an unknown bank name never creates an account (FR-13-24)', () async {
+      final r = await env.ingest(parsed(bank: 'XYZBNK', last4: '3210'));
+      expect((await env.txs.byId(r.transactionId!))!.accountId, isNull);
+      expect(await env.count('accounts'), 0);
+    });
+
+    test('wrong accounts are removed, real ones kept (FR-13-24)', () async {
+      await env.db.customStatement(
+        'INSERT INTO accounts (bank_name, last4, kind, created_at) VALUES '
+        "('XYZBNK','3210','ACCOUNT',1), ('HDFC Bank','9876','ACCOUNT',1), "
+        "('HDFC Bank','1234','ACCOUNT',1)",
+      );
+      final admin = AccountAdminRepositoryImpl(env.db);
+      expect(await admin.removeWrongAccounts({'9876'}), 2);
+      expect(await env.count('accounts'), 1);
     });
 
     test('same bank and digits reuse the account', () async {

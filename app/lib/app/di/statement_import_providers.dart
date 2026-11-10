@@ -43,6 +43,7 @@ StatementOutcomeStore statementOutcomeStore(Ref ref) =>
 ApplyStatementAccounts applyStatementAccounts(Ref ref) =>
     ApplyStatementAccounts(
       StatementAccountStoreImpl(ref.watch(appDatabaseProvider)),
+      ownTails: () => ownPhoneTails(ref),
     );
 
 /// Saved spreadsheet layouts (FR-05-28).

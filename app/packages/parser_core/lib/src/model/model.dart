@@ -89,6 +89,7 @@ class ParsedTransaction {
     required this.confidence,
     required this.transactionHash,
     this.isDebitCard = false,
+    this.counterpartyLast4,
   });
 
   /// Amount in paise.
@@ -154,6 +155,11 @@ class ParsedTransaction {
   /// A debit card: balance is the linked bank account's.
   final bool isDebitCard;
 
+  /// Last digits of the other party's account when the message states them
+  /// ("to A/c XX5678"); the ledger turns the row into an own-account transfer
+  /// when that account is the user's (FR-13-25). Not stored.
+  final String? counterpartyLast4;
+
   /// A copy with the given fields replaced (a null argument keeps the field).
   ParsedTransaction copyWith({
     int? amountMinor,
@@ -177,6 +183,7 @@ class ParsedTransaction {
     double? confidence,
     String? transactionHash,
     bool? isDebitCard,
+    String? counterpartyLast4,
   }) =>
       ParsedTransaction(
         amountMinor: amountMinor ?? this.amountMinor,
@@ -200,6 +207,7 @@ class ParsedTransaction {
         confidence: confidence ?? this.confidence,
         transactionHash: transactionHash ?? this.transactionHash,
         isDebitCard: isDebitCard ?? this.isDebitCard,
+        counterpartyLast4: counterpartyLast4 ?? this.counterpartyLast4,
       );
 
   @override

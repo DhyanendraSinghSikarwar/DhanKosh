@@ -98,6 +98,17 @@ abstract final class AccountExtractor {
     return null;
   }
 
+  /// The other party's account in [text] ("to A/c XX5678", "from A/c XX9999",
+  /// "Beneficiary A/c ..."), never the user's: the first account number that
+  /// reads as the counterparty's (FR-13-25).
+  static AccountRef? counterparty(String text, TransactionType type) {
+    for (final c in _candidates(text)) {
+      if (_isPhoneOrVpa(text, c)) continue;
+      if (_isOtherParty(text, c, type)) return AccountRef(c.last4, c.kind);
+    }
+    return null;
+  }
+
   /// Labelled numbers first, then bare masked ones, then two-digit endings;
   /// each number once.
   static List<_Candidate> _candidates(String text) {

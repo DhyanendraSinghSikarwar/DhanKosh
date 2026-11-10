@@ -5,6 +5,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 ## [Unreleased]
 
 ### Added
+- Accounts: money moved to or from another of your own accounts is an internal transfer (not spend or income); another person's account is never listed.
 - Balance-only bank messages ("available balance is ...") now update the balance of an account you already have.
 - Statement rows carry their UPI/IMPS/NEFT reference, so a statement and an SMS or email of the same payment are stored once, in either order.
 - Home credit cards: each card has one bar — green for the limit left, orange for unbilled spends, red for the billed amount.
@@ -34,6 +35,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - Watched apps screen (More, Payment-app notifications): switch any built-in app off, and add any other app that notifies your phone so its payments are tracked too.
 
 ### Fixed
+- Accounts are no longer created from a phone number's last digits or an unknown bank name; wrong ones are removed when you open Accounts.
 - A credit card is listed (Home, Cards) from its first spend message even when no limit is stated, so SBI Card spends show their card.
 - An income told twice, as an SMS and an email, is now held for you to merge instead of being counted twice.
 - A payment-app notification "Paid X to Shop using SBI Credit Card ending 1234" is a spend on that card, not a card bill; masked numbers like "••4321" and balances or limits in notifications are read.

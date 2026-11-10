@@ -35,6 +35,7 @@ export 'src/model/model.dart';
 export 'src/parse.dart';
 export 'src/parse_result.dart';
 export 'src/parser_config.dart';
+export 'src/registry/account_guard.dart';
 export 'src/registry/bank_parser.dart';
 export 'src/registry/parser_registry.dart';
 export 'src/registry/sender_keys.dart';

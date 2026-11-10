@@ -67,4 +67,10 @@ abstract interface class AccountAdminRepository {
   /// Creates accounts for account-less rows that carry bank and last 4 and
   /// returns the rows to attach through the ledger repository (FR-13-12).
   Future<List<OrphanRow>> restoreMissing();
+
+  /// Deletes accounts the app made by mistake: an unknown bank name or the
+  /// tail of the user's own phone number, with no typed balance, nickname or
+  /// reported figure (FR-13-24). Their rows stay, account-less. Returns how
+  /// many were removed.
+  Future<int> removeWrongAccounts(Set<String> ownTails);
 }

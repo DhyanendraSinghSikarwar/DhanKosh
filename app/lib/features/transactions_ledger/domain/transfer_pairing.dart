@@ -49,6 +49,20 @@ abstract final class TransferPairing {
           return [TransferMark(tx.id, selfNote), TransferMark(o.id, selfNote)];
         }
       }
+      // FR-13-25: the first leg already named its counterparty as the user's
+      // own account and became a transfer; this is the other side of it.
+      if (tx.accountKind == AccountKind.account) {
+        for (final o in others) {
+          if (o.type == TransactionType.transfer &&
+              o.note == selfNote &&
+              o.accountId != null &&
+              o.accountId != accountId &&
+              o.accountKind == AccountKind.account &&
+              within(o, ownWindowMs)) {
+            return [TransferMark(tx.id, selfNote)];
+          }
+        }
+      }
       if (tx.type == TransactionType.debit &&
           tx.accountKind == AccountKind.account) {
         for (final o in others) {

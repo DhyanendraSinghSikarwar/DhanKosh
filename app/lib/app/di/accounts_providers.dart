@@ -1,3 +1,4 @@
+import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/features/accounts_management/data/account_admin_repository_impl.dart';
 import 'package:hisaab/features/accounts_management/domain/account_admin_repository.dart';
@@ -11,6 +12,16 @@ part 'accounts_providers.g.dart';
 @Riverpod(keepAlive: true)
 AccountAdminRepository accountAdminRepository(Ref ref) =>
     AccountAdminRepositoryImpl(ref.watch(appDatabaseProvider));
+
+/// Removes accounts made by mistake (unknown bank, own phone digits) each time
+/// the Accounts screen opens; the count removed (FR-13-24).
+@riverpod
+Future<int> removeWrongAccounts(Ref ref) async {
+  final tails = await ownPhoneTails(ref);
+  return await ref
+      .read(accountAdminRepositoryProvider)
+      .removeWrongAccounts(tails);
+}
 
 /// Untracked-gap detection and follow-ups (FR-13-15).
 @Riverpod(keepAlive: true)

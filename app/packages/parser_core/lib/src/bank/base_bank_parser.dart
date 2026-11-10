@@ -222,6 +222,7 @@ abstract class BaseBankParser extends BankParser {
           reference,
         ),
         isDebitCard: isDebitCard,
+        counterpartyLast4: AccountExtractor.counterparty(text, type)?.last4,
       ),
     );
   }

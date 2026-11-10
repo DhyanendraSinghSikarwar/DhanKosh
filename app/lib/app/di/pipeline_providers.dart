@@ -106,6 +106,8 @@ DataResetRepository dataResetRepository(Ref ref) =>
     DataResetRepositoryImpl(ref.watch(appDatabaseProvider));
 
 /// Last four digits of the user's own numbers (FR-01-08).
+Future<Set<String>> ownPhoneTails(Ref ref) => _ownTails(ref);
+
 Future<Set<String>> _ownTails(Ref ref) async {
   final p = await ref.read(profileRepositoryProvider).read();
   final id = await ref.read(identityRepositoryProvider).read();
