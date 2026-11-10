@@ -63,7 +63,20 @@ class _StatementsScreenState extends ConsumerState<StatementsScreen> {
     setState(() => _busy = true);
     ImportResult r;
     try {
-      r = await ref.read(importStatementProvider).call(file);
+      final use = ref.read(importStatementProvider);
+      // FR-05-34: show what each row would do before anything is written.
+      final plan = await use.preview(file);
+      var skip = const <int>{};
+      if (plan != null) {
+        if (mounted) setState(() => _busy = false);
+        if (!mounted) return;
+        final chosen =
+            await context.push<Set<int>?>('/statements/preview', extra: plan);
+        if (chosen == null || !mounted) return;
+        skip = chosen;
+        setState(() => _busy = true);
+      }
+      r = await use.call(file, skipRows: skip);
     } finally {
       if (mounted) setState(() => _busy = false);
     }

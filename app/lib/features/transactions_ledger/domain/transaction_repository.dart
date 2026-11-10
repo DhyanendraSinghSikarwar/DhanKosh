@@ -15,6 +15,10 @@ abstract interface class TransactionRepository {
 
   Future<IngestResult> ingest(IngestItem item);
 
+  /// What [ingestBatch] would do with each of [items] against the ledger as it
+  /// is now, without writing anything (FR-05-34).
+  Future<List<IngestPlan>> planBatch(List<IngestItem> items);
+
   /// Adds a hand-entered payment (source MANUAL); dedup may merge it.
   Future<IngestResult> addManual({
     required int amountMinor,

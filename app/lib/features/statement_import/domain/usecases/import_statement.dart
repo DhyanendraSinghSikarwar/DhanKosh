@@ -17,6 +17,7 @@ import 'package:hisaab/features/statement_import/domain/saved_password.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 import 'package:hisaab/features/statement_import/domain/statement_outcome.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
+import 'package:hisaab/features/statement_import/domain/statement_preview.dart';
 import 'package:hisaab/features/statement_import/domain/statement_repository.dart';
 import 'package:hisaab/features/statement_import/domain/usecases/apply_statement_accounts.dart';
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart';
@@ -91,7 +92,81 @@ class ImportStatement {
 
   /// Imports [file] picked by the user (FR-05-01). An already imported file
   /// answers [ImportAlreadyDone] unless its row is LOCKED, which is retried.
-  Future<ImportResult> call(PickedFile file) => _import(file, null);
+  ///
+  /// [skipRows] are rows the user unticked in the preview (FR-05-34); they are
+  /// not written.
+  Future<ImportResult> call(PickedFile file, {Set<int> skipRows = const {}}) =>
+      _import(file, null, skipRows);
+
+  /// What importing [file] would do, row by row, against the ledger as it is
+  /// now (FR-05-34). Null when there is nothing to preview: a locked,
+  /// unreadable or already imported file, or one with no rows; [call] then
+  /// handles it as before.
+  Future<StatementPreview?> preview(PickedFile file) async {
+    if (file.bytes.length > maxStatementBytes) return null;
+    final type = sniffStatement(file.bytes, file.name);
+    if (type != StatementFileType.pdf &&
+        type != StatementFileType.csv &&
+        type != StatementFileType.xlsx) {
+      return null;
+    }
+    final digest = sha256.convert(file.bytes).toString();
+    final key = 'file:$digest';
+    final existing = await _statements.byKey(key);
+    if (existing != null && !existing.isLocked) return null;
+    final String text;
+    if (type == StatementFileType.pdf) {
+      final opened = await _openPdf(file.bytes, null);
+      if (opened is! _Text) return null;
+      text = opened.text;
+    } else {
+      try {
+        final rows = type == StatementFileType.csv
+            ? pc.SpreadsheetLines.parseCsv(
+                utf8.decode(file.bytes, allowMalformed: true),
+              )
+            : _sheets.xlsxRows(file.bytes);
+        text = pc.SpreadsheetLines.toText(rows);
+      } on FormatException {
+        return null;
+      }
+    }
+    final now = _clock();
+    final result = await Isolate.run(
+      () => _parseOnWorker((text, file.name, now)),
+    );
+    if (result.transactions.isEmpty) return null;
+    final items = await _items(result, key);
+    final plans = await _ledger.planBatch(items);
+    return StatementPreview(
+      file: file,
+      bankName: result.bankName,
+      last4: result.last4,
+      rows: [
+        for (var i = 0; i < items.length; i++)
+          PreviewRow(
+            index: i,
+            tx: items[i].parsed,
+            kind: plans[i].kind,
+            existingId: plans[i].existingId,
+            reason: plans[i].reason,
+          ),
+      ],
+    );
+  }
+
+  Future<List<IngestItem>> _items(pc.StatementResult result, String key) async {
+    final tails = await _accounts?.ownTails() ?? const <String>{};
+    return [
+      for (var i = 0; i < result.transactions.length; i++)
+        IngestItem(
+          parsed: result.transactions[i],
+          sourceMessageId: 'stmt:$key:$i',
+          rawText: i < result.lines.length ? result.lines[i] : null,
+          phoneLast4s: tails,
+        ),
+    ];
+  }
 
   /// Imports a statement attached to an email (FR-05-16, FR-03-16). The row
   /// key is `email:<messageId>#<index>`, so a re-sync never imports it twice.
@@ -101,9 +176,13 @@ class ImportStatement {
   ) =>
       _import(file, origin);
 
-  Future<ImportResult> _import(PickedFile file, EmailOrigin? origin) async {
+  Future<ImportResult> _import(
+    PickedFile file,
+    EmailOrigin? origin, [
+    Set<int> skipRows = const {},
+  ]) async {
     final started = DateTime.fromMillisecondsSinceEpoch(_clock());
-    final r = await _importInner(file, origin);
+    final r = await _importInner(file, origin, skipRows);
     // FR-22-01 (D7): one entry per picked file, counts and codes only. Emailed
     // statements are counted by the email entry.
     if (origin == null && r is! ImportAlreadyDone) {
@@ -152,8 +231,9 @@ class ImportStatement {
 
   Future<ImportResult> _importInner(
     PickedFile file,
-    EmailOrigin? origin,
-  ) async {
+    EmailOrigin? origin, [
+    Set<int> skipRows = const {},
+  ]) async {
     if (file.bytes.length > maxStatementBytes) {
       return const ImportUnsupported(UnsupportedReason.tooLarge);
     }
@@ -188,6 +268,7 @@ class ImportStatement {
       type,
       existing,
       origin: origin,
+      skipRows: skipRows,
     );
   }
 
@@ -350,6 +431,7 @@ class ImportStatement {
     Statement? existing, {
     String? explicit,
     EmailOrigin? origin,
+    Set<int> skipRows = const {},
   }) async {
     final now = _clock();
     final file = PickedFile(name: name, bytes: bytes);
@@ -365,6 +447,7 @@ class ImportStatement {
             existing,
             now,
             origin,
+            skipRows,
           );
         case _Fail(:final failure):
           if (failure == PdfFailure.passwordRequired ||
@@ -403,7 +486,16 @@ class ImportStatement {
         origin: origin,
       );
     }
-    return await _apply(text, file, key, namePrefix, existing, now, origin);
+    return await _apply(
+      text,
+      file,
+      key,
+      namePrefix,
+      existing,
+      now,
+      origin,
+      skipRows,
+    );
   }
 
   /// No password, then (explicit | derived then saved); first success wins.
@@ -492,20 +584,16 @@ class ImportStatement {
     String? namePrefix,
     Statement? existing,
     int now,
-    EmailOrigin? origin,
-  ) async {
+    EmailOrigin? origin, [
+    Set<int> skipRows = const {},
+  ]) async {
     final result = await Isolate.run(
       () => _parseOnWorker((text, file.name, now)),
     );
-    final tails = await _accounts?.ownTails() ?? const <String>{};
-    final items = <IngestItem>[
-      for (var i = 0; i < result.transactions.length; i++)
-        IngestItem(
-          parsed: result.transactions[i],
-          sourceMessageId: 'stmt:$key:$i',
-          rawText: i < result.lines.length ? result.lines[i] : null,
-          phoneLast4s: tails,
-        ),
+    final all = await _items(result, key);
+    final items = [
+      for (var i = 0; i < all.length; i++)
+        if (!skipRows.contains(i)) all[i],
     ];
     final report = items.isEmpty
         ? const IngestReport([])

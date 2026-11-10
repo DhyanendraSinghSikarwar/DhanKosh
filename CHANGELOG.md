@@ -5,6 +5,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 ## [Unreleased]
 
 ### Added
+- Statements: a Review import screen lists each row (new, matches existing, possible duplicate, already imported) before anything is saved; untick rows you do not want.
 - Accounts: money moved to or from another of your own accounts is an internal transfer (not spend or income); another person's account is never listed.
 - Balance-only bank messages ("available balance is ...") now update the balance of an account you already have.
 - Statement rows carry their UPI/IMPS/NEFT reference, so a statement and an SMS or email of the same payment are stored once, in either order.

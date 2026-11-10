@@ -65,8 +65,10 @@ import 'package:hisaab/features/security_privacy/presentation/security_tile.dart
 import 'package:hisaab/features/settings_data_sources/presentation/sender_lists_screen.dart';
 import 'package:hisaab/features/settings_data_sources/presentation/settings_data_sources_screen.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
+import 'package:hisaab/features/statement_import/domain/statement_preview.dart';
 import 'package:hisaab/features/statement_import/presentation/column_mapping_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statement_detail_screen.dart';
+import 'package:hisaab/features/statement_import/presentation/statement_preview_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_screen.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_tile.dart';
 import 'package:hisaab/features/tax_centre/presentation/tax_centre_screen.dart';
@@ -159,6 +161,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
         routes: [
           // Before ':id', or "map" would be read as a statement id.
+          GoRoute(
+            path: 'preview',
+            builder: (_, state) => StatementPreviewScreen(
+              preview: state.extra! as StatementPreview,
+            ),
+          ),
           GoRoute(
             path: 'map',
             builder: (_, state) =>

@@ -15,6 +15,8 @@ import 'package:hisaab/features/statement_import/domain/password_source.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
 import 'package:hisaab/features/statement_import/domain/usecases/import_statement.dart';
+import 'package:hisaab/features/transactions_ledger/domain/ingest.dart'
+    show PlanKind;
 
 import '../../support/test_env.dart';
 
@@ -158,6 +160,43 @@ void main() {
 
     expect(await uc(pdf()), isA<ImportAlreadyDone>());
     expect(await env.count('transactions'), d.added + d.review);
+  });
+
+  // FR-05-34
+  group('preview', () {
+    test('lists every row and writes nothing', () async {
+      final uc = make(FakePdf(cardText));
+      final p = (await uc.preview(pdf()))!;
+      expect(p.rows, hasLength(4));
+      expect(p.count(PlanKind.added), 4);
+      expect(await env.count('transactions'), 0);
+      expect(await env.count('statements'), 0);
+    });
+
+    test('a row already in the ledger shows as a match', () async {
+      final uc = make(FakePdf(cardText));
+      final first = await uc(pdf());
+      expect(first, isA<ImportDone>());
+      // Same payments again from another file: every row now meets its twin.
+      final p = (await uc.preview(pdf('other')))!;
+      expect(p.count(PlanKind.added), 0);
+      expect(
+        p.count(PlanKind.merged) + p.count(PlanKind.review),
+        p.rows.length,
+      );
+    });
+
+    test('unticked rows are not imported', () async {
+      final uc = make(FakePdf(cardText));
+      final r = await uc(pdf(), skipRows: {0, 1}) as ImportDone;
+      expect(r.added + r.merged + r.review, 2);
+      expect(await env.count('transactions'), r.added + r.review);
+    });
+
+    test('a locked file has no preview', () async {
+      final uc = make(FakePdf(cardText, password: 'secret'));
+      expect(await uc.preview(pdf()), isNull);
+    });
   });
 
   // FR-05-14, FR-05-15.

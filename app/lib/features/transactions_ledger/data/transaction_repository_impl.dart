@@ -60,8 +60,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
         return IngestReport(results);
       });
 
-  Future<IngestResult> _ingestOne(IngestItem input, RuleSet rules) async {
-    var item = input;
+  /// Why [item] is not ingested at all: `already_processed`, `deleted` or
+  /// `ignored_account`; null when it is.
+  Future<String?> _skipReason(IngestItem item) async {
     final src = enumToDb(item.parsed.source);
 
     // FR-07-07 step 3 / FR-08-22: processed ids and tombstones.
@@ -72,21 +73,14 @@ class TransactionRepositoryImpl implements TransactionRepository {
                 s.sourceMessageId.equals(item.sourceMessageId),
           ))
         .getSingleOrNull();
-    if (processed != null) {
-      return const IngestResult(
-        IngestOutcome.skipped,
-        reason: 'already_processed',
-      );
-    }
+    if (processed != null) return 'already_processed';
     final tomb = await (_db.select(_db.deletedMessages)
           ..where(
             (d) =>
                 d.source.equals(src) & d.messageId.equals(item.sourceMessageId),
           ))
         .getSingleOrNull();
-    if (tomb != null) {
-      return const IngestResult(IngestOutcome.skipped, reason: 'deleted');
-    }
+    if (tomb != null) return 'deleted';
 
     // FR-13-22: a message for an ignored account is dropped, unless the user
     // chose the account for it.
@@ -99,12 +93,51 @@ class TransactionRepositoryImpl implements TransactionRepository {
                   t.last4.equals(ignoredLast4),
             ))
           .getSingleOrNull();
-      if (ignored != null) {
-        return const IngestResult(
-          IngestOutcome.skipped,
-          reason: 'ignored_account',
+      if (ignored != null) return 'ignored_account';
+    }
+    return null;
+  }
+
+  // FR-05-34
+  @override
+  Future<List<IngestPlan>> planBatch(List<IngestItem> items) async {
+    final out = <IngestPlan>[];
+    for (final item in items) {
+      final skip = await _skipReason(item);
+      if (skip != null) {
+        out.add(IngestPlan(PlanKind.skipped, reason: skip));
+        continue;
+      }
+      var p = item.parsed;
+      if (await _isOwnCounterparty(p, item.phoneLast4s)) {
+        p = p.copyWith(
+          type: TransactionType.transfer,
+          category: Category.transfer,
         );
       }
+      final decision = await _policy.decide(p, await _candidates(p));
+      out.add(
+        switch (decision) {
+          DedupNew() => const IngestPlan(PlanKind.added),
+          DedupDuplicate(:final existingId) =>
+            IngestPlan(PlanKind.merged, existingId: existingId),
+          DedupPossible(:final existingId, :final reasonText) => IngestPlan(
+              PlanKind.review,
+              existingId: existingId,
+              reason: reasonText,
+            ),
+        },
+      );
+    }
+    return out;
+  }
+
+  Future<IngestResult> _ingestOne(IngestItem input, RuleSet rules) async {
+    var item = input;
+    final src = enumToDb(item.parsed.source);
+    final skip = await _skipReason(item);
+    if (skip != null) {
+      return IngestResult(IngestOutcome.skipped, reason: skip);
     }
 
     // FR-13-25: money sent to or received from another of the user's own

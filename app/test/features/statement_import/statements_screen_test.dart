@@ -9,6 +9,7 @@ import 'package:hisaab/app/di/statement_import_providers.dart';
 import 'package:hisaab/features/statement_import/domain/import_result.dart';
 import 'package:hisaab/features/statement_import/domain/statement.dart';
 import 'package:hisaab/features/statement_import/domain/statement_ports.dart';
+import 'package:hisaab/features/statement_import/domain/statement_preview.dart';
 import 'package:hisaab/features/statement_import/domain/usecases/import_statement.dart';
 import 'package:hisaab/features/statement_import/presentation/statements_screen.dart';
 
@@ -30,10 +31,16 @@ class _FakeImport implements ImportStatement {
   }
 
   @override
-  Future<ImportResult> call(PickedFile file) async {
+  Future<ImportResult> call(
+    PickedFile file, {
+    Set<int> skipRows = const {},
+  }) async {
     imported.add(file.name);
     return next;
   }
+
+  @override
+  Future<StatementPreview?> preview(PickedFile file) async => null;
 
   @override
   Future<void> delete(int id) async => deleted.add(id);

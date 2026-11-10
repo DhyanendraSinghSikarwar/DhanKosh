@@ -57,3 +57,19 @@ class IngestReport {
   int get flagged => _n(IngestOutcome.flagged);
   int get skipped => _n(IngestOutcome.skipped);
 }
+
+/// What ingesting one item would do right now (FR-05-34).
+enum PlanKind { added, merged, review, skipped }
+
+/// A dry-run verdict: no row is written.
+class IngestPlan {
+  const IngestPlan(this.kind, {this.existingId, this.reason});
+
+  final PlanKind kind;
+
+  /// The row it merges into or is compared with.
+  final int? existingId;
+
+  /// Review reason or skip reason.
+  final String? reason;
+}
