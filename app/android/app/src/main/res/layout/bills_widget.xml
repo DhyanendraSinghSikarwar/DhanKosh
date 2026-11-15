@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/bills_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <TextView
+        android:id="@+id/bill_caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="Upcoming bills"
+        android:textColor="@color/widget_text_secondary"
+        android:textSize="12sp" />
+    <TextView
+        android:id="@+id/bill_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="No bills coming up"
+        android:textColor="@color/widget_text_primary"
+        android:textSize="14sp" android:textStyle="bold"
+        android:layout_marginTop="6dp" />
+    <TextView
+        android:id="@+id/bill_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text=""
+        android:textColor="@color/widget_text_primary"
+        android:textSize="13sp"
+        android:layout_marginTop="4dp" />
+    <TextView
+        android:id="@+id/bill_3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text=""
+        android:textColor="@color/widget_text_primary"
+        android:textSize="13sp"
+        android:layout_marginTop="4dp" />
+</LinearLayout>

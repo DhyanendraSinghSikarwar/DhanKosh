@@ -108,6 +108,51 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/spend_widget_info" />
         </receiver>
+        <!-- More widgets: balance, budget, bills, quick add (F-30, FR-30-16). -->
+        <receiver
+            android:name="com.hisaab.widget.BalanceWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_balance_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/balance_widget_info" />
+        </receiver>
+        <receiver
+            android:name="com.hisaab.widget.BudgetWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_budget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/budget_widget_info" />
+        </receiver>
+        <receiver
+            android:name="com.hisaab.widget.BillsWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_bills_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/bills_widget_info" />
+        </receiver>
+        <receiver
+            android:name="com.hisaab.widget.QuickAddWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_quick_add_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_add_widget_info" />
+        </receiver>
         <!-- Shares downloaded updates with the package installer (F-31). -->
         <provider
             android:name="androidx.core.content.FileProvider"

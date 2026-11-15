@@ -14,6 +14,7 @@ import 'package:hisaab/features/news_support_updates/presentation/whats_new_shee
 import 'package:hisaab/features/sms_ingestion/domain/nightly_schedule.dart';
 import 'package:hisaab/shared/log/app_logger.dart';
 import 'package:hisaab/shared/log/log_models.dart';
+import 'package:home_widget/home_widget.dart';
 
 /// On start and every resume: refreshes the home-screen widget (FR-30-08,
 /// FR-30-09) and runs the daily update check (FR-31-18). Never throws.
@@ -65,6 +66,7 @@ class _StartupTasksState extends ConsumerState<StartupTasks>
 
   @override
   void dispose() {
+    unawaited(_taps?.cancel());
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -137,6 +139,30 @@ class _StartupTasksState extends ConsumerState<StartupTasks>
     final gate = ref.read(onboardingGateProvider);
     if (gate.hasValue && !gate.requireValue) {
       ref.read(widgetSyncProvider).start();
+      ref.read(extraWidgetSyncProvider).start();
+      _listenWidgetTaps();
+    }
+  }
+
+  StreamSubscription<Uri?>? _taps;
+
+  /// A tap on a widget opens its screen (FR-30-16): only the screens the
+  /// widgets name, with Home underneath.
+  void _listenWidgetTaps() {
+    if (_taps != null) return;
+    const allowed = {'/accounts', '/budgets', '/bills', '/transactions/add'};
+    void open(Uri? uri) {
+      if (uri == null || !mounted) return;
+      final path = uri.path;
+      if (!allowed.contains(path)) return;
+      openWithBack(ref.read(routerProvider), path);
+    }
+
+    try {
+      unawaited(HomeWidget.initiallyLaunchedFromHomeWidget().then(open));
+      _taps = HomeWidget.widgetClicked.listen(open, onError: (Object _) {});
+    } on Object {
+      // No native side (tests, desktop).
     }
   }
 

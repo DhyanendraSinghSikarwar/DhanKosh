@@ -2,6 +2,14 @@
 <resources>
     <string name="widget_name">DhanKosh spend</string>
     <string name="widget_description">Spent today and this month at a glance.</string>
+    <string name="widget_balance_name">DhanKosh balance</string>
+    <string name="widget_balance_description">Your bank balance at a glance.</string>
+    <string name="widget_budget_name">DhanKosh budget</string>
+    <string name="widget_budget_description">What is left of this month budgets.</string>
+    <string name="widget_bills_name">DhanKosh bills</string>
+    <string name="widget_bills_description">Your next three bills.</string>
+    <string name="widget_quick_add_name">DhanKosh add</string>
+    <string name="widget_quick_add_description">Add a transaction in one tap.</string>
     <color name="widget_background">#FFFFFFFF</color>
     <color name="widget_text_primary">#FF1B1B1F</color>
     <color name="widget_text_secondary">#FF5F6368</color>

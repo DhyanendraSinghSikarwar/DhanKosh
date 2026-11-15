@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/lock_skipper_provider.dart';
+import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/core/platform_channels/widget_channel.dart';
 import 'package:hisaab/features/home_widget/data/widget_updater_impl.dart';
+import 'package:hisaab/features/home_widget/domain/extra_widget_sync.dart';
 import 'package:hisaab/features/home_widget/domain/widget_sync.dart';
 import 'package:hisaab/features/news_support_updates/data/apk_downloader.dart';
 import 'package:hisaab/features/news_support_updates/data/channel_apk_installer.dart';
@@ -20,6 +22,7 @@ import 'package:hisaab/features/news_support_updates/domain/update_checker.dart'
 import 'package:hisaab/features/news_support_updates/domain/update_keys.dart';
 import 'package:hisaab/features/news_support_updates/domain/update_ports.dart';
 import 'package:hisaab/features/news_support_updates/domain/update_state.dart';
+import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
 import 'package:path_provider/path_provider.dart';
 
 // F-30 widget, F-31 news/support/updates wiring.
@@ -41,6 +44,27 @@ final widgetSyncProvider = Provider<WidgetSync>((ref) {
     transactions: ref.watch(transactionRepositoryProvider),
     settings: ref.watch(settingsRepositoryProvider),
     updater: const HomeWidgetUpdater(),
+  );
+  ref.onDispose(sync.stop);
+  return sync;
+});
+
+/// Keeps the Balance, Budget and Bills widgets current (FR-30-16).
+final extraWidgetSyncProvider = Provider<ExtraWidgetSync>((ref) {
+  final now = DateTime.now();
+  final from = DateTime(now.year, now.month).millisecondsSinceEpoch;
+  final to = DateTime(now.year, now.month + 1).millisecondsSinceEpoch;
+  final budgets = ref.watch(budgetRepositoryProvider);
+  final sync = ExtraWidgetSync(
+    accounts: ref
+        .watch(accountRepositoryProvider)
+        .watchWithActivity(monthStartMs: from, monthEndMs: to),
+    budgets: budgets.watchAll(),
+    categorySpend: budgets.watchCategoryTotals(from, to),
+    bills: ref.watch(recurringRepositoryProvider).watchAll(),
+    hidden:
+        ref.watch(settingsRepositoryProvider).watch(SettingKeys.hideAmounts),
+    updater: const HomeWidgetExtraUpdater(),
   );
   ref.onDispose(sync.stop);
   return sync;

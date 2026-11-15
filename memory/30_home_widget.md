@@ -6,7 +6,7 @@
 | Status | In progress (Dart sync, Kotlin provider, XML and manifest landed; native code uncompiled and unrun on a device, CI compiles it; midnight rollover, language re-render and background refresh pending) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-11-15 |
 
 ## 1. Description
 
@@ -51,7 +51,7 @@ Home Widget is a resizable Android home-screen widget called DhanKosh spend. It 
 
 ### 2.4 Out of Scope
 
-- Other widgets such as net worth, budgets or upcoming bills, and any widget settings screen.
+- A net-worth or card-limit widget, and any widget settings screen.
 - iOS widgets.
 - The spending totals logic, which belongs to the ledger feature.
 - The hide-amounts rule itself (see [Security and privacy](25_security_privacy.md)).
@@ -125,6 +125,7 @@ Manifest: one exported receiver (`SpendWidgetReceiver`), no extra permissions. `
 - FR-30-13: The widget shows a sensible empty value (zero rupees, or masked) when there are no transactions and does not display an error.
 - FR-30-14: The widget works without the app process running (reads data persisted by the app) and offline.
 - FR-30-15: The widget contains no per-transaction detail, merchant names or account information.
+- FR-30-16: Four more widgets, each with its own picker entry: Balance (sum of known bank and wallet balances; opens Accounts), Budget (what is left of this month's budgets with a progress bar; opens Budgets), Bills (next three bills, soonest first; opens Bills) and Add (one tap to Add transaction). They follow the same hide-amounts rule (masked until the app has written a snapshot) and carry only totals and bill names the user typed. Taps open only those screens, with Home underneath.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -335,3 +336,4 @@ Tests: `test/features/home_widget/home_widget_test.dart` (TC-30-03, 04, 05; payl
 | 2026-10-19 | Restructured to the 19-section standard (Description, What This Feature Will Do, Implementation Notes added); Last Updated bumped | Audit Gate (Prompt 2, Part A) |
 | 2026-10-21 | Phase 5 widget + updates + release pipeline landed | Phase 5 |
 | 2026-10-22 | Hardening: lock skip around system flows, Home SMS card, activity entries | Hardening |
+| 2026-11-15 | FR-30-16 Balance, Budget, Bills and Add widgets | Owner request (more widgets) |

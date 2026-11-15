@@ -1,3 +1,4 @@
+import 'package:hisaab/features/home_widget/domain/extra_widget_sync.dart';
 import 'package:hisaab/features/home_widget/domain/spend_widget_data.dart';
 import 'package:hisaab/features/home_widget/domain/widget_updater.dart';
 import 'package:home_widget/home_widget.dart';
@@ -26,6 +27,33 @@ class HomeWidgetUpdater implements WidgetUpdater {
         await HomeWidget.saveWidgetData<String>(e.key, e.value);
       }
       await HomeWidget.updateWidget(qualifiedAndroidName: spendWidgetProvider);
+    } on Object {
+      // No native side (tests, desktop) or launcher failure: ignore.
+    }
+  }
+}
+
+/// Native provider classes of the extra widgets (FR-30-16).
+const extraWidgetProviders = [
+  'com.hisaab.widget.BalanceWidgetProvider',
+  'com.hisaab.widget.BudgetWidgetProvider',
+  'com.hisaab.widget.BillsWidgetProvider',
+];
+
+/// [ExtraWidgetUpdater] over the `home_widget` plugin.
+class HomeWidgetExtraUpdater implements ExtraWidgetUpdater {
+  /// Creates the updater.
+  const HomeWidgetExtraUpdater();
+
+  @override
+  Future<void> update(Map<String, String> payload) async {
+    try {
+      for (final e in payload.entries) {
+        await HomeWidget.saveWidgetData<String>(e.key, e.value);
+      }
+      for (final p in extraWidgetProviders) {
+        await HomeWidget.updateWidget(qualifiedAndroidName: p);
+      }
     } on Object {
       // No native side (tests, desktop) or launcher failure: ignore.
     }
