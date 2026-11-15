@@ -68,7 +68,7 @@ abstract final class AccountExtractor {
   /// Always the other party, whatever the direction: "Beneficiary A/c XX9876",
   /// "in favour of a/c".
   static final RegExp _beneficiaryBefore = rx(
-    r"\b(?:benef\w*|bene|payee|recipient|in\s+favou?r\s+of)\s*[:\-]?\s*(?:the\s+)?(?:[\w'’]+\s+){0,2}$",
+    r"\b(?:benef\w*|bene|payee|recipient|in\s+favou?r\s+of)\s*[:\-]?\s*(?:the\s+)?(?:[\w'’.]+,?\s+){0,3}$",
   );
   static final RegExp _your = rx(r'\b(?:your|ur|own|self)\b');
 

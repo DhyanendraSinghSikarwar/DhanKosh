@@ -43,6 +43,7 @@ LedgerTx tx(
   AccountKind kind = AccountKind.account,
   int? inr,
   String? note,
+  bool explicit = true,
 }) =>
     LedgerTx(
       id: id,
@@ -53,7 +54,7 @@ LedgerTx tx(
       accountKind: kind,
       channel: Channel.upi,
       timestamp: at,
-      hasExplicitTime: true,
+      hasExplicitTime: explicit,
       category: Category.other,
       transactionHash: 'h$id',
       confidence: 1,
@@ -95,6 +96,25 @@ void main() {
     expect(g.single.deltaMinor, 1850000 - 1950100);
     expect(g.single.moneyLeft, isTrue);
     expect(g.single.key, '1|$t1|$t2');
+  });
+
+  // FR-13-27
+  test('a statement row without a time never opens or closes a gap', () {
+    expect(
+      detect([
+        tx(1, t1, amount: 100, balance: 2000000),
+        tx(2, t1 + _day, balance: 1400000, explicit: false),
+        tx(3, t2, amount: 100, balance: 1850000, type: TransactionType.credit),
+      ]),
+      isNotEmpty, // the 100-paise endpoints still show the real gap
+    );
+    expect(
+      detect([
+        tx(1, t1, amount: 100, balance: 2000000),
+        tx(2, t1 + _day, balance: 1400000, explicit: false),
+      ]),
+      isEmpty,
+    );
   });
 
   // TC-13-10: below the threshold.

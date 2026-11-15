@@ -34,6 +34,7 @@ class LedgerTx {
     this.alias,
     this.tags = const [],
     this.receipt,
+    this.transferDir,
     this.parts = const [],
     this.inrMinor,
   });
@@ -75,6 +76,9 @@ class LedgerTx {
 
   /// File name of the receipt photo, if one is attached (FR-08-31).
   final String? receipt;
+
+  /// +1 in, -1 out for a transfer whose direction is known (FR-13-28).
+  final int? transferDir;
 
   /// The category parts of a split payment; empty when not split (FR-41-01).
   final List<TxPart> parts;

@@ -417,18 +417,20 @@ void main() {
       final d = tx()!;
       expect(d.title, 'Spent ₹250 at Swiggy');
       // One line, no expanded text (FR-21-03, FR-21-27).
-      expect(d.body, 'HDFC Bank ••1234 · Food & Dining');
+      expect(d.body, 'What was this for? · HDFC Bank ••1234');
       expect(d.body, isNot(contains('\n')));
+      expect(d.timeoutMs, AlertRules.newTransactionTimeoutMs);
       expect(d.notificationId, 10077);
       expect(d.link, 'hisaab://transaction/77');
       expect(d.channel, AlertChannel.newTransactions);
       expect(
         d.actions.map((a) => a.label),
-        ['Shopping', 'Transport', 'More…'],
+        ['Food & Dining', 'Not an expense', 'More…'],
       );
       expect(d.actions.last.id, 'more');
       expect(d.actions.last.payload, {'txId': '77'});
-      expect(d.actions.first.payload, {'txId': '77', 'category': 'shopping'});
+      expect(d.actions[1].id, 'notExpense');
+      expect(d.actions.first.payload, {'txId': '77', 'category': 'food'});
     });
 
     test('credit title, paise shown when non-zero, foreign symbol kept', () {
@@ -471,14 +473,16 @@ void main() {
       );
     });
 
-    test('merchant category first, then usage; max 2 guesses + More…', () {
+    test('an uncategorised spend offers the merchant earlier category', () {
       final d = tx(
+        cat: Category.other,
         merchant: const [Category.groceries, Category.food],
       )!;
       expect(
         d.actions.map((a) => a.label),
-        ['Groceries', 'Shopping', 'More…'],
+        ['Groceries', 'Not an expense', 'More…'],
       );
+      expect(tx(credit: true)!.actions[1].label, 'Not income');
       expect(
         AlertRules.alternativeCategories(
           current: Category.food,

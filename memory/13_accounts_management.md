@@ -6,7 +6,7 @@
 | Status | In progress (grouped Accounts screen; Phase 1 data layer and UI; gap detection with GapCard, Add transaction/Assign/Ignore, duplicate and debit-link suggestions, Merge/Unmerge, Restore missing accounts, edit sheet with nickname, colour, network, link, usage, forex markup, account chart 6 months/Year/All time done; tabs with Book filter, matured-deposit auto-hide, notifications posting by the alerts engine and statement retry on unlock save pending) |
 | Priority | P0 |
 | Phase | 1 (account creation from messages, balances, lists); 2 for debit-card link, merge and gap detection; 3 for statement unlock details |
-| Last Updated | 2026-11-10 |
+| Last Updated | 2026-11-12 |
 
 ## 1. Description
 
@@ -208,6 +208,9 @@ Gap UI: `GapCard` (amber "Untracked change . {summary}", candidate rows "Assign 
 - FR-13-23: An account can carry a low-balance threshold (account menu "Low-balance alert"; column `accounts.low_balance_minor`, schema v11). While its current balance is below it the alerts engine posts "<account> balance is low" once per account per day (key `lowbal:<id>:<date>`, channel Budgets & bills, opens the account). Hidden and merged-away accounts are skipped. Not yet in the encrypted backup.
 - FR-13-24: An account is created automatically only for a bank the app knows by name (`AccountGuard`) and digits that are not the tail of the user's own phone number; a sender code, payment app or payee's bank never makes one. Statements follow the same rule. Opening Accounts removes earlier mistakes (unknown bank or own phone digits, with no nickname, typed balance or reported figure); their rows stay, account-less.
 - FR-13-25: A bank message that names the other party's account ("credited to a/c XX5678", "from a/c XX1234") is an internal transfer when that is exactly one of the user's own accounts (or the payee UPI number ends in the user's phone digits): type transfer, note "Self transfer between your accounts", outside spend and income; the opposite leg arriving later is paired as a transfer too. An account that is not the user's is never listed.
+- FR-13-26: A bank message that states no account digits ("NEFT ... credited to beneficiary X") joins the user's only account at that bank; with none or several it stays account-less.
+- FR-13-27: Only a balance with an exact time can open or close an untracked change; a statement row (date and running balance, no time) never does, which stopped false "came in with no message" gaps.
+- FR-13-28: Transfer rows remember their direction (`transactions.transfer_dir`, schema v16: +1 in, -1 out), set when two legs are paired or when a message names another own account, so both balances move and gaps and net worth count them.
 - FR-13-20: The encrypted backup shall carry and restore these fields (colour, network, last stated balance/limit, forex markup, debit-card link and merge target by `bank|last4` key) without changing JSON schema 1 ([Backup & Export](24_backup_export.md) FR-24-33).
 - FR-13-21: The Accounts screen (`/accounts`) lists accounts and cards in groups Bank accounts, Cash and wallets, Credit cards, filtered by the global Book (`bookProvider`; usage personal/business). Each group is one filled card with hairline-separated rows (no per-row cards, no counts in headers). Rows show a coloured icon, name with last digits, type and source (Synced, Manual or No balance yet), balance (credit cards: due amount and % of limit used) and a Personal/Business tag. A header card shows the total balance and total card dues. The Add button is in the app bar. Tapping a bank account opens `/accounts/<id>`; tapping a credit card opens `/cards/<id>`, falling back to `/cards` when that route is absent.
 
@@ -549,3 +552,4 @@ Pending: tabs and Book filter (Book provider owned by the transactions work), ma
 | 2026-11-06 | Added FR-13-22 Ignore account (table `ignored_accounts`, schema v8, dropped at ingest, "Ignored" list with Stop ignoring) | Auto-discovered accounts parity with PennyWise (issue I-06) |
 | 2026-11-06 | FR-13-23 per-account low-balance alert | PennyWise comparison, W3 |
 | 2026-11-10 | FR-13-24 account guard and cleanup; FR-13-25 own-account counterparty becomes an internal transfer | Owner request: no phantom banks from phone digits; tell own from outside accounts |
+| 2026-11-12 | FR-13-26..28 account for bank messages without digits, no timeless gap endpoints, transfer direction column (schema v16) | Owner-reported issues |

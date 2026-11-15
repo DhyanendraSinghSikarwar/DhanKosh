@@ -84,7 +84,12 @@ abstract final class BalanceGaps {
           return c != 0 ? c : x.id.compareTo(y.id);
         });
       int? stated(LedgerTx t) => card ? t.availableLimitMinor : t.balanceMinor;
-      final s = rows.where((t) => stated(t) != null).toList();
+      // FR-13-27: only a figure with an exact time can open or close a gap. A
+      // statement row has a date and a running balance but no time, so it sits
+      // at noon between messages of that day and would show a gap that is
+      // only its place in the day.
+      final s =
+          rows.where((t) => stated(t) != null && t.hasExplicitTime).toList();
       for (var i = 1; i < s.length; i++) {
         final t1 = s[i - 1].timestamp;
         final t2 = s[i].timestamp;

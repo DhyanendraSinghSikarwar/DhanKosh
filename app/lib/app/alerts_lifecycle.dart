@@ -53,6 +53,8 @@ class _AlertsLifecycleState extends ConsumerState<AlertsLifecycle>
       final route = await ref.read(alertPosterProvider).takeLaunchRoute();
       if (route != null && mounted) _open(ref.read(routerProvider), route);
       if (!mounted) return;
+      await ref.read(alertsEngineProvider).clearSeenTransactionAlerts();
+      if (!mounted) return;
       await ref.read(alertsEngineProvider).run();
     } on Object {
       // Alerts never break the app.

@@ -6,7 +6,7 @@
 | Status | In progress (Phase 3 + hardening: import pipeline, UI, account balance/limit, deposits, detail screen, mismatch warning, emailed attachments and locked notice done; Kotlin PdfBox bridge and APK not run on a device; MF-order/NPS email-body steps and XLSX entry caps pending; 2026-10-26: share-in of PDF, CSV and XLSX from other apps added in Dart and Kotlin, Kotlin not compiled or run) |
 | Priority | P1 |
 | Phase | 3 |
-| Last Updated | 2026-11-10 |
+| Last Updated | 2026-11-12 |
 
 ## 1. Description
 
@@ -335,6 +335,7 @@ PDF: any `RuntimeException` -> Unreadable; locked with no matching password -> s
 | FR-05-32 | A statement's bank and account number are read only from the lines above its first dated row (and the sender for the bank). A row's narration ("UPI/.../HDFC BANK", "to A/c XX6810") names the payee's side and never creates or picks an account; with no header the account stays unknown. |
 | FR-05-33 | A statement row carries the UPI, IMPS or NEFT reference found in its narration and hashes with it, so the same payment from an SMS or email meets the row by hash or reference whichever arrives first and is stored once; one statement row matches at most one message, and a refund never merges with its spend. |
 | FR-05-34 | Before a picked PDF, CSV or XLSX statement is imported, the Review import screen (`/statements/preview`) lists every row with its verdict against the ledger as it is now (New, Matches existing, Possible duplicate, Skipped: already imported, deleted, ignored account) and writes nothing (`ImportStatement.preview`, `TransactionRepository.planBatch`). Rows already imported start unticked; the user can untick any row; Import commits exactly the ticked rows (`call(file, skipRows:)`), Cancel writes nothing. A locked, unreadable, already imported or empty file has no preview and takes the usual path. Emailed attachments import without a preview. |
+| FR-05-35 | A statement's account digits come from its "Account No" line (the whole number, last 4 kept) or a masked number that is not a phone; a mobile number printed masked ("Registered Mobile XXXXXX6810") is never the account. |
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -774,3 +775,4 @@ Hardening 2026-10-22 (app layer, `statement_import`): FR-05-07 done: `ApplyState
 | 2026-11-06 | FR-05-32: bank and last 4 come from the statement header, not from row narrations | An Axis statement row naming YES BANK / HDFC created a non-existing HDFC Bank account |
 | 2026-11-10 | FR-05-33: statement rows carry the narration's reference and a reference-including hash; ledger tests for statement and SMS in both orders | PennyWise comparison: same payment from statement and SMS must be handled once |
 | 2026-11-10 | FR-05-34 Review import screen: dry-run plan per row, untick, confirm commits the plan | PennyWise comparison: its preview is the commit plan; DhanKosh only reported counts afterwards |
+| 2026-11-12 | FR-05-35 account digits from the full Account No, never a masked mobile | Axis statement filed under HDFC ••6810 |

@@ -90,6 +90,7 @@ class ParsedTransaction {
     required this.transactionHash,
     this.isDebitCard = false,
     this.counterpartyLast4,
+    this.directionGuessed = false,
   });
 
   /// Amount in paise.
@@ -160,6 +161,11 @@ class ParsedTransaction {
   /// when that account is the user's (FR-13-25). Not stored.
   final String? counterpartyLast4;
 
+  /// A statement row whose direction nothing in the text settled (no Cr/Dr,
+  /// no running balance to compare); a message for the same payment decides it
+  /// (FR-07-24). Not stored.
+  final bool directionGuessed;
+
   /// A copy with the given fields replaced (a null argument keeps the field).
   ParsedTransaction copyWith({
     int? amountMinor,
@@ -184,6 +190,7 @@ class ParsedTransaction {
     String? transactionHash,
     bool? isDebitCard,
     String? counterpartyLast4,
+    bool? directionGuessed,
   }) =>
       ParsedTransaction(
         amountMinor: amountMinor ?? this.amountMinor,
@@ -208,6 +215,7 @@ class ParsedTransaction {
         transactionHash: transactionHash ?? this.transactionHash,
         isDebitCard: isDebitCard ?? this.isDebitCard,
         counterpartyLast4: counterpartyLast4 ?? this.counterpartyLast4,
+        directionGuessed: directionGuessed ?? this.directionGuessed,
       );
 
   @override

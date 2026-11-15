@@ -19,12 +19,14 @@ ParsedTransaction _tx({
   int? balance,
   int at = 0,
   String sender = 'VM-HDFCBK',
+  String bank = 'HDFC Bank',
+  bool guessed = false,
 }) =>
     ParsedTransaction(
       amountMinor: amount,
       currency: 'INR',
       type: type,
-      bankName: 'HDFC Bank',
+      bankName: bank,
       accountLast4: last4,
       accountKind: AccountKind.account,
       merchant: merchant,
@@ -38,6 +40,7 @@ ParsedTransaction _tx({
       category: Category.other,
       source: source,
       sender: sender,
+      directionGuessed: guessed,
       messageTimestamp: _t0 + at,
       confidence: 0.9,
       transactionHash: TransactionHasher.hash(
@@ -142,6 +145,117 @@ void main() {
     expect(await env.count('transactions'), 1);
     // The two apps are two sources of one row, so Split stays possible.
     expect(await env.count('transaction_sources'), 2);
+  });
+
+  group('incoming NEFT told by a bank SMS and a statement (FR-07-24)', () {
+    const noon = _t0 + 2 * 60 * _min;
+    const ref = 'SCBLH30301640629';
+
+    test('statement row on another account still meets the SMS', () async {
+      await env.ingest(
+        _tx(
+          amount: 2636000,
+          type: TransactionType.credit,
+          ref: ref,
+          last4: '5602',
+          bank: 'Axis Bank',
+          sender: 'JD-AXISBK',
+        ),
+        id: 'sms1',
+      );
+      final r = await env.ingest(
+        _tx(
+          amount: 2636000,
+          type: TransactionType.credit,
+          ref: ref,
+          last4: '6810',
+          source: Source.statement,
+          at: noon - _t0,
+        ),
+        id: 'stmt1',
+      );
+      expect(r.outcome, IngestOutcome.merged);
+      expect(await env.count('transactions'), 1);
+    });
+
+    test('statement first on the wrong account: the SMS corrects it', () async {
+      await env.ingest(
+        _tx(
+          amount: 2636000,
+          type: TransactionType.credit,
+          ref: ref,
+          last4: '6810',
+          source: Source.statement,
+          at: noon - _t0,
+        ),
+        id: 'stmt1',
+      );
+      await env.ingest(
+        _tx(
+          amount: 2636000,
+          type: TransactionType.credit,
+          ref: ref,
+          last4: '5602',
+          bank: 'Axis Bank',
+          sender: 'JD-AXISBK',
+        ),
+        id: 'sms1',
+      );
+      expect(await env.count('transactions'), 1);
+      final rows = await env.db
+          .customSelect('SELECT bank_name, account_last4 FROM transactions')
+          .get();
+      expect(rows.single.data['bank_name'], 'Axis Bank');
+      expect(rows.single.data['account_last4'], '5602');
+    });
+
+    test('a statement row of unsure direction takes the SMS direction',
+        () async {
+      await env.ingest(
+        _tx(
+          amount: 2636000,
+          type: TransactionType.credit,
+          ref: ref,
+          last4: '5602',
+          bank: 'Axis Bank',
+        ),
+        id: 'sms1',
+      );
+      final r = await env.ingest(
+        _tx(
+          amount: 2636000,
+          ref: ref,
+          last4: '5602',
+          bank: 'Axis Bank',
+          source: Source.statement,
+          at: noon - _t0,
+          guessed: true,
+        ),
+        id: 'stmt1',
+      );
+      expect(r.outcome, IngestOutcome.merged);
+      expect(await env.count('transactions'), 1);
+    });
+
+    test('opposite directions with a sure statement stay two (own transfer)',
+        () async {
+      await env.ingest(
+        _tx(amount: 500000, ref: 'NEFT123456789', last4: '1111'),
+        id: 'a',
+      );
+      await env.ingest(
+        _tx(
+          amount: 500000,
+          type: TransactionType.credit,
+          ref: 'NEFT123456789',
+          last4: '2222',
+          source: Source.statement,
+          at: noon - _t0,
+        ),
+        id: 'b',
+      );
+      expect(await env.count('transactions'), 2);
+    });
   });
 
   group('statement and SMS for one payment (FR-05-33)', () {

@@ -42,6 +42,7 @@ LedgerTx toLedgerTx(
       alias: alias,
       tags: tags,
       receipt: r.receipt,
+      transferDir: r.transferDir,
       parts: parts,
       createdAt: r.createdAt,
       inrMinor: r.inrMinor,

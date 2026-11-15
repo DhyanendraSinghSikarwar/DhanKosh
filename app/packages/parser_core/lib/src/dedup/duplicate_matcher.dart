@@ -69,7 +69,9 @@ abstract final class DuplicateMatcher {
         if (!refsEqual(s.referenceNumber, ref)) continue;
         // The same reference on money going the other way is a reversal or a
         // refund, never the same transaction (FR-07-19).
-        if (s.type.direction != tx.type.direction) continue;
+        if (s.type.direction != tx.type.direction && !tx.directionGuessed) {
+          continue;
+        }
         if (!(s.amountMinor == tx.amountMinor || _roundedRelation(s, tx))) {
           continue;
         }
@@ -82,7 +84,11 @@ abstract final class DuplicateMatcher {
         final tLast4 = tx.accountLast4;
         final conflict =
             sLast4 != null && tLast4 != null && !last4Match(sLast4, tLast4);
-        if (gap <= limit && !conflict) {
+        // A statement's account is read from its header and can be wrong or
+        // missing; a long UTR with the same amount and direction is still the
+        // same payment (FR-07-24).
+        final sameUtr = statement && _strongReference(ref);
+        if (gap <= limit && (!conflict || sameUtr)) {
           return Duplicate(s.id, MatchReason.reference);
         }
         sameRef ??= PossibleDuplicate(
@@ -450,6 +456,10 @@ abstract final class DuplicateMatcher {
   /// Two references name one payment: equal once normalised, or one is a
   /// 12-digit UPI/IMPS reference and the other the same digits with a short
   /// prefix (`UPI612345678901`) (FR-07-19).
+  static bool _strongReference(String ref) =>
+      ref.length >= 10 && ref.split('').where(isDigit).length >= 6;
+
+  /// Whether two references name one payment.
   static bool refsEqual(String? a, String? b) {
     final x = normalizeReference(a);
     final y = normalizeReference(b);

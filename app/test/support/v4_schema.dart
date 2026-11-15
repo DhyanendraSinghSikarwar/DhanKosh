@@ -89,6 +89,7 @@ Future<void> dropV14(AppDatabase db) async {
 
 /// Drops everything added in schema v15 so a test can fake a v14 file.
 Future<void> dropV15(AppDatabase db) async {
+  await dropV16(db);
   for (final t in [
     'tx_parts',
     'person_entries',
@@ -98,4 +99,8 @@ Future<void> dropV15(AppDatabase db) async {
   ]) {
     await db.customStatement('DROP TABLE $t');
   }
+}
+
+Future<void> dropV16(AppDatabase db) async {
+  await db.customStatement('ALTER TABLE transactions DROP COLUMN transfer_dir');
 }

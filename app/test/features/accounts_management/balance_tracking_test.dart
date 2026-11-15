@@ -20,6 +20,79 @@ void main() {
     return all.single;
   }
 
+  // FR-13-28
+  group('own-account transfers move both balances', () {
+    Future<Map<String, int?>> balances() async {
+      final all = await env.accounts
+          .watchWithActivity(monthStartMs: 0, monthEndMs: t0 + 400 * hour)
+          .first;
+      return {for (final a in all) a.account.last4: a.currentBalanceMinor};
+    }
+
+    test('a message naming the other own account', () async {
+      await env.ingest(
+        parsed(
+          amountMinor: 100,
+          ref: 'seed1',
+          balance: 1000000,
+          time: t0 - 2 * hour,
+        ),
+      );
+      await env.ingest(
+        parsed(
+          bank: 'ICICI Bank',
+          last4: '5678',
+          type: TransactionType.credit,
+          amountMinor: 100,
+          ref: 'seed2',
+          balance: 500000,
+          time: t0 - 2 * hour,
+        ),
+      );
+      await env.ingest(
+        parsed(counterparty: '5678', amountMinor: 200000, ref: 'xfer0001'),
+      );
+      final b = await balances();
+      expect(b['1234'], 800000);
+    });
+
+    test('two paired legs: out of one, into the other', () async {
+      await env.ingest(
+        parsed(
+          amountMinor: 100,
+          ref: 'seed1',
+          balance: 1000000,
+          time: t0 - 2 * hour,
+        ),
+      );
+      await env.ingest(
+        parsed(
+          bank: 'ICICI Bank',
+          last4: '5678',
+          type: TransactionType.credit,
+          amountMinor: 100,
+          ref: 'seed2',
+          balance: 500000,
+          time: t0 - 2 * hour,
+        ),
+      );
+      await env.ingest(parsed(amountMinor: 300000, ref: 'leg00001'));
+      await env.ingest(
+        parsed(
+          bank: 'ICICI Bank',
+          last4: '5678',
+          type: TransactionType.credit,
+          amountMinor: 300000,
+          ref: null,
+          time: t0 + 10 * minute,
+        ),
+      );
+      final b = await balances();
+      expect(b['1234'], 700000);
+      expect(b['5678'], 800000);
+    });
+  });
+
   group('bank account', () {
     test(
         'a stated balance is kept, later messages move it, a newer stated '

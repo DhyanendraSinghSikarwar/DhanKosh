@@ -182,6 +182,33 @@ class StatementParser {
     return out.join(' ');
   }
 
+  /// "Account No : 920010045605602" prints the whole number.
+  static final RegExp _fullAccount = rx(
+    r'\b(?:account|a/c|acct)\s*(?:no|number|num)?\.?\s*[:.\-]?\s*(\d{9,18})\b',
+  );
+
+  /// A mobile or phone number printed as a masked number is not an account.
+  static final RegExp _phoneCue = rx(
+    r'(?:mobile|mob|phone|contact|cell|registered|whatsapp|call)[\s:.\-#no]*$',
+  );
+
+  /// The account digits of a statement: the labelled number, else a masked
+  /// number that is not a phone, else the shared account reader (FR-05-35).
+  static String? _headerLast4(String preamble) {
+    final full = _fullAccount.firstMatch(preamble);
+    if (full != null) {
+      final d = full.group(1)!;
+      return d.substring(d.length - 4);
+    }
+    for (final m in _maskedNumber.allMatches(preamble)) {
+      final from = m.start - 30 < 0 ? 0 : m.start - 30;
+      if (_phoneCue.hasMatch(preamble.substring(from, m.start))) continue;
+      final g = firstGroup(m);
+      if (g != null) return g;
+    }
+    return AccountExtractor.extract(preamble)?.last4;
+  }
+
   static const _summaryLines = 120;
   static const _labelBlock = 8;
   static const _dateKeys = {'due_date', 'stmt_date', 'period'};
@@ -200,9 +227,7 @@ class StatementParser {
     // transaction: a row's narration ("UPI/.../HDFC BANK", "to A/c 6810") names
     // the other side of a payment, never this statement's account.
     final preamble = _preamble(lines);
-    final mm = _maskedNumber.firstMatch(preamble);
-    final last4 = (mm == null ? null : firstGroup(mm)) ??
-        AccountExtractor.extract(preamble)?.last4;
+    final last4 = _headerLast4(preamble);
     String? bank;
     for (final text in [sender, preamble]) {
       for (final (re, name) in _banks) {
@@ -568,6 +593,7 @@ class StatementParser {
       final crDr = grp(amountStr, 2).toUpperCase();
 
       final TransactionType type;
+      var guessed = false;
       if (isCard && _cardPayment.hasMatch(description)) {
         type = TransactionType.transfer;
       } else if (crDr.startsWith('C')) {
@@ -582,6 +608,7 @@ class StatementParser {
         type = TransactionType.credit;
       } else {
         type = TransactionType.debit;
+        guessed = !isCard;
       }
       if (balance != null) previousBalance = balance;
 
@@ -616,6 +643,7 @@ class StatementParser {
                     : description),
             upiId: null,
             referenceNumber: reference,
+            directionGuessed: guessed,
             channel: channel,
             balanceMinor: balance,
             availableLimitMinor: null,

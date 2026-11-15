@@ -105,6 +105,22 @@ class AlertsEngine {
 
   /// Runs every check once; serialised (FR-21-19), each check isolated
   /// (FR-21-13). Returns the number of notifications posted. Never throws.
+  /// Removes the new-transaction notifications still in the bar: opening the
+  /// app is reading them, so only ones not yet seen stay (FR-21-35).
+  Future<void> clearSeenTransactionAlerts() async {
+    try {
+      for (final k in await _alerted.all()) {
+        if (!k.startsWith('tx:')) continue;
+        final id = int.tryParse(k.substring(3));
+        if (id != null) {
+          await _poster.cancel(AlertRules.newTransactionIdBase + id);
+        }
+      }
+    } on Object {
+      // Alerts never break the app.
+    }
+  }
+
   Future<int> run() {
     final next = _tail.then((_) => _runLocked());
     _tail = next.then((_) {}, onError: (Object _) {});
@@ -249,6 +265,13 @@ class AlertsEngine {
       final key = 'tx:${r.id}';
       if (now - r.createdAt > newTxWindowMs || alerted.contains(key)) continue;
       if (r.duplicateOfId != null || r.needsReview) continue;
+      // FR-21-34: only a text message or a payment-app notification is worth a
+      // notification. Mail and statements are read later; what they leave to
+      // decide (possible duplicates) is shown in the app, not the bar.
+      final srcs = await txs.sourcesOf(r.id);
+      if (!srcs.any((x) => x.source == Source.sms || x.source == Source.app)) {
+        continue;
+      }
       final credit = r.type == TransactionType.credit;
       final d = AlertRules.newTransactionAlert(
         txId: r.id,
@@ -278,6 +301,7 @@ class AlertsEngine {
           body: d.body,
           link: d.link,
           actions: d.actions,
+          timeoutMs: d.timeoutMs,
         ),
       );
     }

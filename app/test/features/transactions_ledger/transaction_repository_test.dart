@@ -338,6 +338,17 @@ void main() {
       expect((await env.txs.byId(r.transactionId!))!.accountId, isNull);
     });
 
+    test(
+        'a message with no account digits joins the only account of its bank '
+        '(FR-13-26)', () async {
+      await env.ingest(parsed(ref: 'AAAAAA111'));
+      final r = await env.ingest(
+        parsed(last4: null, ref: 'BBBBBB222', time: t0 + day),
+      );
+      expect((await env.txs.byId(r.transactionId!))!.accountId, 1);
+      expect(await env.count('accounts'), 1);
+    });
+
     test('an unknown bank name never creates an account (FR-13-24)', () async {
       final r = await env.ingest(parsed(bank: 'XYZBNK', last4: '3210'));
       expect((await env.txs.byId(r.transactionId!))!.accountId, isNull);

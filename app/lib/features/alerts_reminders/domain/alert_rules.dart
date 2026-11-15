@@ -357,6 +357,9 @@ abstract final class AlertRules {
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', //
   ];
 
+  /// How long a new-transaction notification stays in the bar.
+  static const int newTransactionTimeoutMs = 24 * 60 * 60 * 1000;
+
   /// New-transaction notification (FR-21-02, FR-21-03): only for newly
   /// inserted, non-transfer rows with transaction notifications on.
   /// [usedMostFirst] are the categories used most for this type in the last
@@ -384,12 +387,18 @@ abstract final class AlertRules {
       showPaise: true,
       currency: currency,
     );
+    // FR-21-33: "What was this for?" with the category the app chose (or its
+    // best guess when it chose Other), "Not an expense", and More....
     final alts = alternativeCategories(
       current: category,
       isCredit: isCredit,
       usedMostFirst: usedMostFirst,
       merchantFirst: merchantFirst,
+      max: 1,
     );
+    final first = category == Category.other || category == Category.transfer
+        ? (alts.isEmpty ? null : alts.first)
+        : category;
     final id = newTransactionIdBase + txId;
     return AlertDecision(
       kind: AlertKind.newTransaction,
@@ -398,19 +407,26 @@ abstract final class AlertRules {
       notificationId: id,
       title: isCredit ? 'Received $amount from $who' : 'Spent $amount at $who',
       body: [
+        'What was this for?',
         if (bank.isNotEmpty || (last4 != null && last4.isNotEmpty))
           '$bank${(last4 != null && last4.isNotEmpty) ? ' ••$last4' : ''}'
               .trim(),
-        category.label,
       ].join(' · '),
       link: 'hisaab://transaction/$txId',
+      // FR-21-35: an unread one fades after a day.
+      timeoutMs: newTransactionTimeoutMs,
       actions: [
-        for (final c in alts)
+        if (first != null)
           AlertAction(
             id: 'category',
-            label: c.label,
-            payload: {'txId': '$txId', 'category': c.name},
+            label: first.label,
+            payload: {'txId': '$txId', 'category': first.name},
           ),
+        AlertAction(
+          id: 'notExpense',
+          label: isCredit ? 'Not income' : 'Not an expense',
+          payload: {'txId': '$txId'},
+        ),
         AlertAction(
           id: 'more',
           label: 'More…',

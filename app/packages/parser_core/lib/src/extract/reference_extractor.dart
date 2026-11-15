@@ -10,7 +10,7 @@ abstract final class ReferenceExtractor {
   );
   static final _labelled = Guarded(
     r'\b(?:UPI\s*transaction\s*reference\s*(?:number|no\.?)|(?:UPI|IMPS|NEFT|RTGS)(?:\s*Ref(?:erence|\.)?)?(?:\s*(?:No|Number|ID)\.?)?|'
-    r'RRN|UTR(?:\s*No\.?)?|Refno|Ref(?:erence)?(?:\s*(?:No|Number|ID)\.?|\s*#)?|'
+    r'RRN|UTR(?:\s*No\.?)?|Refno|Ref(?:erence)?\.?(?:\s*(?:No|Number|ID)\.?|\s*#)?|'
     r'(?:Txn|Trxn|Transaction)\s*(?:ID|No\.?|Number|Ref(?:erence)?(?:\s*No\.?)?))'
     r'\s*(?:is\s*)?[:.\-#]?\s*\(?\s*([A-Z0-9]{6,22})\b',
     [

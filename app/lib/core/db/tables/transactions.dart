@@ -49,5 +49,9 @@ class Transactions extends Table {
   /// (FR-08-31).
   TextColumn get receipt => text().nullable()();
 
+  /// +1 when a transfer row brought money into its account, -1 when it took
+  /// money out; null when unknown (FR-13-28).
+  IntColumn get transferDir => integer().nullable()();
+
   BoolColumn get excluded => boolean().withDefault(const Constant(false))();
 }

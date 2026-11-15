@@ -143,7 +143,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
     // FR-13-25: money sent to or received from another of the user's own
     // accounts is an internal transfer, not spend or income.
     var p = item.parsed;
+    int? ownDir;
     if (await _isOwnCounterparty(p, item.phoneLast4s)) {
+      ownDir = p.type == TransactionType.credit ? 1 : -1;
       p = p.copyWith(
         type: TransactionType.transfer,
         category: Category.transfer,
@@ -221,6 +223,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
           hash: '${p.transactionHash}#$src:${item.sourceMessageId}',
           flagged: (existingId, reasonText),
           rule: rule,
+          transferDir: ownDir,
         );
       case DedupNew():
         outcome = IngestOutcome.inserted;
@@ -230,6 +233,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
           accountId,
           hash: newHash,
           rule: rule,
+          transferDir: ownDir,
         );
     }
 
@@ -369,6 +373,16 @@ class TransactionRepositoryImpl implements TransactionRepository {
           type: Value(enumToDb(TransactionType.transfer)),
           category: Value(enumToDb(Category.transfer)),
           note: Value(r.note ?? m.note),
+          // FR-13-28: remember which way the money moved before the row
+          // stopped being a credit or a debit.
+          transferDir: Value(
+            r.transferDir ??
+                (r.type == enumToDb(TransactionType.credit)
+                    ? 1
+                    : r.type == enumToDb(TransactionType.debit)
+                        ? -1
+                        : null),
+          ),
         ),
       );
     }
@@ -493,9 +507,11 @@ class TransactionRepositoryImpl implements TransactionRepository {
     required String hash,
     required MerchantRule? rule,
     (int, String)? flagged,
+    int? transferDir,
   }) {
     return _db.into(_db.transactions).insert(
           TransactionsCompanion.insert(
+            transferDir: Value(transferDir),
             amountMinor: p.amountMinor,
             currency: p.currency,
             type: enumToDb(p.type),
@@ -545,8 +561,17 @@ class TransactionRepositoryImpl implements TransactionRepository {
     final row = await (_db.select(_db.transactions)
           ..where((t) => t.id.equals(c.id)))
         .getSingle();
-    final adopt =
-        p.source != Source.app && accountId != null && row.accountId == null;
+    // FR-07-24: a bank message's account beats the one a statement's header
+    // gave the row.
+    final statementOnly =
+        c.sources.isNotEmpty && c.sources.every((s) => s == Source.statement);
+    final bankSays = p.source == Source.sms || p.source == Source.email;
+    final adopt = p.source != Source.app &&
+        accountId != null &&
+        (row.accountId == null ||
+            (statementOnly && bankSays && row.accountId != accountId));
+    final account =
+        adopt && row.accountId != null ? await _accounts.byId(accountId) : null;
     final keepsOwn = row.subcategory == null &&
         row.customCategoryId == null &&
         rule != null &&
@@ -559,7 +584,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
         referenceNumber: Value(m.referenceNumber),
         balanceMinor: Value(m.balanceMinor),
         availableLimitMinor: Value(m.availableLimitMinor),
-        accountLast4: Value(m.accountLast4),
+        accountLast4:
+            account == null ? Value(m.accountLast4) : Value(account.last4),
+        bankName:
+            account == null ? const Value.absent() : Value(account.bankName),
         type: Value(enumToDb(m.type)),
         category: Value(enumToDb(m.category)),
         timestamp: Value(m.timestamp),

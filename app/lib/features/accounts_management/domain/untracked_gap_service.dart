@@ -58,6 +58,11 @@ class UntrackedGapService {
         dir[t.id] = -1;
         continue;
       }
+      final known = t.transferDir;
+      if (known != null) {
+        dir[t.id] = known;
+        continue;
+      }
       for (final s in await _txs.sourcesOf(t.id)) {
         if (s.sourceMessageId.startsWith('xfer-out:')) dir[t.id] = -1;
         if (s.sourceMessageId.startsWith('xfer-in:')) dir[t.id] = 1;

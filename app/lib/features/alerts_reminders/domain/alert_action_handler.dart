@@ -76,6 +76,14 @@ class AlertActionHandler {
           ),
         );
         return true;
+      case 'notExpense':
+        // "Not an expense" / "Not income": the payment stays in the ledger but
+        // leaves every total (FR-21-33).
+        final id = int.tryParse(query['txId'] ?? '');
+        if (id == null) return false;
+        await _txs.setExcluded([id], excluded: true);
+        await _poster.cancel(AlertRules.newTransactionIdBase + id);
+        return true;
       case 'billPaid':
         // "Mark paid" on a bill reminder: the user says it was paid, so it
         // is booked as their own manual payment (FR-21-30).

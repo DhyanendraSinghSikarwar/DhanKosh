@@ -24,6 +24,7 @@ CASE t.type
                  AND s.source_message_id LIKE 'xfer-out:%') THEN -t.inr_minor
     WHEN EXISTS (SELECT 1 FROM transaction_sources s WHERE s.transaction_id = t.id
                  AND s.source_message_id LIKE 'xfer-in:%') THEN t.inr_minor
+    WHEN t.transfer_dir IS NOT NULL THEN t.transfer_dir * t.inr_minor
     WHEN t.note LIKE 'Credit card bill%' THEN -t.inr_minor
     ELSE 0 END
   ELSE 0 END''';

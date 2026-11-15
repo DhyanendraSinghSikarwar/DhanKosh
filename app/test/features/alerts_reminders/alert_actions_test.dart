@@ -105,6 +105,63 @@ void main() {
     expect(activity.entries.single.source, ActivitySource.alerts);
   });
 
+  test('Not an expense leaves the totals and removes the notification',
+      () async {
+    final r = await env.ingest(parsed());
+    final id = r.transactionId!;
+    final h = AlertActionHandler(
+      cardState: CardReminderStateStoreImpl(env.db),
+      paid: _Paid(),
+      txs: env.txs,
+      poster: poster,
+      nowMs: () => t0,
+    );
+    expect(await h.handle({'a': 'notExpense', 'txId': '$id'}), isTrue);
+    expect((await env.txs.byId(id))?.excluded, isTrue);
+    expect(poster.cancelled, [AlertRules.newTransactionIdBase + id]);
+  });
+
+  AlertsEngine engineFor() => AlertsEngine(
+        budgets: BudgetRepositoryImpl(env.db),
+        recurring: RecurringRepositoryImpl(env.db),
+        accounts: env.accounts,
+        alerted: AlertedKeyStoreImpl(env.db),
+        poster: poster,
+        settings: FakeSettings(),
+        activity: activity,
+        txs: env.txs,
+        nowMs: () => t0,
+      );
+
+  test('mail and statement rows never reach the notification bar (FR-21-34)',
+      () async {
+    await env.ingest(parsed(source: Source.email, ref: 'MAIL00001'));
+    await env.ingest(
+      parsed(source: Source.statement, ref: 'STMT00001', amountMinor: 999),
+    );
+    await engineFor().run();
+    expect(
+      poster.posted.where((d) => d.kind == AlertKind.newTransaction),
+      isEmpty,
+    );
+  });
+
+  test('opening the app clears the new-transaction notifications (FR-21-35)',
+      () async {
+    final r = await env.ingest(parsed());
+    final engine = engineFor();
+    await engine.run();
+    expect(
+      poster.posted.where((d) => d.kind == AlertKind.newTransaction),
+      hasLength(1),
+    );
+    await engine.clearSeenTransactionAlerts();
+    expect(
+      poster.cancelled,
+      contains(AlertRules.newTransactionIdBase + r.transactionId!),
+    );
+  });
+
   test('more is handled by the sheet, not the handler (FR-21-22)', () async {
     final h = AlertActionHandler(
       cardState: CardReminderStateStoreImpl(env.db),
@@ -168,7 +225,7 @@ void main() {
     expect(tx.actions, isNotEmpty);
     // One-line notification: short title, one short body line (FR-21-27).
     expect(tx.title, 'Spent ₹250 at Swiggy');
-    expect(tx.body, 'HDFC Bank ••1234 · Food & Dining');
+    expect(tx.body, 'What was this for? · HDFC Bank ••1234');
     expect(tx.body, isNot(contains('\n')));
     expect(card.body, isNot(contains('\n')));
     // Both posted action notifications leave a log entry.

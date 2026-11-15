@@ -6,7 +6,7 @@
 | Status | In progress (matcher and data layer done; Review screen with Compare screen (differences highlighted, Merge / Keep separate / Split) and Split on Transaction detail done; manual merge via ledger multi-select; undo toast pending) |
 | Priority | P0 |
 | Phase | 1 |
-| Last Updated | 2026-11-09 |
+| Last Updated | 2026-11-12 |
 
 ## 1. Description
 
@@ -165,6 +165,7 @@ Keep stored values, fill gaps from the message:
 - FR-07-21: Stated running balances decide ties: the same balance is the same payment, a sequential balance (before - amount = after) is two payments. Printed times 60 s or more apart (`explicitTimeApartMillis`) are two payments.
 - FR-07-22: A mail arriving up to 24 h after its SMS (`lateMailWindowMillis`) merges into it when amount, direction, last4 and balance agree.
 - FR-07-23: Income told twice: a credit arriving as an SMS and as an email for the same amount and the same day, where one has no account digits, no printed times a minute or more apart and no conflicting payee, is held as a possible duplicate ("Same income amount and day, from SMS and email") for the user to merge, up to 24 hours apart. Debits are not covered.
+- FR-07-24: The same long reference (UTR) with the same amount and direction, within the window, is one payment even when a statement row's account differs from the message's; the bank message's account then replaces the statement's. A statement row whose direction nothing settled (no Cr/Dr, no running balance) takes the direction of the message it matches.
 - FR-07-10: The Possible duplicates screen shall list each flagged pair with reason, both rows, both messages and the actions Compare / Keep both / Merge, with the "All clear" empty state.
 - FR-07-11: The Compare screen shall show the nine comparison rows with differing values highlighted and actions Keep both / Merge into one.
 - FR-07-12: `mergeFlagged` and `keepSeparate` shall behave as in 2.6.
@@ -426,3 +427,4 @@ Done: FR-07-11 (`compare_rows.dart` pure field diff, `CompareScreen` pushed from
 | 2026-10-27 | Audit: matcher and 30-minute rule confirmed done; split and Compare confirmed not built | Kotlin parity audit |
 | 2026-10-27 | Compare screen and split (FR-07-11, FR-07-13) | Kotlin parity |
 | 2026-11-09 | FR-07-23 income told twice asks | Owner-reported issue |
+| 2026-11-12 | FR-07-24 same UTR across accounts, statement account corrected by the bank message | Incoming NEFT counted twice (SMS + statement) |

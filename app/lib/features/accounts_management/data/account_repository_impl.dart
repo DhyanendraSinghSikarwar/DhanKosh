@@ -53,7 +53,25 @@ class AccountRepositoryImpl implements AccountRepository {
     Set<String> phoneLast4s = const {},
   }) async {
     final last4 = tx.accountLast4;
-    if (last4 == null || last4.isEmpty) return null;
+    if (last4 == null || last4.isEmpty) {
+      // FR-13-26: a bank message that names no account ("NEFT ... credited to
+      // beneficiary X") belongs to the user's only account at that bank.
+      if (tx.source == Source.app ||
+          tx.accountKind != AccountKind.account ||
+          !AccountGuard.isKnownBank(tx.bankName)) {
+        return null;
+      }
+      final same = await (_db.select(_db.accounts)
+            ..where(
+              (t) =>
+                  t.bankName.equals(tx.bankName) &
+                  t.kind.equals(enumToDb(AccountKind.account)) &
+                  t.hidden.equals(false) &
+                  t.mergedIntoId.isNull(),
+            ))
+          .get();
+      return same.length == 1 ? same.single.id : null;
+    }
     final kind = enumToDb(tx.accountKind);
     final existing = await (_db.select(_db.accounts)
           ..where(
@@ -306,6 +324,7 @@ CASE t.type
                  AND s.source_message_id LIKE 'xfer-out:%') THEN -t.inr_minor
     WHEN EXISTS (SELECT 1 FROM transaction_sources s WHERE s.transaction_id = t.id
                  AND s.source_message_id LIKE 'xfer-in:%') THEN t.inr_minor
+    WHEN t.transfer_dir IS NOT NULL THEN t.transfer_dir * t.inr_minor
     WHEN t.note LIKE 'Credit card bill%' THEN -t.inr_minor
     ELSE 0 END
   ELSE 0 END''';
