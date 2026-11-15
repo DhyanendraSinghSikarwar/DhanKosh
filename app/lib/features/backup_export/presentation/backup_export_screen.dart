@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/backup_providers.dart';
+import 'package:hisaab/features/backup_export/presentation/auto_backup_section.dart';
 import 'package:hisaab/features/backup_export/presentation/encrypted_backup_section.dart';
 import 'package:hisaab/features/backup_export/presentation/reports_section.dart';
 import 'package:hisaab/features/localization/domain/language.dart';
@@ -92,6 +93,8 @@ class _State extends ConsumerState<BackupExportScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           const EncryptedBackupSection(),
+          const Divider(height: 32),
+          const AutoBackupSection(),
           const Divider(height: 32),
           const ReportsSection(),
           const Divider(height: 32),

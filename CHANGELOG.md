@@ -5,6 +5,7 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 ## [Unreleased]
 
 ### Added
+- Automatic backup (Backup & Export): one encrypted file per month plus a base file, updated after each sync and nightly. Always saved on the phone; also to Google Drive only if you allow it and pick the account and folder.
 - New SMS payments notify like PennyWise: "Spent ₹X at Shop — What was this for?" with the category, Not an expense and More. Mail and statements no longer notify; unread ones fade after a day and opening the app clears the rest.
 
 ### Fixed

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/accounts_providers.dart';
 import 'package:hisaab/app/di/bills_providers.dart';
@@ -8,14 +10,19 @@ import 'package:hisaab/app/di/phase4_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/app/di/providers.dart';
 import 'package:hisaab/app/di/sip_providers.dart';
+import 'package:hisaab/core/platform_channels/folder_channel.dart';
+import 'package:hisaab/features/backup_export/data/auto_backup_runner.dart';
 import 'package:hisaab/features/backup_export/data/backup_data.dart';
 import 'package:hisaab/features/backup_export/data/backup_service.dart';
 import 'package:hisaab/features/backup_export/data/file_gateway.dart';
+import 'package:hisaab/features/backup_export/data/folder_sinks.dart';
 import 'package:hisaab/features/backup_export/data/full_backup_service.dart';
 import 'package:hisaab/features/backup_export/data/report_service.dart';
+import 'package:hisaab/features/backup_export/data/scheduled_backup_service.dart';
 import 'package:hisaab/features/backup_export/domain/backup_models.dart';
 import 'package:hisaab/features/backup_export/domain/blob_gateway.dart';
 import 'package:hisaab/features/backup_export/domain/full_backup.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// Pickers for the Backup screen; overridden in tests.
 final backupFileGatewayProvider = Provider<BackupFileGateway>(
@@ -91,5 +98,20 @@ final reportServiceProvider = Provider<ReportService>(
         return null;
       }
     },
+  ),
+);
+
+/// Automatic month-wise backup (F-24, FR-24-34..38): the phone copy always,
+/// the cloud copy only when the user allowed it.
+final autoBackupRunnerProvider = Provider<AutoBackupRunner>(
+  (ref) => AutoBackupRunner(
+    service: ScheduledBackupService(ref.watch(backupDataProvider)),
+    settings: ref.watch(settingsRepositoryProvider),
+    secure: ref.watch(secureStoreProvider),
+    phoneSink: DirectorySink('phone', () async {
+      final base = await getApplicationDocumentsDirectory();
+      return Directory('${base.path}/backups');
+    }),
+    treeSink: (id, uri) => TreeSink(id, uri, const FolderChannel()),
   ),
 );

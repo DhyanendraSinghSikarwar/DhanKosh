@@ -76,6 +76,8 @@ dependencies {
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
     // FileProvider for the in-app update hand-off (F-31, channel `update`).
     implementation("androidx.core:core:1.13.1")
+    // Folder the user picked for scheduled backups (F-24, channel `backup_folder`).
+    implementation("androidx.documentfile:documentfile:1.0.1")
 }
 
 flutter {

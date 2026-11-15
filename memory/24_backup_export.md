@@ -6,7 +6,7 @@
 | Status | In progress (CSV done; encrypted full backup and restore, PDF summary and portfolio reports done with tests; device pickers, Kotlin-free; large-file timing and real-device restore untested; per-account card network, colour, limits, markup and merge/link restored) |
 | Priority | P1 |
 | Phase | 5 |
-| Last Updated | 2026-10-27 |
+| Last Updated | 2026-11-15 |
 
 ## 1. Description
 
@@ -163,6 +163,11 @@ Accounts' nicknames, balances, types, merges and hidden flags, custom categories
 31. FR-24-31: Reports are built and rendered on the phone with the `pdf` package, carry the footer "Made on your phone by DhanKosh. This file was not sent anywhere.", and use Latin-1 text only (other characters print as `?`). The Tax Centre export is specified in [19_tax_centre.md](19_tax_centre.md).
 32. FR-24-32: The backup also carries user SIPs (`sips`), goals with their contributions (`goals`) and recorded MF orders (`mfOrders`). They are optional sections of JSON schema 1: older files without them restore unchanged, and the counts show "SIPs", "goals", "MF orders". Restore goes through `SipRepository.add`, `GoalRepository.addGoal`/`addContribution` and `HoldingRepository.restoreMfOrders`; items are merged by content (SIP name, amount, frequency, day, start; goal name, target, date; contribution amount, day, note; order identifier, time, amount, units), so a second restore adds nothing. Restored orders claim their dedup keys so the same purchase arriving later by mail or SMS is not counted again.
 33. FR-24-33: The `accounts` section also carries `balance`, `limit`, `balanceAt`, `markup` (bps), `linked` and `mergedInto` (`bank|last4` keys) next to the existing colour, network, nickname and usage. All are optional keys of schema 1; merged-away accounts are now exported. Restore sets colour, network, markup and the stated figures on created accounts, fills missing colour/network on existing ones and re-links debit cards and merges once all accounts exist (`AccountAdminRepository`).
+34. FR-24-34: Automatic backup (Backup & Export > Automatic backup) is off until the user turns it on and sets a passphrase, which is kept in the secure store. It then writes encrypted backups by itself: after each sync and every night after the 02:30 scan.
+35. FR-24-35: The phone copy is always made. Without a chosen folder it goes to the app's own `backups` folder (removed if the app is uninstalled); the user can choose a folder with the system picker (channel `backup_folder`) to keep it after uninstall.
+36. FR-24-36: A copy in Google Drive is made only when the user turns on "Also back up to Google Drive" and picks the Drive account and folder in the system picker; the app handles no Google account or token. Turning it off stops that copy.
+37. FR-24-37: Backups are month-wise: `dhankosh-base.dkbk` holds everything except transactions and `dhankosh-YYYY-MM.dkbk` holds that month's transactions, each encrypted and each openable and restorable like a full backup. A run writes only parts whose content changed since that folder last received them, or whose file is missing, so one month can be read without the rest.
+38. FR-24-38: A sync over the history window changes the months it touches, and the next run rewrites exactly those files; a failing folder never stops the other copy, and the result (Backed up, Phone copy failed, Drive copy failed) is shown with the time.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -472,3 +477,4 @@ Built 2026-10-26 (Fold adoption): FR-24-17..31 done. Code: `data/backup_crypto.d
 | 2026-10-26 | Encrypted full backup and restore (FR-24-17..28), PDF summary and portfolio reports (FR-24-29..31); format documented in 10.1 | Fold adoption |
 | 2026-10-26 | Backup includes SIPs, goals, MF orders | Fold adoption |
 | 2026-10-27 | Backup carries and restores account colour, network, limits, markup, debit link and merge links (FR-24-33) | Kotlin parity |
+| 2026-11-15 | FR-24-34..38 automatic month-wise backup: phone always, Drive optional via the system folder picker | Owner request (scheduled folder backup) |

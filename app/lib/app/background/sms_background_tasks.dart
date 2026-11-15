@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/alerts_providers.dart';
+import 'package:hisaab/app/di/backup_providers.dart';
 import 'package:hisaab/app/di/email_providers.dart';
 import 'package:hisaab/app/di/notification_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
@@ -73,6 +74,12 @@ Future<bool> smsNightlyTask({ProviderContainer Function()? create}) =>
         final email = await c.read(emailSyncRunnerProvider).run();
         // Daily alert check (FR-21-13); never throws.
         await c.read(alertsEngineProvider).run();
+        // Month-wise backup after the nightly sync (FR-24-38); never throws.
+        try {
+          await c.read(autoBackupRunnerProvider).run();
+        } on Object {
+          // Backup is best effort.
+        }
         // The periodic job fires again at the next 02:30 (FR-22-08).
         final planned = DateTime.now().add(nextNightlyDelay(DateTime.now()));
         try {

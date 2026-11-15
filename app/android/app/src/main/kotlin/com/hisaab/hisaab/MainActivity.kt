@@ -4,7 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
 import com.hisaab.alerts.AlertsBridge
+import com.hisaab.backup.FolderBridge
 import com.hisaab.notifications.NotificationsBridge
 import com.hisaab.pdf.PdfBridge
 import com.hisaab.sms.SmsBridge
@@ -18,6 +21,14 @@ class MainActivity : FlutterFragmentActivity() {
     private var pdfBridge: PdfBridge? = null
     private var alertsBridge: AlertsBridge? = null
     private var widgetBridge: WidgetBridge? = null
+    private var folderBridge: FolderBridge? = null
+    private var folderCallback: ((Uri?) -> Unit)? = null
+    private val folderPicker = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { uri ->
+        folderCallback?.invoke(uri)
+        folderCallback = null
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +59,13 @@ class MainActivity : FlutterFragmentActivity() {
         widgetBridge = WidgetBridge(this).also {
             it.attach(flutterEngine.dartExecutor.binaryMessenger)
         }
+        folderBridge = FolderBridge(this).also {
+            it.attach(flutterEngine.dartExecutor.binaryMessenger)
+        }
+        FolderBridge.picker = { cb ->
+            folderCallback = cb
+            folderPicker.launch(null)
+        }
         AlertsBridge.secureHandler = { on -> runOnUiThread { applySecure(on) } }
         AlertsBridge.captureRoute(intent)
         AlertsBridge.captureShared(this, intent)
@@ -61,6 +79,9 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
         AlertsBridge.secureHandler = null
+        FolderBridge.picker = null
+        folderBridge?.detach()
+        folderBridge = null
         smsBridge?.detach()
         smsBridge = null
         notificationsBridge?.detach()

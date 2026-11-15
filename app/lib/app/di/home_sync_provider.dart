@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hisaab/app/di/alerts_providers.dart';
+import 'package:hisaab/app/di/backup_providers.dart';
 import 'package:hisaab/app/di/email_providers.dart';
 import 'package:hisaab/app/di/pipeline_providers.dart';
 import 'package:hisaab/features/sms_ingestion/domain/entities/sms_scan.dart';
@@ -127,6 +128,12 @@ class HomeSyncNotifier extends Notifier<HomeSyncState> {
       await ref.read(alertsEngineProvider).run();
     } on Object {
       // Alerts are best effort.
+    }
+    // FR-24-38: the months this sync touched are written to the backups.
+    try {
+      await ref.read(autoBackupRunnerProvider).run();
+    } on Object {
+      // Backup is best effort.
     }
     state = HomeSyncState(
       done: '$read read',

@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import com.hisaab.alerts.AlertsBridge
+import com.hisaab.backup.FolderBridge
 import com.hisaab.notifications.NotificationsBridge
 import io.flutter.FlutterInjector
 import io.flutter.embedding.engine.FlutterEngine
@@ -54,6 +55,7 @@ object HeadlessRunner {
             // Notification queue drain while the app is closed (FR-04-21).
             NotificationsBridge(app).attach(messenger, withLive = false)
             AlertsBridge(app).attach(messenger)
+            FolderBridge(app).attach(messenger)
             BackgroundBridge(app, task) { ok -> main.post { job.finish(ok) } }.attach(messenger)
             main.postDelayed({ job.finish(false) }, TIMEOUT_MS)
             engine.dartExecutor.executeDartEntrypoint(
