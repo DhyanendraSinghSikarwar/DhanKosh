@@ -4,6 +4,8 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
+## [0.0.10] - 2026-11-15
+
 ### Added
 - Four more home-screen widgets: Balance, Budget left (with a progress bar), Upcoming bills and a one-tap Add transaction.
 - Automatic backup (Backup & Export): one encrypted file per month plus a base file, updated after each sync and nightly. Always saved on the phone; also to Google Drive only if you allow it and pick the account and folder.
