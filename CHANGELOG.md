@@ -4,6 +4,8 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 
 ## [Unreleased]
 
+## [0.0.11] - 2026-11-20
+
 ### Fixed
 - A statement now replaces the text and mail entries of its account and period that it did not match, and later ones inside that period are not added again; matched ones keep the extra details.
 - Every credit card on Home shows the Left, Unbilled and Billed bar, laid out in three clean columns; cards without a limit show billed against unbilled.
