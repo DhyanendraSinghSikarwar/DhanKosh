@@ -205,7 +205,8 @@ void main() {
       expect(
         await env.db
             .customSelect(
-                'SELECT id FROM transactions WHERE amount_minor = 77700')
+              'SELECT id FROM transactions WHERE amount_minor = 77700',
+            )
             .get(),
         hasLength(1),
       );
@@ -230,7 +231,8 @@ void main() {
       expect(
         await env.db
             .customSelect(
-                'SELECT id FROM transactions WHERE amount_minor = 77700')
+              'SELECT id FROM transactions WHERE amount_minor = 77700',
+            )
             .get(),
         hasLength(1),
       );
