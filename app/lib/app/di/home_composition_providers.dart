@@ -11,6 +11,7 @@ import 'package:hisaab/app/di/updates_providers.dart';
 import 'package:hisaab/core/utils/combine_latest.dart';
 import 'package:hisaab/core/utils/ist.dart';
 import 'package:hisaab/features/accounts_management/presentation/account_providers.dart';
+import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/activity_log/domain/inbox_logic.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_attention.dart';
 import 'package:hisaab/features/dashboard_home/domain/home_charts.dart';
@@ -36,13 +37,24 @@ final activityLastSeenProvider = StreamProvider<int>(
       ref.watch(settingsRepositoryProvider).watch(SettingKeys.activityLastSeen),
 );
 
-/// Unread Inbox entries for the bell badge; 0 until both sources load
-/// (FR-22-16).
+/// Unread problems of the log, newest first (FR-22-19): a failed run or a
+/// problem entry; counts of messages read stay in the Activity log.
+final inboxProblemsProvider = Provider<List<ActivityEntry>>((ref) {
+  final entries = ref.watch(activityEntriesProvider).value ?? const [];
+  return [
+    for (final e in entries)
+      if (InboxLogic.groupOf(e) == InboxGroup.problems) e,
+  ];
+});
+
+/// What the bell badge counts: things needing attention plus problems not yet
+/// seen; 0 until the sources load (FR-22-16, FR-22-19).
 final inboxUnreadProvider = Provider<int>((ref) {
-  final entries = ref.watch(activityEntriesProvider).value;
   final seen = ref.watch(activityLastSeenProvider).value;
-  if (entries == null || seen == null) return 0;
-  return InboxLogic.unread(entries, seen);
+  if (seen == null) return 0;
+  final problems = ref.watch(inboxProblemsProvider);
+  return ref.watch(homeAttentionProvider).length +
+      InboxLogic.unread(problems, seen);
 });
 
 /// Net worth for the Home card (FR-17-26): null while loading.

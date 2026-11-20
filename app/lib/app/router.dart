@@ -10,6 +10,7 @@ import 'package:hisaab/features/accounts_management/presentation/account_detail_
 import 'package:hisaab/features/accounts_management/presentation/accounts_management_screen.dart';
 import 'package:hisaab/features/activity_log/presentation/activity_log_screen.dart';
 import 'package:hisaab/features/activity_log/presentation/activity_tile.dart';
+import 'package:hisaab/features/activity_log/presentation/inbox_screen.dart';
 import 'package:hisaab/features/alerts_reminders/presentation/alert_action_screen.dart';
 import 'package:hisaab/features/alerts_reminders/presentation/alerts_reminders_screen.dart';
 import 'package:hisaab/features/alerts_reminders/presentation/alerts_tile.dart';
@@ -287,6 +288,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/security',
         builder: (_, __) => const SecurityPrivacyScreen(),
       ),
+      GoRoute(path: '/inbox', builder: (_, __) => const InboxScreen()),
       GoRoute(path: '/activity', builder: (_, __) => const ActivityLogScreen()),
       GoRoute(
         path: '/settings/email',

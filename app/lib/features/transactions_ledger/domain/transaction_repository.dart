@@ -15,6 +15,20 @@ abstract interface class TransactionRepository {
 
   Future<IngestResult> ingest(IngestItem item);
 
+  /// A statement of [bankName] ending [last4] covers [fromMs]..[toMs]
+  /// (FR-05-36). Text and mail entries of that account in the period that the
+  /// statement did not merge into are removed (the statement is the record;
+  /// they only enriched its rows), and later text or mail entries inside the
+  /// period that match no statement row are not added. Entries the user
+  /// touched (note, receipt) and hand-entered ones stay. Returns how many
+  /// entries were removed.
+  Future<int> applyStatementCoverage({
+    required String bankName,
+    required String last4,
+    required int fromMs,
+    required int toMs,
+  });
+
   /// What [ingestBatch] would do with each of [items] against the ledger as it
   /// is now, without writing anything (FR-05-34).
   Future<List<IngestPlan>> planBatch(List<IngestItem> items);

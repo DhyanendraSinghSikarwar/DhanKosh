@@ -216,7 +216,7 @@ class _InboxBell extends ConsumerWidget {
         label: Text(n > 99 ? '99+' : '$n'),
         child: const Icon(Icons.notifications_outlined),
       ),
-      onPressed: () => context.push('/activity'),
+      onPressed: () => context.push('/inbox'),
     );
   }
 }

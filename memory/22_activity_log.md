@@ -6,7 +6,7 @@
 | Status | In progress (Fold adoption 2026-10-26: Inbox with unread bell badge, groups and problem entries; Phase 5: schema v5 table, repository with coalescing and 200 cap, ActivityLogger port wired into SMS scan, live SMS and email runs, Activity screen and More tile done; picked-statement imports and notifications recorded; native-only live runs not logged) |
 | Priority | P2 |
 | Phase | 5 |
-| Last Updated | 2026-10-31 |
+| Last Updated | 2026-11-20 |
 
 ## 1. Description
 
@@ -152,6 +152,7 @@ Clear dialog: AlertDialog "Clear log?" - "Removes every entry. Transactions are 
 17. FR-22-17: Entries group by type with chips above the source pills: Imports (email, statements, a scan with statements), Scans (SMS scan and live SMS), Alerts (payment-app notifications), Problems (`PROBLEMS` entries and any entry with an error). A chip toggles; tapping the active chip clears it; it combines with the source pill.
 
 18. FR-22-18: Alert events from [21_alerts_reminders.md](21_alerts_reminders.md) FR-21-27 are recorded as `ALERTS` entries: `read` = count, `note` = `sent:<kind>` (a notification was posted) or `log:<kind>` (informational, no notification); kinds `newTransaction`, `cardBill`, `statementLocked`, `lowBalanceBill`, `insuranceRenewal`, `untrackedChange`, `budget`, `budgetWarning`, `balanceUpdated`, `categorySaved`, `weeklySummary`, `updateAvailable`. Codes and counts only (no text, merchant, amount, account); one entry per kind per alerts run; not coalesced. Row shows "{Kind label} ×n · notified | no notification" under the Alerts group chip. Test: `activity_log/alert_entries_test.dart`.
+19. FR-22-19: The Home bell opens the Inbox, which lists only what needs attention (duplicates to review, bills and card dues soon, locked or unreadable statements, an update) and the problems of the log (failed runs, unreadable messages); the badge counts those. Messages read, sync times and run totals are not shown there: they stay in the Activity log (Settings > Activity log, or "Open activity log" in the Inbox).
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -455,3 +456,4 @@ Phase 5 (2026-10-21). Code: `features/activity_log/{domain,data,presentation}`; 
 | 2026-10-27 | Statement imports record activity entries (counts and codes only) | Kotlin parity |
 | 2026-10-31 | `ALERTS` source and entry codes for notifications posted and informational events kept out of notifications (FR-22-18) | Action-only notifications, rest in the Activity log |
 | 2026-10-31 | Activity log cards use the shared filled AppCard (radius 20, no border) | More/Accounts/Profile matched to approved mock |
+| 2026-11-20 | FR-22-19 Inbox shows problems and what needs attention only; log keeps the counts | Owner request |

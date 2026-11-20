@@ -21,52 +21,80 @@ class CardLimitBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bar = view.limitBar;
-    if (bar == null) return const SizedBox.shrink();
-    final sem = Theme.of(context).extension<SemanticColors>() ??
-        (Theme.of(context).brightness == Brightness.dark
+    final theme = Theme.of(context);
+    final sem = theme.extension<SemanticColors>() ??
+        (theme.brightness == Brightness.dark
             ? SemanticColors.dark
             : SemanticColors.light);
     const orange = Color(0xFFF08A24);
-    final parts = [
+    final parts = <(int?, Color, String)>[
       (bar.left, sem.income, t('Left')),
       (bar.unbilled, orange, t('Unbilled')),
       (bar.billed, sem.expense, t('Billed')),
+    ];
+    final track = theme.colorScheme.surfaceContainerHighest;
+    final segments = [
+      for (final (v, c, _) in parts)
+        if (v != null && v > 0) (v, c),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
           key: Key('home_card_bar_${view.card.id}'),
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(5),
           child: SizedBox(
-            height: 8,
-            child: Row(
-              children: [
-                for (final (v, c, _) in parts)
-                  if (v > 0) Expanded(flex: v, child: ColoredBox(color: c)),
-              ],
-            ),
+            height: 10,
+            child: segments.isEmpty
+                ? ColoredBox(color: track)
+                : Row(
+                    children: [
+                      for (final (v, c) in segments)
+                        Expanded(
+                          flex: v,
+                          child: ColoredBox(color: c),
+                        ),
+                    ],
+                  ),
           ),
         ),
-        const SizedBox(height: 4),
-        Wrap(
-          spacing: 12,
+        const SizedBox(height: 8),
+        Row(
           children: [
             for (final (v, c, label) in parts)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$label ${cardCompact(v, masked: masked)}',
-                    style: MockText.small(context),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration:
+                              BoxDecoration(color: c, shape: BoxShape.circle),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: MockText.small(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      v == null ? '—' : cardCompact(v, masked: masked),
+                      key: Key('home_card_bar_${label}_${view.card.id}'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: MockText.body(context),
+                    ),
+                  ],
+                ),
               ),
           ],
         ),

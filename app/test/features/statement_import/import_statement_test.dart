@@ -18,6 +18,10 @@ import 'package:hisaab/features/statement_import/domain/usecases/import_statemen
 import 'package:hisaab/features/transactions_ledger/domain/ingest.dart'
     show PlanKind;
 
+import 'package:parser_core/parser_core.dart'
+    show AccountKind, ParsedTransaction;
+
+import '../../support/parsed.dart';
 import '../../support/test_env.dart';
 
 class MemSecure implements SecureStore {
@@ -160,6 +164,77 @@ void main() {
 
     expect(await uc(pdf()), isA<ImportAlreadyDone>());
     expect(await env.count('transactions'), d.added + d.review);
+  });
+
+  // FR-05-36
+  group('statement coverage', () {
+    int at(int d, [int m = 9]) =>
+        DateTime(2026, m, d, 12).millisecondsSinceEpoch;
+    ParsedTransaction sms(int day, int amount, String ref, {int month = 9}) =>
+        parsed(
+          kind: AccountKind.card,
+          last4: '5678',
+          amountMinor: amount,
+          ref: ref,
+          time: at(day, month),
+        );
+
+    test(
+        'SMS entries in the period that the statement did not match are '
+        'removed; others stay', () async {
+      await env.ingest(sms(8, 77700, 'ONLYSMS01'));
+      await env.ingest(sms(2, 149900, 'AMZ0000001'));
+      await env.ingest(sms(1, 55500, 'LATER00001', month: 10));
+      final r = await make(FakePdf(cardText))(pdf()) as ImportDone;
+      expect(r.added + r.merged + r.review, 4);
+      final rows = await env.db
+          .customSelect('SELECT amount_minor a FROM transactions ORDER BY a')
+          .get();
+      final amounts = rows.map((e) => e.data['a']).toList();
+      expect(amounts, isNot(contains(77700)));
+      expect(amounts, contains(55500));
+      expect(amounts, contains(149900));
+    });
+
+    test('a hand-entered or noted row in the period stays', () async {
+      await env.ingest(sms(8, 77700, 'NOTED00001'));
+      await env.db.customStatement(
+        "UPDATE transactions SET note = 'mine' WHERE amount_minor = 77700",
+      );
+      await make(FakePdf(cardText))(pdf());
+      expect(
+        await env.db
+            .customSelect(
+                'SELECT id FROM transactions WHERE amount_minor = 77700')
+            .get(),
+        hasLength(1),
+      );
+    });
+
+    test(
+        'a later SMS inside the period that no statement row matches is not '
+        'added; one outside is', () async {
+      await make(FakePdf(cardText))(pdf());
+      final before = await env.count('transactions');
+      final inside = await env.ingest(sms(9, 12300, 'LATEIN0001'));
+      expect(inside.outcome.name, 'skipped');
+      expect(inside.reason, 'covered_by_statement');
+      final outside = await env.ingest(sms(1, 12300, 'LATEOUT001', month: 10));
+      expect(outside.outcome.name, 'inserted');
+      expect(await env.count('transactions'), before + 1);
+    });
+
+    test('unticked rows mean nothing is removed', () async {
+      await env.ingest(sms(8, 77700, 'ONLYSMS01'));
+      await make(FakePdf(cardText))(pdf(), skipRows: {0});
+      expect(
+        await env.db
+            .customSelect(
+                'SELECT id FROM transactions WHERE amount_minor = 77700')
+            .get(),
+        hasLength(1),
+      );
+    });
   });
 
   // FR-05-34

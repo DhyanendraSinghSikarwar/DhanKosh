@@ -106,7 +106,7 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen> {
     ];
     return Scaffold(
       appBar: AppBar(
-        title: Text(t('Inbox')),
+        title: Text(t('Activity log')),
         actions: [
           if (entries.isNotEmpty)
             IconButton(
@@ -323,14 +323,16 @@ class _DayCard extends StatelessWidget {
               child: Text(title, style: Theme.of(context).textTheme.titleSmall),
             ),
             for (final e in entries)
-              _EntryRow(e, unread: InboxLogic.isUnread(e, seen)),
+              ActivityEntryRow(e, unread: InboxLogic.isUnread(e, seen)),
           ],
         ),
       );
 }
 
-class _EntryRow extends StatelessWidget {
-  const _EntryRow(this.e, {required this.unread});
+/// One entry of the log: icon, title, detail and time.
+class ActivityEntryRow extends StatelessWidget {
+  /// Creates the row.
+  const ActivityEntryRow(this.e, {required this.unread, super.key});
 
   final ActivityEntry e;
   final bool unread;

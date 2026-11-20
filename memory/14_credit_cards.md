@@ -6,7 +6,7 @@
 | Status | In progress (data/domain, message parser, SMS/email notice ingest, `/cards` screen, Edit amounts sheet, Home strip, cycle spend, statement history, paid verification and late flag done; reminders worker and notification actions, forex markup field done; card page with limit override done) |
 | Priority | P0 |
 | Phase | 3 (statements + portfolio); card due SMS/email recording can start in Phase 2; reminders in Phase 2 |
-| Last Updated | 2026-11-09 |
+| Last Updated | 2026-11-20 |
 
 ## 1. Description
 
@@ -194,6 +194,7 @@ Card page and Home card (approved Home mockups, 2026-10-31):
 - FR-14-28: The Bills calendar page lists the month's (or the selected day's) card dues with Mark paid (`BillsCardDues`, composed by the router).
 - FR-14-29: A card that is not a debit or prepaid card is a credit card even when its messages never state a limit (an SBI Card spend alert): it is typed credit card on its first message and appears in Home, Cards and the cards screen (`isCreditCardAccount`).
 - FR-14-30: The Home Credit cards card shows one bar per card with a stated limit: green is the limit left, orange the unbilled spends, red the billed amount, each in proportion, with the three amounts under the bar (`CardView.limitBar`, `CardLimitBar`). Used but not billed counts as unbilled.
+- FR-14-31: Every card on Home shows the bar, in three equal columns under it (Left green, Unbilled orange, Billed red; "—" for what is unknown). A card with a limit splits the limit; one without a limit shows billed against unbilled; one with no figures shows an empty track.
 
 ## 6. Non-Functional Requirements (performance, battery, privacy, offline)
 
@@ -530,3 +531,4 @@ FR-14-15 UI done in the account edit sheet (cards only): "Forex markup %" 0..20 
 | 2026-10-31 | Home matched to approved mock: Credit cards card rows (IconBadge, name and last digits, due and compact limit, whole-rupee amount, limit-used bar, (i) note); card page with gradient header, Auto tag, Overview rows, upcoming, transactions, history and Back bar; Bills calendar shows violet card-due dots (`cardDueDatesProvider`) and card dues as rows with Mark paid chip | Home matched to approved mock |
 | 2026-11-09 | FR-14-29 card without a limit is a credit card | Owner-reported issue |
 | 2026-11-09 | FR-14-30 home limit bar | Owner-reported issue |
+| 2026-11-20 | FR-14-31 bar and legend on every Home card | Owner-reported: not all cards showed it |

@@ -10,6 +10,9 @@ User-visible changes, newest first. Each pull request adds one line under `Unrel
 - New SMS payments notify like PennyWise: "Spent ₹X at Shop — What was this for?" with the category, Not an expense and More. Mail and statements no longer notify; unread ones fade after a day and opening the app clears the rest.
 
 ### Fixed
+- A statement now replaces the text and mail entries of its account and period that it did not match, and later ones inside that period are not added again; matched ones keep the extra details.
+- Every credit card on Home shows the Left, Unbilled and Billed bar, laid out in three clean columns; cards without a limit show billed against unbilled.
+- The bell Inbox shows only what needs attention and what went wrong; read counts and last refresh times stay in the Activity log.
 - An outgoing NEFT told as "credited to beneficiary NAME, A/c XX…" is a payment to NAME, and the friend's account is no longer shown as yours.
 - An incoming NEFT told by a bank SMS and by a statement is one transaction; a statement filed under the wrong account is corrected by the SMS.
 - "Came in with no message" changes no longer appear from statement rows; transfers between your accounts now move both balances.

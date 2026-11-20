@@ -49,7 +49,7 @@ void main() {
       billed: 2000000,
       unbilled: 1000000,
       available: 7000000,
-    ).limitBar!;
+    ).limitBar;
     expect((b.billed, b.unbilled, b.left), (2000000, 1000000, 7000000));
   });
 
@@ -59,11 +59,54 @@ void main() {
       billed: 90000,
       unbilled: 0,
       available: 80000,
-    ).limitBar!;
+    ).limitBar;
     expect(b.billed, 20000);
     expect(b.unbilled, 0);
     expect(b.left, 80000);
-    expect(_view(limit: 0, billed: 0, unbilled: 0).limitBar, isNull);
+    expect(_view(limit: 0, billed: 0, unbilled: 0).limitBar.left, isNull);
+  });
+
+  // FR-14-31
+  test('without a limit the bar still has billed and unbilled', () {
+    const v = CardView(
+      card: CardLimit(
+        id: 2,
+        name: 'Axis Card',
+        bankName: 'Axis',
+        last4: '9999',
+        position: CardPosition(billedMinor: 50000, unbilledMinor: 25000),
+        paid: false,
+      ),
+      usage: AccountUsage.personal,
+    );
+    final b = v.limitBar;
+    expect((b.billed, b.unbilled, b.left, b.known), (50000, 25000, null, true));
+  });
+
+  testWidgets('a card with no figures draws an empty track, not nothing',
+      (tester) async {
+    const v = CardView(
+      card: CardLimit(
+        id: 3,
+        name: 'New Card',
+        bankName: 'SBI',
+        last4: '1111',
+        position: CardPosition(),
+        paid: false,
+      ),
+      usage: AccountUsage.personal,
+    );
+    expect(v.limitBar.known, isFalse);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: CardLimitBar(view: v, masked: false)),
+      ),
+    );
+    expect(find.byKey(const Key('home_card_bar_3')), findsOneWidget);
+    expect(find.text('—'), findsNWidgets(1));
+    expect(find.text('Left'), findsOneWidget);
+    expect(find.text('Unbilled'), findsOneWidget);
+    expect(find.text('Billed'), findsOneWidget);
   });
 
   testWidgets('the bar draws a segment per part with its amounts',

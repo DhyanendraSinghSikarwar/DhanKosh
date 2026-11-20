@@ -43,6 +43,17 @@ pc.StatementResult _parseOnWorker((String, String, int) a) =>
 ///
 /// Never writes `transactions` itself; rows go through
 /// [TransactionRepository.ingestBatch] with ids `stmt:<key>:<i>` (FR-05-04).
+const int _istMs = 19800000;
+const int _dayMs = 86400000;
+
+/// A statement date this far past its last row still ends the covered period.
+const int _maxCoverGapMs = 10 * _dayMs;
+
+/// Longest period one statement may cover (FR-05-36).
+const int _maxCoverMs = 400 * _dayMs;
+
+int _dayStartIst(int ms) => ((ms + _istMs) ~/ _dayMs) * _dayMs - _istMs;
+
 class ImportStatement {
   /// Creates the use case.
   ImportStatement({
@@ -598,6 +609,37 @@ class ImportStatement {
     final report = items.isEmpty
         ? const IngestReport([])
         : await _ledger.ingestBatch(items);
+    // FR-05-36: this statement is the record for its account and period; the
+    // text and mail entries it did not merge into are removed. Not done when
+    // the user left rows out of the import, or without a known account.
+    final bank = result.bankName;
+    final last4 = result.last4;
+    final dates = [
+      for (final t in result.transactions) t.transactionTime,
+    ];
+    if (skipRows.isEmpty &&
+        bank != null &&
+        last4 != null &&
+        dates.isNotEmpty &&
+        result.deposits.isEmpty) {
+      final first = dates.reduce((a, b) => a < b ? a : b);
+      var last = dates.reduce((a, b) => a > b ? a : b);
+      final sd = result.summary.statementDate;
+      if (sd != null) {
+        final end = ApplyStatementAccounts.endOfDayIst(sd);
+        if (end > last && end - last <= _maxCoverGapMs) last = end;
+      }
+      final from = _dayStartIst(first);
+      final to = _dayStartIst(last) + _dayMs - 60000;
+      if (to - from <= _maxCoverMs) {
+        await _ledger.applyStatementCoverage(
+          bankName: bank,
+          last4: last4,
+          fromMs: from,
+          toMs: to,
+        );
+      }
+    }
     final snaps = [
       for (final h in result.holdings)
         if ((h.valueMinor ?? 0) > 0)

@@ -6,6 +6,7 @@ import 'package:hisaab/features/accounts_management/domain/account.dart';
 import 'package:hisaab/features/activity_log/data/activity_log_repository_impl.dart';
 import 'package:hisaab/features/activity_log/domain/entities/activity_entry.dart';
 import 'package:hisaab/features/activity_log/presentation/activity_log_screen.dart';
+import 'package:hisaab/features/activity_log/presentation/inbox_screen.dart';
 import 'package:hisaab/features/dashboard_home/presentation/dashboard_home_screen.dart';
 import 'package:hisaab/features/dashboard_home/presentation/home_net_worth_card.dart';
 import 'package:hisaab/features/settings_data_sources/domain/setting_key.dart';
@@ -32,6 +33,7 @@ List<RouteBase> _routes(List<String> visited, {bool nw = false}) => [
               )
             : const DashboardHomeScreen(),
       ),
+      GoRoute(path: '/inbox', builder: (_, __) => const InboxScreen()),
       GoRoute(path: '/activity', builder: (_, __) => const ActivityLogScreen()),
       for (final p in [
         '/accounts',
@@ -184,29 +186,19 @@ void main() {
     });
     await pumpApp(t, env, _routes([]));
     Badge badge() => t.widget<Badge>(find.byKey(const Key('home_bell_badge')));
+    // FR-22-19: only the problem counts; the scan run stays in the log.
     expect(badge().isLabelVisible, isTrue);
-    expect((badge().label! as Text).data, '2');
+    expect((badge().label! as Text).data, '1');
     await t.tap(find.byKey(const Key('home_bell')));
     await settle(t);
     expect(find.text('Inbox'), findsOneWidget);
     final seen =
         await t.runAsync(() => env.settings.read(SettingKeys.activityLastSeen));
     expect(seen, greaterThan(0));
-    // Group chip filters to problems only; its row shows an unread dot.
-    await t.tap(find.byKey(const Key('group-problems')));
-    await settle(t);
-    await t.scrollUntilVisible(
-      find.text('2 unreadable from AX-HDFCBK'),
-      200,
-      scrollable: find
-          .descendant(
-            of: find.byType(ActivityLogScreen),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
+    expect(find.text('2 unreadable from AX-HDFCBK'), findsOneWidget);
     expect(find.byKey(const Key('inbox-unread-dot')), findsOneWidget);
-    expect(find.textContaining('3 SMS'), findsNothing);
+    expect(find.textContaining('SMS'), findsNothing);
+    expect(find.text('Last SMS scan'), findsNothing);
     await teardownApp(t);
   });
 

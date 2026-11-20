@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:drift/drift.dart';
@@ -178,6 +179,16 @@ class TransactionRepositoryImpl implements TransactionRepository {
 
     final candidates = await _candidates(p);
     var decision = await _policy.decide(p, candidates);
+    // FR-05-36: a statement already covers this account for that day, so a
+    // text or mail entry it did not match is not added.
+    if (decision is! DedupDuplicate &&
+        (p.source == Source.sms || p.source == Source.email) &&
+        await _coveredByStatement(p)) {
+      return const IngestResult(
+        IngestOutcome.skipped,
+        reason: 'covered_by_statement',
+      );
+    }
     final accountId = item.accountId ??
         await _payeeAccount(p.merchant, p.upiId) ??
         await _accounts.ensureAccount(p, phoneLast4s: item.phoneLast4s);
@@ -1000,6 +1011,114 @@ class TransactionRepositoryImpl implements TransactionRepository {
       ),
     );
   }
+
+  static const _coverPrefix = 'stmt_cover:';
+
+  static String _bankKey(String bank) =>
+      bank.toLowerCase().replaceAll(RegExp('[^a-z0-9]'), '');
+
+  static bool _sameBank(String a, String b) {
+    final x = _bankKey(a);
+    final y = _bankKey(b);
+    return x.isNotEmpty && y.isNotEmpty && (x.startsWith(y) || y.startsWith(x));
+  }
+
+  Future<List<List<int>>> _coverage(String bank, String last4) async {
+    final rows = await (_db.select(_db.settings)
+          ..where((t) => t.key.like('$_coverPrefix%|$last4')))
+        .get();
+    final out = <List<int>>[];
+    for (final r in rows) {
+      final b =
+          r.key.substring(_coverPrefix.length, r.key.length - last4.length - 1);
+      if (!_sameBank(b, bank)) continue;
+      try {
+        for (final e in (jsonDecode(r.value) as List)) {
+          final l = (e as List).cast<int>();
+          out.add([l[0], l[1]]);
+        }
+      } on Object {
+        // Unreadable value: ignored.
+      }
+    }
+    return out;
+  }
+
+  Future<bool> _coveredByStatement(ParsedTransaction p) async {
+    final last4 = p.accountLast4;
+    if (last4 == null || last4.isEmpty) return false;
+    for (final r in await _coverage(p.bankName, last4)) {
+      if (p.transactionTime >= r[0] && p.transactionTime <= r[1]) return true;
+    }
+    return false;
+  }
+
+  // FR-05-36
+  @override
+  Future<int> applyStatementCoverage({
+    required String bankName,
+    required String last4,
+    required int fromMs,
+    required int toMs,
+  }) =>
+      _db.transaction(() async {
+        // Remember the period (merged with earlier ones).
+        final key = '$_coverPrefix$bankName|$last4';
+        final existing = await (_db.select(_db.settings)
+              ..where((t) => t.key.equals(key)))
+            .getSingleOrNull();
+        final ranges = <List<int>>[];
+        if (existing != null) {
+          try {
+            for (final e in (jsonDecode(existing.value) as List)) {
+              final l = (e as List).cast<int>();
+              ranges.add([l[0], l[1]]);
+            }
+          } on Object {
+            ranges.clear();
+          }
+        }
+        ranges
+          ..add([fromMs, toMs])
+          ..sort((a, b) => a[0].compareTo(b[0]));
+        final merged = <List<int>>[];
+        for (final r in ranges) {
+          if (merged.isNotEmpty && r[0] <= merged.last[1] + 1) {
+            if (r[1] > merged.last[1]) merged.last[1] = r[1];
+          } else {
+            merged.add([r[0], r[1]]);
+          }
+        }
+        await _db.into(_db.settings).insertOnConflictUpdate(
+              SettingsCompanion.insert(key: key, value: jsonEncode(merged)),
+            );
+        // Remove what the statement replaces.
+        final rows = await (_db.select(_db.transactions)
+              ..where(
+                (t) =>
+                    t.accountLast4.equals(last4) &
+                    t.timestamp.isBetweenValues(fromMs, toMs) &
+                    t.note.isNull() &
+                    t.receipt.isNull(),
+              ))
+            .get();
+        final drop = <int>[];
+        for (final r in rows) {
+          if (!_sameBank(r.bankName, bankName)) continue;
+          final srcs = await (_db.select(_db.transactionSources)
+                ..where((s) => s.transactionId.equals(r.id)))
+              .get();
+          if (srcs.isEmpty) continue;
+          final onlyMessages = srcs.every(
+            (s) =>
+                s.source == enumToDb(Source.sms) ||
+                s.source == enumToDb(Source.email),
+          );
+          if (onlyMessages) drop.add(r.id);
+        }
+        if (drop.isEmpty) return 0;
+        return await deleteTransactions(drop);
+      });
 
   // FR-08-09 / FR-08-22: tombstones for every source, chunks of 900.
   @override

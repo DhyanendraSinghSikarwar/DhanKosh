@@ -199,10 +199,8 @@ class _CardRow extends ConsumerWidget {
                 ),
               ],
             ),
-            if (view.limitBar != null) ...[
-              const SizedBox(height: 8),
-              CardLimitBar(view: view, masked: masked),
-            ],
+            const SizedBox(height: 10),
+            CardLimitBar(view: view, masked: masked),
           ],
         ),
       ),
